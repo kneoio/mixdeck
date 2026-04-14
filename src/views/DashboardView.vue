@@ -33,7 +33,15 @@ const menuThemeOverrides = {
   itemIconColor: '#FF2D95',
   itemTextColorHover: '#ff5aaa',
   itemIconColorHover: '#ff5aaa',
+  itemTextColorActive: '#FF2D95',
+  itemIconColorActive: '#FF2D95',
+  itemTextColorActiveHover: '#ff5aaa',
+  itemIconColorActiveHover: '#ff5aaa',
+  itemTextColorChildActive: '#FF2D95',
+  itemIconColorChildActive: '#FF2D95',
   arrowColor: '#FF2D95',
+  arrowColorActive: '#FF2D95',
+  arrowColorChildActive: '#FF2D95',
   groupTextColor: '#FF2D95',
 }
 
