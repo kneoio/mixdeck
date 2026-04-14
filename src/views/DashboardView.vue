@@ -28,14 +28,20 @@ const brandsStore = useBrandsStore()
 const router = useRouter()
 const route = useRoute()
 
-const menuThemeOverrides = {
-  itemColorActive: '#7C3AED',
-  itemColorActiveHover: '#6d31d4',
-  itemTextColorActive: '#ffffff',
-  itemIconColorActive: '#ffffff',
-  itemTextColorActiveHover: '#ffffff',
-  itemIconColorActiveHover: '#ffffff',
-}
+const menuThemeOverrides = computed(() => {
+  const normalText = themeStore.isDark ? 'rgba(255,255,255,0.82)' : 'rgba(0,0,0,0.85)'
+  return {
+    itemColorActive: '#7C3AED',
+    itemColorActiveHover: '#6d31d4',
+    itemTextColorActive: '#ffffff',
+    itemIconColorActive: '#ffffff',
+    itemTextColorActiveHover: '#ffffff',
+    itemIconColorActiveHover: '#ffffff',
+    itemTextColorChildActive: normalText,
+    itemIconColorChildActive: normalText,
+    arrowColorChildActive: normalText,
+  }
+})
 
 const collapsed = ref(false)
 const windowWidth = ref(window.innerWidth)
