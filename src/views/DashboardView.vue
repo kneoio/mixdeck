@@ -28,23 +28,6 @@ const brandsStore = useBrandsStore()
 const router = useRouter()
 const route = useRoute()
 
-const menuThemeOverrides = {
-  itemTextColor: '#FF2D95',
-  itemIconColor: '#FF2D95',
-  itemTextColorHover: '#ff5aaa',
-  itemIconColorHover: '#ff5aaa',
-  itemTextColorActive: '#FF2D95',
-  itemIconColorActive: '#FF2D95',
-  itemTextColorActiveHover: '#ff5aaa',
-  itemIconColorActiveHover: '#ff5aaa',
-  itemTextColorChildActive: '#FF2D95',
-  itemIconColorChildActive: '#FF2D95',
-  arrowColor: '#FF2D95',
-  arrowColorActive: '#FF2D95',
-  arrowColorChildActive: '#FF2D95',
-  groupTextColor: '#FF2D95',
-}
-
 const collapsed = ref(false)
 const windowWidth = ref(window.innerWidth)
 const isMobile = computed(() => windowWidth.value < 768)
@@ -206,7 +189,6 @@ const handleUserMenuSelect = async (key: string) => {
           :options="menuOptions"
           :value="activeKey"
           :expanded-keys="expandedKeys"
-          :theme-overrides="menuThemeOverrides"
           @update:expanded-keys="handleUpdateExpandedKeys"
           @update:value="handleMenuSelect"
         />
@@ -228,7 +210,6 @@ const handleUserMenuSelect = async (key: string) => {
           :options="menuOptions"
           :value="activeKey"
           :expanded-keys="expandedKeys"
-          :theme-overrides="menuThemeOverrides"
           @update:expanded-keys="handleUpdateExpandedKeys"
           @update:value="handleMenuSelect"
         />
