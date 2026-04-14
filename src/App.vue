@@ -18,7 +18,7 @@ import { onMounted, computed } from 'vue'
 
 const themeStore = useThemeStore()
 
-const themeOverrides: GlobalThemeOverrides = {
+const themeOverrides = computed<GlobalThemeOverrides>(() => ({
   common: {
     primaryColor: '#7C3AED',
     primaryColorHover: '#9d5bf4',
@@ -38,9 +38,9 @@ const themeOverrides: GlobalThemeOverrides = {
     textColorHoverError: '#ffffff',
     textColorPressedError: '#ffffff',
     textColorFocusError: '#ffffff',
-    textColorDisabled: '#888888',
+    ...(themeStore.isDark ? { textColorDisabled: 'rgba(255,255,255,0.38)' } : {}),
   }
-}
+}))
 
 const naiveTheme = computed(() => themeStore.isDark ? darkTheme : null)
 
