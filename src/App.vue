@@ -28,6 +28,7 @@ const themeOverrides = computed<GlobalThemeOverrides>(() => ({
     errorColorHover: '#ff5aaa',
     errorColorPressed: '#e0207f',
     errorColorSuppl: '#FF2D95',
+    ...(themeStore.isDark ? { textColorDisabled: 'rgba(255,255,255,0.38)' } : {}),
   },
   Button: {
     textColorPrimary: '#ffffff',
@@ -38,7 +39,6 @@ const themeOverrides = computed<GlobalThemeOverrides>(() => ({
     textColorHoverError: '#ffffff',
     textColorPressedError: '#ffffff',
     textColorFocusError: '#ffffff',
-    ...(themeStore.isDark ? { textColorDisabled: 'rgba(255,255,255,0.38)' } : {}),
   }
 }))
 
