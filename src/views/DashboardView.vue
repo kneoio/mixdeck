@@ -31,6 +31,10 @@ const route = useRoute()
 const menuThemeOverrides = {
   itemColorActive: '#FF2D95',
   itemColorActiveHover: '#ff5aaa',
+  itemTextColorActive: '#ffffff',
+  itemIconColorActive: '#ffffff',
+  itemTextColorActiveHover: '#ffffff',
+  itemIconColorActiveHover: '#ffffff',
 }
 
 const collapsed = ref(false)
