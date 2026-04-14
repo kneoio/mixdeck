@@ -35,6 +35,12 @@ const menuThemeOverrides = {
   itemIconColorActive: '#ffffff',
   itemTextColorActiveHover: '#ffffff',
   itemIconColorActiveHover: '#ffffff',
+  itemTextColorChildActive: '#ffffff',
+  itemIconColorChildActive: '#ffffff',
+  itemTextColorChildActiveHover: '#ffffff',
+  itemIconColorChildActiveHover: '#ffffff',
+  arrowColorChildActive: '#ffffff',
+  arrowColorChildActiveHover: '#ffffff',
 }
 
 const collapsed = ref(false)
