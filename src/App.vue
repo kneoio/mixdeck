@@ -21,13 +21,23 @@ const themeStore = useThemeStore()
 const themeOverrides: GlobalThemeOverrides = {
   common: {
     primaryColor: '#7C3AED',
-    primaryColorHover: '#820009',
-    primaryColorPressed: '#620007',
-    primaryColorSuppl: '#c20010',
+    primaryColorHover: '#9d5bf4',
+    primaryColorPressed: '#6d31d4',
+    primaryColorSuppl: '#7C3AED',
     errorColor: '#FF2D95',
     errorColorHover: '#ff5aaa',
     errorColorPressed: '#e0207f',
     errorColorSuppl: '#FF2D95',
+  },
+  Button: {
+    textColorPrimary: '#ffffff',
+    textColorHoverPrimary: '#ffffff',
+    textColorPressedPrimary: '#ffffff',
+    textColorFocusPrimary: '#ffffff',
+    textColorError: '#ffffff',
+    textColorHoverError: '#ffffff',
+    textColorPressedError: '#ffffff',
+    textColorFocusError: '#ffffff',
   }
 }
 
