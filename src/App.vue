@@ -38,6 +38,7 @@ const themeOverrides: GlobalThemeOverrides = {
     textColorHoverError: '#ffffff',
     textColorPressedError: '#ffffff',
     textColorFocusError: '#ffffff',
+    textColorDisabled: '#888888',
   }
 }
 
