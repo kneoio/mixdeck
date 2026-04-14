@@ -28,20 +28,23 @@ const brandsStore = useBrandsStore()
 const router = useRouter()
 const route = useRoute()
 
-const menuThemeOverrides = {
-  itemColorActive: '#7C3AED',
-  itemColorActiveHover: '#6d31d4',
-  itemTextColorActive: '#ffffff',
-  itemIconColorActive: '#ffffff',
-  itemTextColorActiveHover: '#ffffff',
-  itemIconColorActiveHover: '#ffffff',
-  itemTextColorChildActive: '#ffffff',
-  itemIconColorChildActive: '#ffffff',
-  itemTextColorChildActiveHover: '#ffffff',
-  itemIconColorChildActiveHover: '#ffffff',
-  arrowColorChildActive: '#ffffff',
-  arrowColorChildActiveHover: '#ffffff',
-}
+const menuThemeOverrides = computed(() => {
+  const childActiveColor = themeStore.isDark ? '#ffffff' : '#7C3AED'
+  return {
+    itemColorActive: '#7C3AED',
+    itemColorActiveHover: '#6d31d4',
+    itemTextColorActive: '#ffffff',
+    itemIconColorActive: '#ffffff',
+    itemTextColorActiveHover: '#ffffff',
+    itemIconColorActiveHover: '#ffffff',
+    itemTextColorChildActive: childActiveColor,
+    itemIconColorChildActive: childActiveColor,
+    itemTextColorChildActiveHover: childActiveColor,
+    itemIconColorChildActiveHover: childActiveColor,
+    arrowColorChildActive: childActiveColor,
+    arrowColorChildActiveHover: childActiveColor,
+  }
+})
 
 const collapsed = ref(false)
 const windowWidth = ref(window.innerWidth)
