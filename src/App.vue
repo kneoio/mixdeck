@@ -24,6 +24,10 @@ const themeOverrides: GlobalThemeOverrides = {
     primaryColorHover: '#820009',
     primaryColorPressed: '#620007',
     primaryColorSuppl: '#c20010',
+    errorColor: '#FF2D95',
+    errorColorHover: '#ff5aaa',
+    errorColorPressed: '#e0207f',
+    errorColorSuppl: '#FF2D95',
   }
 }
 
