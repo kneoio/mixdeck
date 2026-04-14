@@ -29,8 +29,8 @@ const router = useRouter()
 const route = useRoute()
 
 const menuThemeOverrides = {
-  itemColorActive: '#FF2D95',
-  itemColorActiveHover: '#ff5aaa',
+  itemColorActive: '#7C3AED',
+  itemColorActiveHover: '#6d31d4',
   itemTextColorActive: '#ffffff',
   itemIconColorActive: '#ffffff',
   itemTextColorActiveHover: '#ffffff',
