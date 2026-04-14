@@ -20,7 +20,7 @@ const themeStore = useThemeStore()
 
 const themeOverrides: GlobalThemeOverrides = {
   common: {
-    primaryColor: '#A2000C',
+    primaryColor: '#7C3AED',
     primaryColorHover: '#820009',
     primaryColorPressed: '#620007',
     primaryColorSuppl: '#c20010',

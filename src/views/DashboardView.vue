@@ -220,8 +220,8 @@ const handleUserMenuSelect = async (key: string) => {
       <NLayoutHeader
         bordered
         :style="isMobile
-          ? 'padding: 8px; background: linear-gradient(90deg, #A2000C 0%, transparent 100%);'
-          : 'padding: 16px; background: linear-gradient(90deg, #A2000C 0%, transparent 100%);'"
+          ? 'padding: 8px; background: linear-gradient(90deg, #7C3AED 0%, transparent 100%);'
+          : 'padding: 16px; background: linear-gradient(90deg, #7C3AED 0%, transparent 100%);'"
       >
         <NFlex justify="space-between" align="center">
           <NFlex align="center" :size="8">
