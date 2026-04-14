@@ -8,9 +8,12 @@
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "build-only": "vite build",
-    "type-check": "vue-tsc --build"
+    "type-check": "vue-tsc --build",
+    "start": "node server.cjs"
   },
   "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
     "@css-render/vue3-ssr": "^0.15.14",
     "@vicons/ionicons5": "^0.13.0",
     "keycloak-js": "^26.2.0",
