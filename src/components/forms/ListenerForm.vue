@@ -8,7 +8,7 @@ import FormWrapper from '@/components/FormWrapper.vue'
 import { useListenersStore } from '@/stores/listeners'
 import { useBrandsStore } from '@/stores/brands'
 import { useRoute, useRouter } from 'vue-router'
-import datanestApiService from '@/services/datanestApi'
+import dictionaryApiService from '@/services/dictionaryApi'
 
 const route = useRoute()
 const router = useRouter()
@@ -105,9 +105,10 @@ onMounted(async () => {
 
     // Load labels
     try {
-      const lbls = await datanestApiService.getPagedDictionary<any>('/labels/only/category/LISTENER', 1, 200)
-      labelOptions.value = lbls.entries.map((l: any) => ({
-        label: l.identifier || l.title || l.id, value: l.id
+      const lbls = await dictionaryApiService.getLabelsByCategory('LISTENER')
+      labelOptions.value = lbls.map(l => ({
+        label: l.localizedName?.en || l.identifier || l.id,
+        value: l.id
       }))
     } catch {}
 

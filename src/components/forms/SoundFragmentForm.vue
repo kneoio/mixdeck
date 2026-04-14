@@ -8,7 +8,7 @@ import FormWrapper from '@/components/FormWrapper.vue'
 import { useSoundFragmentsStore, FRAGMENT_TYPES } from '@/stores/soundFragments'
 import { useBrandsStore } from '@/stores/brands'
 import { useRoute, useRouter } from 'vue-router'
-import datanestApiService from '@/services/datanestApi'
+import dictionaryApiService from '@/services/dictionaryApi'
 
 const route = useRoute()
 const router = useRouter()
@@ -65,18 +65,19 @@ onMounted(async () => {
 
     // Load genres and labels
     const [genres, lbls] = await Promise.allSettled([
-      datanestApiService.getPagedDictionary<any>('/genres', 1, 200),
-      datanestApiService.getPagedDictionary<any>('/labels/only/category/sound_fragment', 1, 200),
+      dictionaryApiService.getGenres(),
+      dictionaryApiService.getLabelsByCategory('sound_fragment'),
     ])
     if (genres.status === 'fulfilled') {
-      genreOptions.value = genres.value.entries.map((g: any) => ({
+      genreOptions.value = genres.value.map(g => ({
         label: g.localizedName?.en || Object.values(g.localizedName || {})[0] || g.identifier || g.id,
         value: g.id
       }))
     }
     if (lbls.status === 'fulfilled') {
-      labelOptions.value = lbls.value.entries.map((l: any) => ({
-        label: l.localizedName?.en || l.identifier || l.id, value: l.id
+      labelOptions.value = lbls.value.map(l => ({
+        label: l.localizedName?.en || l.identifier || l.id,
+        value: l.id
       }))
     }
 

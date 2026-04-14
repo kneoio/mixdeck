@@ -7,6 +7,7 @@ import {
 } from 'naive-ui'
 import { useBrandsStore } from '@/stores/brands'
 import datanestApiService from '@/services/datanestApi'
+import dictionaryApiService from '@/services/dictionaryApi'
 import PageHeader from '@/components/PageHeader.vue'
 import ActionBar from '@/components/ActionBar.vue'
 
@@ -22,6 +23,41 @@ const pageNum = ref(1)
 const pageSize = ref(10)
 const selectedIds = ref<string[]>([])
 const searchTerm = ref('')
+
+// Lookup maps for resolving IDs → display names
+const genreMap = ref<Map<string, { name: string; color?: string; fontColor?: string }>>(new Map())
+const labelMap = ref<Map<string, { name: string; color?: string; fontColor?: string }>>(new Map())
+
+async function loadDictionaries() {
+  const [genres, labels] = await Promise.allSettled([
+    dictionaryApiService.getGenres(),
+    dictionaryApiService.getLabelsByCategory('sound_fragment'),
+  ])
+  if (genres.status === 'fulfilled') {
+    genreMap.value = new Map(genres.value.map(g => [g.id, {
+      name: g.localizedName?.en || Object.values(g.localizedName || {})[0] || g.identifier || g.id,
+      color: g.color,
+      fontColor: g.fontColor,
+    }]))
+  }
+  if (labels.status === 'fulfilled') {
+    labelMap.value = new Map(labels.value.map(l => [l.id, {
+      name: l.localizedName?.en || l.identifier || l.id,
+      color: l.color,
+      fontColor: l.fontColor,
+    }]))
+  }
+}
+
+function resolveGenre(g: any) {
+  if (typeof g === 'string') return genreMap.value.get(g) ?? { name: g }
+  return { name: g.identifier || g.id, color: g.color, fontColor: g.fontColor }
+}
+
+function resolveLabel(l: any) {
+  if (typeof l === 'string') return labelMap.value.get(l) ?? { name: l }
+  return { name: l.identifier || l.id, color: l.color, fontColor: l.fontColor }
+}
 
 const brand = computed(() => brandsStore.brands.find(b => b.id === route.params.id))
 const slugName = computed(() => brand.value?.slugName ?? '')
@@ -46,12 +82,13 @@ const columns = computed<DataTableColumns<any>>(() => [
     render: (row) => {
       if (!row.genres?.length) return '-'
       return h(NSpace, { size: 4, wrap: true }, {
-        default: () => row.genres.map((g: any) =>
-          h(NTag, {
+        default: () => row.genres.map((g: any) => {
+          const r = resolveGenre(g)
+          return h(NTag, {
             size: 'small',
-            style: g.color ? `background:${g.color};color:${g.fontColor || '#fff'}` : ''
-          }, { default: () => g.identifier || g })
-        )
+            style: r.color ? `background:${r.color};color:${r.fontColor || '#fff'}` : ''
+          }, { default: () => r.name })
+        })
       })
     }
   },
@@ -60,12 +97,13 @@ const columns = computed<DataTableColumns<any>>(() => [
     render: (row) => {
       if (!row.labels?.length) return '-'
       return h(NSpace, { size: 4, wrap: true }, {
-        default: () => row.labels.map((l: any) =>
-          h(NTag, {
+        default: () => row.labels.map((l: any) => {
+          const r = resolveLabel(l)
+          return h(NTag, {
             size: 'small',
-            style: l.color ? `background:${l.color};color:${l.fontColor || '#fff'}` : ''
-          }, { default: () => l.identifier || l })
-        )
+            style: r.color ? `background:${r.color};color:${r.fontColor || '#fff'}` : ''
+          }, { default: () => r.name })
+        })
       })
     }
   },
@@ -142,7 +180,7 @@ function onSearchChange() {
   searchTimer = setTimeout(() => fetchData(1), 400)
 }
 
-watch(slugName, (val) => { if (val) fetchData(1) }, { immediate: true })
+watch(slugName, (val) => { if (val) { loadDictionaries(); fetchData(1) } }, { immediate: true })
 </script>
 
 <template>
