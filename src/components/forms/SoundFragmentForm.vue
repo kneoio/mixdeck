@@ -120,6 +120,7 @@ onMounted(async () => {
 
     if (isEditing.value) {
       const frag = await store.fetchFragment(route.params.fragmentId as string)
+      console.log('[SoundFragmentForm] frag:', frag)
       formData.value = {
         type: frag.type || 'SONG',
         title: frag.title || '',
