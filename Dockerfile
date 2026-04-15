@@ -1,4 +1,3 @@
-# --- Build stage ---
 FROM node:22-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
@@ -6,7 +5,6 @@ RUN npm ci
 COPY . .
 RUN npm run build-only
 
-# --- Production stage ---
 FROM node:22-alpine AS production
 RUN addgroup -r kneo && adduser -r -G kneo kneo
 WORKDIR /app
