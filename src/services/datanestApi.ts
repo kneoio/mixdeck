@@ -60,8 +60,8 @@ class DatanestApiService extends ApiClient {
   }
 
   async rateSoundFragment(id: string, brandSlug: string, action: 'LIKE' | 'DISLIKE'): Promise<void> {
-    await this.request<void>(`/soundfragments/${id}/rate?brand=${encodeURIComponent(brandSlug)}&action=${action}`, {
-      method: 'POST',
+    await this.request<void>(`/soundfragments/${id}/rating?brand=${encodeURIComponent(brandSlug)}&action=${action}`, {
+      method: 'PATCH',
     })
   }
 
