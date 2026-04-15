@@ -1,50 +1,72 @@
 <template>
-  <NLayout style="min-height: 100vh;">
-    <NLayoutContent style="display: flex; align-items: center; justify-content: center; padding: 40px;">
-      <NCard style="width: 100%; max-width: 420px;">
-        <template #header>
-          <div style="text-align: center;">
-            <h1 style="font-size: 24px; font-weight: 600; margin: 0;">Mixdeck</h1>
-          </div>
-        </template>
-
-        <div v-if="!isAuthenticated" style="text-align: center;">
-          <p style="margin-bottom: 24px; opacity: 0.7;">
-            Please log in to access the management area.
-          </p>
-          <NButton
-            type="primary"
-            size="large"
-            @click="authStore.login()"
-            :loading="authStore.isLoading"
-          >
-            {{ authStore.isLoading ? 'Initializing...' : 'Login' }}
-          </NButton>
-        </div>
-
-        <div v-else style="text-align: center;">
-          <p style="margin-bottom: 16px;">Hello, {{ userName }}!</p>
-          <NSpace vertical align="center">
-            <NButton type="primary" size="large" @click="router.push('/brands')">
-              Enter Dashboard
-            </NButton>
-            <NButton text type="error" @click="authStore.logout()">Logout</NButton>
-          </NSpace>
-        </div>
-      </NCard>
-    </NLayoutContent>
-  </NLayout>
+  <div class="landing">
+    <div class="landing-content">
+      <h1 class="landing-title">Mixdeck</h1>
+      <p class="landing-subtitle">Radio brand management</p>
+      <div class="landing-actions">
+        <NButton
+          v-if="isAuthenticated"
+          type="primary"
+          size="large"
+          @click="router.push('/brands')"
+        >
+          Open Dashboard
+        </NButton>
+        <NButton
+          v-else
+          type="primary"
+          size="large"
+          @click="authStore.login()"
+        >
+          Login
+        </NButton>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
-import { NButton, NCard, NSpace, NLayout, NLayoutContent } from 'naive-ui'
+import { NButton } from 'naive-ui'
 
 const authStore = useAuthStore()
 const router = useRouter()
 
 const isAuthenticated = computed(() => authStore.isAuthenticated)
-const userName = computed(() => authStore.userName)
 </script>
+
+<style scoped>
+.landing {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 30% 40%, rgba(124, 58, 237, 0.15), transparent 60%);
+}
+
+.landing-content {
+  text-align: center;
+  padding: 40px;
+}
+
+.landing-title {
+  font-size: 3rem;
+  font-weight: 700;
+  margin: 0 0 8px;
+  letter-spacing: -0.02em;
+}
+
+.landing-subtitle {
+  font-size: 1.1rem;
+  opacity: 0.5;
+  margin: 0 0 40px;
+}
+
+.landing-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+</style>
