@@ -45,7 +45,7 @@ const genreOptions = computed(() =>
 )
 
 const labelOptions = computed(() =>
-  labelsStore.allLabels.map(l => ({
+  labelsStore.labels.map(l => ({
     label: l.localizedName?.en || l.identifier || l.id,
     value: l.id
   }))
@@ -81,7 +81,7 @@ onMounted(async () => {
     // Load genres and labels from stores
     await Promise.allSettled([
       genresStore.loadAllGenres(),
-      labelsStore.loadLabelsByCategory('sound_fragment')
+      labelsStore.loadLabelsByCategory('sound_fragment', 1, 1000)
     ])
 
     if (isEditing.value) {

@@ -193,13 +193,6 @@ watch(slugName, (val) => { if (val) { loadDictionaries(); fetchData(1) } }, { im
           New Track
         </NButton>
         <NButton @click="showBulkUpload = true">Bulk Upload</NButton>
-        <NInput
-          v-model:value="searchTerm"
-          placeholder="Search..."
-          clearable
-          style="width: 220px"
-          @update:value="onSearchChange"
-        />
         <NPopconfirm @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
           <template #trigger>
             <NButton type="error" :disabled="selectedIds.length === 0">
@@ -208,6 +201,13 @@ watch(slugName, (val) => { if (val) { loadDictionaries(); fetchData(1) } }, { im
           </template>
           Delete {{ selectedIds.length }} track(s)?
         </NPopconfirm>
+        <NInput
+          v-model:value="searchTerm"
+          placeholder="Search..."
+          clearable
+          style="width: 220px"
+          @update:value="onSearchChange"
+        />
       </NSpace>
     </ActionBar>
     <BulkUploadDialog
