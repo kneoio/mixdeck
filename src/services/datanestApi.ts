@@ -100,11 +100,19 @@ class DatanestApiService extends ApiClient {
     return `${this.baseUrl}/soundfragments-bulk/status/${encodeURIComponent(batchId)}/stream`
   }
 
-  async downloadFile(url: string, filename: string): Promise<void> {
+  async downloadFile(url: string, fallbackFilename: string): Promise<void> {
     const authHeaders = authService.getAuthHeader()
     const response = await fetch(url, { headers: authHeaders })
     if (!response.ok) throw new Error(`Download failed (${response.status})`)
     const blob = await response.blob()
+
+    let filename = fallbackFilename
+    const disposition = response.headers.get('content-disposition')
+    if (disposition) {
+      const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+      if (match?.[1]) filename = match[1].replace(/['"]/g, '').trim()
+    }
+
     const objectUrl = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = objectUrl
