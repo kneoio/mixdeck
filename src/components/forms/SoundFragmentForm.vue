@@ -7,17 +7,17 @@ import {
 import FormWrapper from '@/components/FormWrapper.vue'
 import { useSoundFragmentsStore, FRAGMENT_TYPES } from '@/stores/soundFragments'
 import { useBrandsStore } from '@/stores/brands'
-import { useLabelsStore } from '@/stores/labels'
-import { useGenresStore } from '@/stores/genres'
+import dictionaryApiService from '@/services/dictionaryApi'
 import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
 const router = useRouter()
 const store = useSoundFragmentsStore()
 const brandsStore = useBrandsStore()
-const labelsStore = useLabelsStore()
-const genresStore = useGenresStore()
 const message = useMessage()
+
+const genreList = ref<{ id: string; localizedName: Record<string, string>; identifier: string }[]>([])
+const labelList = ref<{ id: string; localizedName: Record<string, string>; identifier: string }[]>([])
 
 const brandId = computed(() => route.params.id as string)
 const isEditing = computed(() => !!route.params.fragmentId && route.params.fragmentId !== 'new')
@@ -38,14 +38,14 @@ const formData = ref({
 })
 
 const genreOptions = computed(() =>
-  genresStore.allGenres.map(g => ({
+  genreList.value.map(g => ({
     label: g.localizedName?.en || Object.values(g.localizedName || {})[0] || g.identifier || g.id,
     value: g.id
   }))
 )
 
 const labelOptions = computed(() =>
-  labelsStore.labels.map(l => ({
+  labelList.value.map(l => ({
     label: l.localizedName?.en || l.identifier || l.id,
     value: l.id
   }))
@@ -78,11 +78,12 @@ onMounted(async () => {
   try {
     loading.value = true
 
-    // Load genres and labels from stores
-    await Promise.allSettled([
-      genresStore.loadAllGenres(),
-      labelsStore.loadLabelsByCategory('sound_fragment', 1, 1000)
+    const [genres, labels] = await Promise.allSettled([
+      dictionaryApiService.getGenres(),
+      dictionaryApiService.getLabelsByCategory('sound_fragment'),
     ])
+    if (genres.status === 'fulfilled') genreList.value = genres.value
+    if (labels.status === 'fulfilled') labelList.value = labels.value
 
     if (isEditing.value) {
       const frag = await store.fetchFragment(route.params.fragmentId as string)

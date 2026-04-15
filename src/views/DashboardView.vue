@@ -21,6 +21,7 @@ import {
   MoonOutline as DarkIcon,
   MenuOutline as HamburgerIcon,
   AddOutline as AddIcon,
+  PersonOutline as ProfileIcon,
 } from '@vicons/ionicons5'
 
 const authStore = useAuthStore()
@@ -171,6 +172,11 @@ const handleMenuSelect = async (key: string) => {
 
 const userMenuOptions = [
   {
+    label: 'Profile',
+    key: 'profile',
+    icon: () => h(NIcon, null, { default: () => h(ProfileIcon) }),
+  },
+  {
     label: 'Logout',
     key: 'logout',
     icon: () => h(NIcon, null, { default: () => h(LogoutIcon) }),
@@ -178,6 +184,7 @@ const userMenuOptions = [
 ]
 
 const handleUserMenuSelect = async (key: string) => {
+  if (key === 'profile') router.push('/profile')
   if (key === 'logout') await authStore.logout()
 }
 </script>
