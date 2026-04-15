@@ -70,7 +70,7 @@ class AuthService {
 
     try {
       const authenticated = await this.keycloak.init({
-        onLoad: 'login-required',
+        onLoad: 'check-sso',
         checkLoginIframe: false,
         pkceMethod: 'S256',
         flow: 'standard'
