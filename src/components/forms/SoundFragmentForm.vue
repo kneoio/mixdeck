@@ -209,9 +209,9 @@ onMounted(async () => {
             <NSpace vertical style="width: 100%">
               <a
                 v-if="existingUrl"
-                :href="existingUrl"
-                target="_blank"
+                href="#"
                 style="font-size: 13px;"
+                @click.prevent="datanestApiService.downloadFile(existingUrl, existingFileName)"
               >{{ existingFileName }}</a>
               <NUpload
                 :max="1"
