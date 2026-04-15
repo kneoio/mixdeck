@@ -87,17 +87,24 @@ const router = createRouter({
 
 router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore()
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
 
+  // Public routes pass through immediately — no auth needed
+  if (!requiresAuth) {
+    // If already authenticated and landing on /, redirect into the app
+    if (to.path === '/' && authStore.isAuthenticated) {
+      return next('/brands')
+    }
+    return next()
+  }
+
+  // Protected route — ensure auth is initialized
   if (authStore.isLoading) {
     await authStore.initializeAuth()
   }
 
-  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
-
-  if (requiresAuth && !authStore.isAuthenticated) {
+  if (!authStore.isAuthenticated) {
     next('/')
-  } else if (!requiresAuth && authStore.isAuthenticated && to.path === '/') {
-    next('/brands')
   } else {
     next()
   }
