@@ -153,7 +153,7 @@ onMounted(async () => {
     <template #actions>
       <NSpace>
         <NButton @click="router.push(backRoute)">Close</NButton>
-        <NButton type="primary" @click="handleSave" :loading="loading || isUploading">Save</NButton>
+        <NButton type="primary" @click="handleSave">Save</NButton>
       </NSpace>
     </template>
 
@@ -203,9 +203,12 @@ onMounted(async () => {
 
           <NFormItem label="Audio File">
             <NSpace vertical style="width: 100%">
-              <div v-if="existingFileName" style="font-size: 13px; opacity: 0.55;">
-                Current: {{ existingFileName }}
-              </div>
+              <a
+                v-if="existingUrl"
+                :href="existingUrl"
+                target="_blank"
+                style="font-size: 13px;"
+              >{{ existingFileName }}</a>
               <NUpload
                 :max="1"
                 :custom-request="handleFileCapture"
@@ -213,7 +216,7 @@ onMounted(async () => {
                 :disabled="isUploading"
               >
                 <NButton :disabled="isUploading">
-                  {{ existingFileName ? 'Replace file' : 'Choose file' }}
+                  {{ existingUrl ? 'Replace file' : 'Choose file' }}
                 </NButton>
               </NUpload>
               <NProgress
