@@ -1,5 +1,6 @@
 import { ApiClient, type PagedResult } from './base'
 import { appConfig } from '@/config/appConfig'
+import authService from './auth'
 
 class DatanestApiService extends ApiClient {
   constructor() {
@@ -62,6 +63,41 @@ class DatanestApiService extends ApiClient {
     await this.request<void>(`/soundfragments/${id}/rate?brand=${encodeURIComponent(brandSlug)}&action=${action}`, {
       method: 'POST',
     })
+  }
+
+  bulkUploadFile(
+    file: File,
+    fileId: string,
+    batchId: string,
+    brandSlug: string,
+    onProgress: (percent: number) => void
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const url = `${this.baseUrl}/soundfragments-bulk/files?batchId=${encodeURIComponent(batchId)}&brandSlug=${encodeURIComponent(brandSlug)}&fileId=${encodeURIComponent(fileId)}`
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const xhr = new XMLHttpRequest()
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) onProgress(Math.round((e.loaded * 100) / e.total))
+      }
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) resolve()
+        else reject(new Error(`Upload failed (${xhr.status}): ${xhr.statusText}`))
+      }
+      xhr.onerror = () => reject(new Error('Network error during upload'))
+
+      xhr.open('POST', url)
+      const authHeaders = authService.getAuthHeader()
+      for (const [key, value] of Object.entries(authHeaders)) {
+        xhr.setRequestHeader(key, value)
+      }
+      xhr.send(formData)
+    })
+  }
+
+  getBulkStatusStreamUrl(batchId: string): string {
+    return `${this.baseUrl}/soundfragments-bulk/status/${encodeURIComponent(batchId)}/stream`
   }
 }
 

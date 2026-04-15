@@ -9,7 +9,7 @@ export interface PagedResult<T> {
 }
 
 export class ApiClient {
-  constructor(private readonly baseUrl: string) {}
+  constructor(protected readonly baseUrl: string) {}
 
   protected async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const authHeaders = authService.getAuthHeader()

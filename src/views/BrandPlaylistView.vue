@@ -10,6 +10,7 @@ import datanestApiService from '@/services/datanestApi'
 import dictionaryApiService from '@/services/dictionaryApi'
 import PageHeader from '@/components/PageHeader.vue'
 import ActionBar from '@/components/ActionBar.vue'
+import BulkUploadDialog from '@/components/forms/BulkUploadDialog.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -23,6 +24,7 @@ const pageNum = ref(1)
 const pageSize = ref(10)
 const selectedIds = ref<string[]>([])
 const searchTerm = ref('')
+const showBulkUpload = ref(false)
 
 // Lookup maps for resolving IDs → display names
 const genreMap = ref<Map<string, { name: string; color?: string; fontColor?: string }>>(new Map())
@@ -190,6 +192,7 @@ watch(slugName, (val) => { if (val) { loadDictionaries(); fetchData(1) } }, { im
         <NButton type="primary" @click="router.push(`/brands/${route.params.id}/playlist/new`)">
           New Track
         </NButton>
+        <NButton @click="showBulkUpload = true">Bulk Upload</NButton>
         <NInput
           v-model:value="searchTerm"
           placeholder="Search..."
@@ -207,6 +210,11 @@ watch(slugName, (val) => { if (val) { loadDictionaries(); fetchData(1) } }, { im
         </NPopconfirm>
       </NSpace>
     </ActionBar>
+    <BulkUploadDialog
+      v-model:show="showBulkUpload"
+      :slug-name="slugName"
+      @upload-complete="fetchData(1)"
+    />
     <NDataTable
       :columns="columns"
       :data="entries"
