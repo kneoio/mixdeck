@@ -3,7 +3,6 @@
     <div class="welcome-page">
       <header class="nav">
         <div class="logo">MIXPLA</div>
-        <img src="/favicon.svg" alt="MIXPLA" class="nav-logo">
         <nav>
           <a href="#platform">Platform</a>
           <a href="#creators">Broadcasters</a>
@@ -99,6 +98,9 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { NButton, NConfigProvider, NInput, darkTheme } from 'naive-ui'
+import { useAuthStore } from '@/stores/auth'
+
+const authStore = useAuthStore()
 
 const creatorForm = reactive({
   name: '',
@@ -112,8 +114,8 @@ function goToMixpla() {
   window.open('https://mixpla.online', '_blank', 'noopener,noreferrer')
 }
 
-function goToBrands() {
-  window.location.href = '/brands'
+async function goToBrands() {
+  await authStore.login()
 }
 
 function scrollToRegister() {
@@ -163,11 +165,6 @@ function handleCreatorSubmit() {
   letter-spacing: 0.24em;
   font-size: clamp(1.1rem, 2vw, 1.6rem);
   color: #c0c0c0;
-}
-
-.nav-logo {
-  height: 48px;
-  filter: invert(1);
 }
 
 nav {

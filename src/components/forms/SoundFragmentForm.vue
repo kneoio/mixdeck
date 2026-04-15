@@ -7,13 +7,16 @@ import {
 import FormWrapper from '@/components/FormWrapper.vue'
 import { useSoundFragmentsStore, FRAGMENT_TYPES } from '@/stores/soundFragments'
 import { useBrandsStore } from '@/stores/brands'
+import { useLabelsStore } from '@/stores/labels'
+import { useGenresStore } from '@/stores/genres'
 import { useRoute, useRouter } from 'vue-router'
-import dictionaryApiService from '@/services/dictionaryApi'
 
 const route = useRoute()
 const router = useRouter()
 const store = useSoundFragmentsStore()
 const brandsStore = useBrandsStore()
+const labelsStore = useLabelsStore()
+const genresStore = useGenresStore()
 const message = useMessage()
 
 const brandId = computed(() => route.params.id as string)
@@ -34,8 +37,20 @@ const formData = ref({
   length: null as number | null,
 })
 
-const genreOptions = ref<{ label: string; value: string }[]>([])
-const labelOptions = ref<{ label: string; value: string }[]>([])
+const genreOptions = computed(() =>
+  genresStore.allGenres.map(g => ({
+    label: g.localizedName?.en || Object.values(g.localizedName || {})[0] || g.identifier || g.id,
+    value: g.id
+  }))
+)
+
+const labelOptions = computed(() =>
+  labelsStore.allLabels.map(l => ({
+    label: l.localizedName?.en || l.identifier || l.id,
+    value: l.id
+  }))
+)
+
 const brandOptions = computed(() =>
   brandsStore.brands.map(b => ({
     label: b.localizedName?.['en'] || b.title || b.slugName || b.id,
@@ -63,23 +78,11 @@ onMounted(async () => {
   try {
     loading.value = true
 
-    // Load genres and labels
-    const [genres, lbls] = await Promise.allSettled([
-      dictionaryApiService.getGenres(),
-      dictionaryApiService.getLabelsByCategory('sound_fragment'),
+    // Load genres and labels from stores
+    await Promise.allSettled([
+      genresStore.loadAllGenres(),
+      labelsStore.loadLabelsByCategory('sound_fragment')
     ])
-    if (genres.status === 'fulfilled') {
-      genreOptions.value = genres.value.map(g => ({
-        label: g.localizedName?.en || Object.values(g.localizedName || {})[0] || g.identifier || g.id,
-        value: g.id
-      }))
-    }
-    if (lbls.status === 'fulfilled') {
-      labelOptions.value = lbls.value.map(l => ({
-        label: l.localizedName?.en || l.identifier || l.id,
-        value: l.id
-      }))
-    }
 
     if (isEditing.value) {
       const frag = await store.fetchFragment(route.params.fragmentId as string)

@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import { useBrandsStore } from '@/stores/brands'
+import LedIndicator from '@/components/LedIndicator.vue'
 import {
   NLayout, NLayoutSider, NLayoutHeader, NLayoutContent,
   NMenu, NButton, NDropdown, NAvatar, NSpace, NFlex, NIcon,
@@ -103,7 +104,7 @@ const menuOptions = computed<MenuOption[]>(() => [
       ...brandsStore.brands.map(brand => ({
         label: brandLabel(brand),
         key: `brand-root-${brand.id}`,
-            icon: () => h(NIcon, null, { default: () => h(RadioOutline) }),
+        icon: () => h(LedIndicator, { active: brand.status === 'ON_LINE', pulse: brand.status === 'WARMING_UP', size: 16 }),
         children: [
           {
             label: 'Dashboard',
@@ -250,7 +251,7 @@ const handleUserMenuSelect = async (key: string) => {
             >
               <template #icon><NIcon><HamburgerIcon /></NIcon></template>
             </NButton>
-            <h1 style="color: white; margin: 0; font-size: 14px; font-weight: 600;">Mixdeck</h1>
+            <h1 style="color: white; margin: 0; font-size: 18px; font-weight: 600;">Mixdeck</h1>
           </NFlex>
           <NSpace>
             <NButton

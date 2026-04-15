@@ -107,12 +107,11 @@ const columns = computed<DataTableColumns<any>>(() => [
       })
     }
   },
-  { title: 'Source', key: 'source', width: 110, render: (row) => row.source || '-' },
   { title: 'Played', key: 'playedByBrandCount', width: 80, render: (row) => row.playedByBrandCount ?? 0 },
   {
     title: 'Rating', key: 'rating', width: 140,
     render: (row) => {
-      const val = (row.ratedByBrandCount ?? 100) - 100
+      const val = row.ratedByBrandCount ?? 0
       return h(NSpace, { size: 4, align: 'center' }, {
         default: () => [
           h(NButton, {
