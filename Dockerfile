@@ -6,7 +6,7 @@ COPY . .
 RUN npm run build-only
 
 FROM node:22-alpine AS production
-RUN addgroup -r kneo && adduser -r -G kneo kneo
+RUN addgroup -S kneo && adduser -S -G kneo kneo
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev
