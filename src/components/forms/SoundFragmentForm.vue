@@ -120,7 +120,6 @@ onMounted(async () => {
 
     if (isEditing.value) {
       const frag = await store.fetchFragment(route.params.fragmentId as string)
-      console.log('[SoundFragmentForm] frag:', frag)
       formData.value = {
         type: frag.type || 'SONG',
         title: frag.title || '',
@@ -135,8 +134,10 @@ onMounted(async () => {
           ? frag.length
           : (typeof frag.length === 'string' ? parseInt(frag.length) || null : null),
       }
-      const raw = frag.url || ''
-      existingUrl.value = raw.startsWith('http') ? raw : raw ? `${appConfig.datanestServer}${raw}` : ''
+      const fileUrl = frag.uploadedFiles?.[0]?.url || frag.url || ''
+      existingUrl.value = fileUrl.startsWith('http')
+        ? fileUrl
+        : fileUrl ? `${appConfig.datanestServer}/datanest${fileUrl}` : ''
     }
   } catch (error: any) {
     message.error(error?.message || 'Failed to load')

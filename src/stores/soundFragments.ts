@@ -17,6 +17,14 @@ export const FRAGMENT_TYPES: { label: string; value: FragmentType }[] = [
   { label: 'Background Loop', value: 'BACKGROUND_LOOP' },
 ]
 
+export interface UploadedFile {
+  id: string
+  name: string
+  status: string
+  url: string
+  percentage: number
+}
+
 export interface SoundFragment {
   id: string
   author: string
@@ -36,13 +44,15 @@ export interface SoundFragment {
   source?: string
   length?: string | number
   expiresAt?: string
+  uploadedFiles?: UploadedFile[]
 }
 
 export const useSoundFragmentsStore = defineStore('soundFragments', () => {
   const loading = ref(false)
 
-  async function fetchFragment(id: string) {
-    return datanestApiService.getDocument<SoundFragment>('/soundfragments', id)
+  async function fetchFragment(id: string): Promise<SoundFragment> {
+    const raw: any = await datanestApiService.getDocument<any>('/soundfragments', id)
+    return (raw?.payload?.docData ?? raw?.docData ?? raw) as SoundFragment
   }
 
   async function saveFragment(id: string | null, data: Partial<SoundFragment>): Promise<SoundFragment> {
