@@ -1,0 +1,294 @@
+<template>
+  <n-config-provider :theme="darkTheme">
+    <div class="welcome-page">
+      <header class="nav">
+        <div class="logo">MIXDECK</div>
+        <nav>
+          <a href="#platform">Platform</a>
+          <a href="#creators">Broadcasters</a>
+          <a href="#about">About</a>
+        </nav>
+      </header>
+
+      <section class="hero" id="platform">
+        <div class="hero-text">
+          <p class="eyebrow neon-motto">You choose the vibe. AI keeps it live.</p>
+          <h1>AI-Driven Streams, Events and Audio Experiences.</h1>
+          <p class="subline">Streams that never sleep. Personalised. Interactive. Alive.</p>
+          <div class="hero-ctas">
+            <n-button type="primary" size="large" @click="goToBrands">Access Broadcaster Portal</n-button>
+          </div>
+        </div>
+        <div class="waveform" aria-hidden="true">
+          <span v-for="bar in 32" :key="bar" />
+        </div>
+      </section>
+
+      <section class="what-is" id="about">
+        <div class="section-header">
+          <p class="eyebrow">What is Mixdeck</p>
+          <h2>Audio infrastructure engineered for continuous AI performance.</h2>
+          <p class="intro">Mixdeck powers autonomous AI streams, one-off shows and monetisation for broadcasters building the next generation of sonic experiences.</p>
+        </div>
+        <div class="cards">
+          <article>
+            <h3>Continuous AI Streams</h3>
+            <p>24/7 AI DJ with live listener chat, adaptive programming and telemetry-grade observability.</p>
+          </article>
+          <article>
+            <h3>One-Time Streams</h3>
+            <p>Personalised audio for events, launches, workouts or birthdays with scripted AI hosts.</p>
+          </article>
+          <article>
+            <h3>Marketplace</h3>
+            <p>Broadcasters sell scripts, playlists and DJ styles directly into the Mixdeck ecosystem.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="highlights">
+        <div>24/7 Uptime</div>
+        <div>AI DJ always on</div>
+        <div>Scales from 1 to millions</div>
+        <div>Made in Europe</div>
+      </section>
+
+      <section class="creator-portal" id="creators">
+        <div>
+          <p class="eyebrow">For Broadcasters</p>
+          <h2>Operate your AI stream, own your scripts, ship paid experiences.</h2>
+          <p>Set up stations, manage pipelines and monetise with enterprise tooling built for audio teams.</p>
+          <span class="badge">🔒 Protected — Login Required</span>
+        </div>
+        <n-button type="primary" size="large" @click="goToBrands">Access Broadcaster Portal</n-button>
+      </section>
+
+      <footer class="footer">
+        <div class="logo">MIXDECK</div>
+        <div class="footer-links">
+          <a href="#platform">Platform</a>
+          <a href="#creators">Broadcasters</a>
+          <a href="#about">About</a>
+        </div>
+        <div class="status">● Live — Running 24/7</div>
+        <div class="copyright">© Mixdeck</div>
+        <a class="affiliation" href="https://semantyca.com" target="_blank" rel="noopener noreferrer">By Semantyca</a>
+      </footer>
+    </div>
+  </n-config-provider>
+</template>
+
+<script setup lang="ts">
+import { NButton, NConfigProvider, darkTheme } from 'naive-ui'
+import { useAuthStore } from '@/stores/auth'
+
+const authStore = useAuthStore()
+
+async function goToBrands() {
+  if (authStore.isAuthenticated) {
+    window.location.href = '/brands'
+  } else {
+    await authStore.login()
+  }
+}
+</script>
+
+<style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:global(body) {
+  background: #050505;
+}
+
+.welcome-page {
+  min-height: 100vh;
+  background: #050505;
+  color: #f5f5f5;
+  font-family: 'Inter', sans-serif;
+  padding: 32px clamp(16px, 4vw, 64px);
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 32px;
+}
+
+.logo {
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  font-size: clamp(1.1rem, 2vw, 1.6rem);
+  color: #c0c0c0;
+}
+
+nav {
+  display: flex;
+  gap: 20px;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  align-items: center;
+}
+
+nav a,
+.footer-links a {
+  color: #c0c0c0;
+  text-decoration: none;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  align-items: center;
+  gap: 48px;
+  padding: 64px 0;
+}
+
+.eyebrow {
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: #888;
+  font-size: 0.75rem;
+}
+
+.neon-motto {
+  font-size: 0.75rem;
+  text-shadow: 0 0 5px #ffa500, 0 0 15px #ffa500, 0 0 20px #ffa500, 0 0 40px #ffa500, 0 0 60px #ff0000, 0 0 10px #ff8d00, 0 0 98px #ff0000;
+  color: #fff6a9;
+  text-align: left;
+  animation: blink 12s infinite;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+}
+
+h1 {
+  font-size: clamp(2.5rem, 5vw, 3.8rem);
+  margin: 16px 0;
+}
+
+.subline {
+  font-size: 1.125rem;
+  color: #b0b0b0;
+}
+
+.hero-ctas {
+  display: flex;
+  gap: 16px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.waveform {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 160px;
+  padding: 24px;
+  background: radial-gradient(circle at top, rgba(255,255,255,0.08), transparent 60%);
+  border-radius: 16px;
+}
+
+.waveform span {
+  width: 4px;
+  background: linear-gradient(180deg, #58d6ff, #7b5bff);
+  border-radius: 2px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.waveform span:nth-child(odd) {
+  animation-duration: 1s;
+}
+
+.what-is {
+  padding: 64px 0;
+  border-top: 1px solid #1a1a1a;
+}
+
+.section-header h2 {
+  margin: 12px 0 8px;
+}
+
+.intro {
+  max-width: 680px;
+  color: #b0b0b0;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 24px;
+  margin-top: 32px;
+}
+
+.cards article {
+  padding: 24px;
+  border: 1px solid #1f1f1f;
+  border-radius: 12px;
+  background: #0f0f0f;
+}
+
+.highlights {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  padding: 48px 0;
+  border-top: 1px solid #1a1a1a;
+}
+
+.highlights div {
+  border: 1px solid #1f1f1f;
+  padding: 16px;
+  text-align: center;
+  border-radius: 12px;
+}
+
+.creator-portal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 48px 0;
+  border-top: 1px solid #1a1a1a;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: #ffdf6b;
+}
+
+.footer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  padding-top: 48px;
+  border-top: 1px solid #1a1a1a;
+  align-items: center;
+}
+
+.status { color: #68ffba; }
+
+@keyframes blink {
+  20%, 24%, 55% { color: #111; text-shadow: none; }
+  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+    text-shadow: 0 0 5px #ffa500, 0 0 15px #ffa500, 0 0 20px #ffa500, 0 0 40px #ffa500, 0 0 60px #ff0000, 0 0 10px #ff8d00, 0 0 98px #ff0000;
+    color: #fff6a9;
+  }
+}
+
+@keyframes pulse {
+  0% { height: 20%; opacity: 0.4; }
+  50% { height: 100%; opacity: 1; }
+  100% { height: 30%; opacity: 0.4; }
+}
+
+@media (max-width: 768px) {
+  nav { flex-wrap: wrap; justify-content: center; }
+  .nav { flex-direction: column; }
+  .creator-portal { flex-direction: column; align-items: flex-start; }
+}
+</style>
