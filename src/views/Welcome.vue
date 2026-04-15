@@ -2,7 +2,8 @@
   <n-config-provider :theme="darkTheme">
     <div class="welcome-page">
       <header class="nav">
-        <div class="logo">MIXDECK</div>
+        <div class="logo">MIXPLA</div>
+        <img src="/favicon.svg" alt="MIXPLA" class="nav-logo">
         <nav>
           <a href="#platform">Platform</a>
           <a href="#creators">Broadcasters</a>
@@ -16,7 +17,9 @@
           <h1>AI-Driven Streams, Events and Audio Experiences.</h1>
           <p class="subline">Streams that never sleep. Personalised. Interactive. Alive.</p>
           <div class="hero-ctas">
-            <n-button type="primary" size="large" @click="goToBrands">Access Broadcaster Portal</n-button>
+            <n-button type="primary" size="large" class="cta-button" @click="goToMixpla">Mixplay Music</n-button>
+            <n-button type="primary" size="large" @click="scrollToRegister">Become a Broadcaster</n-button>
+            <n-button size="large" @click="goToBrands">Access Broadcaster Portal</n-button>
           </div>
         </div>
         <div class="waveform" aria-hidden="true">
@@ -26,9 +29,9 @@
 
       <section class="what-is" id="about">
         <div class="section-header">
-          <p class="eyebrow">What is Mixdeck</p>
+          <p class="eyebrow">What is Mixpla</p>
           <h2>Audio infrastructure engineered for continuous AI performance.</h2>
-          <p class="intro">Mixdeck powers autonomous AI streams, one-off shows and monetisation for broadcasters building the next generation of sonic experiences.</p>
+          <p class="intro">Mixpla powers autonomous AI streams, one-off shows and monetisation for broadcasters building the next generation of sonic experiences.</p>
         </div>
         <div class="cards">
           <article>
@@ -41,7 +44,7 @@
           </article>
           <article>
             <h3>Marketplace</h3>
-            <p>Broadcasters sell scripts, playlists and DJ styles directly into the Mixdeck ecosystem.</p>
+            <p>Broadcasters sell scripts, playlists and DJ styles directly into the Mixpla ecosystem.</p>
           </article>
         </div>
       </section>
@@ -63,15 +66,30 @@
         <n-button type="primary" size="large" @click="goToBrands">Access Broadcaster Portal</n-button>
       </section>
 
+      <section class="register" id="register">
+        <div class="section-header">
+          <p class="eyebrow">Register as Broadcaster</p>
+          <h2>Apply for Broadcaster Access.</h2>
+          <p>Authentication powered by Keycloak — full portal coming soon.</p>
+        </div>
+        <form class="register-form" @submit.prevent="handleCreatorSubmit">
+          <n-input v-model:value="creatorForm.name" placeholder="Name" size="large" required />
+          <n-input v-model:value="creatorForm.email" placeholder="Email" size="large" required />
+          <n-input v-model:value="creatorForm.channel" placeholder="Channel / Website" size="large" required />
+          <n-button type="primary" attr-type="submit" size="large">Apply for Broadcaster Access</n-button>
+        </form>
+        <p v-if="submitted" class="success">Application received. We'll reach out soon.</p>
+      </section>
+
       <footer class="footer">
-        <div class="logo">MIXDECK</div>
+        <div class="logo">MIXPLA</div>
         <div class="footer-links">
           <a href="#platform">Platform</a>
           <a href="#creators">Broadcasters</a>
           <a href="#about">About</a>
         </div>
         <div class="status">● Live — Running 24/7</div>
-        <div class="copyright">© Mixdeck</div>
+        <div class="copyright">© Mixpla</div>
         <a class="affiliation" href="https://semantyca.com" target="_blank" rel="noopener noreferrer">By Semantyca</a>
       </footer>
     </div>
@@ -79,22 +97,45 @@
 </template>
 
 <script setup lang="ts">
-import { NButton, NConfigProvider, darkTheme } from 'naive-ui'
-import { useAuthStore } from '@/stores/auth'
+import { reactive, ref } from 'vue'
+import { NButton, NConfigProvider, NInput, darkTheme } from 'naive-ui'
 
-const authStore = useAuthStore()
+const creatorForm = reactive({
+  name: '',
+  email: '',
+  channel: ''
+})
 
-async function goToBrands() {
-  if (authStore.isAuthenticated) {
-    window.location.href = '/brands'
-  } else {
-    await authStore.login()
-  }
+const submitted = ref(false)
+
+function goToMixpla() {
+  window.open('https://mixpla.online', '_blank', 'noopener,noreferrer')
+}
+
+function goToBrands() {
+  window.location.href = '/brands'
+}
+
+function scrollToRegister() {
+  document.getElementById('register')?.scrollIntoView({ behavior: 'smooth' })
+}
+
+function handleCreatorSubmit() {
+  submitted.value = true
 }
 </script>
 
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css?family=Sacramento&display=swap");
+
+@font-face {
+  font-family: 'Kaylon';
+  src: url('/src/assets/fonts/kaylonbold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
 
 :global(body) {
   background: #050505;
@@ -117,10 +158,16 @@ async function goToBrands() {
 }
 
 .logo {
+  font-family: 'Kaylon', 'Inter', sans-serif;
   font-weight: 700;
   letter-spacing: 0.24em;
   font-size: clamp(1.1rem, 2vw, 1.6rem);
   color: #c0c0c0;
+}
+
+.nav-logo {
+  height: 48px;
+  filter: invert(1);
 }
 
 nav {
@@ -135,6 +182,10 @@ nav a,
 .footer-links a {
   color: #c0c0c0;
   text-decoration: none;
+}
+
+nav a:not(:last-child) {
+  margin-right: 16px;
 }
 
 .hero {
@@ -158,6 +209,7 @@ nav a,
   color: #fff6a9;
   text-align: left;
   animation: blink 12s infinite;
+  -webkit-animation: blink 12s infinite;
   letter-spacing: 0.4em;
   text-transform: uppercase;
 }
@@ -179,6 +231,21 @@ h1 {
   flex-wrap: wrap;
 }
 
+.cta-button {
+  background: linear-gradient(120deg, #ff7a18, #af002d 60%, #319197);
+  border: none;
+  color: #fff !important;
+  box-shadow: 0 15px 40px rgba(255, 122, 24, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cta-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 45px rgba(255, 122, 24, 0.45);
+}
+
 .waveform {
   display: flex;
   align-items: flex-end;
@@ -194,6 +261,11 @@ h1 {
   background: linear-gradient(180deg, #58d6ff, #7b5bff);
   border-radius: 2px;
   animation: pulse 1.5s ease-in-out infinite;
+  animation-delay: calc(var(--i) * 0.05s);
+}
+
+.waveform span:nth-child(n) {
+  --i: 1;
 }
 
 .waveform span:nth-child(odd) {
@@ -261,6 +333,23 @@ h1 {
   color: #ffdf6b;
 }
 
+.register {
+  padding: 48px 0 64px;
+  border-top: 1px solid #1a1a1a;
+}
+
+.register-form {
+  display: grid;
+  gap: 16px;
+  max-width: 480px;
+  margin-top: 24px;
+}
+
+.success {
+  margin-top: 16px;
+  color: #68ffba;
+}
+
 .footer {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -270,7 +359,17 @@ h1 {
   align-items: center;
 }
 
-.status { color: #68ffba; }
+.status {
+  color: #68ffba;
+}
+
+@-webkit-keyframes blink {
+  20%, 24%, 55% { color: #111; text-shadow: none; }
+  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+    text-shadow: 0 0 5px #ffa500, 0 0 15px #ffa500, 0 0 20px #ffa500, 0 0 40px #ffa500, 0 0 60px #ff0000, 0 0 10px #ff8d00, 0 0 98px #ff0000;
+    color: #fff6a9;
+  }
+}
 
 @keyframes blink {
   20%, 24%, 55% { color: #111; text-shadow: none; }
