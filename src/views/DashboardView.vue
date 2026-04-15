@@ -182,6 +182,16 @@ const handleUserMenuSelect = async (key: string) => {
 }
 </script>
 
+<style scoped>
+@font-face {
+  font-family: 'Goldman';
+  src: url('/src/assets/fonts/Goldman-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+</style>
+
 <template>
   <NLayout has-sider style="min-height: 100vh; width: 100%; overflow-x: hidden;">
 
@@ -251,7 +261,7 @@ const handleUserMenuSelect = async (key: string) => {
             >
               <template #icon><NIcon><HamburgerIcon /></NIcon></template>
             </NButton>
-            <h1 style="color: white; margin: 0; font-size: 18px; font-weight: 600;">Mixdeck</h1>
+            <h1 style="color: white; margin: 0; font-size: 14px; font-weight: 100; font-family: 'Goldman', 'Inter', sans-serif; letter-spacing: 0.24em;">M I X D E C K</h1>
           </NFlex>
           <NSpace>
             <NButton

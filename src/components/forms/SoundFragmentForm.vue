@@ -163,7 +163,7 @@ onMounted(async () => {
 
           <NFormItem v-if="formData.length != null" label="Length">
             <NInput
-              :value="Math.floor((formData.length as number) / 60) + '.' + String((formData.length as number) % 60).padStart(2, '0')"
+              :value="((formData.length as number) / 60).toFixed(2)"
               readonly style="width: 100px"
             />
           </NFormItem>
