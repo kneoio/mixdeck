@@ -10,6 +10,7 @@ import { useSoundFragmentsStore, FRAGMENT_TYPES } from '@/stores/soundFragments'
 import { useBrandsStore } from '@/stores/brands'
 import dictionaryApiService from '@/services/dictionaryApi'
 import datanestApiService from '@/services/datanestApi'
+import { appConfig } from '@/config/appConfig'
 import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
@@ -133,7 +134,8 @@ onMounted(async () => {
           ? frag.length
           : (typeof frag.length === 'string' ? parseInt(frag.length) || null : null),
       }
-      existingUrl.value = frag.url || ''
+      const raw = frag.url || ''
+      existingUrl.value = raw.startsWith('http') ? raw : raw ? `${appConfig.datanestServer}${raw}` : ''
     }
   } catch (error: any) {
     message.error(error?.message || 'Failed to load')
