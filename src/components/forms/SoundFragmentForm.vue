@@ -2,12 +2,14 @@
 import { ref, computed, onMounted } from 'vue'
 import {
   NButton, NSpace, NForm, NFormItem, NInput, NSelect,
-  NTabs, NTabPane, useMessage
+  NTabs, NTabPane, NUpload, NProgress, useMessage
 } from 'naive-ui'
+import type { UploadCustomRequestOptions } from 'naive-ui'
 import FormWrapper from '@/components/FormWrapper.vue'
 import { useSoundFragmentsStore, FRAGMENT_TYPES } from '@/stores/soundFragments'
 import { useBrandsStore } from '@/stores/brands'
 import dictionaryApiService from '@/services/dictionaryApi'
+import datanestApiService from '@/services/datanestApi'
 import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
@@ -23,6 +25,12 @@ const brandId = computed(() => route.params.id as string)
 const isEditing = computed(() => !!route.params.fragmentId && route.params.fragmentId !== 'new')
 const loading = ref(false)
 const activeTab = ref('properties')
+
+// File upload state
+const pendingFile = ref<File | null>(null)
+const existingUrl = ref('')
+const uploadProgress = ref(0)
+const isUploading = ref(false)
 
 const formData = ref({
   type: 'SONG' as string,
@@ -58,19 +66,43 @@ const brandOptions = computed(() =>
   }))
 )
 
+const existingFileName = computed(() => {
+  if (!existingUrl.value) return ''
+  return existingUrl.value.split('/').pop()?.split('?')[0] || existingUrl.value
+})
+
 const backRoute = computed(() => `/brands/${brandId.value}/playlist`)
+
+// Capture file without uploading yet — upload happens after save
+function handleFileCapture({ file, onFinish }: UploadCustomRequestOptions) {
+  if (file.file) pendingFile.value = file.file
+  onFinish?.()
+}
 
 async function handleSave() {
   try {
     loading.value = true
     const id = isEditing.value ? (route.params.fragmentId as string) : null
-    await store.saveFragment(id, formData.value as any)
-    message.success('Sound fragment saved successfully')
+    const saved = await store.saveFragment(id, formData.value as any)
+    const fragmentId: string = saved?.id || id || ''
+
+    if (pendingFile.value && fragmentId) {
+      isUploading.value = true
+      uploadProgress.value = 0
+      await datanestApiService.uploadFragmentFile(
+        fragmentId,
+        pendingFile.value,
+        (p) => { uploadProgress.value = p }
+      )
+    }
+
+    message.success('Sound fragment saved')
     router.push(backRoute.value)
   } catch (error: any) {
     message.error(error?.message || 'Failed to save')
   } finally {
     loading.value = false
+    isUploading.value = false
   }
 }
 
@@ -101,6 +133,7 @@ onMounted(async () => {
           ? frag.length
           : (typeof frag.length === 'string' ? parseInt(frag.length) || null : null),
       }
+      existingUrl.value = frag.url || ''
     }
   } catch (error: any) {
     message.error(error?.message || 'Failed to load')
@@ -120,15 +153,25 @@ onMounted(async () => {
     <template #actions>
       <NSpace>
         <NButton @click="router.push(backRoute)">Close</NButton>
-        <NButton type="primary" @click="handleSave">Save</NButton>
+        <NButton type="primary" @click="handleSave" :loading="loading || isUploading">Save</NButton>
       </NSpace>
     </template>
 
     <NTabs v-model:value="activeTab">
       <NTabPane name="properties" tab="Main properties">
-        <NForm label-placement="left" label-width="120" :disabled="loading">
+        <NForm label-placement="left" label-width="120" :disabled="loading || isUploading">
+
           <NFormItem label="Type">
-            <NSelect v-model:value="formData.type" :options="FRAGMENT_TYPES" style="width: 200px" />
+            <NSpace align="center">
+              <NSelect v-model:value="formData.type" :options="FRAGMENT_TYPES" style="width: 200px" />
+              <template v-if="formData.length != null">
+                <span style="opacity: 0.45; font-size: 13px;">Length</span>
+                <NInput
+                  :value="((formData.length as number) / 60).toFixed(2)"
+                  readonly style="width: 90px"
+                />
+              </template>
+            </NSpace>
           </NFormItem>
 
           <NFormItem label="Title">
@@ -158,21 +201,39 @@ onMounted(async () => {
               multiple filterable style="width: 100%" />
           </NFormItem>
 
+          <NFormItem label="Audio File">
+            <NSpace vertical style="width: 100%">
+              <div v-if="existingFileName" style="font-size: 13px; opacity: 0.55;">
+                Current: {{ existingFileName }}
+              </div>
+              <NUpload
+                :max="1"
+                :custom-request="handleFileCapture"
+                accept=".mp3,.wav,.flac,.ogg,.m4a,.aac"
+                :disabled="isUploading"
+              >
+                <NButton :disabled="isUploading">
+                  {{ existingFileName ? 'Replace file' : 'Choose file' }}
+                </NButton>
+              </NUpload>
+              <NProgress
+                v-if="isUploading"
+                type="line"
+                :percentage="uploadProgress"
+                :show-indicator="true"
+              />
+            </NSpace>
+          </NFormItem>
+
           <NFormItem v-if="formData.expiresAt" label="Expires At">
             <NInput :value="formData.expiresAt" readonly style="width: 200px" />
           </NFormItem>
 
-          <NFormItem v-if="formData.length != null" label="Length">
-            <NInput
-              :value="((formData.length as number) / 60).toFixed(2)"
-              readonly style="width: 100px"
-            />
-          </NFormItem>
         </NForm>
       </NTabPane>
 
       <NTabPane name="description" tab="Description">
-        <NForm label-placement="left" label-width="120" :disabled="loading">
+        <NForm label-placement="left" label-width="120" :disabled="loading || isUploading">
           <NFormItem label="Description">
             <NInput v-model:value="formData.description" type="textarea"
               :autosize="{ minRows: 8, maxRows: 20 }" style="width: 100%" />

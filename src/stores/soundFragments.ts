@@ -45,10 +45,15 @@ export const useSoundFragmentsStore = defineStore('soundFragments', () => {
     return datanestApiService.getDocument<SoundFragment>('/soundfragments', id)
   }
 
-  async function saveFragment(id: string | null, data: Partial<SoundFragment>) {
+  async function saveFragment(id: string | null, data: Partial<SoundFragment>): Promise<SoundFragment> {
     const { id: _id, author: _a, regDate: _r, lastModifier: _lm, lastModifiedDate: _lmd, ...payload } = data as SoundFragment
-    if (id) return datanestApiService.updateDictionaryItem<SoundFragment>('/soundfragments', id, payload)
-    return datanestApiService.createDictionaryItem<SoundFragment>('/soundfragments', payload)
+    let raw: any
+    if (id) {
+      raw = await datanestApiService.updateDictionaryItem<any>('/soundfragments', id, payload)
+    } else {
+      raw = await datanestApiService.createDictionaryItem<any>('/soundfragments', payload)
+    }
+    return raw?.payload?.docData ?? raw?.docData ?? raw
   }
 
   async function deleteFragment(id: string) {

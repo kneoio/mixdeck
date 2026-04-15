@@ -99,6 +99,36 @@ class DatanestApiService extends ApiClient {
   getBulkStatusStreamUrl(batchId: string): string {
     return `${this.baseUrl}/soundfragments-bulk/status/${encodeURIComponent(batchId)}/stream`
   }
+
+  uploadFragmentFile(
+    fragmentId: string,
+    file: File,
+    onProgress: (percent: number) => void
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const uploadId = `upload-${Date.now()}`
+      const url = `${this.baseUrl}/soundfragments/files/${encodeURIComponent(fragmentId)}?uploadId=${encodeURIComponent(uploadId)}`
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const xhr = new XMLHttpRequest()
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) onProgress(Math.round((e.loaded * 100) / e.total))
+      }
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) resolve()
+        else reject(new Error(`Upload failed (${xhr.status}): ${xhr.statusText}`))
+      }
+      xhr.onerror = () => reject(new Error('Network error during upload'))
+
+      xhr.open('POST', url)
+      const authHeaders = authService.getAuthHeader()
+      for (const [key, value] of Object.entries(authHeaders)) {
+        xhr.setRequestHeader(key, value)
+      }
+      xhr.send(formData)
+    })
+  }
 }
 
 export const datanestApiService = new DatanestApiService()
