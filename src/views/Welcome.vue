@@ -364,16 +364,42 @@ h1 {
 }
 
 @-webkit-keyframes blink {
-  20%, 24%, 55% { color: #111; text-shadow: none; }
-  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+  20%,
+  24%,
+  55% {
+    color: #111;
+    text-shadow: none;
+  }
+
+  0%,
+  19%,
+  21%,
+  23%,
+  25%,
+  54%,
+  56%,
+  100% {
     text-shadow: 0 0 5px #ffa500, 0 0 15px #ffa500, 0 0 20px #ffa500, 0 0 40px #ffa500, 0 0 60px #ff0000, 0 0 10px #ff8d00, 0 0 98px #ff0000;
     color: #fff6a9;
   }
 }
 
 @keyframes blink {
-  20%, 24%, 55% { color: #111; text-shadow: none; }
-  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+  20%,
+  24%,
+  55% {
+    color: #111;
+    text-shadow: none;
+  }
+
+  0%,
+  19%,
+  21%,
+  23%,
+  25%,
+  54%,
+  56%,
+  100% {
     text-shadow: 0 0 5px #ffa500, 0 0 15px #ffa500, 0 0 20px #ffa500, 0 0 40px #ffa500, 0 0 60px #ff0000, 0 0 10px #ff8d00, 0 0 98px #ff0000;
     color: #fff6a9;
   }
@@ -386,8 +412,16 @@ h1 {
 }
 
 @media (max-width: 768px) {
-  nav { flex-wrap: wrap; justify-content: center; }
-  .nav { flex-direction: column; }
-  .creator-portal { flex-direction: column; align-items: flex-start; }
+  nav {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .nav {
+    flex-direction: column;
+  }
+  .creator-portal {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 </style>
