@@ -18,13 +18,6 @@ const router = createRouter({
       component: DashboardView,
       meta: { requiresAuth: true },
       children: [
-        // Brands list & create
-        {
-          path: '/brands',
-          name: 'brands',
-          component: () => import('../views/BrandsView.vue'),
-          meta: { requiresAuth: true }
-        },
         {
           path: '/brands/new',
           name: 'brand-new',
@@ -86,6 +79,12 @@ const router = createRouter({
           component: () => import('../views/ProfileView.vue'),
           meta: { requiresAuth: true }
         },
+        {
+          path: '/broadcaster-welcome',
+          name: 'broadcaster-welcome',
+          component: () => import('../views/BroadcasterWelcome.vue'),
+          meta: { requiresAuth: true }
+        },
       ]
     }
   ],
@@ -102,10 +101,6 @@ router.beforeEach(async (to, _from, next) => {
 
   // Public routes pass through immediately — no auth needed
   if (!requiresAuth) {
-    // If already authenticated and landing on /, redirect into the app
-    if (to.path === '/' && authStore.isAuthenticated) {
-      return next('/brands')
-    }
     return next()
   }
 

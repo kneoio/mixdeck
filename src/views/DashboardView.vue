@@ -67,7 +67,7 @@ const activeKey = computed(() => {
   const path = route.path
   const m = path.match(/^\/brands\/([^/]+)\/(\w+)$/)
   if (m) return `brand-${m[1]}-${m[2]}`
-  if (path === '/brands' || path === '/brands/new') return 'brands-manage'
+  if (path === '/brands/new') return 'brands-manage'
   return null
 })
 
@@ -98,9 +98,8 @@ const brandLabel = (brand: any) =>
 
 const menuOptions = computed<MenuOption[]>(() => [
   {
-    label: 'Brands',
+    label: () => h('span', { style: 'font-weight: 700;' }, 'My brands'),
     key: 'brands-group',
-    icon: () => h(NIcon, null, { default: () => h(RadioOutline) }),
     children: [
       ...brandsStore.brands.map(brand => ({
         label: brandLabel(brand),
@@ -191,6 +190,7 @@ const handleUserMenuSelect = async (key: string) => {
   font-style: normal;
   font-display: swap;
 }
+
 </style>
 
 <template>
@@ -205,22 +205,21 @@ const handleUserMenuSelect = async (key: string) => {
       :width="240"
       :collapsed="collapsed"
       show-trigger
+      style="min-height: 100vh;"
       @collapse="collapsed = true"
       @expand="collapsed = false"
     >
-      <div style="padding: 8px;">
-        <NMenu
-          :collapsed="collapsed"
-          :collapsed-width="64"
-          :collapsed-icon-size="22"
-          :options="menuOptions"
-          :value="activeKey"
-          :expanded-keys="expandedKeys"
-          :theme-overrides="menuThemeOverrides"
-          @update:expanded-keys="handleUpdateExpandedKeys"
-          @update:value="handleMenuSelect"
-        />
-      </div>
+      <NMenu
+        :collapsed="collapsed"
+        :collapsed-width="64"
+        :collapsed-icon-size="22"
+        :options="menuOptions"
+        :value="activeKey"
+        :expanded-keys="expandedKeys"
+        :theme-overrides="menuThemeOverrides"
+        @update:expanded-keys="handleUpdateExpandedKeys"
+        @update:value="handleMenuSelect"
+      />
     </NLayoutSider>
 
     <!-- Mobile drawer -->
