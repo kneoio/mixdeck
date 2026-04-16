@@ -37,7 +37,7 @@ export const useGenresStore = defineStore('genres', () => {
 
   async function loadAllGenres() {
     try {
-      const result = await datanestApiService.getPagedDictionary<Genre>('/genres', 1, 10000)
+      const result = await datanestApiService.getPagedDictionary<Genre>('/datanest/genres', 1, 10000)
       allGenres.value = result.entries
       return result.entries
     } catch (error) {
@@ -53,7 +53,7 @@ export const useGenresStore = defineStore('genres', () => {
       if (filterIdentifier.value) {
         params.search = filterIdentifier.value
       }
-      const result = await datanestApiService.getPagedDictionary<Genre>('/genres', page, size, params)
+      const result = await datanestApiService.getPagedDictionary<Genre>('/datanest/genres', page, size, params)
       genres.value = result.entries
       totalCount.value = result.count
       pageNum.value = result.pageNum
@@ -69,7 +69,7 @@ export const useGenresStore = defineStore('genres', () => {
 
   async function fetchGenre(id: string) {
     try {
-      return await datanestApiService.getDocument<Genre>('/genres', id)
+      return await datanestApiService.getDocument<Genre>('/datanest/genres', id)
     } catch (error) {
       console.error('Failed to fetch genre:', error)
       throw error
@@ -88,7 +88,7 @@ export const useGenresStore = defineStore('genres', () => {
         ...payload
       } = genreData as Partial<Genre>
 
-      const newGenre = await datanestApiService.createDictionaryItem<Genre>('/genres', payload)
+      const newGenre = await datanestApiService.createDictionaryItem<Genre>('/datanest/genres', payload)
       genres.value.push(newGenre)
       return newGenre
     } catch (error) {
@@ -109,7 +109,7 @@ export const useGenresStore = defineStore('genres', () => {
         ...payload
       } = genreData as Partial<Genre>
 
-      const updatedGenre = await datanestApiService.updateDictionaryItem<Genre>('/genres', id, payload)
+      const updatedGenre = await datanestApiService.updateDictionaryItem<Genre>('/datanest/genres', id, payload)
       const index = genres.value.findIndex(genre => genre.id === id)
       if (index !== -1) {
         genres.value[index] = updatedGenre
@@ -126,7 +126,7 @@ export const useGenresStore = defineStore('genres', () => {
       const genre = genres.value.find(genre => genre.identifier === identifier)
       const idToDelete = genre ? genre.id : identifier
 
-      await datanestApiService.deleteDictionaryItem('/genres', idToDelete)
+      await datanestApiService.deleteDictionaryItem('/datanest/genres', idToDelete)
       genres.value = genres.value.filter(genre => genre.identifier !== identifier)
     } catch (error) {
       console.error('Failed to delete genre:', error)
