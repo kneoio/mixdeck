@@ -136,12 +136,6 @@ const menuOptions = computed<MenuOption[]>(() => [
       },
     ],
   },
-  { key: 'divider-1', type: 'divider' },
-  {
-    label: 'Logout',
-    key: 'logout',
-    icon: () => h(NIcon, null, { default: () => h(LogoutIcon) }),
-  },
 ])
 
 const handleMenuSelect = async (key: string) => {
