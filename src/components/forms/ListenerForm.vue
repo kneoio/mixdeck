@@ -105,7 +105,7 @@ onMounted(async () => {
 
     // Load labels
     try {
-      const lbls = await dictionaryApiService.getLabelsByCategory('LISTENER')
+      const lbls = await dictionaryApiService.getLabelsByCategory('listener')
       labelOptions.value = lbls.map(l => ({
         label: l.localizedName?.en || l.identifier || l.id,
         value: l.id
