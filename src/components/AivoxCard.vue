@@ -58,11 +58,6 @@ onUnmounted(() => stopPolling())
 <template>
   <NCard class="aivox-card">
     <div class="aivox-row">
-      <div class="aivox-status">
-        <LedIndicator :active="alive" :pulse="alive" color="#FFD600" :size="18" />
-        <span class="aivox-label">Aivox stream</span>
-        <span class="aivox-state">{{ alive ? 'live' : 'offline' }}</span>
-      </div>
       <NSpace>
         <NButton size="small" type="primary" :loading="starting" :disabled="starting || stopping" @click="start">
           Start
@@ -71,6 +66,11 @@ onUnmounted(() => stopPolling())
           Stop
         </NButton>
       </NSpace>
+      <div class="aivox-status">
+        <LedIndicator :active="alive" :pulse="alive" color="#FFD600" :size="18" />
+        <span class="aivox-label">Aivox stream</span>
+        <span class="aivox-state">{{ alive ? 'live' : 'offline' }}</span>
+      </div>
     </div>
   </NCard>
 </template>
