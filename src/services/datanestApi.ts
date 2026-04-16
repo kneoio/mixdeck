@@ -9,7 +9,7 @@ class DatanestApiService extends ApiClient {
 
   async getBrandListeners(brandSlug: string, page = 1, pageSize = 10): Promise<PagedResult<any>> {
     const response = await this.request<any>(
-      `/listeners/available-listeners?brand=${encodeURIComponent(brandSlug)}&page=${page}&size=${pageSize}`
+      `/datanest/listeners/available-listeners?brand=${encodeURIComponent(brandSlug)}&page=${page}&size=${pageSize}`
     )
     const viewData = response?.payload?.viewData ?? response?.viewData
     if (!viewData) throw new Error('Unexpected response format')
