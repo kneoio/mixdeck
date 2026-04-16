@@ -4,7 +4,7 @@ import authService from './auth'
 
 class DatanestApiService extends ApiClient {
   constructor() {
-    super(`${appConfig.datanestServer}/datanest`)
+    super(appConfig.datanestServer)
   }
 
   async getBrandListeners(brandSlug: string, page = 1, pageSize = 10): Promise<PagedResult<any>> {
