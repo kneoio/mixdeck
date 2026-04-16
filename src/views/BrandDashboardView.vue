@@ -1,6 +1,7 @@
 <template>
   <div class="brand-dashboard">
     <PageHeader :title="brandName" subtitle="Station Dashboard" />
+    <AivoxCard v-if="brandSlug" :brand-slug="brandSlug" />
     <AgendaCard v-if="brandSlug" :brand-slug="brandSlug" />
   </div>
 </template>
@@ -11,6 +12,7 @@ import { useRoute } from 'vue-router'
 import { useBrandsStore } from '@/stores/brands'
 import PageHeader from '@/components/PageHeader.vue'
 import AgendaCard from '@/components/AgendaCard.vue'
+import AivoxCard from '@/components/AivoxCard.vue'
 
 const route = useRoute()
 const brandsStore = useBrandsStore()

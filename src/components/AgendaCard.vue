@@ -156,15 +156,15 @@ watch(() => props.brandSlug, () => fetchAgenda(), { immediate: true })
 
 .refresh-btn {
   background: none;
-  border: 1px solid var(--color-border);
+  border: 1px solid rgba(128, 128, 128, 0.3);
   border-radius: 4px;
   padding: 2px 10px;
   cursor: pointer;
   font-size: 0.75rem;
-  color: var(--color-text);
-  transition: border-color 0.15s;
+  color: inherit;
+  transition: border-color 0.15s, color 0.15s;
 }
-.refresh-btn:hover:not(:disabled) { border-color: var(--color-primary); color: var(--color-primary); }
+.refresh-btn:hover:not(:disabled) { border-color: #7C3AED; color: #7C3AED; }
 .refresh-btn:disabled { opacity: 0.4; cursor: default; }
 
 .agenda-meta {
@@ -173,7 +173,7 @@ watch(() => props.brandSlug, () => fetchAgenda(), { immediate: true })
   gap: 24px;
   margin-bottom: 20px;
   padding-bottom: 16px;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid rgba(128, 128, 128, 0.2);
 }
 .meta-item { display: flex; flex-direction: column; gap: 2px; }
 .meta-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.8px; opacity: 0.5; }
@@ -192,7 +192,7 @@ watch(() => props.brandSlug, () => fetchAgenda(), { immediate: true })
   font-weight: 600;
   letter-spacing: 0.5px;
   white-space: nowrap;
-  color: var(--color-primary);
+  color: #7C3AED;
 }
 .scene-title {
   font-size: 0.85rem;
@@ -218,7 +218,7 @@ watch(() => props.brandSlug, () => fetchAgenda(), { immediate: true })
   padding: 8px 0;
 }
 .block-item {
-  border-left: 2px solid var(--color-border);
+  border-left: 2px solid rgba(128, 128, 128, 0.25);
   padding-left: 12px;
   display: flex;
   flex-direction: column;
@@ -232,7 +232,7 @@ watch(() => props.brandSlug, () => fetchAgenda(), { immediate: true })
   padding: 2px 0;
 }
 .block-seq { font-family: monospace; font-size: 0.65rem; opacity: 0.5; min-width: 24px; }
-.block-time { font-family: monospace; font-size: 0.7rem; font-weight: 600; color: var(--color-primary); }
+.block-time { font-family: monospace; font-size: 0.7rem; font-weight: 600; color: #7C3AED; }
 .block-dur { font-family: monospace; font-size: 0.65rem; opacity: 0.55; margin-left: auto; }
 
 .flag {
@@ -256,7 +256,7 @@ watch(() => props.brandSlug, () => fetchAgenda(), { immediate: true })
   padding: 3px 8px;
   border-radius: 4px;
   font-size: 0.8rem;
-  background: var(--color-background-soft);
+  background: rgba(128, 128, 128, 0.07);
 }
 .song-title  { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .song-artist { font-size: 0.7rem; opacity: 0.55; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

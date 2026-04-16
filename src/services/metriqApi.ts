@@ -44,6 +44,23 @@ class MetriqApiService extends ApiClient {
     super(appConfig.metriqServer)
   }
 
+  async aivoxHeartbeat(brandSlug: string): Promise<boolean> {
+    const response = await fetch(`${this.baseUrl}/aivox/${encodeURIComponent(brandSlug)}/heartbeat`, {
+      headers: { 'X-Client-ID': 'mixpla-web' },
+    })
+    if (!response.ok) return false
+    const text = await response.text()
+    return text.trim() === 'true'
+  }
+
+  async aivoxStart(brandSlug: string): Promise<void> {
+    await this.request<any>(`/aivox/${encodeURIComponent(brandSlug)}/start`, { method: 'POST' })
+  }
+
+  async aivoxStop(brandSlug: string): Promise<void> {
+    await this.request<any>(`/aivox/${encodeURIComponent(brandSlug)}/stop`, { method: 'DELETE' })
+  }
+
   async getAgendas(brandSlug: string): Promise<Agenda | null> {
     const response = await this.request<any>(`/jesoos/info/${encodeURIComponent(brandSlug)}/agendas`)
     if (!response) return null

@@ -2,14 +2,14 @@
   <span
     class="led"
     :class="{ active, pulse }"
-    :style="{ color: (active || pulse) ? '#00FF3C' : '#9ca3af' }"
+    :style="{ color: (active || pulse) ? (color ?? '#00FF3C') : '#9ca3af' }"
   >
     ▬
   </span>
 </template>
 
 <script setup lang="ts">
-const props = defineProps<{ active?: boolean; pulse?: boolean; size?: number }>();
+const props = defineProps<{ active?: boolean; pulse?: boolean; size?: number; color?: string }>();
 </script>
 
 <style scoped>
