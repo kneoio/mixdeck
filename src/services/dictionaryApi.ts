@@ -22,7 +22,7 @@ export interface LabelEntry {
 
 class DictionaryApiService extends ApiClient {
   constructor() {
-    super(`${appConfig.datanestServer}/datanest`)
+    super(`${appConfig.datanestServer}`)
   }
 
   async getGenres(): Promise<GenreEntry[]> {
