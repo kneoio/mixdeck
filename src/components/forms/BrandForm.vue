@@ -273,11 +273,6 @@ onMounted(async () => {
           <NFormItem label="Public">
             <NSwitch :value="formData.publicBrand === 1" @update:value="(v) => formData.publicBrand = v ? 1 : 0" />
           </NFormItem>
-
-          <NFormItem label="Labels">
-            <NSelect v-model:value="formData.labels" :options="labelOptions"
-              multiple filterable style="width: 100%" />
-          </NFormItem>
         </NForm>
       </NTabPane>
 

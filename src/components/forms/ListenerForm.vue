@@ -173,7 +173,7 @@ onMounted(async () => {
       <NFormItem label="User Data">
         <NDynamicInput v-model:value="userDataArray" :on-create="createUserData" style="width:100%">
           <template #default="{ value }">
-            <NSpace align="center" style="width:100%">
+            <NSpace align="center" style="width:100%" :wrap="false">
               <NInput v-model:value="value.key" placeholder="Field name" style="width:200px" />
               <NInput v-model:value="value.value" placeholder="Field value" style="flex:1" />
             </NSpace>
