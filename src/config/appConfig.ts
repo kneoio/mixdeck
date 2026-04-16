@@ -6,6 +6,7 @@ type KeycloakConfig = {
 
 type AppConfig = {
   datanestServer: string
+  metriqServer: string
   keycloak: KeycloakConfig
 }
 
@@ -31,6 +32,7 @@ function readRequiredEnvString(key: keyof ImportMetaEnv): string {
 
 export const appConfig: AppConfig = {
   datanestServer: normalizeUrl(readRequiredEnvString('VITE_DATANEST_SERVER')),
+  metriqServer: normalizeUrl(readRequiredEnvString('VITE_METRIQ_SERVER')),
   keycloak: {
     url: normalizeUrl(readEnvString('VITE_KEYCLOAK_URL', 'https://auth.semantyca.com')),
     realm: readEnvString('VITE_KEYCLOAK_REALM', 'master'),
