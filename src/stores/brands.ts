@@ -58,7 +58,7 @@ export const useBrandsStore = defineStore('brands', () => {
   async function loadBrands(page = pageNum.value, size = pageSize.value) {
     loading.value = true
     try {
-      const result = await datanestApiService.getPagedDictionary<Brand>('/brands', page, size)
+      const result = await datanestApiService.getPagedDictionary<Brand>('/datanest/brands', page, size)
       brands.value = result.entries
       totalCount.value = result.count
       pageNum.value = result.pageNum
@@ -70,17 +70,17 @@ export const useBrandsStore = defineStore('brands', () => {
   }
 
   async function fetchBrand(id: string) {
-    return datanestApiService.getDocument<Brand>('/brands', id)
+    return datanestApiService.getDocument<Brand>('/datanest/brands', id)
   }
 
   async function saveBrand(id: string | null, data: Partial<Brand>) {
     const { id: _id, author: _a, regDate: _r, lastModifier: _lm, lastModifiedDate: _lmd, status: _s, ...payload } = data as Brand
-    if (id) return datanestApiService.updateDictionaryItem<Brand>('/brands', id, payload)
-    return datanestApiService.createDictionaryItem<Brand>('/brands', payload)
+    if (id) return datanestApiService.updateDictionaryItem<Brand>('/datanest/brands', id, payload)
+    return datanestApiService.createDictionaryItem<Brand>('/datanest/brands', payload)
   }
 
   async function deleteBrand(id: string) {
-    return datanestApiService.deleteDictionaryItem('/brands', id)
+    return datanestApiService.deleteDictionaryItem('/datanest/brands', id)
   }
 
   return { brands, loading, totalCount, pageNum, pageSize, maxPage, loadBrands, fetchBrand, saveBrand, deleteBrand }
