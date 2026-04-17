@@ -26,12 +26,12 @@ class DictionaryApiService extends ApiClient {
   }
 
   async getGenres(): Promise<GenreEntry[]> {
-    const result = await this.getPagedDictionary<GenreEntry>('/dictionary/genres', 1, 1000)
+    const result = await this.getPagedDictionary<GenreEntry>('/datanest/dictionary/genres', 1, 1000)
     return result.entries
   }
 
   async getLabelsByCategory(category: string): Promise<LabelEntry[]> {
-    const result = await this.getPagedDictionary<LabelEntry>(`/dictionary/labels/${category}`, 1, 500)
+    const result = await this.getPagedDictionary<LabelEntry>(`/datanest/dictionary/labels/${category}`, 1, 500)
     return result.entries
   }
 }
