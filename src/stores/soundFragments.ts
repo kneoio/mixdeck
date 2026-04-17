@@ -51,7 +51,7 @@ export const useSoundFragmentsStore = defineStore('soundFragments', () => {
   const loading = ref(false)
 
   async function fetchFragment(id: string): Promise<SoundFragment> {
-    const raw: any = await datanestApiService.getDocument<any>('/datanest/soundfragments', id)
+    const raw: any = await datanestApiService.getDocument<any>('/soundfragments', id)
     return (raw?.payload?.docData ?? raw?.docData ?? raw) as SoundFragment
   }
 
@@ -59,15 +59,15 @@ export const useSoundFragmentsStore = defineStore('soundFragments', () => {
     const { id: _id, author: _a, regDate: _r, lastModifier: _lm, lastModifiedDate: _lmd, ...payload } = data as SoundFragment
     let raw: any
     if (id) {
-      raw = await datanestApiService.updateDictionaryItem<any>('/datanest/soundfragments', id, payload)
+      raw = await datanestApiService.updateDictionaryItem<any>('/soundfragments', id, payload)
     } else {
-      raw = await datanestApiService.createDictionaryItem<any>('/datanest/soundfragments', payload)
+      raw = await datanestApiService.createDictionaryItem<any>('/soundfragments', payload)
     }
     return raw?.payload?.docData ?? raw?.docData ?? raw
   }
 
   async function deleteFragment(id: string) {
-    return datanestApiService.deleteDictionaryItem('/datanest/soundfragments', id)
+    return datanestApiService.deleteDictionaryItem('/soundfragments', id)
   }
 
   return { loading, fetchFragment, saveFragment, deleteFragment }

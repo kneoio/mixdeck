@@ -38,7 +38,7 @@ export const useLabelsStore = defineStore('labels', () => {
 
   async function loadAllLabels() {
     try {
-      const result = await datanestApiService.getPagedDictionary<Label>('/datanest/labels', 1, 10000)
+      const result = await datanestApiService.getPagedDictionary<Label>('/labels', 1, 10000)
       allLabels.value = result.entries
       return result.entries
     } catch (error) {
@@ -50,7 +50,7 @@ export const useLabelsStore = defineStore('labels', () => {
   async function loadLabelsByCategory(category: string, page = pageNum.value, size = pageSize.value) {
     loading.value = true
     try {
-      const result = await datanestApiService.getPagedDictionary<Label>(`/datanest/labels/only/category/${category}`, page, size, {
+      const result = await datanestApiService.getPagedDictionary<Label>(`/labels/only/category/${category}`, page, size, {
         search: filterIdentifier.value || undefined
       })
       labels.value = result.entries
@@ -69,7 +69,7 @@ export const useLabelsStore = defineStore('labels', () => {
   async function loadLabels(page = pageNum.value, size = pageSize.value) {
     loading.value = true
     try {
-      const result = await datanestApiService.getPagedDictionary<Label>('/datanest/labels', page, size, {
+      const result = await datanestApiService.getPagedDictionary<Label>('/labels', page, size, {
         category: filterCategory.value || undefined,
         search: filterIdentifier.value || undefined
       })
@@ -88,7 +88,7 @@ export const useLabelsStore = defineStore('labels', () => {
 
   async function fetchLabel(id: string) {
     try {
-      return await datanestApiService.getDocument<Label>('/datanest/labels', id)
+      return await datanestApiService.getDocument<Label>('/labels', id)
     } catch (error) {
       console.error('Failed to fetch label:', error)
       throw error
@@ -107,7 +107,7 @@ export const useLabelsStore = defineStore('labels', () => {
         ...payload
       } = labelData as Partial<Label>
 
-      const newLabel = await datanestApiService.createDictionaryItem<Label>('/datanest/labels', payload)
+      const newLabel = await datanestApiService.createDictionaryItem<Label>('/labels', payload)
       labels.value.push(newLabel)
       return newLabel
     } catch (error) {
@@ -128,7 +128,7 @@ export const useLabelsStore = defineStore('labels', () => {
         ...payload
       } = labelData as Partial<Label>
 
-      const updatedLabel = await datanestApiService.updateDictionaryItem<Label>('/datanest/labels', id, payload)
+      const updatedLabel = await datanestApiService.updateDictionaryItem<Label>('/labels', id, payload)
       const index = labels.value.findIndex(label => label.id === id)
       if (index !== -1) {
         labels.value[index] = updatedLabel
@@ -145,7 +145,7 @@ export const useLabelsStore = defineStore('labels', () => {
       const label = labels.value.find(label => label.identifier === identifier)
       const idToDelete = label ? label.id : identifier
 
-      await datanestApiService.deleteDictionaryItem('/datanest/labels', idToDelete)
+      await datanestApiService.deleteDictionaryItem('/labels', idToDelete)
       labels.value = labels.value.filter(label => label.identifier !== identifier)
     } catch (error) {
       console.error('Failed to delete label:', error)
