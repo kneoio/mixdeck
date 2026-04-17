@@ -12,6 +12,7 @@ import dictionaryApiService from '@/services/dictionaryApi'
 import datanestApiService from '@/services/datanestApi'
 import { appConfig } from '@/config/appConfig'
 import { useRoute, useRouter } from 'vue-router'
+import { handleApiError } from '@/utils/notificationService'
 
 const route = useRoute()
 const router = useRouter()
@@ -100,7 +101,7 @@ async function handleSave() {
     message.success('Sound fragment saved')
     router.push(backRoute.value)
   } catch (error: any) {
-    message.error(error?.message || 'Failed to save')
+    handleApiError(error, message)
   } finally {
     loading.value = false
     isUploading.value = false

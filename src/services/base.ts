@@ -1,4 +1,5 @@
 import authService from './auth'
+import { ApiValidationError, type ValidationError } from '@/utils/errorHandler'
 
 export interface PagedResult<T> {
   entries: T[]
@@ -32,12 +33,21 @@ export class ApiClient {
       let errorMessage = `HTTP error! status: ${response.status}`
       try {
         const data = await response.json()
+        
+        if (data && data.type && data.errors && typeof data.errors === 'object') {
+          throw new ApiValidationError(data as ValidationError, response.status)
+        }
+        
         if (response.status === 401 && typeof (data as any).error === 'string') {
           errorMessage = (data as any).error
         } else if (data && typeof (data as any).message === 'string') {
           errorMessage = (data as any).message
         }
-      } catch {}
+      } catch (error) {
+        if (error instanceof ApiValidationError) {
+          throw error
+        }
+      }
       throw new Error(errorMessage)
     }
 

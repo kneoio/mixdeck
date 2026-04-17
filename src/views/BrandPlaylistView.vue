@@ -11,6 +11,7 @@ import dictionaryApiService from '@/services/dictionaryApi'
 import PageHeader from '@/components/PageHeader.vue'
 import ActionBar from '@/components/ActionBar.vue'
 import BulkUploadDialog from '@/components/forms/BulkUploadDialog.vue'
+import { handleApiError } from '@/utils/notificationService'
 
 const route = useRoute()
 const router = useRouter()
@@ -146,7 +147,7 @@ async function fetchData(page = pageNum.value, size = pageSize.value) {
     pageNum.value = result.pageNum
     pageSize.value = result.pageSize
   } catch (e: any) {
-    message.error(e?.message || 'Failed to load playlist')
+    handleApiError(e, message)
   } finally {
     loading.value = false
   }
@@ -160,7 +161,7 @@ async function handleBulkDelete() {
     selectedIds.value = []
     await fetchData()
   } catch (e: any) {
-    message.error(e?.message || 'Failed to delete')
+    handleApiError(e, message)
   } finally {
     loading.value = false
   }
@@ -171,7 +172,7 @@ async function rateTrack(row: any, action: 'LIKE' | 'DISLIKE') {
     await datanestApiService.rateSoundFragment(row.id, slugName.value, action)
     await fetchData()
   } catch (e: any) {
-    message.error(e?.message || 'Rating failed')
+    handleApiError(e, message)
   }
 }
 

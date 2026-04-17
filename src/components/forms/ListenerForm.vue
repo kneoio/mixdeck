@@ -9,6 +9,7 @@ import { useListenersStore } from '@/stores/listeners'
 import { useBrandsStore } from '@/stores/brands'
 import { useRoute, useRouter } from 'vue-router'
 import dictionaryApiService from '@/services/dictionaryApi'
+import { handleApiError } from '@/utils/notificationService'
 
 const route = useRoute()
 const router = useRouter()
@@ -93,7 +94,7 @@ async function handleSave() {
     message.success('Listener saved successfully')
     router.push(backRoute.value)
   } catch (error: any) {
-    message.error(error?.message || 'Failed to save')
+    handleApiError(error, message)
   } finally {
     loading.value = false
   }

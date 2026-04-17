@@ -9,6 +9,7 @@ import { useBrandsStore } from '@/stores/brands'
 import datanestApiService from '@/services/datanestApi'
 import PageHeader from '@/components/PageHeader.vue'
 import ActionBar from '@/components/ActionBar.vue'
+import { handleApiError } from '@/utils/notificationService'
 
 const route = useRoute()
 const router = useRouter()
@@ -84,7 +85,7 @@ async function fetchData(page = pageNum.value, size = pageSize.value) {
     pageSize.value = result.pageSize
     maxPage.value = result.maxPage
   } catch (e: any) {
-    message.error(e?.message || 'Failed to load listeners')
+    handleApiError(e, message)
   } finally {
     loading.value = false
   }
@@ -98,7 +99,7 @@ async function handleBulkDelete() {
     selectedIds.value = []
     await fetchData()
   } catch (e: any) {
-    message.error(e?.message || 'Failed to delete')
+    handleApiError(e, message)
   } finally {
     loading.value = false
   }

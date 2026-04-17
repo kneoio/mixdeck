@@ -10,6 +10,7 @@ import { useBrandsStore, SUBMISSION_POLICY_OPTIONS, type SubmissionPolicy } from
 import { useScriptsStore } from '@/stores/scripts'
 import { useRoute, useRouter } from 'vue-router'
 import datanestApiService from '@/services/datanestApi'
+import { handleApiError } from '@/utils/notificationService'
 
 const route = useRoute()
 const router = useRouter()
@@ -33,7 +34,6 @@ const localizedNames = ref<{ lang: string; name: string }[]>([{ lang: 'en', name
 const formData = ref({
   country: null as string | null,
   description: '',
-  slugName: '',
   timeZone: null as string | null,
   publicBrand: 0,
   bitRate: 128,
@@ -146,7 +146,7 @@ async function handleSave() {
     message.success('Brand saved successfully')
     router.push(backRoute.value)
   } catch (error: any) {
-    message.error(error?.message || 'Failed to save')
+    handleApiError(error, message)
   } finally {
     loading.value = false
   }
@@ -188,7 +188,6 @@ onMounted(async () => {
       formData.value = {
         country: brand.country || null,
         description: brand.description || '',
-        slugName: brand.slugName || '',
         timeZone: brand.timeZone || null,
         publicBrand: brand.publicBrand ?? 0,
         bitRate: brand.bitRate ?? 128,
@@ -245,10 +244,6 @@ onMounted(async () => {
                 </NSpace>
               </template>
             </NDynamicInput>
-          </NFormItem>
-
-          <NFormItem label="Slug Name">
-            <NInput v-model:value="formData.slugName" style="width: 100%" />
           </NFormItem>
 
           <NFormItem label="Country">
