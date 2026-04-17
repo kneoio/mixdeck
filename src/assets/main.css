@@ -7,6 +7,32 @@
   font-weight: normal;
 }
 
+/* RTL: flip Naive UI sidebar trigger and any LTR-specific layout */
+[dir="rtl"] .n-layout-sider__trigger {
+  right: auto;
+  left: 0;
+  border-radius: 0 4px 4px 0;
+}
+
+[dir="rtl"] .n-menu .n-menu-item-content {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .n-descriptions-item__label {
+  text-align: right;
+}
+
+/* Ensure Arabic / Hindi fonts render comfortably */
+[dir="rtl"],
+:lang(ar) {
+  font-family: 'Segoe UI', 'Tahoma', 'Arial', sans-serif;
+  letter-spacing: 0;
+}
+
+:lang(hi) {
+  font-family: 'Noto Sans Devanagari', 'Mangal', 'Arial Unicode MS', sans-serif;
+}
+
 a,
 .primary {
   text-decoration: none;

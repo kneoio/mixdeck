@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   NButton, NSpace, NForm, NFormItem, NInput, NSelect,
   NDynamicInput, useMessage
@@ -10,6 +11,8 @@ import { useBrandsStore } from '@/stores/brands'
 import { useRoute, useRouter } from 'vue-router'
 import dictionaryApiService from '@/services/dictionaryApi'
 import { handleApiError } from '@/utils/notificationService'
+
+const { t } = useI18n()
 
 const route = useRoute()
 const router = useRouter()
@@ -75,7 +78,7 @@ const backRoute = computed(() => `/brands/${brandId.value}/listeners`)
 
 async function handleSave() {
   if (!email.value?.trim()) {
-    message.error('Email is required')
+    message.error(t('listenerForm.email_required'))
     return
   }
   try {
@@ -91,7 +94,7 @@ async function handleSave() {
       listenerOf: listenerOf.value,
       labels: labels.value,
     })
-    message.success('Listener saved successfully')
+    message.success(t('listenerForm.saved'))
     router.push(backRoute.value)
   } catch (error: any) {
     handleApiError(error, message)
@@ -125,7 +128,7 @@ onMounted(async () => {
       userDataArray.value = Object.entries(data.userData || {}).map(([key, value]) => ({ key, value: value as string }))
     }
   } catch (error: any) {
-    message.error(error?.message || 'Failed to load')
+    message.error(error?.message || t('listenerForm.load_failed'))
     if (isEditing.value) router.push(backRoute.value)
   } finally {
     loading.value = false
@@ -135,19 +138,19 @@ onMounted(async () => {
 
 <template>
   <FormWrapper
-    :title="isEditing ? 'Edit Listener' : 'Create Listener'"
-    :subtitle="isEditing ? 'Update listener details' : 'Add a new listener'"
+    :title="isEditing ? t('listenerForm.edit_title') : t('listenerForm.create_title')"
+    :subtitle="isEditing ? t('listenerForm.edit_subtitle') : t('listenerForm.create_subtitle')"
     :loading="loading"
   >
     <template #actions>
       <NSpace>
-        <NButton @click="router.push(backRoute)">Close</NButton>
-        <NButton type="primary" @click="handleSave">Save</NButton>
+        <NButton @click="router.push(backRoute)">{{ t('common.close') }}</NButton>
+        <NButton type="primary" @click="handleSave">{{ t('common.save') }}</NButton>
       </NSpace>
     </template>
 
     <NForm label-placement="left" label-width="140" :disabled="loading">
-      <NFormItem label="Localized Names">
+      <NFormItem :label="t('listenerForm.localized_names')">
         <NDynamicInput v-model:value="localizedNameArray" :on-create="createLocalizedName" style="width:100%">
           <template #default="{ value }">
             <NSpace align="center" style="width:100%">
@@ -159,7 +162,7 @@ onMounted(async () => {
         </NDynamicInput>
       </NFormItem>
 
-      <NFormItem label="Nick Names">
+      <NFormItem :label="t('listenerForm.nick_names')">
         <NDynamicInput v-model:value="nickNameArray" :on-create="createNickName" style="width:100%">
           <template #default="{ value }">
             <NSpace align="center" style="width:100%" :wrap="false">
@@ -171,32 +174,32 @@ onMounted(async () => {
         </NDynamicInput>
       </NFormItem>
 
-      <NFormItem label="User Data">
+      <NFormItem :label="t('listenerForm.user_data')">
         <NDynamicInput v-model:value="userDataArray" :on-create="createUserData" style="width:100%">
           <template #default="{ value }">
             <NSpace align="center" style="width:100%" :wrap="false">
-              <NInput v-model:value="value.key" placeholder="Field name" style="width:200px" />
-              <NInput v-model:value="value.value" placeholder="Field value" style="flex:1" />
+              <NInput v-model:value="value.key" :placeholder="t('listenerForm.field_name')" style="width:200px" />
+              <NInput v-model:value="value.value" :placeholder="t('listenerForm.field_value')" style="flex:1" />
             </NSpace>
           </template>
         </NDynamicInput>
       </NFormItem>
 
-      <NFormItem label="Email">
+      <NFormItem :label="t('listenerForm.email')">
         <NInput v-model:value="email" placeholder="listener@example.com" style="width:100%" />
       </NFormItem>
 
-      <NFormItem label="Slug Name">
+      <NFormItem :label="t('listenerForm.slug_name')">
         <NInput v-model:value="slugName" style="width:100%" />
       </NFormItem>
 
-      <NFormItem label="Listener Of">
+      <NFormItem :label="t('listenerForm.listener_of')">
         <NSelect v-model:value="listenerOf" :options="brandOptions"
           multiple filterable style="width:100%"
-          placeholder="Select brands" />
+          :placeholder="t('listenerForm.select_brands')" />
       </NFormItem>
 
-      <NFormItem label="Labels">
+      <NFormItem :label="t('listenerForm.labels')">
         <NSelect v-model:value="labels" :options="labelOptions"
           multiple filterable style="width:100%" />
       </NFormItem>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, h } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import {
   NDataTable, NButton, NSpace, NPopconfirm, NInput, NTag,
   type DataTableColumns, useMessage
@@ -12,6 +13,8 @@ import PageHeader from '@/components/PageHeader.vue'
 import ActionBar from '@/components/ActionBar.vue'
 import BulkUploadDialog from '@/components/forms/BulkUploadDialog.vue'
 import { handleApiError } from '@/utils/notificationService'
+
+const { t } = useI18n()
 
 const route = useRoute()
 const router = useRouter()
@@ -78,10 +81,10 @@ const pagination = computed(() => ({
 
 const columns = computed<DataTableColumns<any>>(() => [
   { type: 'selection', multiple: true },
-  { title: 'Title', key: 'title', minWidth: 200, render: (row) => row.title || '-' },
-  { title: 'Artist', key: 'artist', minWidth: 160, render: (row) => row.artist || '-' },
+  { title: t('playlistView.col_title'), key: 'title', minWidth: 200, render: (row) => row.title || '-' },
+  { title: t('playlistView.col_artist'), key: 'artist', minWidth: 160, render: (row) => row.artist || '-' },
   {
-    title: 'Genres', key: 'genres', width: 180,
+    title: t('playlistView.col_genres'), key: 'genres', width: 180,
     render: (row) => {
       if (!row.genres?.length) return '-'
       return h(NSpace, { size: 4, wrap: true }, {
@@ -96,7 +99,7 @@ const columns = computed<DataTableColumns<any>>(() => [
     }
   },
   {
-    title: 'Labels', key: 'labels', width: 180,
+    title: t('playlistView.col_labels'), key: 'labels', width: 180,
     render: (row) => {
       if (!row.labels?.length) return '-'
       return h(NSpace, { size: 4, wrap: true }, {
@@ -110,9 +113,9 @@ const columns = computed<DataTableColumns<any>>(() => [
       })
     }
   },
-  { title: 'Played', key: 'playedByBrandCount', width: 80, render: (row) => row.playedByBrandCount ?? 0 },
+  { title: t('playlistView.col_played'), key: 'playedByBrandCount', width: 80, render: (row) => row.playedByBrandCount ?? 0 },
   {
-    title: 'Rating', key: 'rating', width: 140,
+    title: t('playlistView.col_rating'), key: 'rating', width: 140,
     render: (row) => {
       const val = row.ratedByBrandCount ?? 0
       return h(NSpace, { size: 4, align: 'center' }, {
@@ -131,7 +134,7 @@ const columns = computed<DataTableColumns<any>>(() => [
       })
     }
   },
-  { title: 'Description', key: 'description', minWidth: 160, ellipsis: { tooltip: true } },
+  { title: t('playlistView.col_description'), key: 'description', minWidth: 160, ellipsis: { tooltip: true } },
 ])
 
 async function fetchData(page = pageNum.value, size = pageSize.value) {
@@ -157,7 +160,7 @@ async function handleBulkDelete() {
   try {
     loading.value = true
     await Promise.all(selectedIds.value.map(id => datanestApiService.deleteSoundFragment(id)))
-    message.success(`Deleted ${selectedIds.value.length} track(s)`)
+    message.success(t('playlistView.deleted', { count: selectedIds.value.length }))
     selectedIds.value = []
     await fetchData()
   } catch (e: any) {
@@ -187,24 +190,24 @@ watch(slugName, (val) => { if (val) { loadDictionaries(); fetchData(1) } }, { im
 
 <template>
   <div>
-    <PageHeader :title="brandName" subtitle="Playlist" :count="totalCount" />
+    <PageHeader :title="brandName" :subtitle="t('playlistView.subtitle')" :count="totalCount" />
     <ActionBar>
       <NSpace>
         <NButton type="primary" @click="router.push(`/brands/${route.params.id}/playlist/new`)">
-          New Track
+          {{ t('playlistView.new_track') }}
         </NButton>
-        <NButton @click="showBulkUpload = true">Bulk Upload</NButton>
+        <NButton @click="showBulkUpload = true">{{ t('playlistView.bulk_upload') }}</NButton>
         <NPopconfirm @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
           <template #trigger>
             <NButton type="error" :disabled="selectedIds.length === 0">
-              Delete ({{ selectedIds.length }})
+              {{ t('playlistView.delete_btn', { count: selectedIds.length }) }}
             </NButton>
           </template>
-          Delete {{ selectedIds.length }} track(s)?
+          {{ t('playlistView.delete_confirm', { count: selectedIds.length }) }}
         </NPopconfirm>
         <NInput
           v-model:value="searchTerm"
-          placeholder="Search..."
+          :placeholder="t('playlistView.search')"
           clearable
           style="width: 220px"
           @update:value="onSearchChange"

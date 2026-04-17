@@ -13,13 +13,16 @@
 </template>
 
 <script setup lang="ts">
-import {RouterView} from 'vue-router'
-import {NMessageProvider, NLoadingBarProvider, NGlobalStyle, NConfigProvider} from 'naive-ui'
-import {darkTheme, type GlobalThemeOverrides} from 'naive-ui'
-import {useThemeStore} from '@/stores/theme'
-import {onMounted, computed} from 'vue'
+import { RouterView } from 'vue-router'
+import { NMessageProvider, NLoadingBarProvider, NGlobalStyle, NConfigProvider } from 'naive-ui'
+import { darkTheme, type GlobalThemeOverrides } from 'naive-ui'
+import { useThemeStore } from '@/stores/theme'
+import { onMounted, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { applyDirection, type SupportedLocale } from '@/i18n'
 
 const themeStore = useThemeStore()
+const { locale } = useI18n()
 
 const themeOverrides = computed<GlobalThemeOverrides>(() => ({
   common: {
@@ -46,6 +49,8 @@ const themeOverrides = computed<GlobalThemeOverrides>(() => ({
 }))
 
 const naiveTheme = computed(() => themeStore.isDark ? darkTheme : null)
+
+watch(locale, (val) => applyDirection(val as SupportedLocale), { immediate: true })
 
 onMounted(() => {
   themeStore.initializeTheme()

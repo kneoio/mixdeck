@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   NAvatar, NButton, NTag, NDescriptions, NDescriptionsItem,
-  NCard, NSpace, NFlex, NDivider
+  NCard, NSpace, NFlex, NDivider, NSelect
 } from 'naive-ui'
 import { useAuthStore } from '@/stores/auth'
 import PageHeader from '@/components/PageHeader.vue'
+import { LOCALE_LABELS, SUPPORTED_LOCALES, saveLocale, type SupportedLocale } from '@/i18n'
 
+const { t, locale } = useI18n()
 const authStore = useAuthStore()
 
 const profile = computed(() => authStore.userProfile ?? {})
@@ -26,13 +29,23 @@ const initials = computed(() => {
 const memberSince = computed(() => {
   const ts = profile.value.createdTimestamp
   if (!ts) return '—'
-  return new Date(ts).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+  return new Date(ts).toLocaleDateString(locale.value, { year: 'numeric', month: 'long', day: 'numeric' })
 })
+
+const localeOptions = SUPPORTED_LOCALES.map(code => ({
+  label: LOCALE_LABELS[code],
+  value: code,
+}))
+
+function onLocaleChange(val: SupportedLocale) {
+  locale.value = val
+  saveLocale(val)
+}
 </script>
 
 <template>
   <div>
-    <PageHeader title="Profile" subtitle="Your account details" />
+    <PageHeader :title="t('profile.title')" :subtitle="t('profile.subtitle')" />
 
     <div style="max-width: 760px; display: flex; flex-direction: column; gap: 16px;">
 
@@ -49,10 +62,10 @@ const memberSince = computed(() => {
         </NFlex>
 
         <NDescriptions label-placement="left" :column="1" label-style="width: 160px; opacity: 0.55;">
-          <NDescriptionsItem label="Username">{{ authStore.userName || '—' }}</NDescriptionsItem>
-          <NDescriptionsItem label="First name">{{ profile.firstName || '—' }}</NDescriptionsItem>
-          <NDescriptionsItem label="Last name">{{ profile.lastName || '—' }}</NDescriptionsItem>
-          <NDescriptionsItem label="Email">
+          <NDescriptionsItem :label="t('profile.username')">{{ authStore.userName || '—' }}</NDescriptionsItem>
+          <NDescriptionsItem :label="t('profile.first_name')">{{ profile.firstName || '—' }}</NDescriptionsItem>
+          <NDescriptionsItem :label="t('profile.last_name')">{{ profile.lastName || '—' }}</NDescriptionsItem>
+          <NDescriptionsItem :label="t('profile.email')">
             <NSpace :size="8" align="center">
               <span>{{ authStore.userEmail || '—' }}</span>
               <NTag
@@ -60,61 +73,72 @@ const memberSince = computed(() => {
                 size="small"
                 round
               >
-                {{ profile.emailVerified ? 'Verified' : 'Unverified' }}
+                {{ profile.emailVerified ? t('profile.verified') : t('profile.unverified') }}
               </NTag>
             </NSpace>
           </NDescriptionsItem>
-          <NDescriptionsItem label="Member since">{{ memberSince }}</NDescriptionsItem>
+          <NDescriptionsItem :label="t('profile.member_since')">{{ memberSince }}</NDescriptionsItem>
         </NDescriptions>
       </NCard>
 
+      <!-- Language -->
+      <NCard :title="t('profile.language')">
+        <p style="opacity: 0.55; font-size: 13px; margin: 0 0 12px;">{{ t('profile.language_subtitle') }}</p>
+        <NSelect
+          :value="locale"
+          :options="localeOptions"
+          style="width: 200px;"
+          @update:value="onLocaleChange"
+        />
+      </NCard>
+
       <!-- Subscription -->
-      <NCard title="Subscription">
+      <NCard :title="t('profile.subscription')">
         <NFlex justify="space-between" align="center" style="margin-bottom: 16px;">
           <div>
-            <div style="font-size: 16px; font-weight: 600;">Free Plan</div>
-            <div style="opacity: 0.55; font-size: 13px; margin-top: 2px;">Basic access · up to 3 brands</div>
+            <div style="font-size: 16px; font-weight: 600;">{{ t('profile.free_plan') }}</div>
+            <div style="opacity: 0.55; font-size: 13px; margin-top: 2px;">{{ t('profile.free_plan_desc') }}</div>
           </div>
-          <NTag type="default" size="medium" round>Free</NTag>
+          <NTag type="default" size="medium" round>{{ t('profile.free') }}</NTag>
         </NFlex>
 
         <NDivider style="margin: 0 0 16px;" />
 
         <NDescriptions label-placement="left" :column="1" label-style="width: 180px; opacity: 0.55;">
-          <NDescriptionsItem label="Brands">3 / 3</NDescriptionsItem>
-          <NDescriptionsItem label="Listeners">100 / 100</NDescriptionsItem>
-          <NDescriptionsItem label="Storage">5 GB / 5 GB</NDescriptionsItem>
-          <NDescriptionsItem label="Bulk upload">
-            <NTag type="success" size="small" round>Enabled</NTag>
+          <NDescriptionsItem :label="t('profile.brands')">3 / 3</NDescriptionsItem>
+          <NDescriptionsItem :label="t('profile.listeners_quota')">100 / 100</NDescriptionsItem>
+          <NDescriptionsItem :label="t('profile.storage')">5 GB / 5 GB</NDescriptionsItem>
+          <NDescriptionsItem :label="t('profile.bulk_upload')">
+            <NTag type="success" size="small" round>{{ t('profile.enabled') }}</NTag>
           </NDescriptionsItem>
-          <NDescriptionsItem label="AI DJ">
-            <NTag type="warning" size="small" round>Pro only</NTag>
+          <NDescriptionsItem :label="t('profile.ai_dj')">
+            <NTag type="warning" size="small" round>{{ t('profile.pro_only') }}</NTag>
           </NDescriptionsItem>
-          <NDescriptionsItem label="Renewal">—</NDescriptionsItem>
+          <NDescriptionsItem :label="t('profile.renewal')">—</NDescriptionsItem>
         </NDescriptions>
 
         <NDivider style="margin: 16px 0;" />
 
         <NButton type="primary" style="background: #7C3AED; border-color: #7C3AED;">
-          Upgrade to Pro
+          {{ t('profile.upgrade') }}
         </NButton>
       </NCard>
 
       <!-- Security -->
-      <NCard title="Security">
+      <NCard :title="t('profile.security')">
         <NDescriptions label-placement="left" :column="1" label-style="width: 160px; opacity: 0.55;">
-          <NDescriptionsItem label="Password">••••••••</NDescriptionsItem>
-          <NDescriptionsItem label="2FA">
-            <NTag type="warning" size="small" round>Not enabled</NTag>
+          <NDescriptionsItem :label="t('profile.password')">••••••••</NDescriptionsItem>
+          <NDescriptionsItem :label="t('profile.tfa')">
+            <NTag type="warning" size="small" round>{{ t('profile.tfa_not_enabled') }}</NTag>
           </NDescriptionsItem>
-          <NDescriptionsItem label="Sessions">1 active</NDescriptionsItem>
+          <NDescriptionsItem :label="t('profile.sessions')">{{ t('profile.sessions_value') }}</NDescriptionsItem>
         </NDescriptions>
 
         <NDivider style="margin: 16px 0;" />
 
         <NSpace>
-          <NButton secondary>Change password</NButton>
-          <NButton secondary>Enable 2FA</NButton>
+          <NButton secondary>{{ t('profile.change_password') }}</NButton>
+          <NButton secondary>{{ t('profile.enable_tfa') }}</NButton>
         </NSpace>
       </NCard>
 

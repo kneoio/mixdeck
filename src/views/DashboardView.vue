@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, h, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import { useBrandsStore } from '@/stores/brands'
@@ -23,6 +24,8 @@ import {
   AddOutline as AddIcon,
   PersonOutline as ProfileIcon,
 } from '@vicons/ionicons5'
+
+const { t } = useI18n()
 
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
@@ -98,7 +101,7 @@ const brandLabel = (brand: any) =>
 
 const menuOptions = computed<MenuOption[]>(() => [
   {
-    label: () => h('span', { style: 'font-weight: 700;' }, 'My brands'),
+    label: () => h('span', { style: 'font-weight: 700;' }, t('menu.my_brands')),
     key: 'brands-group',
     children: [
       ...brandsStore.brands.map(brand => ({
@@ -107,29 +110,29 @@ const menuOptions = computed<MenuOption[]>(() => [
         icon: () => h(LedIndicator, { active: brand.status === 'ON_LINE', pulse: brand.status === 'WARMING_UP', size: 16 }),
         children: [
           {
-            label: 'Dashboard',
+            label: t('menu.dashboard'),
             key: `brand-${brand.id}-dashboard`,
             icon: () => h(NIcon, null, { default: () => h(DashboardIcon) }),
           },
           {
-            label: 'Listeners',
+            label: t('menu.listeners'),
             key: `brand-${brand.id}-listeners`,
             icon: () => h(NIcon, null, { default: () => h(ListenersIcon) }),
           },
           {
-            label: 'Playlist',
+            label: t('menu.playlist'),
             key: `brand-${brand.id}-playlist`,
             icon: () => h(NIcon, null, { default: () => h(PlaylistIcon) }),
           },
           {
-            label: 'Settings',
+            label: t('menu.settings'),
             key: `brand-${brand.id}-settings`,
             icon: () => h(NIcon, null, { default: () => h(SettingsIcon) }),
           },
         ],
       })),
       {
-        label: 'Add New',
+        label: t('menu.add_new'),
         key: 'brands-new',
         icon: () => h(NIcon, null, { default: () => h(AddIcon) }),
       },
@@ -163,18 +166,18 @@ const handleMenuSelect = async (key: string) => {
   }
 }
 
-const userMenuOptions = [
+const userMenuOptions = computed(() => [
   {
-    label: 'Profile',
+    label: t('userMenu.profile'),
     key: 'profile',
     icon: () => h(NIcon, null, { default: () => h(ProfileIcon) }),
   },
   {
-    label: 'Logout',
+    label: t('userMenu.logout'),
     key: 'logout',
     icon: () => h(NIcon, null, { default: () => h(LogoutIcon) }),
   },
-]
+])
 
 const handleUserMenuSelect = async (key: string) => {
   if (key === 'profile') router.push('/profile')
@@ -267,7 +270,7 @@ const handleUserMenuSelect = async (key: string) => {
             <NButton
               circle quaternary
               @click="themeStore.toggleTheme"
-              :title="themeStore.isDark ? 'Switch to light mode' : 'Switch to dark mode'"
+              :title="themeStore.isDark ? t('theme.to_light') : t('theme.to_dark')"
             >
               <template #icon>
                 <NIcon>

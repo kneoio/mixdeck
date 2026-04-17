@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import {
   NDataTable, NButton, NSpace, NPopconfirm, type DataTableColumns
 } from 'naive-ui'
@@ -10,6 +11,8 @@ import datanestApiService from '@/services/datanestApi'
 import PageHeader from '@/components/PageHeader.vue'
 import ActionBar from '@/components/ActionBar.vue'
 import { handleApiError } from '@/utils/notificationService'
+
+const { t } = useI18n()
 
 const route = useRoute()
 const router = useRouter()
@@ -38,14 +41,14 @@ const pagination = computed(() => ({
   itemCount: totalCount.value,
 }))
 
-const columns: DataTableColumns<any> = [
+const columns = computed<DataTableColumns<any>>(() => [
   { type: 'selection', multiple: true },
   {
-    title: 'Name', key: 'name', minWidth: 160,
+    title: t('listenersView.col_name'), key: 'name', minWidth: 160,
     render: (row) => row.listener?.localizedName?.en || row.listener?.localizedName?.ru || '-'
   },
   {
-    title: 'Nickname', key: 'nickname', minWidth: 140,
+    title: t('listenersView.col_nickname'), key: 'nickname', minWidth: 140,
     render: (row) => {
       const nn = row.listener?.nickName ?? row.listener?.nickname
       if (!nn) return '-'
@@ -56,11 +59,11 @@ const columns: DataTableColumns<any> = [
     }
   },
   {
-    title: 'Type', key: 'listenerType', width: 130,
+    title: t('listenersView.col_type'), key: 'listenerType', width: 130,
     render: (row) => row.listenerType || row.listener?.listenerType || '-'
   },
   {
-    title: 'User Data', key: 'userData', minWidth: 200,
+    title: t('listenersView.col_user_data'), key: 'userData', minWidth: 200,
     render: (row) => {
       const ud = row.listener?.userData
       if (!ud || typeof ud !== 'object') return '-'
@@ -69,10 +72,10 @@ const columns: DataTableColumns<any> = [
     }
   },
   {
-    title: 'Registered', key: 'regDate', width: 160,
+    title: t('listenersView.col_registered'), key: 'regDate', width: 160,
     render: (row) => row.listener?.regDate || '-'
   },
-]
+])
 
 async function fetchData(page = pageNum.value, size = pageSize.value) {
   if (!slugName.value) return
@@ -95,7 +98,7 @@ async function handleBulkDelete() {
   try {
     loading.value = true
     await Promise.all(selectedIds.value.map(id => datanestApiService.deleteBrandListener(id)))
-    message.success(`Deleted ${selectedIds.value.length} listener(s)`)
+    message.success(t('listenersView.deleted', { count: selectedIds.value.length }))
     selectedIds.value = []
     await fetchData()
   } catch (e: any) {
@@ -111,19 +114,19 @@ watch(slugName, (val) => { if (val) fetchData(1) }, { immediate: true })
 
 <template>
   <div>
-    <PageHeader :title="brandName" subtitle="Listeners" :count="totalCount" />
+    <PageHeader :title="brandName" :subtitle="t('listenersView.subtitle')" :count="totalCount" />
     <ActionBar>
       <NSpace>
         <NButton type="primary" @click="router.push(`/brands/${route.params.id}/listeners/new`)">
-          New Listener
+          {{ t('listenersView.new_listener') }}
         </NButton>
         <NPopconfirm @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
           <template #trigger>
             <NButton type="error" :disabled="selectedIds.length === 0">
-              Delete ({{ selectedIds.length }})
+              {{ t('listenersView.delete_btn', { count: selectedIds.length }) }}
             </NButton>
           </template>
-          Delete {{ selectedIds.length }} listener(s)?
+          {{ t('listenersView.delete_confirm', { count: selectedIds.length }) }}
         </NPopconfirm>
       </NSpace>
     </ActionBar>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   NButton, NSpace, NForm, NFormItem, NInput, NSelect, NSwitch,
   NTabs, NTabPane, NDynamicInput, NInputNumber,
@@ -11,6 +12,8 @@ import { useScriptsStore } from '@/stores/scripts'
 import { useRoute, useRouter } from 'vue-router'
 import datanestApiService from '@/services/datanestApi'
 import { handleApiError } from '@/utils/notificationService'
+
+const { t } = useI18n()
 
 const route = useRoute()
 const router = useRouter()
@@ -143,7 +146,7 @@ async function handleSave() {
         : undefined,
       owner: (formData.value.owner.name || formData.value.owner.email) ? formData.value.owner : undefined,
     } as any)
-    message.success('Brand saved successfully')
+    message.success(t('brandForm.saved'))
     router.push(backRoute.value)
   } catch (error: any) {
     handleApiError(error, message)
@@ -210,7 +213,7 @@ onMounted(async () => {
       if (firstScript?.userVariables) userVariables.value = { ...firstScript.userVariables }
     }
   } catch (error: any) {
-    message.error(error?.message || 'Failed to load')
+    message.error(error?.message || t('brandForm.load_failed'))
     if (isEditing.value) router.push(backRoute.value)
   } finally {
     loading.value = false
@@ -220,21 +223,21 @@ onMounted(async () => {
 
 <template>
   <FormWrapper
-    :title="isEditing ? 'Edit Brand' : 'Create Brand'"
-    :subtitle="isEditing ? 'Update brand / radio station' : 'Create a new brand'"
+    :title="isEditing ? t('brandForm.edit_title') : t('brandForm.create_title')"
+    :subtitle="isEditing ? t('brandForm.edit_subtitle') : t('brandForm.create_subtitle')"
     :loading="loading"
   >
     <template #actions>
       <NSpace>
-        <NButton @click="router.push(backRoute)">Close</NButton>
-        <NButton type="primary" @click="handleSave">Save</NButton>
+        <NButton @click="router.push(backRoute)">{{ t('common.close') }}</NButton>
+        <NButton type="primary" @click="handleSave">{{ t('common.save') }}</NButton>
       </NSpace>
     </template>
 
     <NTabs v-model:value="activeTab">
-      <NTabPane name="properties" tab="Properties">
+      <NTabPane name="properties" :tab="t('brandForm.tab_properties')">
         <NForm label-placement="left" label-width="140" :disabled="loading">
-          <NFormItem label="Localized Names">
+          <NFormItem :label="t('brandForm.localized_names')">
             <NDynamicInput v-model:value="localizedNames" :on-create="createLocalizedName" style="width:100%">
               <template #default="{ index }">
                 <NSpace align="center" style="width:100%">
@@ -246,58 +249,58 @@ onMounted(async () => {
             </NDynamicInput>
           </NFormItem>
 
-          <NFormItem label="Country">
+          <NFormItem :label="t('brandForm.country')">
             <NSelect v-model:value="formData.country" :options="COUNTRIES"
               filterable clearable style="width: 250px" />
           </NFormItem>
 
-          <NFormItem label="Description">
+          <NFormItem :label="t('brandForm.description')">
             <NInput v-model:value="formData.description" type="textarea"
               :autosize="{ minRows: 3, maxRows: 6 }" style="width: 100%" />
           </NFormItem>
 
-          <NFormItem label="Time Zone">
+          <NFormItem :label="t('brandForm.time_zone')">
             <NSelect v-model:value="formData.timeZone" :options="TIMEZONES"
               filterable clearable style="width: 280px" />
           </NFormItem>
 
-          <NFormItem label="Bit Rate">
+          <NFormItem :label="t('brandForm.bit_rate')">
             <NSelect v-model:value="formData.bitRate" :options="BIT_RATE_OPTIONS" style="width: 160px" />
           </NFormItem>
 
-          <NFormItem label="Public">
+          <NFormItem :label="t('brandForm.public')">
             <NSwitch :value="formData.publicBrand === 1" @update:value="(v) => formData.publicBrand = v ? 1 : 0" />
           </NFormItem>
         </NForm>
       </NTabPane>
 
-      <NTabPane name="dj" tab="DJ">
+      <NTabPane name="dj" :tab="t('brandForm.tab_dj')">
         <NForm label-placement="left" label-width="160" :disabled="loading">
-          <NFormItem label="AI Agent">
+          <NFormItem :label="t('brandForm.ai_agent')">
             <NSelect v-model:value="formData.aiAgentId" :options="agentOptions"
               filterable clearable style="width: 100%" />
           </NFormItem>
 
-          <NFormItem label="AI Override Prompt">
+          <NFormItem :label="t('brandForm.ai_override')">
             <NInput v-model:value="formData.aiOverriding.prompt" type="textarea"
               :autosize="{ minRows: 3, maxRows: 6 }" style="width: 100%" />
           </NFormItem>
         </NForm>
       </NTabPane>
 
-      <NTabPane name="script" tab="Script">
+      <NTabPane name="script" :tab="t('brandForm.tab_script')">
         <NForm label-placement="left" label-width="140" :disabled="loading">
-          <NFormItem label="Script">
+          <NFormItem :label="t('brandForm.script')">
             <NSelect v-model:value="formData.scriptId" :options="scriptOptions"
               filterable clearable style="width: 100%; max-width: 500px" />
           </NFormItem>
 
-          <NFormItem v-if="selectedScript?.description" label="Description">
+          <NFormItem v-if="selectedScript?.description" :label="t('fragmentForm.description')">
             <span style="color: #888; font-size: 13px;">{{ selectedScript.description }}</span>
           </NFormItem>
 
           <template v-if="selectedScript?.requiredVariables?.length">
-            <NFormItem label="Variables">
+            <NFormItem :label="t('brandForm.variables')">
               <div style="width: 100%; max-width: 500px">
                 <div v-for="variable in selectedScript.requiredVariables" :key="variable.name"
                   style="margin-bottom: 12px">
@@ -317,43 +320,43 @@ onMounted(async () => {
         </NForm>
       </NTabPane>
 
-      <NTabPane name="audience" tab="Audience">
+      <NTabPane name="audience" :tab="t('brandForm.tab_audience')">
         <NForm label-placement="left" label-width="160" :disabled="loading">
-          <NFormItem label="Audience Type">
+          <NFormItem :label="t('brandForm.audience_type')">
             <NSelect v-model:value="formData.profileId" :options="profileOptions"
               filterable clearable style="width: 100%; max-width: 500px" />
           </NFormItem>
 
-          <NFormItem v-if="formData.profileId" label="Local Name">
+          <NFormItem v-if="formData.profileId" :label="t('brandForm.local_name')">
             <NInput v-model:value="formData.profileOverriding.name"
-              placeholder="Optional override" style="width: 100%; max-width: 500px" />
+              :placeholder="t('brandForm.optional_override')" style="width: 100%; max-width: 500px" />
           </NFormItem>
 
-          <NFormItem v-if="formData.profileId" label="Additional Info">
+          <NFormItem v-if="formData.profileId" :label="t('brandForm.additional_info')">
             <NInput v-model:value="formData.profileOverriding.description"
               type="textarea" :autosize="{ minRows: 3, maxRows: 5 }"
-              placeholder="Optional override" style="width: 100%; max-width: 500px" />
+              :placeholder="t('brandForm.optional_override')" style="width: 100%; max-width: 500px" />
           </NFormItem>
         </NForm>
       </NTabPane>
 
-      <NTabPane name="contribution" tab="Contribution">
+      <NTabPane name="contribution" :tab="t('brandForm.tab_contribution')">
         <NForm label-placement="left" label-width="180" :disabled="loading">
-          <NFormItem label="Messaging">
+          <NFormItem :label="t('brandForm.messaging')">
             <NSelect v-model:value="formData.messagingPolicy" :options="SUBMISSION_POLICY_OPTIONS" style="width: 220px" />
           </NFormItem>
-          <NFormItem label="One-Time Stream">
+          <NFormItem :label="t('brandForm.one_time_stream')">
             <NSelect v-model:value="formData.oneTimeStreamPolicy" :options="SUBMISSION_POLICY_OPTIONS" style="width: 220px" />
           </NFormItem>
-          <NFormItem label="Song Submission">
+          <NFormItem :label="t('brandForm.song_submission')">
             <NSelect v-model:value="formData.submissionPolicy" :options="SUBMISSION_POLICY_OPTIONS" style="width: 220px" />
           </NFormItem>
         </NForm>
       </NTabPane>
 
-      <NTabPane name="playerUi" tab="Player UI">
+      <NTabPane name="playerUi" :tab="t('brandForm.tab_player_ui')">
         <NForm label-placement="left" label-width="120" :disabled="loading">
-          <NFormItem v-if="localizedNames[0]?.name" label="Preview">
+          <NFormItem v-if="localizedNames[0]?.name" :label="t('brandForm.preview')">
             <div :style="{
               fontFamily: formData.titleFont || undefined,
               fontSize: '34px',
@@ -365,24 +368,24 @@ onMounted(async () => {
             </div>
           </NFormItem>
 
-          <NFormItem label="Title Font">
+          <NFormItem :label="t('brandForm.title_font')">
             <NSelect v-model:value="formData.titleFont" :options="stationFontOptions"
               filterable clearable style="width: 280px" />
           </NFormItem>
 
-          <NFormItem label="Color">
+          <NFormItem :label="t('brandForm.color')">
             <NColorPicker v-model:value="formData.color" style="width: 200px" />
           </NFormItem>
         </NForm>
       </NTabPane>
 
-      <NTabPane name="owner" tab="Owner">
+      <NTabPane name="owner" :tab="t('brandForm.tab_owner')">
         <NForm label-placement="left" label-width="120" :disabled="loading">
-          <NFormItem label="Owner Name">
+          <NFormItem :label="t('brandForm.owner_name')">
             <NInput v-model:value="formData.owner.name"
-              placeholder="Owner name" style="width: 100%; max-width: 400px" />
+              :placeholder="t('brandForm.owner_name')" style="width: 100%; max-width: 400px" />
           </NFormItem>
-          <NFormItem label="Owner Email">
+          <NFormItem :label="t('brandForm.owner_email')">
             <NInput v-model:value="formData.owner.email"
               placeholder="owner@example.com" style="width: 100%; max-width: 400px" />
           </NFormItem>

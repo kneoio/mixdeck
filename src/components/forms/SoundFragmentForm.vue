@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   NButton, NSpace, NForm, NFormItem, NInput, NSelect,
   NTabs, NTabPane, NUpload, NProgress, useMessage
@@ -13,6 +14,8 @@ import datanestApiService from '@/services/datanestApi'
 import { appConfig } from '@/config/appConfig'
 import { useRoute, useRouter } from 'vue-router'
 import { handleApiError } from '@/utils/notificationService'
+
+const { t } = useI18n()
 
 const route = useRoute()
 const router = useRouter()
@@ -98,7 +101,7 @@ async function handleSave() {
       )
     }
 
-    message.success('Sound fragment saved')
+    message.success(t('fragmentForm.saved'))
     router.push(backRoute.value)
   } catch (error: any) {
     handleApiError(error, message)
@@ -141,7 +144,7 @@ onMounted(async () => {
         : fileUrl ? `${appConfig.datanestServer}/datanest${fileUrl}` : ''
     }
   } catch (error: any) {
-    message.error(error?.message || 'Failed to load')
+    message.error(error?.message || t('fragmentForm.load_failed'))
     if (isEditing.value) router.push(backRoute.value)
   } finally {
     loading.value = false
@@ -151,26 +154,26 @@ onMounted(async () => {
 
 <template>
   <FormWrapper
-    :title="isEditing ? 'Edit Sound Fragment' : 'Create Sound Fragment'"
-    :subtitle="isEditing ? 'Update sound fragment' : 'Add a new sound fragment'"
+    :title="isEditing ? t('fragmentForm.edit_title') : t('fragmentForm.create_title')"
+    :subtitle="isEditing ? t('fragmentForm.edit_subtitle') : t('fragmentForm.create_subtitle')"
     :loading="loading"
   >
     <template #actions>
       <NSpace>
-        <NButton @click="router.push(backRoute)">Close</NButton>
-        <NButton type="primary" @click="handleSave">Save</NButton>
+        <NButton @click="router.push(backRoute)">{{ t('common.close') }}</NButton>
+        <NButton type="primary" @click="handleSave">{{ t('common.save') }}</NButton>
       </NSpace>
     </template>
 
     <NTabs v-model:value="activeTab">
-      <NTabPane name="properties" tab="Main properties">
+      <NTabPane name="properties" :tab="t('fragmentForm.tab_properties')">
         <NForm label-placement="left" label-width="120" :disabled="loading || isUploading">
 
-          <NFormItem label="Type">
+          <NFormItem :label="t('fragmentForm.type')">
             <NSpace align="center">
               <NSelect v-model:value="formData.type" :options="FRAGMENT_TYPES" style="width: 200px" />
               <template v-if="formData.length != null">
-                <span style="opacity: 0.45; font-size: 13px;">Length</span>
+                <span style="opacity: 0.45; font-size: 13px;">{{ t('fragmentForm.length') }}</span>
                 <NInput
                   :value="((formData.length as number) / 60).toFixed(2)"
                   readonly style="width: 90px"
@@ -179,34 +182,34 @@ onMounted(async () => {
             </NSpace>
           </NFormItem>
 
-          <NFormItem label="Title">
+          <NFormItem :label="t('fragmentForm.title')">
             <NInput v-model:value="formData.title" style="width: 100%" />
           </NFormItem>
 
-          <NFormItem label="Artist">
+          <NFormItem :label="t('fragmentForm.artist')">
             <NInput v-model:value="formData.artist" style="width: 100%" />
           </NFormItem>
 
-          <NFormItem label="Album">
+          <NFormItem :label="t('fragmentForm.album')">
             <NInput v-model:value="formData.album" style="width: 100%" />
           </NFormItem>
 
-          <NFormItem label="Genres">
+          <NFormItem :label="t('fragmentForm.genres')">
             <NSelect v-model:value="formData.genres" :options="genreOptions"
               multiple filterable style="width: 100%" />
           </NFormItem>
 
-          <NFormItem label="Labels">
+          <NFormItem :label="t('fragmentForm.labels')">
             <NSelect v-model:value="formData.labels" :options="labelOptions"
               multiple filterable style="width: 100%" />
           </NFormItem>
 
-          <NFormItem label="Assign To">
+          <NFormItem :label="t('fragmentForm.assign_to')">
             <NSelect v-model:value="formData.representedInBrands" :options="brandOptions"
               multiple filterable style="width: 100%" />
           </NFormItem>
 
-          <NFormItem label="Audio File">
+          <NFormItem :label="t('fragmentForm.audio_file')">
             <NSpace vertical style="width: 100%">
               <a
                 v-if="existingUrl"
@@ -221,7 +224,7 @@ onMounted(async () => {
                 :disabled="isUploading"
               >
                 <NButton :disabled="isUploading">
-                  {{ existingUrl ? 'Replace file' : 'Choose file' }}
+                  {{ existingUrl ? t('fragmentForm.replace_file') : t('fragmentForm.choose_file') }}
                 </NButton>
               </NUpload>
               <NProgress
@@ -233,16 +236,16 @@ onMounted(async () => {
             </NSpace>
           </NFormItem>
 
-          <NFormItem v-if="formData.expiresAt" label="Expires At">
+          <NFormItem v-if="formData.expiresAt" :label="t('fragmentForm.expires_at')">
             <NInput :value="formData.expiresAt" readonly style="width: 200px" />
           </NFormItem>
 
         </NForm>
       </NTabPane>
 
-      <NTabPane name="description" tab="Description">
+      <NTabPane name="description" :tab="t('fragmentForm.tab_description')">
         <NForm label-placement="left" label-width="120" :disabled="loading || isUploading">
-          <NFormItem label="Description">
+          <NFormItem :label="t('fragmentForm.description')">
             <NInput v-model:value="formData.description" type="textarea"
               :autosize="{ minRows: 8, maxRows: 20 }" style="width: 100%" />
           </NFormItem>

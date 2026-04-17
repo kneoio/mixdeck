@@ -4,21 +4,21 @@
       <header class="nav">
         <div class="logo">MIXPLA</div>
         <nav>
-          <a href="#platform">Platform</a>
-          <a href="#creators">Broadcasters</a>
-          <a href="#about">About</a>
+          <a href="#platform">{{ t('nav.platform') }}</a>
+          <a href="#creators">{{ t('nav.broadcasters') }}</a>
+          <a href="#about">{{ t('nav.about') }}</a>
         </nav>
       </header>
 
       <section class="hero" id="platform">
         <div class="hero-text">
-          <p class="eyebrow neon-motto">You choose the vibe. AI keeps it live.</p>
-          <h1>AI-Driven Streams, Events and Audio Experiences.</h1>
-          <p class="subline">Streams that never sleep. Personalised. Interactive. Alive.</p>
+          <p class="eyebrow neon-motto">{{ t('welcome.motto') }}</p>
+          <h1>{{ t('welcome.headline') }}</h1>
+          <p class="subline">{{ t('welcome.subline') }}</p>
           <div class="hero-ctas">
-            <n-button type="primary" size="large" class="cta-button" @click="goToMixpla">Mixplay Music</n-button>
-            <n-button type="primary" size="large" @click="scrollToRegister">Become a Broadcaster</n-button>
-            <n-button size="large" @click="goToBrands">Access Broadcaster Portal</n-button>
+            <n-button type="primary" size="large" class="cta-button" @click="goToMixpla">{{ t('welcome.cta_mixplay') }}</n-button>
+            <n-button type="primary" size="large" @click="scrollToRegister">{{ t('welcome.cta_broadcaster') }}</n-button>
+            <n-button size="large" @click="goToBrands">{{ t('welcome.cta_portal') }}</n-button>
           </div>
         </div>
         <div class="waveform" aria-hidden="true">
@@ -28,66 +28,66 @@
 
       <section class="what-is" id="about">
         <div class="section-header">
-          <p class="eyebrow">What is Mixpla</p>
-          <h2>Audio infrastructure engineered for continuous AI performance.</h2>
-          <p class="intro">Mixpla powers autonomous AI streams, one-off shows and monetisation for broadcasters building the next generation of sonic experiences.</p>
+          <p class="eyebrow">{{ t('welcome.what_is_eyebrow') }}</p>
+          <h2>{{ t('welcome.what_is_headline') }}</h2>
+          <p class="intro">{{ t('welcome.what_is_intro') }}</p>
         </div>
         <div class="cards">
           <article>
-            <h3>Continuous AI Streams</h3>
-            <p>24/7 AI DJ with live listener chat, adaptive programming and telemetry-grade observability.</p>
+            <h3>{{ t('welcome.card1_title') }}</h3>
+            <p>{{ t('welcome.card1_body') }}</p>
           </article>
           <article>
-            <h3>One-Time Streams</h3>
-            <p>Personalised audio for events, launches, workouts or birthdays with scripted AI hosts.</p>
+            <h3>{{ t('welcome.card2_title') }}</h3>
+            <p>{{ t('welcome.card2_body') }}</p>
           </article>
           <article>
-            <h3>Marketplace</h3>
-            <p>Broadcasters sell scripts, playlists and DJ styles directly into the Mixpla ecosystem.</p>
+            <h3>{{ t('welcome.card3_title') }}</h3>
+            <p>{{ t('welcome.card3_body') }}</p>
           </article>
         </div>
       </section>
 
       <section class="highlights">
-        <div>24/7 Uptime</div>
-        <div>AI DJ always on</div>
-        <div>Scales from 1 to millions</div>
-        <div>Made in Europe</div>
+        <div>{{ t('welcome.highlight1') }}</div>
+        <div>{{ t('welcome.highlight2') }}</div>
+        <div>{{ t('welcome.highlight3') }}</div>
+        <div>{{ t('welcome.highlight4') }}</div>
       </section>
 
       <section class="creator-portal" id="creators">
         <div>
-          <p class="eyebrow">For Broadcasters</p>
-          <h2>Operate your AI stream, own your scripts, ship paid experiences.</h2>
-          <p>Set up stations, manage pipelines and monetise with enterprise tooling built for audio teams.</p>
-          <span class="badge">🔒 Protected — Login Required</span>
+          <p class="eyebrow">{{ t('welcome.portal_eyebrow') }}</p>
+          <h2>{{ t('welcome.portal_headline') }}</h2>
+          <p>{{ t('welcome.portal_body') }}</p>
+          <span class="badge">{{ t('welcome.portal_badge') }}</span>
         </div>
-        <n-button type="primary" size="large" @click="goToBrands">Access Broadcaster Portal</n-button>
+        <n-button type="primary" size="large" @click="goToBrands">{{ t('welcome.cta_portal') }}</n-button>
       </section>
 
       <section class="register" id="register">
         <div class="section-header">
-          <p class="eyebrow">Register as Broadcaster</p>
-          <h2>Apply for Broadcaster Access.</h2>
-          <p>Authentication powered by Keycloak — full portal coming soon.</p>
+          <p class="eyebrow">{{ t('welcome.register_eyebrow') }}</p>
+          <h2>{{ t('welcome.register_headline') }}</h2>
+          <p>{{ t('welcome.register_body') }}</p>
         </div>
         <form class="register-form" @submit.prevent="handleCreatorSubmit">
-          <n-input v-model:value="creatorForm.name" placeholder="Name" size="large" required />
-          <n-input v-model:value="creatorForm.email" placeholder="Email" size="large" required />
-          <n-input v-model:value="creatorForm.channel" placeholder="Channel / Website" size="large" required />
-          <n-button type="primary" attr-type="submit" size="large">Apply for Broadcaster Access</n-button>
+          <n-input v-model:value="creatorForm.name" :placeholder="t('welcome.register_name')" size="large" required />
+          <n-input v-model:value="creatorForm.email" :placeholder="t('welcome.register_email')" size="large" required />
+          <n-input v-model:value="creatorForm.channel" :placeholder="t('welcome.register_channel')" size="large" required />
+          <n-button type="primary" attr-type="submit" size="large">{{ t('welcome.register_submit') }}</n-button>
         </form>
-        <p v-if="submitted" class="success">Application received. We'll reach out soon.</p>
+        <p v-if="submitted" class="success">{{ t('welcome.register_success') }}</p>
       </section>
 
       <footer class="footer">
         <div class="logo">MIXPLA</div>
         <div class="footer-links">
-          <a href="#platform">Platform</a>
-          <a href="#creators">Broadcasters</a>
-          <a href="#about">About</a>
+          <a href="#platform">{{ t('nav.platform') }}</a>
+          <a href="#creators">{{ t('nav.broadcasters') }}</a>
+          <a href="#about">{{ t('nav.about') }}</a>
         </div>
-        <div class="status">● Live — Running 24/7</div>
+        <div class="status">{{ t('welcome.footer_status') }}</div>
         <div class="copyright">© Mixpla</div>
         <a class="affiliation" href="https://semantyca.com" target="_blank" rel="noopener noreferrer">By Semantyca</a>
       </footer>
@@ -98,10 +98,12 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { NButton, NConfigProvider, NInput, darkTheme } from 'naive-ui'
 import { useAuthStore } from '@/stores/auth'
 import { useBrandsStore } from '@/stores/brands'
 
+const { t } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
 const brandsStore = useBrandsStore()

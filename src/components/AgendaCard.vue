@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { NCard, NSpin, NAlert, NCollapse, NCollapseItem, NTag, NEmpty } from 'naive-ui'
 import metriqApiService, { type Agenda, type AgendaScene } from '@/services/metriqApi'
+
+const { t } = useI18n()
 
 const props = defineProps<{ brandSlug: string }>()
 
@@ -57,7 +60,7 @@ async function fetchAgenda() {
   try {
     agenda.value = await metriqApiService.getAgendas(props.brandSlug)
   } catch (e: any) {
-    error.value = e?.message ?? 'Failed to load agenda'
+    error.value = e?.message ?? t('agenda.no_data')
     agenda.value = null
   } finally {
     loading.value = false
@@ -68,9 +71,9 @@ watch(() => props.brandSlug, () => fetchAgenda(), { immediate: true })
 </script>
 
 <template>
-  <NCard title="Today's Agenda" class="agenda-card">
+  <NCard :title="t('agenda.title')" class="agenda-card">
     <template #header-extra>
-      <button class="refresh-btn" :disabled="loading" @click="fetchAgenda">↺ refresh</button>
+      <button class="refresh-btn" :disabled="loading" @click="fetchAgenda">{{ t('agenda.refresh') }}</button>
     </template>
 
     <NSpin :show="loading">
@@ -79,23 +82,23 @@ watch(() => props.brandSlug, () => fetchAgenda(), { immediate: true })
       <template v-if="!loading && !error && agenda">
         <div class="agenda-meta">
           <span v-if="agenda.timezone" class="meta-item">
-            <span class="meta-label">Timezone</span>
+            <span class="meta-label">{{ t('agenda.timezone') }}</span>
             <span class="meta-value">{{ agenda.timezone }}</span>
           </span>
           <span v-if="agenda.country" class="meta-item">
-            <span class="meta-label">Country</span>
+            <span class="meta-label">{{ t('agenda.country') }}</span>
             <span class="meta-value">{{ agenda.country }}</span>
           </span>
           <span class="meta-item">
-            <span class="meta-label">Scenes</span>
+            <span class="meta-label">{{ t('agenda.scenes') }}</span>
             <span class="meta-value">{{ agenda.totalScenes }}</span>
           </span>
           <span class="meta-item">
-            <span class="meta-label">Duration</span>
+            <span class="meta-label">{{ t('agenda.duration') }}</span>
             <span class="meta-value">{{ fmtDuration(agenda.scenes.reduce((a, s) => a + sceneEffectiveDuration(s), 0)) }}</span>
           </span>
           <span class="meta-item">
-            <span class="meta-label">Songs</span>
+            <span class="meta-label">{{ t('agenda.songs') }}</span>
             <span class="meta-value">{{ agenda.scenes.reduce((a, s) => a + sceneEffectiveSongCount(s), 0) }}</span>
           </span>
         </div>
@@ -114,11 +117,11 @@ watch(() => props.brandSlug, () => fetchAgenda(), { immediate: true })
                 </NTag>
                 <span class="scene-title">{{ scene.title }}</span>
                 <span v-if="sceneEffectiveDuration(scene) > 0" class="scene-dur">{{ fmtDuration(sceneEffectiveDuration(scene)) }}</span>
-                <span class="scene-songs">{{ sceneEffectiveSongCount(scene) }} songs</span>
+                <span class="scene-songs">{{ t('agenda.songs_count', { n: sceneEffectiveSongCount(scene) }) }}</span>
               </div>
             </template>
 
-            <div v-if="!scene.timeline?.length" class="timeline-empty">No songs in this scene</div>
+            <div v-if="!scene.timeline?.length" class="timeline-empty">{{ t('agenda.no_songs') }}</div>
             <template v-else>
               <div class="block-list">
                 <div v-for="block in scene.timeline" :key="block.id" class="block-item">
@@ -141,10 +144,10 @@ watch(() => props.brandSlug, () => fetchAgenda(), { immediate: true })
           </NCollapseItem>
         </NCollapse>
 
-        <NEmpty v-else description="No scenes in agenda" />
+        <NEmpty v-else :description="t('agenda.no_scenes')" />
       </template>
 
-      <NEmpty v-else-if="!loading && !error" description="No agenda data available" />
+      <NEmpty v-else-if="!loading && !error" :description="t('agenda.no_data')" />
     </NSpin>
   </NCard>
 </template>

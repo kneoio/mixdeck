@@ -1,5 +1,10 @@
 import authService from './auth'
 import { ApiValidationError, type ValidationError } from '@/utils/errorHandler'
+import { LOCALE_KEY } from '@/i18n'
+
+function getAcceptLanguage(): string {
+  return localStorage.getItem(LOCALE_KEY) || 'en'
+}
 
 export interface PagedResult<T> {
   entries: T[]
@@ -24,6 +29,7 @@ export class ApiClient {
       ...options,
       headers: {
         'Content-Type': 'application/json',
+        'Accept-Language': getAcceptLanguage(),
         ...authHeaders,
         ...options.headers,
       },
