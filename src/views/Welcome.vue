@@ -100,13 +100,9 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { NButton, NConfigProvider, NInput, darkTheme } from 'naive-ui'
-import { useAuthStore } from '@/stores/auth'
-import { useBrandsStore } from '@/stores/brands'
 
 const { t } = useI18n()
 const router = useRouter()
-const authStore = useAuthStore()
-const brandsStore = useBrandsStore()
 
 const creatorForm = reactive({
   name: '',
@@ -120,18 +116,8 @@ function goToMixpla() {
   window.open('https://mixpla.online', '_blank', 'noopener,noreferrer')
 }
 
-async function goToBrands() {
-  if (!authStore.isAuthenticated) {
-    await authStore.login()
-    return
-  }
-  await brandsStore.loadBrands(1, 1)
-  const first = brandsStore.brands[0]
-  if (first) {
-    await router.push(`/brands/${first.id}/playlist`)
-  } else {
-    await router.push('/broadcaster-welcome')
-  }
+function goToBrands() {
+  router.push('/brands')
 }
 
 function scrollToRegister() {

@@ -26,9 +26,9 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function login() {
+  async function login(redirectUri?: string) {
     try {
-      await authService.login()
+      await authService.login(redirectUri)
     } catch (error) {
       console.error('Login failed:', error)
     }

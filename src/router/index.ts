@@ -85,6 +85,12 @@ const router = createRouter({
           component: () => import('../views/BroadcasterWelcome.vue'),
           meta: { requiresAuth: true }
         },
+        {
+          path: '/brands',
+          name: 'brands-redirect',
+          component: () => import('../views/BrandsRedirectView.vue'),
+          meta: { requiresAuth: true }
+        },
       ]
     }
   ],
@@ -106,7 +112,8 @@ router.beforeEach(async (to, _from, next) => {
 
   // Protected route — check authentication
   if (!authStore.isAuthenticated) {
-    next('/')
+    await authStore.login(window.location.origin + to.fullPath)
+    return next(false)
   } else {
     next()
   }

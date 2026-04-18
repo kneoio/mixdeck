@@ -118,12 +118,12 @@ class AuthService {
     }
   }
 
-  async login(): Promise<void> {
+  async login(redirectUri?: string): Promise<void> {
     try {
       if (!globalInitialized) {
         await this.init()
       }
-      await this.keycloak.login({ redirectUri: window.location.origin })
+      await this.keycloak.login({ redirectUri: redirectUri ?? window.location.origin })
     } catch (error) {
       console.error('Login failed:', error)
     }
