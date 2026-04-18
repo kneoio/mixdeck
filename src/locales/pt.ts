@@ -204,7 +204,7 @@ export default {
     duration: 'Duração',
     songs: 'Músicas',
     no_scenes: 'Nenhuma cena na agenda',
-    no_data: 'Nenhum dado de agenda disponível',
+    no_data: 'Agenda não está disponível',
     no_songs: 'Nenhuma música nesta cena',
     songs_count: '{n} músicas',
   },

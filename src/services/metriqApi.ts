@@ -45,7 +45,7 @@ class MetriqApiService extends ApiClient {
   }
 
   async aivoxHeartbeat(brandSlug: string): Promise<boolean> {
-    const response = await fetch(`${this.baseUrl}/aivox/${encodeURIComponent(brandSlug)}/heartbeat`, {
+    const response = await fetch(`${this.baseUrl}/${encodeURIComponent(brandSlug)}/heartbeat`, {
       headers: { 'X-Client-ID': 'mixpla-web' },
     })
     if (!response.ok) return false
@@ -54,11 +54,11 @@ class MetriqApiService extends ApiClient {
   }
 
   async aivoxStart(brandSlug: string): Promise<void> {
-    await this.request<any>(`/aivox/${encodeURIComponent(brandSlug)}/start`, { method: 'POST' })
+    await this.request<any>(`/${encodeURIComponent(brandSlug)}/start`, { method: 'POST' })
   }
 
   async aivoxStop(brandSlug: string): Promise<void> {
-    await this.request<any>(`/aivox/${encodeURIComponent(brandSlug)}/stop`, { method: 'DELETE' })
+    await this.request<any>(`/${encodeURIComponent(brandSlug)}/stop`, { method: 'DELETE' })
   }
 
   async getAgendas(brandSlug: string): Promise<Agenda | null> {

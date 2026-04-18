@@ -60,8 +60,14 @@ async function fetchAgenda() {
   try {
     agenda.value = await metriqApiService.getAgendas(props.brandSlug)
   } catch (e: any) {
-    error.value = e?.message ?? t('agenda.no_data')
-    agenda.value = null
+    const status = e?.message?.match(/status:\s*(\d+)/)?.[1]
+    if (status === '404') {
+      agenda.value = null
+      error.value = null
+    } else {
+      error.value = e?.message ?? t('agenda.no_data')
+      agenda.value = null
+    }
   } finally {
     loading.value = false
   }

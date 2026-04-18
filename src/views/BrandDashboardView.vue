@@ -1,19 +1,21 @@
 <template>
   <div class="brand-dashboard">
-    <PageHeader :title="brandName" subtitle="Station Dashboard" />
+    <PageHeader :title="brandName" :subtitle="t('menu.dashboard')" />
     <AivoxCard v-if="brandSlug" :brand-slug="brandSlug" />
-    <AgendaCard v-if="brandSlug" :brand-slug="brandSlug" />
+    <AgendaCard :brand-slug="brandSlug" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { useBrandsStore } from '@/stores/brands'
 import PageHeader from '@/components/PageHeader.vue'
 import AgendaCard from '@/components/AgendaCard.vue'
 import AivoxCard from '@/components/AivoxCard.vue'
 
+const { t } = useI18n()
 const route = useRoute()
 const brandsStore = useBrandsStore()
 

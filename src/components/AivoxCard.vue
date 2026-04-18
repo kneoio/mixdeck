@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted } from 'vue'
-import { NCard, NButton, NSpace } from 'naive-ui'
+import { NCard, NSwitch } from 'naive-ui'
+import type { CSSProperties } from 'vue'
 import metriqApiService from '@/services/metriqApi'
 import LedIndicator from '@/components/LedIndicator.vue'
 
 const props = defineProps<{ brandSlug: string }>()
 
 const alive = ref(false)
-const starting = ref(false)
-const stopping = ref(false)
+const loading = ref(false)
 
 let pollTimer: ReturnType<typeof setInterval> | null = null
 
@@ -17,24 +17,30 @@ async function poll() {
   alive.value = await metriqApiService.aivoxHeartbeat(props.brandSlug)
 }
 
-async function start() {
-  starting.value = true
+async function handleSwitch(value: boolean) {
+  loading.value = true
   try {
-    await metriqApiService.aivoxStart(props.brandSlug)
+    if (value) {
+      await metriqApiService.aivoxStart(props.brandSlug)
+    } else {
+      await metriqApiService.aivoxStop(props.brandSlug)
+    }
     await poll()
   } finally {
-    starting.value = false
+    loading.value = false
   }
 }
 
-async function stop() {
-  stopping.value = true
-  try {
-    await metriqApiService.aivoxStop(props.brandSlug)
-    await poll()
-  } finally {
-    stopping.value = false
+function railStyle({ focused, checked }: { focused: boolean; checked: boolean }) {
+  const style: CSSProperties = {}
+  if (checked) {
+    style.background = '#18a058'
+    if (focused) style.boxShadow = '0 0 0 2px #18a05840'
+  } else {
+    style.background = '#d03050'
+    if (focused) style.boxShadow = '0 0 0 2px #d0305040'
   }
+  return style
 }
 
 function startPolling() {
@@ -58,18 +64,18 @@ onUnmounted(() => stopPolling())
 <template>
   <NCard class="aivox-card">
     <div class="aivox-row">
-      <NSpace>
-        <NButton size="small" type="primary" :loading="starting" :disabled="starting || stopping" @click="start">
-          Start
-        </NButton>
-        <NButton size="small" type="error" :loading="stopping" :disabled="starting || stopping" @click="stop">
-          Stop
-        </NButton>
-      </NSpace>
+      <NSwitch
+        :value="alive"
+        :loading="loading"
+        :rail-style="railStyle"
+        @update:value="handleSwitch"
+      >
+        <template #checked>Live</template>
+        <template #unchecked>Offline</template>
+      </NSwitch>
       <div class="aivox-status">
         <LedIndicator :active="alive" :pulse="alive" color="#FFD600" :size="18" />
         <span class="aivox-label">Aivox stream</span>
-        <span class="aivox-state">{{ alive ? 'live' : 'offline' }}</span>
       </div>
     </div>
   </NCard>
