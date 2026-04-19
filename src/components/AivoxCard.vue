@@ -5,6 +5,7 @@ import aivoxApiService from '@/services/aivoxApi'
 import LedIndicator from '@/components/LedIndicator.vue'
 
 const props = defineProps<{ brandSlug: string }>()
+const emit = defineEmits<{ (e: 'update:alive', value: boolean): void }>()
 
 const alive = ref(false)
 const loading = ref(false)
@@ -13,7 +14,9 @@ let pollTimer: ReturnType<typeof setInterval> | null = null
 
 async function poll() {
   if (!props.brandSlug) return
-  alive.value = await aivoxApiService.heartbeat(props.brandSlug)
+  const val = await aivoxApiService.heartbeat(props.brandSlug)
+  if (val !== alive.value) emit('update:alive', val)
+  alive.value = val
 }
 
 async function handleClick() {
@@ -22,7 +25,9 @@ async function handleClick() {
     const result = alive.value
       ? await aivoxApiService.stop(props.brandSlug)
       : await aivoxApiService.start(props.brandSlug)
-    alive.value = !['stopped', 'error'].includes(result.status)
+    const val = !['stopped', 'error'].includes(result.status)
+    if (val !== alive.value) emit('update:alive', val)
+    alive.value = val
   } finally {
     loading.value = false
   }

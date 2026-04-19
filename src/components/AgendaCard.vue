@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NCard, NSpin, NAlert, NCollapse, NCollapseItem, NTag, NEmpty } from 'naive-ui'
 import jesoosApiService, { type Agenda, type AgendaScene } from '@/services/jesoosApi'
 
 const { t } = useI18n()
 
-const props = defineProps<{ brandSlug: string }>()
+const props = defineProps<{ brandSlug: string; alive?: boolean }>()
 
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -73,7 +73,23 @@ async function fetchAgenda() {
   }
 }
 
+let refreshTimer: ReturnType<typeof setInterval> | null = null
+
+function stopRefresh() {
+  if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null }
+}
+
+watch(() => props.alive, (val) => {
+  stopRefresh()
+  if (val) {
+    fetchAgenda()
+    refreshTimer = setInterval(fetchAgenda, 60_000)
+  }
+})
+
 watch(() => props.brandSlug, () => fetchAgenda(), { immediate: true })
+
+onUnmounted(() => stopRefresh())
 </script>
 
 <template>
