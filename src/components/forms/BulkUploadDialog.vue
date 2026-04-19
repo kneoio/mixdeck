@@ -8,9 +8,9 @@
         v-model:file-list="fileList"
         :accept="'.mp3,.wav,.flac,.ogg,.m4a,.aac'"
         :custom-request="handleFileUpload"
-        :disabled="isUploading"
+        :disabled="uploadCompleted"
       >
-        <n-button :disabled="isUploading">Choose Files</n-button>
+        <n-button :disabled="uploadCompleted">Choose Files</n-button>
       </n-upload>
 
       <n-data-table
@@ -54,7 +54,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, h } from 'vue'
-import { NModal, NUpload, NButton, NSpace, NProgress, NDataTable, useMessage } from 'naive-ui'
+import { NModal, NUpload, NButton, NSpace, NProgress, NDataTable, NText, useMessage } from 'naive-ui'
 import type { UploadCustomRequestOptions } from 'naive-ui'
 import LedIndicator from '@/components/LedIndicator.vue'
 import YellowLed from '@/components/YellowLed.vue'
@@ -75,7 +75,8 @@ const uploadRef = ref()
 const showDialog = ref(props.show)
 const fileList = ref<any[]>([])
 const fileStatuses = ref<Record<string, any>>({})
-const isUploading = ref(false)
+const activeUploads = ref(0)
+const isUploading = computed(() => activeUploads.value > 0)
 const totalFiles = ref(0)
 const eventSource = ref<EventSource | null>(null)
 const batchId = ref('')
@@ -87,7 +88,7 @@ watch(() => props.show, (v) => {
     if (uploadCompleted.value) emit('upload-complete')
     fileList.value = []
     fileStatuses.value = {}
-    isUploading.value = false
+    activeUploads.value = 0
     uploadCompleted.value = false
     totalFiles.value = 0
     if (eventSource.value) {
@@ -154,6 +155,21 @@ const columns = [
         ]
       )
     }
+  },
+  {
+    title: 'Status',
+    key: 'serverStatus',
+    render(row: any) {
+      const st = fileStatuses.value[row.id]
+      if (!st) return null
+      if (st.status === 'error') {
+        return h(NText, { type: 'error', style: 'font-size:12px;' }, { default: () => st.errorMessage || 'Error' })
+      }
+      if (st.status === 'finished') {
+        return h(NText, { type: 'success', style: 'font-size:12px;' }, { default: () => 'Done' })
+      }
+      return h(NText, { style: 'font-size:12px;opacity:0.5;' }, { default: () => st.status })
+    }
   }
 ]
 
@@ -184,7 +200,6 @@ function startSSE() {
       const ok = Object.values(next).filter((f: any) => f.status === 'finished').length
       if (errors > 0) message.warning(`Processing completed: ${ok} succeeded, ${errors} failed`)
       else message.success(`All ${ok} files processed successfully`)
-      isUploading.value = false
       uploadCompleted.value = true
     }
   }
@@ -193,8 +208,7 @@ function startSSE() {
     if (eventSource.value) {
       eventSource.value.close()
       eventSource.value = null
-      if (isUploading.value) message.error('Connection to server lost')
-      isUploading.value = false
+      if (!uploadCompleted.value) message.error('Lost connection to server — processing status unknown')
     }
   }
 }
@@ -205,12 +219,13 @@ async function handleFileUpload({ file, onProgress, onFinish, onError }: UploadC
     return
   }
 
-  if (!isUploading.value) {
-    isUploading.value = true
+  if (activeUploads.value === 0) {
     batchId.value = `batch-${Date.now()}`
     totalFiles.value = fileList.value.length
     fileStatuses.value = {}
+    startSSE()  // subscribe before any upload so we never miss server events
   }
+  activeUploads.value++
 
   try {
     await datanestApiService.bulkUploadFile(
@@ -221,10 +236,11 @@ async function handleFileUpload({ file, onProgress, onFinish, onError }: UploadC
       (percent) => onProgress?.({ percent })
     )
     onFinish?.()
-    startSSE()
   } catch (err: any) {
     message.error(err.message || `Upload failed: ${file.name}`)
     onError?.()
+  } finally {
+    activeUploads.value--
   }
 }
 

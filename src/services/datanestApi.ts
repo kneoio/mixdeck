@@ -127,9 +127,9 @@ class DatanestApiService extends ApiClient {
     fragmentId: string,
     file: File,
     onProgress: (percent: number) => void
-  ): Promise<void> {
+  ): Promise<any> {
     return new Promise((resolve, reject) => {
-      const uploadId = `upload-${Date.now()}`
+      const uploadId = crypto.randomUUID()
       const url = `${this.baseUrl}/soundfragments/files/${encodeURIComponent(fragmentId)}?uploadId=${encodeURIComponent(uploadId)}`
       const formData = new FormData()
       formData.append('file', file)
@@ -139,8 +139,11 @@ class DatanestApiService extends ApiClient {
         if (e.lengthComputable) onProgress(Math.round((e.loaded * 100) / e.total))
       }
       xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) resolve()
-        else reject(new Error(`Upload failed (${xhr.status}): ${xhr.statusText}`))
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try { resolve(JSON.parse(xhr.responseText)) } catch { resolve(null) }
+        } else {
+          reject(new Error(`Upload failed (${xhr.status}): ${xhr.statusText}`))
+        }
       }
       xhr.onerror = () => reject(new Error('Network error during upload'))
 

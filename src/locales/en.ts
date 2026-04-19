@@ -166,6 +166,7 @@ export default {
     choose_file: 'Choose file',
     saved: 'Sound fragment saved',
     load_failed: 'Failed to load',
+    wait_upload: 'Please wait for the file upload to complete before saving.',
   },
   listenersView: {
     subtitle: 'Listeners',

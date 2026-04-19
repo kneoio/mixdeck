@@ -33,10 +33,11 @@ const loading = ref(false)
 const activeTab = ref('properties')
 
 // File upload state
-const pendingFile = ref<File | null>(null)
 const existingUrl = ref('')
+const existingFileName = ref('')
 const uploadProgress = ref(0)
 const isUploading = ref(false)
+const uploadedFileNames = ref<string[]>([])  // newly uploaded during this session
 
 const formData = ref({
   type: 'SONG' as string,
@@ -46,7 +47,7 @@ const formData = ref({
   description: '',
   genres: [] as string[],
   labels: [] as string[],
-  representedInBrands: [] as string[],
+  representedInBrands: [brandId.value] as string[],
   expiresAt: '' as string | null,
   length: null as number | null,
 })
@@ -72,10 +73,6 @@ const brandOptions = computed(() =>
   }))
 )
 
-const existingFileName = computed(() => {
-  if (!existingUrl.value) return ''
-  return existingUrl.value.split('/').pop()?.split('?')[0] || existingUrl.value
-})
 
 const backRoute = computed(() => `/brands/${brandId.value}/playlist`)
 
@@ -90,37 +87,55 @@ async function handleDownload(url: string, filename: string) {
   }
 }
 
-// Capture file without uploading yet — upload happens after save
-function handleFileCapture({ file, onFinish }: UploadCustomRequestOptions) {
-  if (file.file) pendingFile.value = file.file
-  onFinish?.()
+async function handleFileCapture({ file, onFinish, onError }: UploadCustomRequestOptions) {
+  const chosen = file.file
+  if (!chosen) { onFinish?.(); return }
+
+  isUploading.value = true
+  uploadProgress.value = 0
+
+  try {
+    // Use existing ID or "temp" — server links temp uploads on save via newlyUploaded
+    const fragmentId = (route.params.fragmentId as string) || 'temp'
+    const res = await datanestApiService.uploadFragmentFile(fragmentId, chosen, (p) => { uploadProgress.value = p })
+
+    uploadedFileNames.value.push(chosen.name)
+
+    // Apply metadata returned by server (title, artist, album, length, genres)
+    const meta = res?.metadata ?? res?.payload?.metadata
+    if (meta) {
+      if (meta.title && !formData.value.title) formData.value.title = meta.title
+      if (meta.artist && !formData.value.artist) formData.value.artist = meta.artist
+      if (meta.album && !formData.value.album) formData.value.album = meta.album
+      if (meta.length && formData.value.length == null) formData.value.length = meta.length
+    }
+
+    onFinish?.()
+  } catch (e: any) {
+    handleApiError(e, message)
+    onError?.()
+  } finally {
+    isUploading.value = false
+  }
 }
 
 async function handleSave() {
+  if (isUploading.value) {
+    message.warning(t('fragmentForm.wait_upload'))
+    return
+  }
   try {
     loading.value = true
     const id = isEditing.value ? (route.params.fragmentId as string) : null
-    const saved = await store.saveFragment(id, formData.value as any)
-    const fragmentId: string = saved?.id || id || ''
-
-    if (pendingFile.value) {
-      if (!fragmentId) throw new Error('Fragment ID missing — cannot upload file')
-      isUploading.value = true
-      uploadProgress.value = 0
-      await datanestApiService.uploadFragmentFile(
-        fragmentId,
-        pendingFile.value,
-        (p) => { uploadProgress.value = p }
-      )
-    }
-
+    const payload: any = { ...formData.value }
+    if (uploadedFileNames.value.length) payload.newlyUploaded = uploadedFileNames.value
+    await store.saveFragment(id, payload)
     message.success(t('fragmentForm.saved'))
     router.push(backRoute.value)
   } catch (error: any) {
     handleApiError(error, message)
   } finally {
     loading.value = false
-    isUploading.value = false
   }
 }
 
@@ -151,10 +166,12 @@ onMounted(async () => {
           ? frag.length
           : (typeof frag.length === 'string' ? parseInt(frag.length) || null : null),
       }
-      const fileUrl = frag.uploadedFiles?.[0]?.url || frag.url || ''
+      const f0 = frag.uploadedFiles?.[0]
+      const fileUrl = f0?.url || frag.url || ''
       existingUrl.value = fileUrl.startsWith('http')
         ? fileUrl
         : fileUrl ? `${appConfig.datanestServer}${fileUrl}` : ''
+      existingFileName.value = f0?.name || fileUrl.split('/').pop()?.split('?')[0] || ''
     }
   } catch (error: any) {
     message.error(error?.message || t('fragmentForm.load_failed'))
