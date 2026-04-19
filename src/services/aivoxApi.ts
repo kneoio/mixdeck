@@ -16,11 +16,11 @@ class AivoxApiService extends ApiClient {
   }
 
   async start(brandSlug: string): Promise<{ status: string }> {
-    return this.request<{ status: string }>(`/command/start?brand=${encodeURIComponent(brandSlug)}`, { method: 'POST' })
+    return this.request<{ status: string }>(`/command/start?brand=${encodeURIComponent(brandSlug)}`, { method: 'POST', headers: { 'X-Client-ID': 'mixpla-web' } })
   }
 
   async stop(brandSlug: string): Promise<{ status: string }> {
-    return this.request<{ status: string }>(`/command/stop?brand=${encodeURIComponent(brandSlug)}`, { method: 'DELETE' })
+    return this.request<{ status: string }>(`/command/stop?brand=${encodeURIComponent(brandSlug)}`, { method: 'DELETE', headers: { 'X-Client-ID': 'mixpla-web' } })
   }
 }
 
