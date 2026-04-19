@@ -20,12 +20,10 @@ async function poll() {
 async function handleSwitch(value: boolean) {
   loading.value = true
   try {
-    if (value) {
-      await aivoxApiService.start(props.brandSlug)
-    } else {
-      await aivoxApiService.stop(props.brandSlug)
-    }
-    await poll()
+    const result = value
+      ? await aivoxApiService.start(props.brandSlug)
+      : await aivoxApiService.stop(props.brandSlug)
+    alive.value = !['stopped', 'error'].includes(result.status)
   } finally {
     loading.value = false
   }

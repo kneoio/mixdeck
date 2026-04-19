@@ -7,7 +7,7 @@ class AivoxApiService extends ApiClient {
   }
 
   async heartbeat(brandSlug: string): Promise<boolean> {
-    const response = await fetch(`${this.baseUrl}/${encodeURIComponent(brandSlug)}/heartbeat`, {
+    const response = await fetch(`${this.baseUrl}/info/heartbeat/${encodeURIComponent(brandSlug)}`, {
       headers: { 'X-Client-ID': 'mixpla-web' },
     })
     if (!response.ok) return false
@@ -15,12 +15,12 @@ class AivoxApiService extends ApiClient {
     return text.trim() === 'true'
   }
 
-  async start(brandSlug: string): Promise<void> {
-    await this.request<any>(`/${encodeURIComponent(brandSlug)}/start`, { method: 'POST' })
+  async start(brandSlug: string): Promise<{ status: string }> {
+    return this.request<{ status: string }>(`/command/start?brand=${encodeURIComponent(brandSlug)}`, { method: 'POST' })
   }
 
-  async stop(brandSlug: string): Promise<void> {
-    await this.request<any>(`/${encodeURIComponent(brandSlug)}/stop`, { method: 'DELETE' })
+  async stop(brandSlug: string): Promise<{ status: string }> {
+    return this.request<{ status: string }>(`/command/stop?brand=${encodeURIComponent(brandSlug)}`, { method: 'DELETE' })
   }
 }
 

@@ -20,10 +20,7 @@ export default defineConfig({
     port: 5175,
     strictPort: true,
     host: true,
-    proxy: {
-      '/datanest': { target: 'http://localhost:38799', rewrite: (path) => path.replace(/^\/datanest/, '') },
-      '/metriq': { target: 'http://localhost:38790', rewrite: (path) => path.replace(/^\/metriq/, '') },
-    },
+
   },
   preview: {
     port: 3043,
