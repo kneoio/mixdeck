@@ -108,8 +108,36 @@ const TIMEZONES = [
   { label: 'America/Sao_Paulo (-3)', value: 'America/Sao_Paulo' },
 ]
 
+const mostUsedLanguages = [
+  { label: 'Main English', value: 'en-US' },
+  { label: 'British English', value: 'en-GB' },
+  { label: 'Spanish (Spain)', value: 'es-ES' },
+  { label: 'Spanish (US)', value: 'es-US' },
+  { label: 'French (France)', value: 'fr-FR' },
+  { label: 'German', value: 'de-DE' },
+  { label: 'Hindi', value: 'hi-IN' },
+  { label: 'Turkish', value: 'tr-TR' },
+  { label: 'Arabic', value: 'ar-XA' },
+  { label: 'Chinese (Mandarin)', value: 'cmn-CN' },
+  { label: 'Hebrew', value: 'he-IL' },
+  { label: 'Bulgarian', value: 'bg-BG' },
+  { label: 'Latvian', value: 'lv-LV' },
+  { label: 'Swedish', value: 'sv-SE' },
+  { label: 'Italian', value: 'it-IT' },
+  { label: 'Portuguese (Brazil)', value: 'pt-BR' },
+  { label: 'Japanese', value: 'ja-JP' },
+  { label: 'Korean', value: 'ko-KR' },
+  { label: 'Finnish', value: 'fi-FI' },
+  { label: 'Thai', value: 'th-TH' },
+  { label: 'Ukrainian', value: 'uk-UA' },
+  { label: 'Dutch (Netherlands)', value: 'nl-NL' },
+  { label: 'Russian', value: 'ru-RU' },
+  { label: 'Chinese (Taiwan)', value: 'cmn-TW' },
+  { label: 'Portuguese (Portugal)', value: 'pt-PT' },
+]
+
 function createLocalizedName() {
-  return { lang: 'en', name: '' }
+  return { lang: 'en-US', name: '' }
 }
 
 function buildLocalizedName(): Record<string, string> {
@@ -241,8 +269,8 @@ onMounted(async () => {
             <NDynamicInput v-model:value="localizedNames" :on-create="createLocalizedName" style="width:100%">
               <template #default="{ index }">
                 <NSpace align="center" style="width:100%">
-                  <NInput v-model:value="localizedNames[index].lang"
-                    placeholder="en" style="width:80px" />
+                  <NSelect v-model:value="localizedNames[index].lang"
+                    :options="mostUsedLanguages" filterable style="width:200px" />
                   <NInput v-model:value="localizedNames[index].name" style="flex:1" />
                 </NSpace>
               </template>
