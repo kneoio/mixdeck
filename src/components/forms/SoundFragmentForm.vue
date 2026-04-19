@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   NButton, NSpace, NForm, NFormItem, NInput, NSelect,
-  NTabs, NTabPane, NUpload, NProgress, useMessage
+  NTabs, NTabPane, NUpload, NProgress, useMessage, useLoadingBar
 } from 'naive-ui'
 import type { UploadCustomRequestOptions } from 'naive-ui'
 import FormWrapper from '@/components/FormWrapper.vue'
@@ -22,6 +22,7 @@ const router = useRouter()
 const store = useSoundFragmentsStore()
 const brandsStore = useBrandsStore()
 const message = useMessage()
+const loadingBar = useLoadingBar()
 
 const genreList = ref<{ id: string; localizedName: Record<string, string>; identifier: string }[]>([])
 const labelList = ref<{ id: string; localizedName: Record<string, string>; identifier: string }[]>([])
@@ -78,6 +79,17 @@ const existingFileName = computed(() => {
 
 const backRoute = computed(() => `/brands/${brandId.value}/playlist`)
 
+async function handleDownload(url: string, filename: string) {
+  loadingBar.start()
+  try {
+    await datanestApiService.downloadFile(url, filename)
+    loadingBar.finish()
+  } catch (e: any) {
+    loadingBar.error()
+    handleApiError(e, message)
+  }
+}
+
 // Capture file without uploading yet — upload happens after save
 function handleFileCapture({ file, onFinish }: UploadCustomRequestOptions) {
   if (file.file) pendingFile.value = file.file
@@ -91,7 +103,8 @@ async function handleSave() {
     const saved = await store.saveFragment(id, formData.value as any)
     const fragmentId: string = saved?.id || id || ''
 
-    if (pendingFile.value && fragmentId) {
+    if (pendingFile.value) {
+      if (!fragmentId) throw new Error('Fragment ID missing — cannot upload file')
       isUploading.value = true
       uploadProgress.value = 0
       await datanestApiService.uploadFragmentFile(
@@ -141,7 +154,7 @@ onMounted(async () => {
       const fileUrl = frag.uploadedFiles?.[0]?.url || frag.url || ''
       existingUrl.value = fileUrl.startsWith('http')
         ? fileUrl
-        : fileUrl ? `${appConfig.datanestServer}/datanest${fileUrl}` : ''
+        : fileUrl ? `${appConfig.datanestServer}${fileUrl}` : ''
     }
   } catch (error: any) {
     message.error(error?.message || t('fragmentForm.load_failed'))
@@ -215,7 +228,7 @@ onMounted(async () => {
                 v-if="existingUrl"
                 href="#"
                 style="font-size: 13px;"
-                @click.prevent="datanestApiService.downloadFile(existingUrl, existingFileName)"
+                @click.prevent="handleDownload(existingUrl, existingFileName)"
               >{{ existingFileName }}</a>
               <NUpload
                 :max="1"
