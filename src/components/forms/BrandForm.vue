@@ -109,31 +109,25 @@ const TIMEZONES = [
 ]
 
 const mostUsedLanguages = [
-  { label: 'Main English', value: 'en-US' },
-  { label: 'British English', value: 'en-GB' },
-  { label: 'Spanish (Spain)', value: 'es-ES' },
-  { label: 'Spanish (US)', value: 'es-US' },
-  { label: 'French (France)', value: 'fr-FR' },
-  { label: 'German', value: 'de-DE' },
-  { label: 'Hindi', value: 'hi-IN' },
-  { label: 'Turkish', value: 'tr-TR' },
-  { label: 'Arabic', value: 'ar-XA' },
-  { label: 'Chinese (Mandarin)', value: 'cmn-CN' },
-  { label: 'Hebrew', value: 'he-IL' },
-  { label: 'Bulgarian', value: 'bg-BG' },
-  { label: 'Latvian', value: 'lv-LV' },
-  { label: 'Swedish', value: 'sv-SE' },
-  { label: 'Italian', value: 'it-IT' },
-  { label: 'Portuguese (Brazil)', value: 'pt-BR' },
-  { label: 'Japanese', value: 'ja-JP' },
-  { label: 'Korean', value: 'ko-KR' },
-  { label: 'Finnish', value: 'fi-FI' },
-  { label: 'Thai', value: 'th-TH' },
-  { label: 'Ukrainian', value: 'uk-UA' },
-  { label: 'Dutch (Netherlands)', value: 'nl-NL' },
-  { label: 'Russian', value: 'ru-RU' },
-  { label: 'Chinese (Taiwan)', value: 'cmn-TW' },
-  { label: 'Portuguese (Portugal)', value: 'pt-PT' },
+  { label: 'English', value: 'en-US' },
+  { label: 'Español', value: 'es-ES' },
+  { label: 'Français', value: 'fr-FR' },
+  { label: 'Português', value: 'pt-PT' },
+  { label: 'Deutsch', value: 'de-DE' },
+  { label: 'हिन्दी', value: 'hi-IN' },
+  { label: 'Türkçe', value: 'tr-TR' },
+  { label: 'العربية', value: 'ar-XA' },
+  { label: '中文', value: 'cmn-CN' },
+  { label: 'Български', value: 'bg-BG' },
+  { label: 'Latviešu', value: 'lv-LV' },
+  { label: 'Svenska', value: 'sv-SE' },
+  { label: 'Italiano', value: 'it-IT' },
+  { label: '日本語', value: 'ja-JP' },
+  { label: '한국어', value: 'ko-KR' },
+  { label: 'Suomi', value: 'fi-FI' },
+  { label: 'ไทย', value: 'th-TH' },
+  { label: 'Українська', value: 'uk-UA' },
+  { label: 'Русский', value: 'ru-RU' }
 ]
 
 function createLocalizedName() {
@@ -270,7 +264,7 @@ onMounted(async () => {
               <template #default="{ index }">
                 <NSpace align="center" style="width:100%">
                   <NSelect v-model:value="localizedNames[index].lang"
-                    :options="mostUsedLanguages" filterable style="width:200px" />
+                    :options="mostUsedLanguages" filterable style="width:140px" />
                   <NInput v-model:value="localizedNames[index].name" style="flex:1" />
                 </NSpace>
               </template>
