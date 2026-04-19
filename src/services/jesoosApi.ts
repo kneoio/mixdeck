@@ -39,37 +39,19 @@ export interface Agenda {
   scenes: AgendaScene[]
 }
 
-class MetriqApiService extends ApiClient {
+class JesoosApiService extends ApiClient {
   constructor() {
-    super(appConfig.metriqServer)
-  }
-
-  async aivoxHeartbeat(brandSlug: string): Promise<boolean> {
-    const response = await fetch(`${this.baseUrl}/${encodeURIComponent(brandSlug)}/heartbeat`, {
-      headers: { 'X-Client-ID': 'mixpla-web' },
-    })
-    if (!response.ok) return false
-    const text = await response.text()
-    return text.trim() === 'true'
-  }
-
-  async aivoxStart(brandSlug: string): Promise<void> {
-    await this.request<any>(`/${encodeURIComponent(brandSlug)}/start`, { method: 'POST' })
-  }
-
-  async aivoxStop(brandSlug: string): Promise<void> {
-    await this.request<any>(`/${encodeURIComponent(brandSlug)}/stop`, { method: 'DELETE' })
+    super(appConfig.jesoosServer)
   }
 
   async getAgendas(brandSlug: string): Promise<Agenda | null> {
-    const response = await this.request<any>(`/jesoos/info/${encodeURIComponent(brandSlug)}/agendas`)
+    const response = await this.request<any>(`/info/${encodeURIComponent(brandSlug)}/agendas`)
     if (!response) return null
-    // Response may be { brandSlug: agendaObj } or the agendaObj directly
     if (response.scenes != null) return response as Agenda
     const nested = response[brandSlug]
     return nested ?? (Object.values(response)[0] as Agenda) ?? null
   }
 }
 
-export const metriqApiService = new MetriqApiService()
-export default metriqApiService
+export const jesoosApiService = new JesoosApiService()
+export default jesoosApiService

@@ -2,7 +2,7 @@
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NCard, NSpin, NAlert, NCollapse, NCollapseItem, NTag, NEmpty } from 'naive-ui'
-import metriqApiService, { type Agenda, type AgendaScene } from '@/services/metriqApi'
+import jesoosApiService, { type Agenda, type AgendaScene } from '@/services/jesoosApi'
 
 const { t } = useI18n()
 
@@ -58,7 +58,7 @@ async function fetchAgenda() {
   loading.value = true
   error.value = null
   try {
-    agenda.value = await metriqApiService.getAgendas(props.brandSlug)
+    agenda.value = await jesoosApiService.getAgendas(props.brandSlug)
   } catch (e: any) {
     const status = e?.message?.match(/status:\s*(\d+)/)?.[1]
     if (status === '404') {

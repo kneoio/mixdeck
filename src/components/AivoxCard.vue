@@ -2,7 +2,7 @@
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { NCard, NSwitch } from 'naive-ui'
 import type { CSSProperties } from 'vue'
-import metriqApiService from '@/services/metriqApi'
+import aivoxApiService from '@/services/aivoxApi'
 import LedIndicator from '@/components/LedIndicator.vue'
 
 const props = defineProps<{ brandSlug: string }>()
@@ -14,16 +14,16 @@ let pollTimer: ReturnType<typeof setInterval> | null = null
 
 async function poll() {
   if (!props.brandSlug) return
-  alive.value = await metriqApiService.aivoxHeartbeat(props.brandSlug)
+  alive.value = await aivoxApiService.heartbeat(props.brandSlug)
 }
 
 async function handleSwitch(value: boolean) {
   loading.value = true
   try {
     if (value) {
-      await metriqApiService.aivoxStart(props.brandSlug)
+      await aivoxApiService.start(props.brandSlug)
     } else {
-      await metriqApiService.aivoxStop(props.brandSlug)
+      await aivoxApiService.stop(props.brandSlug)
     }
     await poll()
   } finally {
