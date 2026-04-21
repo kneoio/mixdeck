@@ -46,6 +46,10 @@ export default {
     settings: 'Settings',
     add_new: 'Add New',
   },
+  dashboard: {
+    stationTime: 'Station Time',
+    timezone: 'Timezone',
+  },
   userMenu: {
     profile: 'Profile',
     logout: 'Logout',
