@@ -3,9 +3,8 @@ import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
-  NDataTable, NButton, NSpace, NPopconfirm, type DataTableColumns
+  NDataTable, NButton, NSpace, useMessage, type DataTableColumns
 } from 'naive-ui'
-import { useMessage } from 'naive-ui'
 import { useBrandsStore } from '@/stores/brands'
 import datanestApiService from '@/services/datanestApi'
 import PageHeader from '@/components/PageHeader.vue'
@@ -94,20 +93,6 @@ async function fetchData(page = pageNum.value, size = pageSize.value) {
   }
 }
 
-async function handleBulkDelete() {
-  try {
-    loading.value = true
-    await Promise.all(selectedIds.value.map(id => datanestApiService.deleteBrandListener(id)))
-    message.success(t('listenersView.deleted', { count: selectedIds.value.length }))
-    selectedIds.value = []
-    await fetchData()
-  } catch (e: any) {
-    handleApiError(e, message)
-  } finally {
-    loading.value = false
-  }
-}
-
 // Fetch when slugName becomes available (brand loaded from store)
 watch(slugName, (val) => { if (val) fetchData(1) }, { immediate: true })
 </script>
@@ -117,17 +102,9 @@ watch(slugName, (val) => { if (val) fetchData(1) }, { immediate: true })
     <PageHeader :title="brandName" :subtitle="t('listenersView.subtitle')" :count="totalCount" />
     <ActionBar>
       <NSpace>
-        <NButton type="primary" @click="router.push(`/brands/${route.params.id}/listeners/new`)">
-          {{ t('listenersView.new_listener') }}
+        <NButton type="error" @click="message.info('Bulk actions coming soon — currently view-only')">
+          {{ t('listenersView.ban_btn', { count: selectedIds.length }) }}
         </NButton>
-        <NPopconfirm @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
-          <template #trigger>
-            <NButton type="error" :disabled="selectedIds.length === 0">
-              {{ t('listenersView.delete_btn', { count: selectedIds.length }) }}
-            </NButton>
-          </template>
-          {{ t('listenersView.delete_confirm', { count: selectedIds.length }) }}
-        </NPopconfirm>
       </NSpace>
     </ActionBar>
     <NDataTable
@@ -138,7 +115,7 @@ watch(slugName, (val) => { if (val) fetchData(1) }, { immediate: true })
       v-model:checked-row-keys="selectedIds"
       :pagination="pagination"
       remote
-      :row-props="(row: any) => ({ style: 'cursor:pointer', onClick: () => router.push(`/brands/${route.params.id}/listeners/${row.id || row.listener?.id}`) })"
+      :row-props="(row: any) => ({ style: 'cursor:pointer', onClick: (e: MouseEvent) => { if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return; router.push(`/brands/${route.params.id}/listeners/${row.id || row.listener?.id}`) } })"
       @update:page="(p) => { pageNum = p; fetchData(p) }"
       @update:page-size="(s) => { pageSize = s; fetchData(1, s) }"
     />

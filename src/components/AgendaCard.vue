@@ -61,7 +61,10 @@ async function fetchAgenda() {
     agenda.value = await jesoosApiService.getAgendas(props.brandSlug)
   } catch (e: any) {
     const status = e?.message?.match(/status:\s*(\d+)/)?.[1]
-    if (status === '404') {
+    const isConnectionError = e?.message?.includes('Failed to fetch') ||
+                               e?.message?.includes('ERR_CONNECTION_REFUSED') ||
+                               e?.message?.includes('NetworkError')
+    if (status === '404' || isConnectionError) {
       agenda.value = null
       error.value = null
     } else {

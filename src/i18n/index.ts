@@ -8,9 +8,10 @@ import pt from '@/locales/pt'
 import ja from '@/locales/ja'
 import ar from '@/locales/ar'
 import hi from '@/locales/hi'
+import uk from '@/locales/uk'
 
 export const LOCALE_KEY = 'mixdeck_locale'
-export const SUPPORTED_LOCALES = ['en', 'ru', 'de', 'fr', 'es', 'pt', 'ja', 'ar', 'hi'] as const
+export const SUPPORTED_LOCALES = ['en', 'ru', 'de', 'fr', 'es', 'pt', 'ja', 'ar', 'hi', 'uk'] as const
 export type SupportedLocale = typeof SUPPORTED_LOCALES[number]
 
 export const LOCALE_LABELS: Record<SupportedLocale, string> = {
@@ -23,6 +24,7 @@ export const LOCALE_LABELS: Record<SupportedLocale, string> = {
   ja: '日本語',
   ar: 'العربية',
   hi: 'हिन्दी',
+  uk: 'Українська',
 }
 
 const RTL_LOCALES = new Set<SupportedLocale>(['ar'])
@@ -56,7 +58,7 @@ const i18n = createI18n({
   legacy: false,
   locale: getSavedLocale(),
   fallbackLocale: 'en',
-  messages: { en, ru, de, fr, es, pt, ja, ar, hi },
+  messages: { en, ru, de, fr, es, pt, ja, ar, hi, uk },
 })
 
 export default i18n

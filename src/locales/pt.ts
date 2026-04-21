@@ -176,6 +176,7 @@ export default {
     col_registered: 'Registado',
     new_listener: 'Novo ouvinte',
     delete_btn: 'Eliminar ({count})',
+    ban_btn: 'Banir ({count})',
     delete_confirm: 'Eliminar {count} ouvinte(s)?',
     deleted: '{count} ouvinte(s) eliminado(s)',
   },

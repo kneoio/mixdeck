@@ -176,6 +176,7 @@ export default {
     col_registered: 'Registriert',
     new_listener: 'Neuer Hörer',
     delete_btn: 'Löschen ({count})',
+    ban_btn: 'Sperren ({count})',
     delete_confirm: '{count} Hörer löschen?',
     deleted: '{count} Hörer gelöscht',
   },

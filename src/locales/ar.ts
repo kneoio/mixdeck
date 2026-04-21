@@ -176,7 +176,8 @@ export default {
     col_registered: 'تاريخ التسجيل',
     new_listener: 'مستمع جديد',
     delete_btn: 'حذف ({count})',
-    delete_confirm: 'حذف {count} مستمع؟',
+    ban_btn: 'حظر ({count})',
+    delete_confirm: 'حذف {count} مستمع(ين)؟',
     deleted: 'تم حذف {count} مستمع',
   },
   playlistView: {

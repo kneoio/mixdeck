@@ -174,9 +174,10 @@ export default {
     col_type: 'タイプ',
     col_user_data: 'ユーザーデータ',
     col_registered: '登録日',
-    new_listener: '新規リスナー',
+    new_listener: '新しいリスナー',
     delete_btn: '削除 ({count})',
-    delete_confirm: '{count}件のリスナーを削除しますか？',
+    ban_btn: '禁止 ({count})',
+    delete_confirm: '{count} 人のリスナーを削除しますか？',
     deleted: '{count}件のリスナーを削除しました',
   },
   playlistView: {

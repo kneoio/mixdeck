@@ -176,6 +176,7 @@ export default {
     col_registered: 'Регистрация',
     new_listener: 'Новый слушатель',
     delete_btn: 'Удалить ({count})',
+    ban_btn: 'Заблокировать ({count})',
     delete_confirm: 'Удалить {count} слушателя(ей)?',
     deleted: 'Удалено {count} слушателя(ей)',
   },

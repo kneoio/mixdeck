@@ -181,6 +181,7 @@ export default {
     col_registered: 'Registered',
     new_listener: 'New Listener',
     delete_btn: 'Delete ({count})',
+    ban_btn: 'Ban ({count})',
     delete_confirm: 'Delete {count} listener(s)?',
     deleted: 'Deleted {count} listener(s)',
   },

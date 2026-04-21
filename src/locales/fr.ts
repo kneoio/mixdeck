@@ -176,7 +176,8 @@ export default {
     col_registered: 'Inscrit',
     new_listener: 'Nouvel auditeur',
     delete_btn: 'Supprimer ({count})',
-    delete_confirm: 'Supprimer {count} auditeur(s)?',
+    ban_btn: 'Bannir ({count})',
+    delete_confirm: 'Supprimer {count} auditeur(s) ?',
     deleted: '{count} auditeur(s) supprimé(s)',
   },
   playlistView: {

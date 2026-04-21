@@ -176,6 +176,7 @@ export default {
     col_registered: 'पंजीकृत',
     new_listener: 'नया श्रोता',
     delete_btn: 'हटाएं ({count})',
+    ban_btn: 'प्रतिबंध ({count})',
     delete_confirm: '{count} श्रोता हटाएं?',
     deleted: '{count} श्रोता हटाए गए',
   },
