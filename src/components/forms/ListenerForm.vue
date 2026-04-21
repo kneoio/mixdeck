@@ -7,7 +7,6 @@ import {
 } from 'naive-ui'
 import FormWrapper from '@/components/FormWrapper.vue'
 import { useListenersStore } from '@/stores/listeners'
-import { useBrandsStore } from '@/stores/brands'
 import { useRoute, useRouter } from 'vue-router'
 import dictionaryApiService from '@/services/dictionaryApi'
 import { handleApiError } from '@/utils/notificationService'
@@ -17,23 +16,25 @@ const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const store = useListenersStore()
-const brandsStore = useBrandsStore()
 const message = useMessage()
 
 const brandId = computed(() => route.params.id as string)
 const isEditing = computed(() => !!route.params.listenerId && route.params.listenerId !== 'new')
+
+const pageTitle = computed(() => {
+  if (!isEditing.value) return t('listenerForm.create_title')
+  const firstName = localizedNameArray.value.find(n => n.name?.trim())?.name
+  return firstName || t('listenerForm.edit_title')
+})
+
 const loading = ref(false)
 
 // Form fields
-const email = ref('')
-const slugName = ref('')
 const userId = ref<number | string>('')
-const listenerOf = ref<string[]>([])
 const labels = ref<string[]>([])
 
 // Dynamic arrays
 const localizedNameArray = ref<{ language: string; name: string }[]>([])
-const nickNameArray = ref<{ language: string; names: string[] }[]>([])
 const userDataArray = ref<{ key: string; value: string }[]>([])
 
 // Options
@@ -46,16 +47,9 @@ const langOptions = [
   { label: 'Chinese', value: 'zh' },
 ]
 
-const brandOptions = computed(() =>
-  brandsStore.brands.map(b => ({
-    label: b.localizedName?.['en'] || b.title || b.slugName || b.id,
-    value: b.id,
-  }))
-)
 const labelOptions = ref<{ label: string; value: string }[]>([])
 
 function createLocalizedName() { return { language: '', name: '' } }
-function createNickName() { return { language: '', names: [''] } }
 function createUserData() { return { key: '', value: '' } }
 
 function buildRecord<T>(arr: { language: string; name?: T; names?: T }[], field: 'name' | 'names'): Record<string, T> {
@@ -77,21 +71,13 @@ function buildUserData(): Record<string, string> {
 const backRoute = computed(() => `/brands/${brandId.value}/listeners`)
 
 async function handleSave() {
-  if (!email.value?.trim()) {
-    message.error(t('listenerForm.email_required'))
-    return
-  }
   try {
     loading.value = true
     const id = isEditing.value ? (route.params.listenerId as string) : null
     await store.saveListener(id, {
-      email: email.value,
-      slugName: slugName.value || undefined,
       userId: userId.value ? Number(userId.value) : undefined,
       localizedName: buildRecord(localizedNameArray.value, 'name'),
-      nickName: buildRecord(nickNameArray.value, 'names'),
       userData: buildUserData(),
-      listenerOf: listenerOf.value,
       labels: labels.value,
     })
     message.success(t('listenerForm.saved'))
@@ -118,13 +104,9 @@ onMounted(async () => {
 
     if (isEditing.value) {
       const data = await store.fetchListener(route.params.listenerId as string)
-      email.value = data.email || ''
-      slugName.value = data.slugName || ''
       userId.value = data.userId || ''
-      listenerOf.value = data.listenerOf || []
       labels.value = data.labels || []
       localizedNameArray.value = Object.entries(data.localizedName || {}).map(([language, name]) => ({ language, name }))
-      nickNameArray.value = Object.entries(data.nickName || {}).map(([language, names]) => ({ language, names: names as string[] }))
       userDataArray.value = Object.entries(data.userData || {}).map(([key, value]) => ({ key, value: value as string }))
     }
   } catch (error: any) {
@@ -138,7 +120,7 @@ onMounted(async () => {
 
 <template>
   <FormWrapper
-    :title="isEditing ? t('listenerForm.edit_title') : t('listenerForm.create_title')"
+    :title="pageTitle"
     :subtitle="isEditing ? t('listenerForm.edit_subtitle') : t('listenerForm.create_subtitle')"
     :loading="loading"
   >
@@ -162,18 +144,6 @@ onMounted(async () => {
         </NDynamicInput>
       </NFormItem>
 
-      <NFormItem :label="t('listenerForm.nick_names')">
-        <NDynamicInput v-model:value="nickNameArray" :on-create="createNickName" style="width:100%">
-          <template #default="{ value }">
-            <NSpace align="center" style="width:100%" :wrap="false">
-              <NSelect v-model:value="value.language" :options="langOptions"
-                filterable style="width:130px; flex-shrink:0" />
-              <NDynamicInput v-model:value="value.names" :on-create="() => ''" style="flex:1" />
-            </NSpace>
-          </template>
-        </NDynamicInput>
-      </NFormItem>
-
       <NFormItem :label="t('listenerForm.user_data')">
         <NDynamicInput v-model:value="userDataArray" :on-create="createUserData" style="width:100%">
           <template #default="{ value }">
@@ -183,20 +153,6 @@ onMounted(async () => {
             </NSpace>
           </template>
         </NDynamicInput>
-      </NFormItem>
-
-      <NFormItem :label="t('listenerForm.email')">
-        <NInput v-model:value="email" placeholder="listener@example.com" style="width:100%" />
-      </NFormItem>
-
-      <NFormItem :label="t('listenerForm.slug_name')">
-        <NInput v-model:value="slugName" style="width:100%" />
-      </NFormItem>
-
-      <NFormItem :label="t('listenerForm.listener_of')">
-        <NSelect v-model:value="listenerOf" :options="brandOptions"
-          multiple filterable style="width:100%"
-          :placeholder="t('listenerForm.select_brands')" />
       </NFormItem>
 
       <NFormItem :label="t('listenerForm.labels')">

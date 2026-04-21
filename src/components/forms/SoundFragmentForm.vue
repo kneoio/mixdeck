@@ -76,6 +76,14 @@ const brandOptions = computed(() =>
 
 const backRoute = computed(() => `/brands/${brandId.value}/playlist`)
 
+const formTitle = computed(() => {
+  if (!isEditing.value) return t('fragmentForm.create_title')
+  if (formData.value.title && formData.value.artist) {
+    return `${formData.value.title} - ${formData.value.artist}`
+  }
+  return t('fragmentForm.edit_title')
+})
+
 async function handleDownload(url: string, filename: string) {
   loadingBar.start()
   try {
@@ -184,7 +192,7 @@ onMounted(async () => {
 
 <template>
   <FormWrapper
-    :title="isEditing ? t('fragmentForm.edit_title') : t('fragmentForm.create_title')"
+    :title="formTitle"
     :subtitle="isEditing ? t('fragmentForm.edit_subtitle') : t('fragmentForm.create_subtitle')"
     :loading="loading"
   >

@@ -29,6 +29,13 @@ const backRoute = computed(() =>
   isSettings.value ? `/brands/${route.params.id}/dashboard` : '/brands'
 )
 
+const formTitle = computed(() => {
+  if (!isEditing.value) return t('brandForm.create_title')
+  const firstName = localizedNames.value[0]?.name
+  if (firstName) return firstName
+  return t('brandForm.edit_title')
+})
+
 const loading = ref(false)
 const activeTab = ref('properties')
 
@@ -245,8 +252,8 @@ onMounted(async () => {
 
 <template>
   <FormWrapper
-    :title="isEditing ? t('brandForm.edit_title') : t('brandForm.create_title')"
-    :subtitle="isEditing ? t('brandForm.edit_subtitle') : t('brandForm.create_subtitle')"
+    :title="formTitle"
+    :subtitle="isEditing ? 'settings' : t('brandForm.create_subtitle')"
     :loading="loading"
   >
     <template #actions>
