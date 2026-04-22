@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, h } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   NButton, NSpace, NForm, NFormItem, NInput, NSelect, NSwitch,
   NTabs, NTabPane, NDynamicInput, NInputNumber,
-  NColorPicker, useMessage
+  NColorPicker, NTag, useMessage
 } from 'naive-ui'
+import type { SelectOption } from 'naive-ui'
 import FormWrapper from '@/components/FormWrapper.vue'
 import { useBrandsStore, SUBMISSION_POLICY_OPTIONS, type SubmissionPolicy } from '@/stores/brands'
 import { useScriptsStore } from '@/stores/scripts'
@@ -65,7 +66,20 @@ const formData = ref({
 
 const userVariables = ref<Record<string, any>>({})
 
-const agentOptions = ref<{ label: string; value: string }[]>([])
+type AgentLabel = {
+  id: string
+  name: string
+  identifier?: string
+  color?: string
+  fontColor?: string
+  category?: string
+}
+
+type AgentOption = SelectOption & {
+  labels?: AgentLabel[]
+}
+
+const agentOptions = ref<AgentOption[]>([])
 const profileOptions = ref<{ label: string; value: string }[]>([])
 const scriptOptions = ref<{ label: string; value: string }[]>([])
 const labelOptions = ref<{ label: string; value: string }[]>([])
@@ -92,6 +106,36 @@ function buildLocalizedName(): Record<string, string> {
 
 function formatVariableName(name: string) {
   return name.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase())
+}
+
+function renderAgentOptionLabel(option: SelectOption) {
+  const typedOption = option as AgentOption
+  const tags = typedOption.labels || []
+  return h(
+    NSpace,
+    { align: 'center', size: 8, wrapItem: false },
+    {
+      default: () => [
+        h('span', String(option.label ?? option.value ?? '')),
+        ...tags
+          .filter(tag => Boolean(tag?.name || tag?.identifier))
+          .map(tag =>
+          h(
+            NTag,
+            {
+              size: 'small',
+              bordered: false,
+              color: {
+                color: tag.color || '#ececec',
+                textColor: tag.fontColor || '#333333',
+              },
+            },
+            { default: () => tag.name || tag.identifier }
+          )
+          ),
+      ],
+    }
+  )
 }
 
 async function handleSave() {
@@ -128,14 +172,16 @@ onMounted(async () => {
   try {
     loading.value = true
     const [agents, profiles, scripts, lbls] = await Promise.allSettled([
-      datanestApiService.getPagedDictionary<any>('/aiagents', 1, 100),
+      datanestApiService.getPagedDictionary<any>('/dictionary/agents', 1, 100),
       datanestApiService.getPagedDictionary<any>('/profiles', 1, 100),
       scriptsStore.loadScripts(1, 200),
       datanestApiService.getPagedDictionary<any>('/labels/only/category/brand', 1, 200),
     ])
     if (agents.status === 'fulfilled') {
       agentOptions.value = agents.value.entries.map((a: any) => ({
-        label: a.name || a.id, value: a.id
+        label: a.name || a.id,
+        value: a.id,
+        labels: Array.isArray(a.labels) ? a.labels : [],
       }))
     }
     if (profiles.status === 'fulfilled') {
@@ -244,7 +290,7 @@ onMounted(async () => {
         <NForm label-placement="left" label-width="160" :disabled="loading">
           <NFormItem :label="t('brandForm.ai_agent')">
             <NSelect v-model:value="formData.aiAgentId" :options="agentOptions"
-              filterable clearable style="width: 100%" />
+              :render-label="renderAgentOptionLabel" filterable clearable style="width: 100%" />
           </NFormItem>
 
           <NFormItem :label="t('brandForm.ai_override')">
