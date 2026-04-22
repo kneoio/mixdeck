@@ -46,6 +46,11 @@ export default {
     settings: 'Definições',
     add_new: 'Adicionar novo',
   },
+  dashboard: {
+    stationTime: 'Hora da estação',
+    timezone: 'Fuso horário',
+    onAir: 'No ar',
+  },
   userMenu: {
     profile: 'Perfil',
     logout: 'Terminar sessão',

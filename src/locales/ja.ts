@@ -46,6 +46,11 @@ export default {
     settings: '設定',
     add_new: '新規追加',
   },
+  dashboard: {
+    stationTime: 'ステーション時刻',
+    timezone: 'タイムゾーン',
+    onAir: 'オンエア',
+  },
   userMenu: {
     profile: 'プロフィール',
     logout: 'ログアウト',

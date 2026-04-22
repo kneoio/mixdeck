@@ -49,6 +49,7 @@ export default {
   dashboard: {
     stationTime: 'Station Time',
     timezone: 'Timezone',
+    onAir: 'On Air',
   },
   userMenu: {
     profile: 'Profile',

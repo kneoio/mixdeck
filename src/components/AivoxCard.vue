@@ -106,7 +106,7 @@ onUnmounted(() => {
       </NButton>
       <div class="aivox-status">
         <LedIndicator :active="alive" :pulse="alive" color="#FFD600" :size="18" />
-        <span class="aivox-label">Aivox stream</span>
+        <span class="aivox-label">{{ t('dashboard.onAir') }}</span>
       </div>
       <div v-if="timezone" class="time-info">
         <div class="time-display">

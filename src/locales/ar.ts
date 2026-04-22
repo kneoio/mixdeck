@@ -46,6 +46,11 @@ export default {
     settings: 'الإعدادات',
     add_new: 'إضافة جديد',
   },
+  dashboard: {
+    stationTime: 'وقت المحطة',
+    timezone: 'المنطقة الزمنية',
+    onAir: 'على الهواء',
+  },
   userMenu: {
     profile: 'الملف الشخصي',
     logout: 'تسجيل الخروج',

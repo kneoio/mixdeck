@@ -46,6 +46,11 @@ export default {
     settings: 'Настройки',
     add_new: 'Добавить',
   },
+  dashboard: {
+    stationTime: 'Время станции',
+    timezone: 'Часовой пояс',
+    onAir: 'В эфире',
+  },
   userMenu: {
     profile: 'Профиль',
     logout: 'Выйти',

@@ -46,6 +46,11 @@ export default {
     settings: 'Configuración',
     add_new: 'Añadir nuevo',
   },
+  dashboard: {
+    stationTime: 'Hora de la emisora',
+    timezone: 'Zona horaria',
+    onAir: 'En antena',
+  },
   userMenu: {
     profile: 'Perfil',
     logout: 'Cerrar sesión',

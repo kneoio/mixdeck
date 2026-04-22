@@ -49,6 +49,7 @@ export default {
   dashboard: {
     stationTime: 'Час станції',
     timezone: 'Часовий пояс',
+    onAir: 'В ефірі',
   },
   userMenu: {
     profile: 'Профіль',

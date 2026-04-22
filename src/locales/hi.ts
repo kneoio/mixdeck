@@ -46,6 +46,11 @@ export default {
     settings: 'सेटिंग्स',
     add_new: 'नया जोड़ें',
   },
+  dashboard: {
+    stationTime: 'स्टेशन समय',
+    timezone: 'समय क्षेत्र',
+    onAir: 'ऑन एयर',
+  },
   userMenu: {
     profile: 'प्रोफ़ाइल',
     logout: 'लॉगआउट',
