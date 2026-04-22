@@ -4,15 +4,26 @@ import datanestApiService from '@/services/datanestApi'
 
 export interface Script {
   id: string
-  author: string
-  regDate: string
-  lastModifier: string
-  lastModifiedDate: string
+  author?: string
+  regDate?: string
+  lastModifier?: string
+  lastModifiedDate?: string
   name: string
   description: string
   defaultProfileId?: string
-  labels: string[]
+  labels?: string[]
+  tags?: Array<{
+    id: string
+    name: string
+    identifier?: string
+    color?: string
+    fontColor?: string
+    category?: string
+  }>
   accessLevel?: number
+  languageTag?: string
+  timingMode?: string
+  slugName?: string
   requiredVariables?: Array<{ name: string; type: string; description: string; required?: boolean }>
 }
 
@@ -26,7 +37,7 @@ export const useScriptsStore = defineStore('scripts', () => {
   async function loadScripts(page = pageNum.value, size = pageSize.value) {
     loading.value = true
     try {
-      const result = await datanestApiService.getPagedDictionary<Script>('/scripts', page, size)
+      const result = await datanestApiService.getPagedDictionary<Script>('/dictionary/scripts', page, size)
       scripts.value = result.entries
       totalCount.value = result.count
       pageNum.value = result.pageNum

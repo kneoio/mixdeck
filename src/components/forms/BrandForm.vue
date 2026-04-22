@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, h } from 'vue'
+import { ref, computed, onMounted, h, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   NButton, NSpace, NForm, NFormItem, NInput, NSelect, NSwitch,
@@ -79,9 +79,13 @@ type AgentOption = SelectOption & {
   labels?: AgentLabel[]
 }
 
+type ScriptOption = SelectOption & {
+  tags?: AgentLabel[]
+}
+
 const agentOptions = ref<AgentOption[]>([])
 const profileOptions = ref<{ label: string; value: string }[]>([])
-const scriptOptions = ref<{ label: string; value: string }[]>([])
+const scriptOptions = ref<ScriptOption[]>([])
 const labelOptions = ref<{ label: string; value: string }[]>([])
 
 const selectedScript = computed(() =>
@@ -116,7 +120,6 @@ function renderAgentOptionLabel(option: SelectOption) {
     { align: 'center', size: 8, wrapItem: false },
     {
       default: () => [
-        h('span', String(option.label ?? option.value ?? '')),
         ...tags
           .filter(tag => Boolean(tag?.name || tag?.identifier))
           .map(tag =>
@@ -133,6 +136,37 @@ function renderAgentOptionLabel(option: SelectOption) {
             { default: () => tag.name || tag.identifier }
           )
           ),
+        h('span', String(option.label ?? option.value ?? '')),
+      ],
+    }
+  )
+}
+
+function renderScriptOptionLabel(option: SelectOption) {
+  const typedOption = option as ScriptOption
+  const tags = typedOption.tags || []
+  return h(
+    NSpace,
+    { align: 'center', size: 8, wrapItem: false },
+    {
+      default: () => [
+        ...tags
+          .filter(tag => Boolean(tag?.name || tag?.identifier))
+          .map(tag =>
+            h(
+              NTag,
+              {
+                size: 'small',
+                bordered: false,
+                color: {
+                  color: tag.color || '#ececec',
+                  textColor: tag.fontColor || '#333333',
+                },
+              },
+              { default: () => tag.name || tag.identifier }
+            )
+          ),
+        h('span', String(option.label ?? option.value ?? '')),
       ],
     }
   )
@@ -168,6 +202,37 @@ async function handleSave() {
   }
 }
 
+function applyBrandToForm(brand: any) {
+  const ln = brand.localizedName || {}
+  localizedNames.value = Object.entries(ln).map(([lang, name]) => ({ lang, name: String(name ?? '') }))
+  if (!localizedNames.value.length) localizedNames.value = [{ lang: 'en', name: '' }]
+
+  const firstScript = brand.scripts?.[0] ?? (brand.scriptId ? { scriptId: brand.scriptId } : null)
+  formData.value = {
+    country: brand.country || null,
+    description: brand.description || '',
+    timeZone: brand.timeZone || null,
+    publicBrand: brand.publicBrand ?? 0,
+    bitRate: brand.bitRate ?? 128,
+    aiAgentId: brand.aiAgentId || null,
+    profileId: brand.profileId || null,
+    oneTimeStreamPolicy: brand.oneTimeStreamPolicy || 'NOT_ALLOWED',
+    submissionPolicy: brand.submissionPolicy || 'NOT_ALLOWED',
+    messagingPolicy: brand.messagingPolicy || 'NOT_ALLOWED',
+    aiOverriding: { prompt: brand.aiOverriding?.prompt || '' },
+    scriptId: firstScript?.scriptId || null,
+    profileOverriding: {
+      name: brand.profileOverriding?.name || '',
+      description: brand.profileOverriding?.description || ''
+    },
+    color: brand.color || '#000000',
+    titleFont: brand.titleFont || null,
+    owner: { name: brand.owner?.name || '', email: brand.owner?.email || '' },
+    labels: (brand as any).labels || [],
+  }
+  userVariables.value = firstScript?.userVariables ? { ...firstScript.userVariables } : {}
+}
+
 onMounted(async () => {
   try {
     loading.value = true
@@ -194,38 +259,15 @@ onMounted(async () => {
         label: l.identifier || l.title || l.id, value: l.id
       }))
     }
-    scriptOptions.value = scriptsStore.scripts.map(s => ({ label: s.name || s.id, value: s.id }))
+    scriptOptions.value = scriptsStore.scripts.map((s: any) => ({
+      label: s.name || s.id,
+      value: s.id,
+      tags: Array.isArray(s.tags) ? s.tags : [],
+    }))
 
     if (isEditing.value) {
       const brand = await store.fetchBrand(route.params.id as string)
-      const ln = brand.localizedName || {}
-      localizedNames.value = Object.entries(ln).map(([lang, name]) => ({ lang, name }))
-      if (!localizedNames.value.length) localizedNames.value = [{ lang: 'en', name: '' }]
-
-      const firstScript = brand.scripts?.[0] ?? (brand.scriptId ? { scriptId: brand.scriptId } : null)
-      formData.value = {
-        country: brand.country || null,
-        description: brand.description || '',
-        timeZone: brand.timeZone || null,
-        publicBrand: brand.publicBrand ?? 0,
-        bitRate: brand.bitRate ?? 128,
-        aiAgentId: brand.aiAgentId || null,
-        profileId: brand.profileId || null,
-        oneTimeStreamPolicy: brand.oneTimeStreamPolicy || 'NOT_ALLOWED',
-        submissionPolicy: brand.submissionPolicy || 'NOT_ALLOWED',
-        messagingPolicy: brand.messagingPolicy || 'NOT_ALLOWED',
-        aiOverriding: { prompt: brand.aiOverriding?.prompt || '' },
-        scriptId: firstScript?.scriptId || null,
-        profileOverriding: {
-          name: brand.profileOverriding?.name || '',
-          description: brand.profileOverriding?.description || ''
-        },
-        color: brand.color || '#000000',
-        titleFont: brand.titleFont || null,
-        owner: { name: brand.owner?.name || '', email: brand.owner?.email || '' },
-        labels: (brand as any).labels || [],
-      }
-      if (firstScript?.userVariables) userVariables.value = { ...firstScript.userVariables }
+      applyBrandToForm(brand)
     }
   } catch (error: any) {
     message.error(error?.message || t('brandForm.load_failed'))
@@ -234,6 +276,23 @@ onMounted(async () => {
     loading.value = false
   }
 })
+
+watch(
+  () => route.params.id,
+  async (newId, oldId) => {
+    if (!isEditing.value || !newId || newId === oldId) return
+    try {
+      loading.value = true
+      const brand = await store.fetchBrand(newId as string)
+      applyBrandToForm(brand)
+    } catch (error: any) {
+      message.error(error?.message || t('brandForm.load_failed'))
+      router.push(backRoute.value)
+    } finally {
+      loading.value = false
+    }
+  }
+)
 </script>
 
 <template>
@@ -290,7 +349,7 @@ onMounted(async () => {
         <NForm label-placement="left" label-width="160" :disabled="loading">
           <NFormItem :label="t('brandForm.ai_agent')">
             <NSelect v-model:value="formData.aiAgentId" :options="agentOptions"
-              :render-label="renderAgentOptionLabel" filterable clearable style="width: 100%" />
+              :render-label="renderAgentOptionLabel" style="width: 100%" />
           </NFormItem>
 
           <NFormItem :label="t('brandForm.ai_override')">
@@ -304,7 +363,7 @@ onMounted(async () => {
         <NForm label-placement="left" label-width="140" :disabled="loading">
           <NFormItem :label="t('brandForm.script')">
             <NSelect v-model:value="formData.scriptId" :options="scriptOptions"
-              filterable clearable style="width: 100%; max-width: 500px" />
+              :render-label="renderScriptOptionLabel" filterable style="width: 100%; max-width: 500px" />
           </NFormItem>
 
           <NFormItem v-if="selectedScript?.description" :label="t('fragmentForm.description')">

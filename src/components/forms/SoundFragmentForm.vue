@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
-  NButton, NSpace, NForm, NFormItem, NInput, NSelect,
+  NButton, NSpace, NForm, NFormItem, NInput, NSelect, NTreeSelect,
   NTabs, NTabPane, NUpload, NProgress, useMessage, useLoadingBar
 } from 'naive-ui'
 import type { UploadCustomRequestOptions } from 'naive-ui'
@@ -10,6 +10,7 @@ import FormWrapper from '@/components/FormWrapper.vue'
 import { useSoundFragmentsStore, FRAGMENT_TYPES } from '@/stores/soundFragments'
 import { useBrandsStore } from '@/stores/brands'
 import dictionaryApiService from '@/services/dictionaryApi'
+import type { GenreEntry, LabelEntry } from '@/services/dictionaryApi'
 import datanestApiService from '@/services/datanestApi'
 import { appConfig } from '@/config/appConfig'
 import { useRoute, useRouter } from 'vue-router'
@@ -24,8 +25,8 @@ const brandsStore = useBrandsStore()
 const message = useMessage()
 const loadingBar = useLoadingBar()
 
-const genreList = ref<{ id: string; localizedName: Record<string, string>; identifier: string }[]>([])
-const labelList = ref<{ id: string; localizedName: Record<string, string>; identifier: string }[]>([])
+const genreList = ref<GenreEntry[]>([])
+const labelList = ref<LabelEntry[]>([])
 
 const brandId = computed(() => route.params.id as string)
 const isEditing = computed(() => !!route.params.fragmentId && route.params.fragmentId !== 'new')
@@ -52,12 +53,22 @@ const formData = ref({
   length: null as number | null,
 })
 
-const genreOptions = computed(() =>
-  genreList.value.map(g => ({
-    label: g.localizedName?.en || Object.values(g.localizedName || {})[0] || g.identifier || g.id,
-    value: g.id
+function getGenreLabel(genre: GenreEntry): string {
+  const directName = (genre as any).name
+  return directName || genre.localizedName?.en || Object.values(genre.localizedName || {})[0] || genre.identifier || genre.id
+}
+
+function toGenreTreeOptions(genres: GenreEntry[]): any[] {
+  return genres.map(genre => ({
+    label: getGenreLabel(genre),
+    key: genre.id,
+    children: Array.isArray(genre.children) && genre.children.length
+      ? toGenreTreeOptions(genre.children)
+      : undefined,
   }))
-)
+}
+
+const genreTreeOptions = computed(() => toGenreTreeOptions(genreList.value))
 
 const labelOptions = computed(() =>
   labelList.value.map(l => ({
@@ -83,6 +94,17 @@ const formTitle = computed(() => {
   }
   return t('fragmentForm.edit_title')
 })
+
+function normalizeIdList(input: unknown): string[] {
+  if (!Array.isArray(input)) return []
+  return input
+    .map((item: any) => {
+      if (typeof item === 'string') return item
+      if (item && typeof item === 'object') return item.id || item.identifier || null
+      return null
+    })
+    .filter((v): v is string => Boolean(v))
+}
 
 async function handleDownload(url: string, filename: string) {
   loadingBar.start()
@@ -166,7 +188,7 @@ onMounted(async () => {
         artist: frag.artist || '',
         album: frag.album || '',
         description: frag.description || '',
-        genres: frag.genres || [],
+        genres: normalizeIdList(frag.genres),
         labels: frag.labels || [],
         representedInBrands: frag.representedInBrands || [],
         expiresAt: frag.expiresAt || null,
@@ -233,8 +255,15 @@ onMounted(async () => {
           </NFormItem>
 
           <NFormItem :label="t('fragmentForm.genres')">
-            <NSelect v-model:value="formData.genres" :options="genreOptions"
-              multiple filterable style="width: 100%" />
+            <NTreeSelect
+              v-model:value="formData.genres"
+              :options="genreTreeOptions"
+              multiple
+              checkable
+              clear-filter-after-select
+              filterable
+              style="width: 100%"
+            />
           </NFormItem>
 
           <NFormItem :label="t('fragmentForm.labels')">

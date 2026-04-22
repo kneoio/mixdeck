@@ -4,7 +4,8 @@ import { appConfig } from '@/config/appConfig'
 export interface GenreEntry {
   id: string
   identifier: string
-  localizedName: Record<string, string>
+  name?: string
+  localizedName?: Record<string, string>
   color?: string
   fontColor?: string
   parent?: string | null
