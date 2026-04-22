@@ -186,6 +186,9 @@ function onSearchChange() {
 }
 
 watch(slugName, (val) => { if (val) { loadDictionaries(); fetchData(1) } }, { immediate: true })
+watch(showBulkUpload, (isOpen, wasOpen) => {
+  if (wasOpen && !isOpen) fetchData(1)
+})
 </script>
 
 <template>
@@ -217,7 +220,6 @@ watch(slugName, (val) => { if (val) { loadDictionaries(); fetchData(1) } }, { im
     <BulkUploadDialog
       v-model:show="showBulkUpload"
       :slug-name="slugName"
-      @upload-complete="fetchData(1)"
     />
     <NDataTable
       :columns="columns"

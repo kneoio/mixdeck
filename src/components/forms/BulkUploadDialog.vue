@@ -4,6 +4,7 @@
       <n-upload
         ref="uploadRef"
         :multiple="true"
+        :max="20"
         :show-file-list="false"
         v-model:file-list="fileList"
         :accept="'.mp3,.wav,.flac,.ogg,.m4a,.aac'"
@@ -128,7 +129,7 @@ const columns = [
     title: 'File',
     key: 'name',
     ellipsis: { tooltip: true },
-    width: 260
+    width: 320
   },
   {
     title: 'Upload',
