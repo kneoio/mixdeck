@@ -22,10 +22,6 @@ class DatanestApiService extends ApiClient {
     }
   }
 
-  async deleteBrandListener(id: string): Promise<void> {
-    await this.request<void>(`/listeners/${id}`, { method: 'DELETE' })
-  }
-
   async getBrandPlaylist(
     brandSlug: string,
     page = 1,
