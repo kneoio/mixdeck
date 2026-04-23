@@ -3,11 +3,6 @@
     <div class="welcome-page">
       <header class="nav">
         <div class="logo">MIXPLA</div>
-        <nav>
-          <a href="#platform">{{ t('nav.platform') }}</a>
-          <a href="#creators">{{ t('nav.broadcasters') }}</a>
-          <a href="#about">{{ t('nav.about') }}</a>
-        </nav>
       </header>
 
       <section class="hero" id="platform">
@@ -17,7 +12,6 @@
           <p class="subline">{{ t('welcome.subline') }}</p>
           <div class="hero-ctas">
             <n-button type="primary" size="large" class="cta-button" @click="goToMixpla">{{ t('welcome.cta_mixplay') }}</n-button>
-            <n-button type="primary" size="large" @click="scrollToRegister">{{ t('welcome.cta_broadcaster') }}</n-button>
             <n-button size="large" @click="goToBrands">{{ t('welcome.cta_portal') }}</n-button>
           </div>
         </div>
@@ -62,7 +56,10 @@
           <p>{{ t('welcome.portal_body') }}</p>
           <span class="badge">{{ t('welcome.portal_badge') }}</span>
         </div>
-        <n-button type="primary" size="large" @click="goToBrands">{{ t('welcome.cta_portal') }}</n-button>
+        <div class="portal-access">
+          <n-button type="primary" size="large" @click="goToBrands">{{ t('welcome.cta_portal') }}</n-button>
+          <p class="portal-note">{{ t('welcome.portal_note') }}</p>
+        </div>
       </section>
 
       <section class="register" id="register">
@@ -71,22 +68,10 @@
           <h2>{{ t('welcome.register_headline') }}</h2>
           <p>{{ t('welcome.register_body') }}</p>
         </div>
-        <form class="register-form" @submit.prevent="handleCreatorSubmit">
-          <n-input v-model:value="creatorForm.name" :placeholder="t('welcome.register_name')" size="large" required />
-          <n-input v-model:value="creatorForm.email" :placeholder="t('welcome.register_email')" size="large" required />
-          <n-input v-model:value="creatorForm.channel" :placeholder="t('welcome.register_channel')" size="large" required />
-          <n-button type="primary" attr-type="submit" size="large">{{ t('welcome.register_submit') }}</n-button>
-        </form>
-        <p v-if="submitted" class="success">{{ t('welcome.register_success') }}</p>
       </section>
 
       <footer class="footer">
         <div class="logo">MIXPLA</div>
-        <div class="footer-links">
-          <a href="#platform">{{ t('nav.platform') }}</a>
-          <a href="#creators">{{ t('nav.broadcasters') }}</a>
-          <a href="#about">{{ t('nav.about') }}</a>
-        </div>
         <div class="status">{{ t('welcome.footer_status') }}</div>
         <div class="copyright">© Mixpla</div>
         <a class="affiliation" href="https://semantyca.com" target="_blank" rel="noopener noreferrer">By Semantyca</a>
@@ -96,21 +81,12 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { NButton, NConfigProvider, NInput, darkTheme } from 'naive-ui'
+import { NButton, NConfigProvider, darkTheme } from 'naive-ui'
 
 const { t } = useI18n()
 const router = useRouter()
-
-const creatorForm = reactive({
-  name: '',
-  email: '',
-  channel: ''
-})
-
-const submitted = ref(false)
 
 function goToMixpla() {
   window.open('https://mixpla.online', '_blank', 'noopener,noreferrer')
@@ -118,14 +94,6 @@ function goToMixpla() {
 
 function goToBrands() {
   router.push('/brands')
-}
-
-function scrollToRegister() {
-  document.getElementById('register')?.scrollIntoView({ behavior: 'smooth' })
-}
-
-function handleCreatorSubmit() {
-  submitted.value = true
 }
 </script>
 
@@ -156,7 +124,7 @@ function handleCreatorSubmit() {
 .nav {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 24px;
   padding-bottom: 32px;
 }
@@ -167,24 +135,6 @@ function handleCreatorSubmit() {
   letter-spacing: 0.24em;
   font-size: clamp(1.1rem, 2vw, 1.6rem);
   color: #c0c0c0;
-}
-
-nav {
-  display: flex;
-  gap: 20px;
-  text-transform: uppercase;
-  font-size: 0.85rem;
-  align-items: center;
-}
-
-nav a,
-.footer-links a {
-  color: #c0c0c0;
-  text-decoration: none;
-}
-
-nav a:not(:last-child) {
-  margin-right: 16px;
 }
 
 .hero {
@@ -332,21 +282,22 @@ h1 {
   color: #ffdf6b;
 }
 
+.portal-access {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.portal-note {
+  margin: 0;
+  color: #b0b0b0;
+  font-size: 0.9rem;
+}
+
 .register {
   padding: 48px 0 64px;
   border-top: 1px solid #1a1a1a;
-}
-
-.register-form {
-  display: grid;
-  gap: 16px;
-  max-width: 480px;
-  margin-top: 24px;
-}
-
-.success {
-  margin-top: 16px;
-  color: #68ffba;
 }
 
 .footer {
@@ -411,10 +362,6 @@ h1 {
 }
 
 @media (max-width: 768px) {
-  nav {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
   .nav {
     flex-direction: column;
   }
