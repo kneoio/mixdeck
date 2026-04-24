@@ -20,7 +20,8 @@ export const useConstantsStore = defineStore('constants', () => {
     { label: 'Suomi', value: 'fi-FI' },
     { label: 'ไทย', value: 'th-TH' },
     { label: 'Українська', value: 'uk-UA' },
-    { label: 'Русский', value: 'ru-RU' }
+    { label: 'Русский', value: 'ru-RU' },
+    { label: 'Қазақша', value: 'kk-KZ' }
   ]
 
   const mostUsedLanguagesSimple = [
@@ -42,7 +43,8 @@ export const useConstantsStore = defineStore('constants', () => {
     { label: 'Suomi', value: 'fi' },
     { label: 'ไทย', value: 'th' },
     { label: 'Українська', value: 'uk' },
-    { label: 'Русский', value: 'ru' }
+    { label: 'Русский', value: 'ru' },
+    { label: 'Қазақша', value: 'kk' }
   ]
 
   const stationFonts = [
