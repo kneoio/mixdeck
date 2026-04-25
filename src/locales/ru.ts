@@ -51,6 +51,13 @@ export default {
     stationTime: 'Время станции',
     timezone: 'Часовой пояс',
     onAir: 'В эфире',
+    queue: {
+      nowPlaying: 'СЕЙЧАС ИГРАЕТ',
+      played: 'Сыграно',
+      upNext: 'Далее',
+      inQueue: 'В очереди',
+      priority: 'Приоритет',
+    },
   },
   userMenu: {
     profile: 'Профиль',

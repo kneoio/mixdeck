@@ -51,6 +51,13 @@ export default {
     stationTime: 'ステーション時刻',
     timezone: 'タイムゾーン',
     onAir: 'オンエア',
+    queue: {
+      nowPlaying: '再生中',
+      played: '再生済み',
+      upNext: '次に再生',
+      inQueue: 'キュー内',
+      priority: '優先度',
+    },
   },
   userMenu: {
     profile: 'プロフィール',

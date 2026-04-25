@@ -51,6 +51,13 @@ export default {
     stationTime: 'Senderzeit',
     timezone: 'Zeitzone',
     onAir: 'On Air',
+    queue: {
+      nowPlaying: 'JETZT LÄUFT',
+      played: 'Gespielt',
+      upNext: 'Als Nächstes',
+      inQueue: 'In der Warteschlange',
+      priority: 'Priorität',
+    },
   },
   userMenu: {
     profile: 'Profil',

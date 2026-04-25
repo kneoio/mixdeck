@@ -51,6 +51,13 @@ export default {
     stationTime: 'Hora da estação',
     timezone: 'Fuso horário',
     onAir: 'No ar',
+    queue: {
+      nowPlaying: 'TOCANDO AGORA',
+      played: 'Tocada',
+      upNext: 'A seguir',
+      inQueue: 'Na fila',
+      priority: 'Prioridade',
+    },
   },
   userMenu: {
     profile: 'Perfil',

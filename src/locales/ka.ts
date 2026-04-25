@@ -51,6 +51,13 @@ export default {
     stationTime: 'სადგურის დრო',
     timezone: 'დროის სარტყელი',
     onAir: 'ეთერში',
+    queue: {
+      nowPlaying: 'ახლა უკრავს',
+      played: 'დაკრულია',
+      upNext: 'შემდეგი',
+      inQueue: 'რიგშია',
+      priority: 'პრიორიტეტი',
+    },
   },
   userMenu: {
     profile: 'პროფილი',

@@ -51,6 +51,13 @@ export default {
     stationTime: 'स्टेशन समय',
     timezone: 'समय क्षेत्र',
     onAir: 'ऑन एयर',
+    queue: {
+      nowPlaying: 'अभी चल रहा है',
+      played: 'चल चुका',
+      upNext: 'अगला',
+      inQueue: 'कतार में',
+      priority: 'प्राथमिकता',
+    },
   },
   userMenu: {
     profile: 'प्रोफ़ाइल',

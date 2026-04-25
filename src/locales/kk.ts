@@ -51,6 +51,13 @@ export default {
     stationTime: 'Станция уақыты',
     timezone: 'Уақыт белдеуі',
     onAir: 'Эфирде',
+    queue: {
+      nowPlaying: 'ҚАЗІР ОЙНАЛУДА',
+      played: 'Ойнатылды',
+      upNext: 'Келесі',
+      inQueue: 'Кезекте',
+      priority: 'Басымдық',
+    },
   },
   userMenu: {
     profile: 'Профиль',

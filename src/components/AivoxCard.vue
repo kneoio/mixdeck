@@ -74,10 +74,10 @@ function stopQueuePolling() {
 }
 
 function queueTypeLabel(item: AivoxQueueEntry): string {
-  if (item.queueType === 'playing') return 'NOW PLAYING'
-  if (item.queueType === 'played') return 'Played'
-  if (item.queueType === 'prioritized') return 'Up Next'
-  return 'In Queue'
+  if (item.queueType === 'playing') return t('dashboard.queue.nowPlaying')
+  if (item.queueType === 'played') return t('dashboard.queue.played')
+  if (item.queueType === 'prioritized') return t('dashboard.queue.upNext')
+  return t('dashboard.queue.inQueue')
 }
 
 function updateLocalTime() {
@@ -173,7 +173,7 @@ onUnmounted(() => {
           <span class="queue-artist"> - {{ item.artist }}</span>
         </div>
         <div class="queue-meta">
-          <span class="queue-priority">Priority: {{ item.priority }}</span>
+          <span class="queue-priority">{{ t('dashboard.queue.priority') }}: {{ item.priority }}</span>
           <span class="queue-type">{{ queueTypeLabel(item) }}</span>
         </div>
       </div>

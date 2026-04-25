@@ -51,6 +51,13 @@ export default {
     stationTime: 'Час станції',
     timezone: 'Часовий пояс',
     onAir: 'В ефірі',
+    queue: {
+      nowPlaying: 'ЗАРАЗ ГРАЄ',
+      played: 'Відтворено',
+      upNext: 'Далі',
+      inQueue: 'У черзі',
+      priority: 'Пріоритет',
+    },
   },
   userMenu: {
     profile: 'Профіль',

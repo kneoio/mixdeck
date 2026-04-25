@@ -51,6 +51,13 @@ export default {
     stationTime: 'وقت المحطة',
     timezone: 'المنطقة الزمنية',
     onAir: 'على الهواء',
+    queue: {
+      nowPlaying: 'قيد التشغيل الآن',
+      played: 'تم التشغيل',
+      upNext: 'التالي',
+      inQueue: 'في قائمة الانتظار',
+      priority: 'الأولوية',
+    },
   },
   userMenu: {
     profile: 'الملف الشخصي',

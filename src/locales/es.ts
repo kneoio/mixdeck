@@ -51,6 +51,13 @@ export default {
     stationTime: 'Hora de la emisora',
     timezone: 'Zona horaria',
     onAir: 'En antena',
+    queue: {
+      nowPlaying: 'SONANDO AHORA',
+      played: 'Reproducido',
+      upNext: 'A continuación',
+      inQueue: 'En cola',
+      priority: 'Prioridad',
+    },
   },
   userMenu: {
     profile: 'Perfil',

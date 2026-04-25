@@ -51,6 +51,13 @@ export default {
     stationTime: 'Heure de la station',
     timezone: 'Fuseau horaire',
     onAir: 'À l’antenne',
+    queue: {
+      nowPlaying: 'EN COURS',
+      played: 'Lu',
+      upNext: 'À suivre',
+      inQueue: 'Dans la file',
+      priority: 'Priorité',
+    },
   },
   userMenu: {
     profile: 'Profil',
