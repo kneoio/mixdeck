@@ -1,7 +1,7 @@
 import { ApiClient } from './base'
 import { appConfig } from '@/config/appConfig'
 
-export type AivoxQueueType = 'obtained' | 'prioritized' | 'regular'
+export type AivoxQueueType = 'played' | 'playing' | 'prioritized' | 'regular'
 
 export interface AivoxQueueEntry {
   pos: number

@@ -24,11 +24,6 @@ const sortedQueueEntries = computed(() =>
     .sort((a, b) => a.pos - b.pos)
 )
 
-const currentObtainedSongId = computed(() => {
-  const obtained = sortedQueueEntries.value.filter(item => item.queueType === 'obtained')
-  return obtained.length > 0 ? obtained[obtained.length - 1].songId : ''
-})
-
 async function poll() {
   if (!props.brandSlug) return
   const val = await aivoxApiService.heartbeat(props.brandSlug)
@@ -79,7 +74,8 @@ function stopQueuePolling() {
 }
 
 function queueTypeLabel(item: AivoxQueueEntry): string {
-  if (item.queueType === 'obtained') return 'Now Playing'
+  if (item.queueType === 'playing') return 'NOW PLAYING'
+  if (item.queueType === 'played') return 'Played'
   if (item.queueType === 'prioritized') return 'Up Next'
   return 'In Queue'
 }
@@ -168,7 +164,7 @@ onUnmounted(() => {
         class="queue-item"
         :class="[
           `queue-item--${item.queueType}`,
-          item.queueType === 'obtained' && item.songId === currentObtainedSongId ? 'queue-item--current' : ''
+          item.queueType === 'playing' ? 'queue-item--current' : ''
         ]"
       >
         <div class="queue-item-main">
@@ -240,7 +236,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  border-radius: 8px;
+  border-radius: 0;
   padding: 8px 10px;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -280,12 +276,17 @@ onUnmounted(() => {
   font-weight: 600;
   opacity: 0.85;
 }
-.queue-item--obtained {
+.queue-item--playing {
   border-color: rgba(255, 214, 0, 0.4);
   background: rgba(255, 214, 0, 0.1);
 }
-.queue-item--obtained.queue-item--current {
+.queue-item--playing.queue-item--current {
   box-shadow: 0 0 0 1px rgba(255, 214, 0, 0.35);
+}
+.queue-item--played {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.015);
+  opacity: 0.6;
 }
 .queue-item--prioritized {
   border-color: rgba(24, 160, 88, 0.35);
