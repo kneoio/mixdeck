@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { NCard, NButton } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import aivoxApiService from '@/services/aivoxApi'
+import type { AivoxQueueEntry } from '@/services/aivoxApi'
 import LedIndicator from '@/components/LedIndicator.vue'
 
 const props = defineProps<{ brandSlug: string; timezone?: string }>()
@@ -12,9 +13,22 @@ const { t } = useI18n()
 const alive = ref(false)
 const loading = ref(false)
 const localTime = ref('')
+const queueEntries = ref<AivoxQueueEntry[]>([])
 
 let pollTimer: ReturnType<typeof setInterval> | null = null
 let timeTimer: ReturnType<typeof setInterval> | null = null
+let queueTimer: ReturnType<typeof setInterval> | null = null
+
+const sortedQueueEntries = computed(() =>
+  [...queueEntries.value]
+    .sort((a, b) => a.pos - b.pos)
+    .slice(0, 6)
+)
+
+const currentObtainedSongId = computed(() => {
+  const obtained = sortedQueueEntries.value.filter(item => item.queueType === 'obtained')
+  return obtained.length > 0 ? obtained[obtained.length - 1].songId : ''
+})
 
 async function poll() {
   if (!props.brandSlug) return
@@ -46,6 +60,31 @@ function stopPolling() {
   if (pollTimer) { clearInterval(pollTimer); pollTimer = null }
 }
 
+async function pollQueue() {
+  if (!props.brandSlug) return
+  try {
+    const response = await aivoxApiService.queue(props.brandSlug)
+    queueEntries.value = Array.isArray(response.fullQueue) ? response.fullQueue : []
+  } catch {
+    queueEntries.value = []
+  }
+}
+
+function startQueuePolling() {
+  pollQueue()
+  queueTimer = setInterval(pollQueue, 10000)
+}
+
+function stopQueuePolling() {
+  if (queueTimer) { clearInterval(queueTimer); queueTimer = null }
+}
+
+function queueTypeLabel(item: AivoxQueueEntry): string {
+  if (item.queueType === 'obtained') return 'Now Playing'
+  if (item.queueType === 'prioritized') return 'Up Next'
+  return 'In Queue'
+}
+
 function updateLocalTime() {
   if (props.timezone) {
     try {
@@ -75,7 +114,9 @@ function stopTimeUpdate() {
 
 watch(() => props.brandSlug, (val) => {
   stopPolling()
+  stopQueuePolling()
   if (val) startPolling()
+  if (val) startQueuePolling()
 })
 
 watch(() => props.timezone, (val) => {
@@ -85,11 +126,13 @@ watch(() => props.timezone, (val) => {
 
 onMounted(() => {
   if (props.brandSlug) startPolling()
+  if (props.brandSlug) startQueuePolling()
   if (props.timezone) startTimeUpdate()
 })
 
 onUnmounted(() => {
   stopPolling()
+  stopQueuePolling()
   stopTimeUpdate()
 })
 </script>
@@ -117,6 +160,24 @@ onUnmounted(() => {
           <span class="label">{{ t('dashboard.timezone') }}:</span>
           <span class="timezone">{{ timezone }}</span>
         </div>
+      </div>
+    </div>
+    <div class="queue-wrap">
+      <div
+        v-for="item in sortedQueueEntries"
+        :key="`${item.songId}-${item.pos}`"
+        class="queue-item"
+        :class="[
+          `queue-item--${item.queueType}`,
+          item.queueType === 'obtained' && item.songId === currentObtainedSongId ? 'queue-item--current' : ''
+        ]"
+      >
+        <div class="queue-item-main">
+          <span class="queue-pos">#{{ item.pos }}</span>
+          <span class="queue-title">{{ item.title }}</span>
+          <span class="queue-artist"> - {{ item.artist }}</span>
+        </div>
+        <span class="queue-type">{{ queueTypeLabel(item) }}</span>
       </div>
     </div>
   </NCard>
@@ -165,5 +226,61 @@ onUnmounted(() => {
 }
 .timezone {
   font-weight: 500;
+}
+.queue-wrap {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.queue-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.queue-item-main {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.queue-pos {
+  font-weight: 700;
+  opacity: 0.8;
+}
+.queue-title {
+  font-weight: 600;
+}
+.queue-artist {
+  opacity: 0.8;
+}
+.queue-type {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.queue-item--obtained {
+  border-color: rgba(255, 214, 0, 0.4);
+  background: rgba(255, 214, 0, 0.1);
+}
+.queue-item--obtained.queue-item--current {
+  box-shadow: 0 0 0 1px rgba(255, 214, 0, 0.35);
+}
+.queue-item--prioritized {
+  border-color: rgba(24, 160, 88, 0.35);
+  background: rgba(24, 160, 88, 0.08);
+}
+.queue-item--regular {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
 }
 </style>
