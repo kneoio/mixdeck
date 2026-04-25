@@ -22,7 +22,6 @@ let queueTimer: ReturnType<typeof setInterval> | null = null
 const sortedQueueEntries = computed(() =>
   [...queueEntries.value]
     .sort((a, b) => a.pos - b.pos)
-    .slice(0, 6)
 )
 
 const currentObtainedSongId = computed(() => {
@@ -177,7 +176,10 @@ onUnmounted(() => {
           <span class="queue-title">{{ item.title }}</span>
           <span class="queue-artist"> - {{ item.artist }}</span>
         </div>
-        <span class="queue-type">{{ queueTypeLabel(item) }}</span>
+        <div class="queue-meta">
+          <span class="queue-priority">Priority: {{ item.priority }}</span>
+          <span class="queue-type">{{ queueTypeLabel(item) }}</span>
+        </div>
       </div>
     </div>
   </NCard>
@@ -267,6 +269,16 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: 0.02em;
   text-transform: uppercase;
+}
+.queue-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.queue-priority {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.85;
 }
 .queue-item--obtained {
   border-color: rgba(255, 214, 0, 0.4);
