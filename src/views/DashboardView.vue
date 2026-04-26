@@ -108,7 +108,7 @@ const menuOptions = computed<MenuOption[]>(() => [
         label: brandLabel(brand),
         key: `brand-root-${brand.id}`,
         icon: () => h(LedIndicator, {
-            active: brandsStore.streamingStates[brand.slugName ?? ''] ?? brand.status === 'ON_LINE',
+            active: brandsStore.streamingStates[brand.slugName ?? ''] ?? ['ON_LINE', 'IDLE'].includes(brand.status ?? ''),
             pulse: false,
             size: 16
           }),
