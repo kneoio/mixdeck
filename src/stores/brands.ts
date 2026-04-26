@@ -54,6 +54,7 @@ export const useBrandsStore = defineStore('brands', () => {
   const pageNum = ref(1)
   const pageSize = ref(10)
   const maxPage = ref(1)
+  const streamingStates = ref<Record<string, boolean>>({})
 
   async function loadBrands(page = pageNum.value, size = pageSize.value) {
     loading.value = true
@@ -83,5 +84,9 @@ export const useBrandsStore = defineStore('brands', () => {
     return datanestApiService.deleteDictionaryItem('/brands', id)
   }
 
-  return { brands, loading, totalCount, pageNum, pageSize, maxPage, loadBrands, fetchBrand, saveBrand, deleteBrand }
+  function setStreamingState(slug: string, alive: boolean) {
+    streamingStates.value[slug] = alive
+  }
+
+  return { brands, loading, totalCount, pageNum, pageSize, maxPage, streamingStates, loadBrands, fetchBrand, saveBrand, deleteBrand, setStreamingState }
 })

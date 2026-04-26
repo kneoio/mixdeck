@@ -5,10 +5,12 @@ import { useI18n } from 'vue-i18n'
 import aivoxApiService from '@/services/aivoxApi'
 import type { AivoxQueueEntry } from '@/services/aivoxApi'
 import LedIndicator from '@/components/LedIndicator.vue'
+import { useBrandsStore } from '@/stores/brands'
 
 const props = defineProps<{ brandSlug: string; timezone?: string }>()
 const emit = defineEmits<{ (e: 'update:alive', value: boolean): void }>()
 const { t } = useI18n()
+const brandsStore = useBrandsStore()
 
 const alive = ref(false)
 const loading = ref(false)
@@ -29,6 +31,7 @@ async function poll() {
   const val = await aivoxApiService.heartbeat(props.brandSlug)
   if (val !== alive.value) emit('update:alive', val)
   alive.value = val
+  brandsStore.setStreamingState(props.brandSlug, val)
 }
 
 async function handleClick() {
@@ -40,6 +43,7 @@ async function handleClick() {
     const val = !['stopped', 'error'].includes(result.status)
     if (val !== alive.value) emit('update:alive', val)
     alive.value = val
+    brandsStore.setStreamingState(props.brandSlug, val)
   } finally {
     loading.value = false
   }

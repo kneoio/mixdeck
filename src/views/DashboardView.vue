@@ -107,7 +107,11 @@ const menuOptions = computed<MenuOption[]>(() => [
       ...brandsStore.brands.map(brand => ({
         label: brandLabel(brand),
         key: `brand-root-${brand.id}`,
-        icon: () => h(LedIndicator, { active: brand.status === 'ON_LINE', pulse: brand.status === 'WARMING_UP', size: 16 }),
+        icon: () => h(LedIndicator, {
+            active: brandsStore.streamingStates[brand.slugName ?? ''] ?? brand.status === 'ON_LINE',
+            pulse: false,
+            size: 16
+          }),
         children: [
           {
             label: t('menu.dashboard'),
