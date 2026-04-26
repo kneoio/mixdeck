@@ -9,6 +9,7 @@ const { t } = useI18n()
 const props = defineProps<{ brandSlug: string; alive?: boolean }>()
 
 const loading = ref(false)
+const refreshing = ref(false)
 const error = ref<string | null>(null)
 const agenda = ref<Agenda | null>(null)
 
@@ -55,7 +56,9 @@ function statusType(s: string): 'success' | 'warning' | 'error' | 'info' | 'defa
 
 async function fetchAgenda() {
   if (!props.brandSlug) return
-  loading.value = true
+  const isInitial = agenda.value === null
+  if (isInitial) loading.value = true
+  else refreshing.value = true
   error.value = null
   try {
     agenda.value = await jesoosApiService.getAgendas(props.brandSlug)
@@ -73,6 +76,7 @@ async function fetchAgenda() {
     }
   } finally {
     loading.value = false
+    refreshing.value = false
   }
 }
 
@@ -98,7 +102,10 @@ onUnmounted(() => stopRefresh())
 <template>
   <NCard :title="t('agenda.title')" class="agenda-card">
     <template #header-extra>
-      <button class="refresh-btn" :disabled="loading" @click="fetchAgenda">{{ t('agenda.refresh') }}</button>
+      <button class="refresh-btn" :disabled="loading || refreshing" @click="fetchAgenda">
+        <span v-if="refreshing" class="refresh-spinner" />
+        {{ t('agenda.refresh') }}
+      </button>
     </template>
 
     <NSpin :show="loading">
@@ -183,6 +190,9 @@ onUnmounted(() => stopRefresh())
 }
 
 .refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   background: none;
   border: 1px solid rgba(128, 128, 128, 0.3);
   border-radius: 4px;
@@ -194,6 +204,17 @@ onUnmounted(() => stopRefresh())
 }
 .refresh-btn:hover:not(:disabled) { border-color: #7C3AED; color: #7C3AED; }
 .refresh-btn:disabled { opacity: 0.4; cursor: default; }
+
+.refresh-spinner {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
 .agenda-meta {
   display: flex;
