@@ -173,7 +173,18 @@ onUnmounted(() => {
           <span class="queue-artist"> - {{ item.artist }}</span>
         </div>
         <div class="queue-meta">
-          <span class="queue-priority">{{ t('dashboard.queue.priority') }}: {{ item.priority }}</span>
+          <span
+            v-if="item.priority !== undefined && item.priority !== 9"
+            class="queue-priority"
+            :class="item.priority <= 8 ? 'queue-priority--arrow' : ''"
+          >
+            <template v-if="item.priority <= 8">
+              <span class="priority-arrow" :class="item.priority === 7 ? 'priority-arrow--high' : 'priority-arrow--med'">▲</span>
+            </template>
+            <template v-else>
+              {{ t('dashboard.queue.priority') }}: {{ item.priority }}
+            </template>
+          </span>
           <span class="queue-type">{{ queueTypeLabel(item) }}</span>
         </div>
       </div>
@@ -275,6 +286,20 @@ onUnmounted(() => {
   font-size: 12px;
   font-weight: 600;
   opacity: 0.85;
+}
+.priority-arrow {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+}
+.priority-arrow--med {
+  color: #18a058;
+  opacity: 1;
+}
+.priority-arrow--high {
+  color: #f0a020;
+  opacity: 1;
+  text-shadow: 0 0 6px rgba(240, 160, 32, 0.6);
 }
 .queue-item--playing {
   border-color: rgba(255, 214, 0, 0.4);

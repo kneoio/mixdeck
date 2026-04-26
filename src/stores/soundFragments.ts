@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import datanestApiService from '@/services/datanestApi'
 
 export type FragmentType =
-  | 'SONG' | 'ADVERTISEMENT' | 'JINGLE' | 'NEWS' | 'WEATHER'
+  | 'SONG' | 'ADVERTISEMENT' | 'JINGLE'
   | 'JINGLE_INTRO' | 'JINGLE_OUTRO' | 'BACKGROUND_LOOP'
 
 export const FRAGMENT_TYPES: { label: string; value: FragmentType }[] = [
@@ -12,8 +12,6 @@ export const FRAGMENT_TYPES: { label: string; value: FragmentType }[] = [
   { label: 'Jingle', value: 'JINGLE' },
   { label: 'Jingle Intro', value: 'JINGLE_INTRO' },
   { label: 'Jingle Outro', value: 'JINGLE_OUTRO' },
-  { label: 'News', value: 'NEWS' },
-  { label: 'Weather', value: 'WEATHER' },
   { label: 'Background Loop', value: 'BACKGROUND_LOOP' },
 ]
 
