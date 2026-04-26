@@ -174,7 +174,7 @@ onUnmounted(() => {
         </div>
         <div class="queue-meta">
           <span
-            v-if="item.priority !== undefined && item.priority !== 9"
+            v-if="item.priority !== undefined && item.priority !== 9 && item.queueType !== 'played'"
             class="queue-priority"
             :class="item.priority <= 8 ? 'queue-priority--arrow' : ''"
           >
