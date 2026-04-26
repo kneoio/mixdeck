@@ -237,7 +237,7 @@ onUnmounted(() => {
   font-weight: 500;
 }
 .queue-wrap {
-  margin-top: 16px;
+  margin-top: 8px;
   display: flex;
   flex-direction: column;
   gap: 8px;
