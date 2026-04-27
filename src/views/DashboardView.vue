@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import { useBrandsStore } from '@/stores/brands'
 import LedIndicator from '@/components/LedIndicator.vue'
+import aivoxApiService from '@/services/aivoxApi'
 import {
   NLayout, NLayoutSider, NLayoutHeader, NLayoutContent,
   NMenu, NButton, NDropdown, NAvatar, NSpace, NFlex, NIcon,
@@ -57,12 +58,38 @@ const onResize = () => { windowWidth.value = window.innerWidth }
 onMounted(() => window.addEventListener('resize', onResize))
 onUnmounted(() => window.removeEventListener('resize', onResize))
 
+let ledPollTimer: ReturnType<typeof setInterval> | null = null
+
+async function pollAllLeds() {
+  const slugs = brandsStore.brands
+    .map(b => b.slugName)
+    .filter((s): s is string => !!s)
+  await Promise.allSettled(
+    slugs.map(async slug => {
+      const alive = await aivoxApiService.heartbeat(slug)
+      brandsStore.setStreamingState(slug, alive)
+    })
+  )
+}
+
+function startLedPolling() {
+  pollAllLeds()
+  ledPollTimer = setInterval(pollAllLeds, 10000)
+}
+
+function stopLedPolling() {
+  if (ledPollTimer) { clearInterval(ledPollTimer); ledPollTimer = null }
+}
+
+onUnmounted(() => stopLedPolling())
+
 onMounted(async () => {
   if (!authStore.isAuthenticated) {
     router.push('/')
     return
   }
   await brandsStore.loadBrands(1, 10)
+  startLedPolling()
 })
 
 // Derive active menu key from current route
