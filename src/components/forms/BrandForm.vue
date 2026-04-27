@@ -77,7 +77,6 @@ type AgentLabel = {
 
 type AgentOption = SelectOption & {
   labels?: AgentLabel[]
-  description?: string
 }
 
 type ScriptOption = SelectOption & {
@@ -85,6 +84,8 @@ type ScriptOption = SelectOption & {
 }
 
 const agentOptions = ref<AgentOption[]>([])
+/** Raw agent rows from API (like scripts in scriptsStore) — used for description under DJ select. */
+const agentsList = ref<Array<{ id: string; description?: string; labels?: AgentLabel[]; name?: string }>>([])
 const profileOptions = ref<{ label: string; value: string }[]>([])
 const scriptOptions = ref<ScriptOption[]>([])
 const labelOptions = ref<{ label: string; value: string }[]>([])
@@ -97,11 +98,9 @@ const selectedScript = computed(() =>
 
 const selectedAgent = computed(() =>
   formData.value.aiAgentId
-    ? agentOptions.value.find(a => a.value === formData.value.aiAgentId) ?? null
+    ? agentsList.value.find(a => a.id === formData.value.aiAgentId) ?? null
     : null
 )
-
-
 
 function createLocalizedName() {
   return { lang: 'en', name: '' }
@@ -183,7 +182,7 @@ async function handleSave() {
   try {
     loading.value = true
     const id = isEditing.value ? (route.params.id as string) : null
-    const savedBrand = await store.saveBrand(id, {
+    await store.saveBrand(id, {
       ...formData.value,
       localizedName: buildLocalizedName(),
       country: formData.value.country || undefined,
@@ -201,13 +200,7 @@ async function handleSave() {
         : undefined,
       owner: (formData.value.owner.name || formData.value.owner.email) ? formData.value.owner : undefined,
     } as any)
-
-    await store.loadBrands(1, 200)
     message.success(t('brandForm.saved'))
-
-    if (!id && savedBrand?.id) {
-      await router.push(`/brands/${savedBrand.id}/playlist`)
-    }
   } catch (error: any) {
     handleApiError(error, message)
   } finally {
@@ -256,11 +249,22 @@ onMounted(async () => {
       datanestApiService.getPagedDictionary<any>('/labels/only/category/brand', 1, 200),
     ])
     if (agents.status === 'fulfilled') {
-      agentOptions.value = agents.value.entries.map((a: any) => ({
+      const entries = agents.value.entries as any[]
+      agentsList.value = entries.map((a: any) => {
+        const top = typeof a.description === 'string' ? a.description.trim() : ''
+        const nested = typeof a.docData?.description === 'string' ? a.docData.description.trim() : ''
+        const description = top || nested
+        return {
+          id: a.id,
+          name: a.name,
+          labels: Array.isArray(a.labels) ? a.labels : [],
+          ...(description ? { description } : {}),
+        }
+      })
+      agentOptions.value = entries.map((a: any) => ({
         label: a.name || a.id,
         value: a.id,
         labels: Array.isArray(a.labels) ? a.labels : [],
-        description: a.description || '',
       }))
     }
     if (profiles.status === 'fulfilled') {
