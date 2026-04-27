@@ -107,11 +107,18 @@ const menuOptions = computed<MenuOption[]>(() => [
       ...brandsStore.brands.map(brand => ({
         label: brandLabel(brand),
         key: `brand-root-${brand.id}`,
-        icon: () => h(LedIndicator, {
-            active: brandsStore.streamingStates[brand.slugName ?? ''] ?? ['ON_LINE', 'IDLE'].includes(brand.status ?? ''),
-            pulse: false,
-            size: 16
-          }),
+        icon: () => {
+            const slug = brand.slugName ?? ''
+            const isStreaming = brandsStore.streamingStates[slug]
+            const isOnline = isStreaming ?? brand.status === 'ON_LINE'
+            const isIdle = !isStreaming && brand.status === 'IDLE'
+            return h(LedIndicator, {
+              active: isOnline || isIdle,
+              pulse: false,
+              size: 16,
+              color: isIdle ? '#FFD600' : '#00FF3C',
+            })
+          },
         children: [
           {
             label: t('menu.dashboard'),
