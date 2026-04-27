@@ -124,9 +124,12 @@ function onLocaleChange(val: SupportedLocale) {
         </NButton>
       </NCard>
 
-      <!-- Security -->
-      <NCard :title="t('profile.security')">
+      <!-- About -->
+      <NCard title="About Mixdeck">
         <NDescriptions label-placement="left" :column="1" label-style="width: 160px; opacity: 0.55;">
+          <NDescriptionsItem label="Version">
+            <NTag type="default" size="small" round>v0.0.1</NTag>
+          </NDescriptionsItem>
           <NDescriptionsItem :label="t('profile.password')">••••••••</NDescriptionsItem>
           <NDescriptionsItem :label="t('profile.tfa')">
             <NTag type="warning" size="small" round>{{ t('profile.tfa_not_enabled') }}</NTag>
