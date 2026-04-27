@@ -77,6 +77,7 @@ type AgentLabel = {
 
 type AgentOption = SelectOption & {
   labels?: AgentLabel[]
+  description?: string
 }
 
 type ScriptOption = SelectOption & {
@@ -91,6 +92,12 @@ const labelOptions = ref<{ label: string; value: string }[]>([])
 const selectedScript = computed(() =>
   formData.value.scriptId
     ? scriptsStore.scripts.find(s => s.id === formData.value.scriptId)
+    : null
+)
+
+const selectedAgent = computed(() =>
+  formData.value.aiAgentId
+    ? agentOptions.value.find(a => a.value === formData.value.aiAgentId) ?? null
     : null
 )
 
@@ -176,7 +183,7 @@ async function handleSave() {
   try {
     loading.value = true
     const id = isEditing.value ? (route.params.id as string) : null
-    await store.saveBrand(id, {
+    const savedBrand = await store.saveBrand(id, {
       ...formData.value,
       localizedName: buildLocalizedName(),
       country: formData.value.country || undefined,
@@ -194,7 +201,13 @@ async function handleSave() {
         : undefined,
       owner: (formData.value.owner.name || formData.value.owner.email) ? formData.value.owner : undefined,
     } as any)
+
+    await store.loadBrands(1, 200)
     message.success(t('brandForm.saved'))
+
+    if (!id && savedBrand?.id) {
+      await router.push(`/brands/${savedBrand.id}/playlist`)
+    }
   } catch (error: any) {
     handleApiError(error, message)
   } finally {
@@ -247,6 +260,7 @@ onMounted(async () => {
         label: a.name || a.id,
         value: a.id,
         labels: Array.isArray(a.labels) ? a.labels : [],
+        description: a.description || '',
       }))
     }
     if (profiles.status === 'fulfilled') {
@@ -350,6 +364,10 @@ watch(
           <NFormItem :label="t('brandForm.ai_agent')">
             <NSelect v-model:value="formData.aiAgentId" :options="agentOptions"
               :render-label="renderAgentOptionLabel" style="width: 100%" />
+          </NFormItem>
+
+          <NFormItem v-if="selectedAgent?.description" :label="t('fragmentForm.description')">
+            <span style="color: #888; font-size: 13px;">{{ selectedAgent.description }}</span>
           </NFormItem>
 
           <NFormItem :label="t('brandForm.ai_override')">
