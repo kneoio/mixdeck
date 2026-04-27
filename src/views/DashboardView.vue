@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import { useBrandsStore } from '@/stores/brands'
 import LedIndicator from '@/components/LedIndicator.vue'
+import aivoxApiService from '@/services/aivoxApi'
 import {
   NLayout, NLayoutSider, NLayoutHeader, NLayoutContent,
   NMenu, NButton, NDropdown, NAvatar, NSpace, NFlex, NIcon,
@@ -63,6 +64,13 @@ onMounted(async () => {
     return
   }
   await brandsStore.loadBrands(1, 10)
+  brandsStore.brands
+    .filter(b => b.slugName)
+    .forEach(b => {
+      aivoxApiService.heartbeat(b.slugName!).then(alive => {
+        brandsStore.setStreamingState(b.slugName!, alive)
+      })
+    })
 })
 
 // Derive active menu key from current route
