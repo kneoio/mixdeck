@@ -130,19 +130,7 @@ function onLocaleChange(val: SupportedLocale) {
           <NDescriptionsItem label="Version">
             <NTag type="default" size="small" round>v0.0.1</NTag>
           </NDescriptionsItem>
-          <NDescriptionsItem :label="t('profile.password')">••••••••</NDescriptionsItem>
-          <NDescriptionsItem :label="t('profile.tfa')">
-            <NTag type="warning" size="small" round>{{ t('profile.tfa_not_enabled') }}</NTag>
-          </NDescriptionsItem>
-          <NDescriptionsItem :label="t('profile.sessions')">{{ t('profile.sessions_value') }}</NDescriptionsItem>
         </NDescriptions>
-
-        <NDivider style="margin: 16px 0;" />
-
-        <NSpace>
-          <NButton secondary>{{ t('profile.change_password') }}</NButton>
-          <NButton secondary>{{ t('profile.enable_tfa') }}</NButton>
-        </NSpace>
       </NCard>
 
     </div>

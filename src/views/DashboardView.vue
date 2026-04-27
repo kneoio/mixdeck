@@ -117,9 +117,11 @@ const menuOptions = computed<MenuOption[]>(() => [
         key: `brand-root-${brand.id}`,
         icon: () => {
             const slug = brand.slugName ?? ''
-            const isStreaming = brandsStore.streamingStates[slug]
-            const isOnline = isStreaming ?? brand.status === 'ON_LINE'
-            const isIdle = !isStreaming && brand.status === 'IDLE'
+            const liveState = brandsStore.streamingStates[slug]
+            const isOnline = liveState === true || (liveState === undefined && brand.status === 'ON_LINE')
+            const isIdle = liveState === false
+              ? brand.status === 'IDLE'
+              : (liveState === undefined && brand.status === 'IDLE')
             return h(LedIndicator, {
               active: isOnline || isIdle,
               pulse: false,
