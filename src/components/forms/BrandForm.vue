@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import {
   NButton, NSpace, NForm, NFormItem, NInput, NSelect, NSwitch,
   NTabs, NTabPane, NDynamicInput, NInputNumber,
-  NColorPicker, NTag, useMessage
+  NColorPicker, NTag, NPopconfirm, useMessage
 } from 'naive-ui'
 import type { SelectOption } from 'naive-ui'
 import FormWrapper from '@/components/FormWrapper.vue'
@@ -13,6 +13,7 @@ import { useScriptsStore } from '@/stores/scripts'
 import { useConstantsStore } from '@/stores/constants'
 import { useRoute, useRouter } from 'vue-router'
 import datanestApiService from '@/services/datanestApi'
+import dictionaryApiService from '@/services/dictionaryApi'
 import { handleApiError } from '@/utils/notificationService'
 
 const { t } = useI18n()
@@ -181,7 +182,7 @@ async function handleSave() {
   try {
     loading.value = true
     const id = isEditing.value ? (route.params.id as string) : null
-    await store.saveBrand(id, {
+    const savedBrand = await store.saveBrand(id, {
       ...formData.value,
       localizedName: buildLocalizedName(),
       country: formData.value.country || undefined,
@@ -200,6 +201,29 @@ async function handleSave() {
       owner: (formData.value.owner.name || formData.value.owner.email) ? formData.value.owner : undefined,
     } as any)
     message.success(t('brandForm.saved'))
+    if (!id) {
+      const newId = (savedBrand as any)?.id
+        ?? (savedBrand as any)?.docData?.id
+        ?? (savedBrand as any)?.payload?.docData?.id
+      if (newId) {
+        await store.loadBrands(1, 10)
+        await router.push(`/brands/${newId}/playlist`)
+      }
+    }
+  } catch (error: any) {
+    handleApiError(error, message)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function handleCloseBrand() {
+  if (!isEditing.value) return
+  try {
+    loading.value = true
+    await store.closeBrand(route.params.id as string)
+    message.success('Brand closed successfully')
+    await router.push('/brands')
   } catch (error: any) {
     handleApiError(error, message)
   } finally {
@@ -244,7 +268,7 @@ onMounted(async () => {
       datanestApiService.getPagedDictionary<any>('/dictionary/agents', 1, 100),
       datanestApiService.getPagedDictionary<any>('/profiles', 1, 100),
       scriptsStore.loadScripts(1, 200),
-      datanestApiService.getPagedDictionary<any>('/labels/only/category/brand', 1, 200),
+      dictionaryApiService.getLabelsByCategory('brand'),
     ])
     if (agents.status === 'fulfilled') {
       const entries = agents.value.entries as any[]
@@ -271,7 +295,7 @@ onMounted(async () => {
       }))
     }
     if (lbls.status === 'fulfilled') {
-      labelOptions.value = lbls.value.entries.map((l: any) => ({
+      labelOptions.value = lbls.value.map((l: any) => ({
         label: l.identifier || l.title || l.id, value: l.id
       }))
     }
@@ -318,7 +342,19 @@ watch(
     :loading="loading"
   >
     <template #actions>
-      <NButton type="primary" @click="handleSave">{{ t('common.save') }}</NButton>
+      <NSpace>
+        <NPopconfirm
+          v-if="isEditing"
+          :disabled="loading"
+          @positive-click="handleCloseBrand"
+        >
+          <template #trigger>
+            <NButton type="error" :disabled="loading">{{ t('common.close') }}</NButton>
+          </template>
+          Close this brand?
+        </NPopconfirm>
+        <NButton type="primary" :disabled="loading" @click="handleSave">{{ t('common.save') }}</NButton>
+      </NSpace>
     </template>
 
     <NTabs v-model:value="activeTab">

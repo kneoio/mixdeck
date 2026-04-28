@@ -64,6 +64,10 @@ onMounted(async () => {
     return
   }
   await brandsStore.loadBrands(1, 10)
+  if (brandsStore.brands.length === 0 && route.path !== '/broadcaster-welcome') {
+    await router.replace('/broadcaster-welcome')
+    return
+  }
   brandsStore.brands
     .filter(b => b.slugName)
     .forEach(b => {
@@ -72,6 +76,15 @@ onMounted(async () => {
       })
     })
 })
+
+watch(
+  () => brandsStore.brands.length,
+  async (count) => {
+    if (count === 0 && route.path !== '/broadcaster-welcome') {
+      await router.replace('/broadcaster-welcome')
+    }
+  }
+)
 
 // Derive active menu key from current route
 const activeKey = computed(() => {

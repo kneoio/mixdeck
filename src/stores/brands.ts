@@ -84,9 +84,27 @@ export const useBrandsStore = defineStore('brands', () => {
     return datanestApiService.deleteDictionaryItem('/brands', id)
   }
 
+  async function closeBrand(id: string) {
+    return datanestApiService.post(`/brands/${id}/close`, {})
+  }
+
   function setStreamingState(slug: string, alive: boolean) {
     streamingStates.value[slug] = alive
   }
 
-  return { brands, loading, totalCount, pageNum, pageSize, maxPage, streamingStates, loadBrands, fetchBrand, saveBrand, deleteBrand, setStreamingState }
+  return {
+    brands,
+    loading,
+    totalCount,
+    pageNum,
+    pageSize,
+    maxPage,
+    streamingStates,
+    loadBrands,
+    fetchBrand,
+    saveBrand,
+    deleteBrand,
+    closeBrand,
+    setStreamingState
+  }
 })

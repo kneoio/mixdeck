@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, h } from 'vue'
+import { ref, computed, watch, h, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
@@ -29,6 +29,7 @@ const pageSize = ref(10)
 const selectedIds = ref<string[]>([])
 const searchTerm = ref('')
 const showBulkUpload = ref(false)
+const brandDoc = ref<any | null>(null)
 
 // Lookup maps for resolving IDs → display names
 const genreMap = ref<Map<string, { name: string; color?: string; fontColor?: string }>>(new Map())
@@ -66,9 +67,13 @@ function resolveLabel(l: any) {
 }
 
 const brand = computed(() => brandsStore.brands.find(b => b.id === route.params.id))
-const slugName = computed(() => brand.value?.slugName ?? '')
+const effectiveBrand = computed(() => brand.value ?? brandDoc.value)
+const slugName = computed(() => effectiveBrand.value?.slugName ?? '')
 const brandName = computed(() =>
-  brand.value?.localizedName?.['en'] || brand.value?.title || brand.value?.slugName || (route.params.id as string)
+  effectiveBrand.value?.localizedName?.['en']
+    || effectiveBrand.value?.title
+    || effectiveBrand.value?.slugName
+    || (route.params.id as string)
 )
 
 const pagination = computed(() => ({
@@ -156,6 +161,18 @@ async function fetchData(page = pageNum.value, size = pageSize.value) {
   }
 }
 
+async function ensureBrandLoaded() {
+  if (brand.value) {
+    brandDoc.value = null
+    return
+  }
+  try {
+    brandDoc.value = await brandsStore.fetchBrand(route.params.id as string)
+  } catch {
+    brandDoc.value = null
+  }
+}
+
 async function handleBulkDelete() {
   try {
     loading.value = true
@@ -184,6 +201,19 @@ function onSearchChange() {
   if (searchTimer) clearTimeout(searchTimer)
   searchTimer = setTimeout(() => fetchData(1), 400)
 }
+
+onMounted(() => {
+  ensureBrandLoaded()
+})
+
+watch(
+  () => route.params.id,
+  () => {
+    brandDoc.value = null
+    ensureBrandLoaded()
+  },
+  { immediate: true }
+)
 
 watch(slugName, (val) => { if (val) { loadDictionaries(); fetchData(1) } }, { immediate: true })
 watch(showBulkUpload, (isOpen, wasOpen) => {
