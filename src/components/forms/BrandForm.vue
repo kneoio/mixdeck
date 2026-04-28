@@ -54,7 +54,6 @@ const formData = ref({
   profileId: null as string | null,
   oneTimeStreamPolicy: 'NOT_ALLOWED' as SubmissionPolicy,
   submissionPolicy: 'NOT_ALLOWED' as SubmissionPolicy,
-  messagingPolicy: 'NOT_ALLOWED' as SubmissionPolicy,
   aiOverriding: { prompt: '' },
   scriptId: null as string | null,
   profileOverriding: { name: '', description: '' },
@@ -224,7 +223,6 @@ function applyBrandToForm(brand: any) {
     profileId: brand.profileId || null,
     oneTimeStreamPolicy: brand.oneTimeStreamPolicy || 'NOT_ALLOWED',
     submissionPolicy: brand.submissionPolicy || 'NOT_ALLOWED',
-    messagingPolicy: brand.messagingPolicy || 'NOT_ALLOWED',
     aiOverriding: { prompt: brand.aiOverriding?.prompt || '' },
     scriptId: firstScript?.scriptId || null,
     profileOverriding: {
@@ -435,9 +433,6 @@ watch(
 
       <NTabPane name="contribution" :tab="t('brandForm.tab_contribution')">
         <NForm label-placement="left" label-width="180" :disabled="loading">
-          <NFormItem :label="t('brandForm.messaging')">
-            <NSelect v-model:value="formData.messagingPolicy" :options="SUBMISSION_POLICY_OPTIONS" style="width: 220px" />
-          </NFormItem>
           <NFormItem :label="t('brandForm.one_time_stream')">
             <NSelect v-model:value="formData.oneTimeStreamPolicy" :options="SUBMISSION_POLICY_OPTIONS" style="width: 220px" />
           </NFormItem>
