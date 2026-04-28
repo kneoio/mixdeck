@@ -230,5 +230,6 @@ export default {
   common: {
     save: 'حفظ',
     close: 'إغلاق',
+    required_field: 'حقل {field} مطلوب',
   },
 }

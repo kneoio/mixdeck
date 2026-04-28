@@ -230,5 +230,6 @@ export default {
   common: {
     save: 'Speichern',
     close: 'Schließen',
+    required_field: '{field} ist erforderlich',
   },
 }

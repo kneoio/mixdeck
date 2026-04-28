@@ -231,5 +231,6 @@ export default {
   common: {
     save: 'შენახვა',
     close: 'დახურვა',
+    required_field: '{field} სავალდებულოა',
   },
 }

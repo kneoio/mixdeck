@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { gsap } from 'gsap'
 import {
   NButton, NSpace, NForm, NFormItem, NInput, NSelect, NTreeSelect,
   NTabs, NTabPane, NUpload, NProgress, useMessage, useLoadingBar
@@ -32,6 +33,21 @@ const brandId = computed(() => route.params.id as string)
 const isEditing = computed(() => !!route.params.fragmentId && route.params.fragmentId !== 'new')
 const loading = ref(false)
 const activeTab = ref('properties')
+const isTabChangeFromValidation = ref(false)
+
+const titleFieldRef = ref<HTMLElement | null>(null)
+const artistFieldRef = ref<HTMLElement | null>(null)
+const representedInBrandsFieldRef = ref<HTMLElement | null>(null)
+const audioFileFieldRef = ref<HTMLElement | null>(null)
+
+type ValidationField = 'title' | 'artist' | 'representedInBrands' | 'audioFile'
+
+const fieldErrors = ref<Record<ValidationField, string>>({
+  title: '',
+  artist: '',
+  representedInBrands: '',
+  audioFile: '',
+})
 
 // File upload state
 const existingUrl = ref('')
@@ -88,12 +104,93 @@ const brandOptions = computed(() =>
 const backRoute = computed(() => `/brands/${brandId.value}/playlist`)
 
 const formTitle = computed(() => {
-  if (!isEditing.value) return t('fragmentForm.create_title')
+  if (!isEditing.value) return 'Track'
   if (formData.value.title && formData.value.artist) {
     return `${formData.value.title} - ${formData.value.artist}`
   }
   return t('fragmentForm.edit_title')
 })
+
+function getFieldRef(field: ValidationField) {
+  if (field === 'title') return titleFieldRef.value
+  if (field === 'artist') return artistFieldRef.value
+  if (field === 'representedInBrands') return representedInBrandsFieldRef.value
+  return audioFileFieldRef.value
+}
+
+function getFieldLabel(field: ValidationField) {
+  if (field === 'title') return t('fragmentForm.title')
+  if (field === 'artist') return t('fragmentForm.artist')
+  if (field === 'representedInBrands') return t('fragmentForm.assign_to')
+  return t('fragmentForm.audio_file')
+}
+
+function clearFieldError(field: ValidationField) {
+  if (!fieldErrors.value[field]) return
+  fieldErrors.value[field] = ''
+  const target = getFieldRef(field)
+  if (target) {
+    gsap.to(target, {
+      borderColor: 'rgba(255,77,79,0)',
+      boxShadow: '0 0 0 0 rgba(255,77,79,0)',
+      duration: 0.2,
+      ease: 'power1.out',
+    })
+  }
+}
+
+function clearAllFieldErrors() {
+  const allFields: ValidationField[] = ['title', 'artist', 'representedInBrands', 'audioFile']
+  for (const field of allFields) {
+    clearFieldError(field)
+  }
+}
+
+async function showFieldError(field: ValidationField) {
+  fieldErrors.value[field] = t('common.required_field', { field: getFieldLabel(field) })
+  await nextTick()
+  const target = getFieldRef(field)
+  if (!target) return
+  gsap.killTweensOf(target)
+  gsap.fromTo(
+    target,
+    {
+      borderColor: 'rgba(255,77,79,0)',
+      boxShadow: '0 0 0 0 rgba(255,77,79,0)',
+    },
+    {
+      borderColor: 'rgba(255,77,79,0.95)',
+      boxShadow: '0 0 0 2px rgba(255,77,79,0.5)',
+      duration: 0.24,
+      repeat: 1,
+      yoyo: true,
+      ease: 'power1.out',
+    }
+  )
+}
+
+async function validateBeforeSave() {
+  const invalidFields: ValidationField[] = []
+
+  if (!formData.value.title.trim()) invalidFields.push('title')
+  if (!formData.value.artist.trim()) invalidFields.push('artist')
+  if (!formData.value.representedInBrands.length) invalidFields.push('representedInBrands')
+  if (!existingUrl.value && !uploadedFileNames.value.length) invalidFields.push('audioFile')
+
+  const allFields: ValidationField[] = ['title', 'artist', 'representedInBrands', 'audioFile']
+  for (const field of allFields) {
+    if (!invalidFields.includes(field)) clearFieldError(field)
+  }
+
+  if (!invalidFields.length) return true
+
+  isTabChangeFromValidation.value = true
+  activeTab.value = 'properties'
+  await nextTick()
+  isTabChangeFromValidation.value = false
+  await Promise.all(invalidFields.map(showFieldError))
+  return false
+}
 
 function normalizeIdList(input: unknown): string[] {
   if (!Array.isArray(input)) return []
@@ -154,6 +251,8 @@ async function handleSave() {
     message.warning(t('fragmentForm.wait_upload'))
     return
   }
+  const valid = await validateBeforeSave()
+  if (!valid) return
   try {
     loading.value = true
     const id = isEditing.value ? (route.params.fragmentId as string) : null
@@ -210,6 +309,31 @@ onMounted(async () => {
     loading.value = false
   }
 })
+
+watch(() => formData.value.title, (value) => {
+  if (value.trim()) clearFieldError('title')
+})
+
+watch(() => formData.value.artist, (value) => {
+  if (value.trim()) clearFieldError('artist')
+})
+
+watch(() => formData.value.representedInBrands, (value) => {
+  if (value.length) clearFieldError('representedInBrands')
+}, { deep: true })
+
+watch(uploadedFileNames, (value) => {
+  if (value.length || existingUrl.value) clearFieldError('audioFile')
+}, { deep: true })
+
+watch(existingUrl, (value) => {
+  if (value || uploadedFileNames.value.length) clearFieldError('audioFile')
+})
+
+watch(activeTab, () => {
+  if (isTabChangeFromValidation.value) return
+  clearAllFieldErrors()
+})
 </script>
 
 <template>
@@ -230,81 +354,127 @@ onMounted(async () => {
         <NForm label-placement="left" label-width="120" :disabled="loading || isUploading">
 
           <NFormItem :label="t('fragmentForm.type')">
-            <NSpace align="center">
-              <NSelect v-model:value="formData.type" :options="FRAGMENT_TYPES" style="width: 200px" />
-              <template v-if="formData.length != null">
-                <span style="opacity: 0.45; font-size: 13px;">{{ t('fragmentForm.length') }}</span>
-                <NInput
-                  :value="((formData.length as number) / 60).toFixed(2)"
-                  readonly style="width: 90px"
-                />
-              </template>
-            </NSpace>
+            <div class="field-shell-plain">
+              <NSpace align="center">
+                <NSelect v-model:value="formData.type" :options="FRAGMENT_TYPES" style="width: 200px" />
+                <template v-if="formData.length != null">
+                  <span style="opacity: 0.45; font-size: 13px;">{{ t('fragmentForm.length') }}</span>
+                  <NInput
+                    :value="((formData.length as number) / 60).toFixed(2)"
+                    readonly style="width: 90px"
+                  />
+                </template>
+              </NSpace>
+            </div>
           </NFormItem>
 
           <NFormItem :label="t('fragmentForm.title')">
-            <NInput v-model:value="formData.title" style="width: 100%" />
+            <div class="field-stack">
+              <div
+                ref="titleFieldRef"
+                class="field-error-shell"
+                :class="{ 'field-error-shell--active': !!fieldErrors.title }"
+              >
+                <NInput v-model:value="formData.title" style="width: 100%" />
+              </div>
+              <div v-if="fieldErrors.title" class="field-error-label">{{ fieldErrors.title }}</div>
+            </div>
           </NFormItem>
 
           <NFormItem :label="t('fragmentForm.artist')">
-            <NInput v-model:value="formData.artist" style="width: 100%" />
+            <div class="field-stack">
+              <div
+                ref="artistFieldRef"
+                class="field-error-shell"
+                :class="{ 'field-error-shell--active': !!fieldErrors.artist }"
+              >
+                <NInput v-model:value="formData.artist" style="width: 100%" />
+              </div>
+              <div v-if="fieldErrors.artist" class="field-error-label">{{ fieldErrors.artist }}</div>
+            </div>
           </NFormItem>
 
           <NFormItem :label="t('fragmentForm.album')">
-            <NInput v-model:value="formData.album" style="width: 100%" />
+            <div class="field-shell-plain">
+              <NInput v-model:value="formData.album" style="width: 100%" />
+            </div>
           </NFormItem>
 
           <NFormItem :label="t('fragmentForm.genres')">
-            <NTreeSelect
-              v-model:value="formData.genres"
-              :options="genreTreeOptions"
-              multiple
-              checkable
-              clear-filter-after-select
-              filterable
-              style="width: 100%"
-            />
+            <div class="field-shell-plain">
+              <NTreeSelect
+                v-model:value="formData.genres"
+                :options="genreTreeOptions"
+                multiple
+                checkable
+                clear-filter-after-select
+                filterable
+                style="width: 100%"
+              />
+            </div>
           </NFormItem>
 
           <NFormItem :label="t('fragmentForm.labels')">
-            <NSelect v-model:value="formData.labels" :options="labelOptions"
-              multiple filterable style="width: 100%" />
+            <div class="field-shell-plain">
+              <NSelect v-model:value="formData.labels" :options="labelOptions"
+                multiple filterable style="width: 100%" />
+            </div>
           </NFormItem>
 
           <NFormItem :label="t('fragmentForm.assign_to')">
-            <NSelect v-model:value="formData.representedInBrands" :options="brandOptions"
-              multiple filterable style="width: 100%" />
+            <div class="field-stack">
+              <div
+                ref="representedInBrandsFieldRef"
+                class="field-error-shell"
+                :class="{ 'field-error-shell--active': !!fieldErrors.representedInBrands }"
+              >
+                <NSelect v-model:value="formData.representedInBrands" :options="brandOptions"
+                  multiple filterable style="width: 100%" />
+              </div>
+              <div v-if="fieldErrors.representedInBrands" class="field-error-label">{{ fieldErrors.representedInBrands }}</div>
+            </div>
           </NFormItem>
 
           <NFormItem :label="t('fragmentForm.audio_file')">
-            <NSpace vertical style="width: 100%">
-              <a
-                v-if="existingUrl"
-                href="#"
-                style="font-size: 13px;"
-                @click.prevent="handleDownload(existingUrl, existingFileName)"
-              >{{ existingFileName }}</a>
-              <NUpload
-                :max="1"
-                :custom-request="handleFileCapture"
-                accept=".mp3,.wav,.flac,.ogg,.m4a,.aac"
-                :disabled="isUploading"
+            <div class="field-stack">
+              <div
+                ref="audioFileFieldRef"
+                class="field-error-shell"
+                :class="{ 'field-error-shell--active': !!fieldErrors.audioFile }"
               >
-                <NButton :disabled="isUploading">
-                  {{ existingUrl ? t('fragmentForm.replace_file') : t('fragmentForm.choose_file') }}
-                </NButton>
-              </NUpload>
-              <NProgress
-                v-if="isUploading"
-                type="line"
-                :percentage="uploadProgress"
-                :show-indicator="true"
-              />
-            </NSpace>
+                <NSpace vertical style="width: 100%">
+                  <a
+                    v-if="existingUrl"
+                    href="#"
+                    style="font-size: 13px;"
+                    @click.prevent="handleDownload(existingUrl, existingFileName)"
+                  >{{ existingFileName }}</a>
+                  <NUpload
+                    :max="1"
+                    :custom-request="handleFileCapture"
+                    accept=".mp3,.wav,.flac,.ogg,.m4a,.aac"
+                    :disabled="isUploading"
+                  >
+                    <NButton :disabled="isUploading">
+                      {{ existingUrl ? t('fragmentForm.replace_file') : t('fragmentForm.choose_file') }}
+                    </NButton>
+                  </NUpload>
+                  <NProgress
+                    v-if="isUploading"
+                    type="line"
+                    :percentage="uploadProgress"
+                    :show-indicator="true"
+                  />
+                </NSpace>
+              </div>
+              <div v-if="fieldErrors.audioFile" class="field-error-label">{{ fieldErrors.audioFile }}</div>
+            </div>
           </NFormItem>
 
           <NFormItem v-if="formData.expiresAt" :label="t('fragmentForm.expires_at')">
-            <NInput :value="formData.expiresAt" readonly style="width: 200px" />
+            <div class="field-shell-plain">
+              <NInput :value="formData.expiresAt" readonly style="width: 200px" />
+            </div>
           </NFormItem>
 
         </NForm>
@@ -313,11 +483,46 @@ onMounted(async () => {
       <NTabPane name="description" :tab="t('fragmentForm.tab_description')">
         <NForm label-placement="left" label-width="120" :disabled="loading || isUploading">
           <NFormItem :label="t('fragmentForm.description')">
-            <NInput v-model:value="formData.description" type="textarea"
-              :autosize="{ minRows: 8, maxRows: 20 }" style="width: 100%" />
+            <div class="field-shell-plain">
+              <NInput v-model:value="formData.description" type="textarea"
+                :autosize="{ minRows: 8, maxRows: 20 }" style="width: 100%" />
+            </div>
           </NFormItem>
         </NForm>
       </NTabPane>
     </NTabs>
   </FormWrapper>
 </template>
+
+<style scoped>
+.field-stack {
+  width: 100%;
+  display: block;
+}
+
+.field-error-shell {
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 8px;
+  transition: border-color 0.2s ease;
+}
+
+.field-shell-plain {
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 8px;
+}
+
+.field-error-shell--active {
+  border-color: rgba(255, 77, 79, 0.95);
+}
+
+.field-error-label {
+  margin-top: 6px;
+  color: #ff4d4f;
+  font-size: 12px;
+  line-height: 1.3;
+}
+</style>

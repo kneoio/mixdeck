@@ -230,5 +230,6 @@ export default {
   common: {
     save: 'Enregistrer',
     close: 'Fermer',
+    required_field: '{field} est obligatoire',
   },
 }

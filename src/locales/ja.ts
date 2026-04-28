@@ -230,5 +230,6 @@ export default {
   common: {
     save: '保存',
     close: '閉じる',
+    required_field: '{field}は必須です',
   },
 }

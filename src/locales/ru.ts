@@ -230,5 +230,6 @@ export default {
   common: {
     save: 'Сохранить',
     close: 'Закрыть',
+    required_field: 'Поле «{field}» обязательно',
   },
 }

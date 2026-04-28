@@ -230,5 +230,6 @@ export default {
   common: {
     save: 'सहेजें',
     close: 'बंद करें',
+    required_field: '{field} आवश्यक है',
   },
 }

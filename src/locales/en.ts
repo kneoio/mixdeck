@@ -158,7 +158,7 @@ export default {
     load_failed: 'Failed to load',
   },
   fragmentForm: {
-    create_title: 'Create Sound Fragment',
+    create_title: 'Track',
     create_subtitle: 'Add a new sound fragment',
     edit_title: 'Edit Sound Fragment',
     edit_subtitle: 'Update sound fragment',
@@ -231,5 +231,6 @@ export default {
   common: {
     save: 'Save',
     close: 'Close',
+    required_field: '{field} is required',
   },
 }

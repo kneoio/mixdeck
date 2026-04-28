@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, h, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, h, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { gsap } from 'gsap'
 import {
@@ -44,6 +44,7 @@ const formTitle = computed(() => {
 const loading = ref(false)
 const activeTab = ref('properties')
 const isTabChangeFromValidation = ref(false)
+const isMobile = ref(false)
 const localizedNamesFieldRef = ref<HTMLElement | null>(null)
 const countryFieldRef = ref<HTMLElement | null>(null)
 const timeZoneFieldRef = ref<HTMLElement | null>(null)
@@ -119,6 +120,13 @@ const selectedAgent = computed(() =>
     : null
 )
 
+const formLabelPlacement = computed(() => (isMobile.value ? 'top' : 'left'))
+
+function updateIsMobile() {
+  if (typeof window === 'undefined') return
+  isMobile.value = window.innerWidth <= 768
+}
+
 function createLocalizedName() {
   return { lang: 'en', name: '' }
 }
@@ -167,7 +175,7 @@ function clearAllFieldErrors() {
 }
 
 async function showFieldError(field: ValidationField) {
-  fieldErrors.value[field] = `${getFieldLabel(field)} is required`
+  fieldErrors.value[field] = t('common.required_field', { field: getFieldLabel(field) })
   await nextTick()
   const target = getFieldRef(field)
   if (!target) return
@@ -378,6 +386,8 @@ function applyBrandToForm(brand: any) {
 }
 
 onMounted(async () => {
+  updateIsMobile()
+  window.addEventListener('resize', updateIsMobile)
   try {
     loading.value = true
     const [agents, profiles, scripts, lbls] = await Promise.allSettled([
@@ -431,6 +441,11 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
+})
+
+onBeforeUnmount(() => {
+  if (typeof window === 'undefined') return
+  window.removeEventListener('resize', updateIsMobile)
 })
 
 watch(
@@ -495,7 +510,7 @@ watch(activeTab, () => {
 
     <NTabs v-model:value="activeTab">
       <NTabPane name="properties" :tab="t('brandForm.tab_properties')">
-        <NForm label-placement="left" label-width="140" :disabled="loading">
+        <NForm :label-placement="formLabelPlacement" label-width="140" :disabled="loading">
           <NFormItem :label="t('brandForm.localized_names')">
             <div class="field-stack">
               <div
@@ -567,7 +582,7 @@ watch(activeTab, () => {
       </NTabPane>
 
       <NTabPane name="dj" :tab="t('brandForm.tab_dj')">
-        <NForm label-placement="left" label-width="160" :disabled="loading">
+        <NForm :label-placement="formLabelPlacement" label-width="160" :disabled="loading">
           <NFormItem :label="t('brandForm.ai_agent')">
             <div class="field-stack">
               <div
@@ -598,7 +613,7 @@ watch(activeTab, () => {
       </NTabPane>
 
       <NTabPane name="script" :tab="t('brandForm.tab_script')">
-        <NForm label-placement="left" label-width="140" :disabled="loading">
+        <NForm :label-placement="formLabelPlacement" label-width="140" :disabled="loading">
           <NFormItem :label="t('brandForm.script')">
             <div class="field-stack">
               <div
@@ -641,7 +656,7 @@ watch(activeTab, () => {
       </NTabPane>
 
       <NTabPane name="audience" :tab="t('brandForm.tab_audience')">
-        <NForm label-placement="left" label-width="160" :disabled="loading">
+        <NForm :label-placement="formLabelPlacement" label-width="160" :disabled="loading">
           <NFormItem :label="t('brandForm.audience_type')">
             <div class="field-shell-plain">
               <NSelect v-model:value="formData.profileId" :options="profileOptions"
@@ -667,7 +682,7 @@ watch(activeTab, () => {
       </NTabPane>
 
       <NTabPane name="contribution" :tab="t('brandForm.tab_contribution')">
-        <NForm label-placement="left" label-width="180" :disabled="loading">
+        <NForm :label-placement="formLabelPlacement" label-width="180" :disabled="loading">
           <NFormItem :label="t('brandForm.one_time_stream')">
             <div class="field-shell-plain">
               <NSelect v-model:value="formData.oneTimeStreamPolicy" :options="SUBMISSION_POLICY_OPTIONS" style="width: 220px" />
@@ -682,7 +697,7 @@ watch(activeTab, () => {
       </NTabPane>
 
       <NTabPane name="playerUi" :tab="t('brandForm.tab_player_ui')">
-        <NForm label-placement="left" label-width="120" :disabled="loading">
+        <NForm :label-placement="formLabelPlacement" label-width="120" :disabled="loading">
           <NFormItem v-if="localizedNames[0]?.name" :label="t('brandForm.preview')">
             <div class="field-shell-plain">
               <div :style="{
@@ -713,7 +728,7 @@ watch(activeTab, () => {
       </NTabPane>
 
       <NTabPane name="owner" :tab="t('brandForm.tab_owner')">
-        <NForm label-placement="left" label-width="120" :disabled="loading">
+        <NForm :label-placement="formLabelPlacement" label-width="120" :disabled="loading">
           <NFormItem :label="t('brandForm.owner_name')">
             <div class="field-shell-plain">
               <NInput v-model:value="formData.owner.name"

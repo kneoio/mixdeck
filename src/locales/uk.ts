@@ -231,5 +231,6 @@ export default {
   common: {
     save: 'Зберегти',
     close: 'Закрити',
+    required_field: 'Поле «{field}» є обов’язковим',
   },
 }

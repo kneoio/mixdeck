@@ -231,5 +231,6 @@ export default {
   common: {
     save: 'Сақтау',
     close: 'Жабу',
+    required_field: '«{field}» өрісі міндетті',
   },
 }
