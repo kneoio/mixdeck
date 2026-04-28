@@ -223,7 +223,13 @@ async function handleCloseBrand() {
     loading.value = true
     await store.closeBrand(route.params.id as string)
     message.success('Brand closed successfully')
-    await router.push('/brands')
+    await store.loadBrands(1, 1)
+    const nextBrand = store.brands[0]
+    if (nextBrand?.id) {
+      await router.push(`/brands/${nextBrand.id}/playlist`)
+    } else {
+      await router.push('/broadcaster-welcome')
+    }
   } catch (error: any) {
     handleApiError(error, message)
   } finally {
