@@ -159,8 +159,7 @@ function clearFieldError(field: ValidationField) {
   const target = getFieldRef(field)
   if (target) {
     gsap.to(target, {
-      borderColor: 'rgba(255,77,79,0)',
-      boxShadow: '0 0 0 0 rgba(255,77,79,0)',
+      borderLeftColor: 'rgba(255,77,79,0)',
       duration: 0.2,
       ease: 'power1.out',
     })
@@ -183,12 +182,10 @@ async function showFieldError(field: ValidationField) {
   gsap.fromTo(
     target,
     {
-      borderColor: 'rgba(255,77,79,0)',
-      boxShadow: '0 0 0 0 rgba(255,77,79,0)',
+      borderLeftColor: 'rgba(255,77,79,0)',
     },
     {
-      borderColor: 'rgba(255,77,79,0.95)',
-      boxShadow: '0 0 0 2px rgba(255,77,79,0.5)',
+      borderLeftColor: 'rgba(255,77,79,0.95)',
       duration: 0.24,
       repeat: 1,
       yoyo: true,
@@ -528,7 +525,9 @@ watch(activeTab, () => {
                   </template>
                 </NDynamicInput>
               </div>
-              <div v-if="fieldErrors.localizedNames" class="field-error-label">{{ fieldErrors.localizedNames }}</div>
+              <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.localizedNames }">
+                {{ fieldErrors.localizedNames || '\u00A0' }}
+              </div>
             </div>
           </NFormItem>
 
@@ -542,7 +541,9 @@ watch(activeTab, () => {
                 <NSelect v-model:value="formData.country" :options="constantsStore.countries"
                   filterable clearable style="width: 250px" />
               </div>
-              <div v-if="fieldErrors.country" class="field-error-label">{{ fieldErrors.country }}</div>
+              <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.country }">
+                {{ fieldErrors.country || '\u00A0' }}
+              </div>
             </div>
           </NFormItem>
 
@@ -563,7 +564,9 @@ watch(activeTab, () => {
                 <NSelect v-model:value="formData.timeZone" :options="constantsStore.timezones"
                   filterable clearable style="width: 280px" />
               </div>
-              <div v-if="fieldErrors.timeZone" class="field-error-label">{{ fieldErrors.timeZone }}</div>
+              <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.timeZone }">
+                {{ fieldErrors.timeZone || '\u00A0' }}
+              </div>
             </div>
           </NFormItem>
 
@@ -593,7 +596,9 @@ watch(activeTab, () => {
                 <NSelect v-model:value="formData.aiAgentId" :options="agentOptions"
                   :render-label="renderAgentOptionLabel" style="width: 100%" />
               </div>
-              <div v-if="fieldErrors.aiAgentId" class="field-error-label">{{ fieldErrors.aiAgentId }}</div>
+              <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.aiAgentId }">
+                {{ fieldErrors.aiAgentId || '\u00A0' }}
+              </div>
             </div>
           </NFormItem>
 
@@ -624,7 +629,9 @@ watch(activeTab, () => {
                 <NSelect v-model:value="formData.scriptId" :options="scriptOptions"
                   :render-label="renderScriptOptionLabel" filterable style="width: 100%; max-width: 500px" />
               </div>
-              <div v-if="fieldErrors.scriptId" class="field-error-label">{{ fieldErrors.scriptId }}</div>
+              <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.scriptId }">
+                {{ fieldErrors.scriptId || '\u00A0' }}
+              </div>
             </div>
           </NFormItem>
 
@@ -776,10 +783,9 @@ watch(activeTab, () => {
 
 .field-error-shell {
   width: 100%;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  padding: 8px;
-  transition: border-color 0.2s ease;
+  border-left: 2px solid transparent;
+  padding-left: 8px;
+  transition: border-left-color 0.2s ease;
 }
 
 .field-shell-plain {
@@ -790,14 +796,21 @@ watch(activeTab, () => {
 }
 
 .field-error-shell--active {
-  border-color: rgba(255, 77, 79, 0.95);
+  border-left-color: rgba(255, 77, 79, 0.95);
 }
 
 .field-error-label {
   margin-top: 6px;
+  min-height: 16px;
+  padding-left: 10px;
   color: #ff4d4f;
   font-size: 12px;
   line-height: 1.3;
+  visibility: hidden;
+}
+
+.field-error-label--visible {
+  visibility: visible;
 }
 
 .localized-row {
@@ -811,5 +824,18 @@ watch(activeTab, () => {
 .localized-row__input {
   flex: 1;
   min-width: 0;
+}
+
+:deep(.n-form-item .n-form-item-feedback-wrapper) {
+  min-height: 12px;
+  line-height: 1.1;
+}
+
+:deep(.n-form-item) {
+  margin-bottom: 8px;
+}
+
+:deep(.n-form-item:last-child) {
+  margin-bottom: 0;
 }
 </style>

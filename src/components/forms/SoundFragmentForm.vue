@@ -137,8 +137,7 @@ function clearFieldError(field: ValidationField) {
   const target = getFieldRef(field)
   if (target) {
     gsap.to(target, {
-      borderColor: 'rgba(255,77,79,0)',
-      boxShadow: '0 0 0 0 rgba(255,77,79,0)',
+      borderLeftColor: 'rgba(255,77,79,0)',
       duration: 0.2,
       ease: 'power1.out',
     })
@@ -161,12 +160,10 @@ async function showFieldError(field: ValidationField) {
   gsap.fromTo(
     target,
     {
-      borderColor: 'rgba(255,77,79,0)',
-      boxShadow: '0 0 0 0 rgba(255,77,79,0)',
+      borderLeftColor: 'rgba(255,77,79,0)',
     },
     {
-      borderColor: 'rgba(255,77,79,0.95)',
-      boxShadow: '0 0 0 2px rgba(255,77,79,0.5)',
+      borderLeftColor: 'rgba(255,77,79,0.95)',
       duration: 0.24,
       repeat: 1,
       yoyo: true,
@@ -383,7 +380,9 @@ watch(activeTab, () => {
               >
                 <NInput v-model:value="formData.title" style="width: 100%" />
               </div>
-              <div v-if="fieldErrors.title" class="field-error-label">{{ fieldErrors.title }}</div>
+              <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.title }">
+                {{ fieldErrors.title || '\u00A0' }}
+              </div>
             </div>
           </NFormItem>
 
@@ -396,7 +395,9 @@ watch(activeTab, () => {
               >
                 <NInput v-model:value="formData.artist" style="width: 100%" />
               </div>
-              <div v-if="fieldErrors.artist" class="field-error-label">{{ fieldErrors.artist }}</div>
+              <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.artist }">
+                {{ fieldErrors.artist || '\u00A0' }}
+              </div>
             </div>
           </NFormItem>
 
@@ -437,7 +438,9 @@ watch(activeTab, () => {
                 <NSelect v-model:value="formData.representedInBrands" :options="brandOptions"
                   multiple filterable style="width: 100%" />
               </div>
-              <div v-if="fieldErrors.representedInBrands" class="field-error-label">{{ fieldErrors.representedInBrands }}</div>
+              <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.representedInBrands }">
+                {{ fieldErrors.representedInBrands || '\u00A0' }}
+              </div>
             </div>
           </NFormItem>
 
@@ -473,7 +476,9 @@ watch(activeTab, () => {
                   />
                 </NSpace>
               </div>
-              <div v-if="fieldErrors.audioFile" class="field-error-label">{{ fieldErrors.audioFile }}</div>
+              <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.audioFile }">
+                {{ fieldErrors.audioFile || '\u00A0' }}
+              </div>
             </div>
           </NFormItem>
 
@@ -508,10 +513,9 @@ watch(activeTab, () => {
 
 .field-error-shell {
   width: 100%;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  padding: 8px;
-  transition: border-color 0.2s ease;
+  border-left: 2px solid transparent;
+  padding-left: 8px;
+  transition: border-left-color 0.2s ease;
 }
 
 .field-shell-plain {
@@ -522,13 +526,33 @@ watch(activeTab, () => {
 }
 
 .field-error-shell--active {
-  border-color: rgba(255, 77, 79, 0.95);
+  border-left-color: rgba(255, 77, 79, 0.95);
 }
 
 .field-error-label {
   margin-top: 6px;
+  min-height: 16px;
+  padding-left: 10px;
   color: #ff4d4f;
   font-size: 12px;
   line-height: 1.3;
+  visibility: hidden;
+}
+
+.field-error-label--visible {
+  visibility: visible;
+}
+
+:deep(.n-form-item .n-form-item-feedback-wrapper) {
+  min-height: 12px;
+  line-height: 1.1;
+}
+
+:deep(.n-form-item) {
+  margin-bottom: 8px;
+}
+
+:deep(.n-form-item:last-child) {
+  margin-bottom: 0;
 }
 </style>

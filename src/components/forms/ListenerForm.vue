@@ -106,3 +106,18 @@ onMounted(async () => {
     </NForm>
   </FormWrapper>
 </template>
+
+<style scoped>
+:deep(.n-form-item .n-form-item-feedback-wrapper) {
+  min-height: 12px;
+  line-height: 1.1;
+}
+
+:deep(.n-form-item) {
+  margin-bottom: 8px;
+}
+
+:deep(.n-form-item:last-child) {
+  margin-bottom: 0;
+}
+</style>
