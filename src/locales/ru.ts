@@ -158,10 +158,10 @@ export default {
     load_failed: 'Ошибка загрузки',
   },
   fragmentForm: {
-    create_title: 'Создать звуковой фрагмент',
-    create_subtitle: 'Добавить новый звуковой фрагмент',
-    edit_title: 'Редактировать фрагмент',
-    edit_subtitle: 'Обновить звуковой фрагмент',
+    create_title: 'Трек',
+    create_subtitle: 'создать трек',
+    edit_title: 'Редактировать трек',
+    edit_subtitle: 'Обновить трек',
     tab_properties: 'Основные свойства',
     tab_description: 'Описание',
     type: 'Тип',
@@ -177,7 +177,7 @@ export default {
     expires_at: 'Истекает',
     replace_file: 'Заменить файл',
     choose_file: 'Выбрать файл',
-    saved: 'Звуковой фрагмент сохранён',
+    saved: 'Трек сохранён',
     load_failed: 'Ошибка загрузки',
   },
   listenersView: {

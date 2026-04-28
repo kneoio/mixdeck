@@ -158,10 +158,10 @@ export default {
     load_failed: 'Échec du chargement',
   },
   fragmentForm: {
-    create_title: 'Créer un fragment sonore',
-    create_subtitle: 'Ajouter un nouveau fragment sonore',
-    edit_title: 'Modifier le fragment sonore',
-    edit_subtitle: 'Mettre à jour le fragment sonore',
+    create_title: 'Piste',
+    create_subtitle: 'créer une piste',
+    edit_title: 'Modifier la piste',
+    edit_subtitle: 'Mettre à jour la piste',
     tab_properties: 'Propriétés principales',
     tab_description: 'Description',
     type: 'Type',
@@ -177,7 +177,7 @@ export default {
     expires_at: 'Expire le',
     replace_file: 'Remplacer le fichier',
     choose_file: 'Choisir un fichier',
-    saved: 'Fragment sonore enregistré',
+    saved: 'Piste enregistrée',
     load_failed: 'Échec du chargement',
   },
   listenersView: {

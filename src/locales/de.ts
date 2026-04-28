@@ -158,10 +158,10 @@ export default {
     load_failed: 'Fehler beim Laden',
   },
   fragmentForm: {
-    create_title: 'Klangfragment erstellen',
-    create_subtitle: 'Neues Klangfragment hinzufügen',
-    edit_title: 'Klangfragment bearbeiten',
-    edit_subtitle: 'Klangfragment aktualisieren',
+    create_title: 'Track',
+    create_subtitle: 'Track erstellen',
+    edit_title: 'Track bearbeiten',
+    edit_subtitle: 'Track aktualisieren',
     tab_properties: 'Haupteigenschaften',
     tab_description: 'Beschreibung',
     type: 'Typ',
@@ -177,7 +177,7 @@ export default {
     expires_at: 'Läuft ab am',
     replace_file: 'Datei ersetzen',
     choose_file: 'Datei wählen',
-    saved: 'Klangfragment gespeichert',
+    saved: 'Track gespeichert',
     load_failed: 'Fehler beim Laden',
   },
   listenersView: {

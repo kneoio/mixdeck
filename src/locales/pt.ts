@@ -158,10 +158,10 @@ export default {
     load_failed: 'Falha ao carregar',
   },
   fragmentForm: {
-    create_title: 'Criar fragmento de som',
-    create_subtitle: 'Adicionar novo fragmento de som',
-    edit_title: 'Editar fragmento de som',
-    edit_subtitle: 'Actualizar fragmento de som',
+    create_title: 'Faixa',
+    create_subtitle: 'criar faixa',
+    edit_title: 'Editar faixa',
+    edit_subtitle: 'Actualizar faixa',
     tab_properties: 'Propriedades principais',
     tab_description: 'Descrição',
     type: 'Tipo',
@@ -177,7 +177,7 @@ export default {
     expires_at: 'Expira em',
     replace_file: 'Substituir ficheiro',
     choose_file: 'Escolher ficheiro',
-    saved: 'Fragmento de som guardado',
+    saved: 'Faixa guardada',
     load_failed: 'Falha ao carregar',
   },
   listenersView: {

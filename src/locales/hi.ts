@@ -158,10 +158,10 @@ export default {
     load_failed: 'लोड करने में विफल',
   },
   fragmentForm: {
-    create_title: 'साउंड फ्रैगमेंट बनाएं',
-    create_subtitle: 'नया साउंड फ्रैगमेंट जोड़ें',
-    edit_title: 'साउंड फ्रैगमेंट संपादित करें',
-    edit_subtitle: 'साउंड फ्रैगमेंट अपडेट करें',
+    create_title: 'ट्रैक',
+    create_subtitle: 'ट्रैक बनाएं',
+    edit_title: 'ट्रैक संपादित करें',
+    edit_subtitle: 'ट्रैक अपडेट करें',
     tab_properties: 'मुख्य गुण',
     tab_description: 'विवरण',
     type: 'प्रकार',
@@ -177,7 +177,7 @@ export default {
     expires_at: 'समाप्ति तिथि',
     replace_file: 'फ़ाइल बदलें',
     choose_file: 'फ़ाइल चुनें',
-    saved: 'साउंड फ्रैगमेंट सहेजा गया',
+    saved: 'ट्रैक सहेजा गया',
     load_failed: 'लोड करने में विफल',
   },
   listenersView: {

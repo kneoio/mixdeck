@@ -158,10 +158,10 @@ export default {
     load_failed: '読み込み失敗',
   },
   fragmentForm: {
-    create_title: 'サウンドフラグメント作成',
-    create_subtitle: '新しいサウンドフラグメントを追加',
-    edit_title: 'サウンドフラグメント編集',
-    edit_subtitle: 'サウンドフラグメントを更新',
+    create_title: 'トラック',
+    create_subtitle: 'トラックを作成',
+    edit_title: 'トラック編集',
+    edit_subtitle: 'トラックを更新',
     tab_properties: 'メインプロパティ',
     tab_description: '説明',
     type: 'タイプ',
@@ -177,7 +177,7 @@ export default {
     expires_at: '有効期限',
     replace_file: 'ファイルを置換',
     choose_file: 'ファイルを選択',
-    saved: 'サウンドフラグメントを保存しました',
+    saved: 'トラックを保存しました',
     load_failed: '読み込み失敗',
   },
   listenersView: {

@@ -104,12 +104,18 @@ const brandOptions = computed(() =>
 const backRoute = computed(() => `/brands/${brandId.value}/playlist`)
 
 const formTitle = computed(() => {
-  if (!isEditing.value) return 'Track'
-  if (formData.value.title && formData.value.artist) {
-    return `${formData.value.title} - ${formData.value.artist}`
+  const title = formData.value.title.trim()
+  const artist = formData.value.artist.trim()
+  if (title || artist) {
+    return [title, artist].filter(Boolean).join(' - ')
   }
+  if (!isEditing.value) return ''
   return t('fragmentForm.edit_title')
 })
+
+const formSubtitle = computed(() =>
+  isEditing.value ? t('fragmentForm.edit_subtitle') : t('fragmentForm.create_subtitle')
+)
 
 function getFieldRef(field: ValidationField) {
   if (field === 'title') return titleFieldRef.value
@@ -339,7 +345,7 @@ watch(activeTab, () => {
 <template>
   <FormWrapper
     :title="formTitle"
-    :subtitle="isEditing ? t('fragmentForm.edit_subtitle') : t('fragmentForm.create_subtitle')"
+    :subtitle="formSubtitle"
     :loading="loading"
   >
     <template #actions>

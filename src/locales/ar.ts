@@ -158,10 +158,10 @@ export default {
     load_failed: 'فشل التحميل',
   },
   fragmentForm: {
-    create_title: 'إنشاء مقطع صوتي',
-    create_subtitle: 'إضافة مقطع صوتي جديد',
-    edit_title: 'تعديل المقطع الصوتي',
-    edit_subtitle: 'تحديث المقطع الصوتي',
+    create_title: 'مقطوعة',
+    create_subtitle: 'إنشاء مقطوعة',
+    edit_title: 'تعديل المقطوعة',
+    edit_subtitle: 'تحديث المقطوعة',
     tab_properties: 'الخصائص الرئيسية',
     tab_description: 'الوصف',
     type: 'النوع',
@@ -177,7 +177,7 @@ export default {
     expires_at: 'ينتهي في',
     replace_file: 'استبدال الملف',
     choose_file: 'اختيار ملف',
-    saved: 'تم حفظ المقطع الصوتي',
+    saved: 'تم حفظ المقطوعة',
     load_failed: 'فشل التحميل',
   },
   listenersView: {
