@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, h, watch } from 'vue'
+import { ref, computed, onMounted, h, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { gsap } from 'gsap'
 import {
   NButton, NSpace, NForm, NFormItem, NInput, NSelect, NSwitch,
   NTabs, NTabPane, NDynamicInput, NInputNumber,
@@ -42,6 +43,22 @@ const formTitle = computed(() => {
 
 const loading = ref(false)
 const activeTab = ref('properties')
+const isTabChangeFromValidation = ref(false)
+const localizedNamesFieldRef = ref<HTMLElement | null>(null)
+const countryFieldRef = ref<HTMLElement | null>(null)
+const timeZoneFieldRef = ref<HTMLElement | null>(null)
+const aiAgentFieldRef = ref<HTMLElement | null>(null)
+const scriptFieldRef = ref<HTMLElement | null>(null)
+
+type ValidationField = 'localizedNames' | 'country' | 'timeZone' | 'aiAgentId' | 'scriptId'
+
+const fieldErrors = ref<Record<ValidationField, string>>({
+  localizedNames: '',
+  country: '',
+  timeZone: '',
+  aiAgentId: '',
+  scriptId: '',
+})
 
 const localizedNames = ref<{ lang: string; name: string }[]>([{ lang: 'en', name: '' }])
 
@@ -104,6 +121,97 @@ const selectedAgent = computed(() =>
 
 function createLocalizedName() {
   return { lang: 'en', name: '' }
+}
+
+function getFieldRef(field: ValidationField) {
+  if (field === 'localizedNames') return localizedNamesFieldRef.value
+  if (field === 'country') return countryFieldRef.value
+  if (field === 'timeZone') return timeZoneFieldRef.value
+  if (field === 'aiAgentId') return aiAgentFieldRef.value
+  return scriptFieldRef.value
+}
+
+function getFieldLabel(field: ValidationField) {
+  if (field === 'localizedNames') return t('brandForm.localized_names')
+  if (field === 'country') return t('brandForm.country')
+  if (field === 'timeZone') return t('brandForm.time_zone')
+  if (field === 'aiAgentId') return t('brandForm.ai_agent')
+  return t('brandForm.script')
+}
+
+function getFieldTab(field: ValidationField) {
+  if (field === 'localizedNames' || field === 'country' || field === 'timeZone') return 'properties'
+  if (field === 'aiAgentId') return 'dj'
+  return 'script'
+}
+
+function clearFieldError(field: ValidationField) {
+  if (!fieldErrors.value[field]) return
+  fieldErrors.value[field] = ''
+  const target = getFieldRef(field)
+  if (target) {
+    gsap.to(target, {
+      borderColor: 'rgba(255,77,79,0)',
+      boxShadow: '0 0 0 0 rgba(255,77,79,0)',
+      duration: 0.2,
+      ease: 'power1.out',
+    })
+  }
+}
+
+function clearAllFieldErrors() {
+  const allFields: ValidationField[] = ['localizedNames', 'country', 'timeZone', 'aiAgentId', 'scriptId']
+  for (const field of allFields) {
+    clearFieldError(field)
+  }
+}
+
+async function showFieldError(field: ValidationField) {
+  fieldErrors.value[field] = `${getFieldLabel(field)} is required`
+  await nextTick()
+  const target = getFieldRef(field)
+  if (!target) return
+  gsap.killTweensOf(target)
+  gsap.fromTo(
+    target,
+    {
+      borderColor: 'rgba(255,77,79,0)',
+      boxShadow: '0 0 0 0 rgba(255,77,79,0)',
+    },
+    {
+      borderColor: 'rgba(255,77,79,0.95)',
+      boxShadow: '0 0 0 2px rgba(255,77,79,0.5)',
+      duration: 0.24,
+      repeat: 1,
+      yoyo: true,
+      ease: 'power1.out',
+    }
+  )
+}
+
+async function validateBeforeSave() {
+  const invalidFields: ValidationField[] = []
+
+  const hasName = localizedNames.value.some(item => item.name.trim().length > 0)
+  if (!hasName) invalidFields.push('localizedNames')
+  if (!formData.value.country) invalidFields.push('country')
+  if (!formData.value.timeZone) invalidFields.push('timeZone')
+  if (!formData.value.aiAgentId) invalidFields.push('aiAgentId')
+  if (!formData.value.scriptId) invalidFields.push('scriptId')
+
+  const allFields: ValidationField[] = ['localizedNames', 'country', 'timeZone', 'aiAgentId', 'scriptId']
+  for (const field of allFields) {
+    if (!invalidFields.includes(field)) clearFieldError(field)
+  }
+
+  if (!invalidFields.length) return true
+
+  isTabChangeFromValidation.value = true
+  activeTab.value = getFieldTab(invalidFields[0])
+  await nextTick()
+  isTabChangeFromValidation.value = false
+  await Promise.all(invalidFields.map(showFieldError))
+  return false
 }
 
 function buildLocalizedName(): Record<string, string> {
@@ -179,6 +287,8 @@ function renderScriptOptionLabel(option: SelectOption) {
 }
 
 async function handleSave() {
+  const valid = await validateBeforeSave()
+  if (!valid) return
   try {
     loading.value = true
     const id = isEditing.value ? (route.params.id as string) : null
@@ -339,6 +449,36 @@ watch(
     }
   }
 )
+
+watch(
+  localizedNames,
+  () => {
+    const hasName = localizedNames.value.some(item => item.name.trim().length > 0)
+    if (hasName) clearFieldError('localizedNames')
+  },
+  { deep: true }
+)
+
+watch(() => formData.value.country, (value) => {
+  if (value) clearFieldError('country')
+})
+
+watch(() => formData.value.timeZone, (value) => {
+  if (value) clearFieldError('timeZone')
+})
+
+watch(() => formData.value.aiAgentId, (value) => {
+  if (value) clearFieldError('aiAgentId')
+})
+
+watch(() => formData.value.scriptId, (value) => {
+  if (value) clearFieldError('scriptId')
+})
+
+watch(activeTab, () => {
+  if (isTabChangeFromValidation.value) return
+  clearAllFieldErrors()
+})
 </script>
 
 <template>
@@ -357,38 +497,71 @@ watch(
       <NTabPane name="properties" :tab="t('brandForm.tab_properties')">
         <NForm label-placement="left" label-width="140" :disabled="loading">
           <NFormItem :label="t('brandForm.localized_names')">
-            <NDynamicInput v-model:value="localizedNames" :on-create="createLocalizedName" style="width:100%">
-              <template #default="{ index }">
-                <NSpace align="center" style="width:100%">
-                  <NSelect v-model:value="localizedNames[index].lang"
-                    :options="constantsStore.mostUsedLanguagesSimple" filterable style="width:140px" />
-                  <NInput v-model:value="localizedNames[index].name" style="flex:1" />
-                </NSpace>
-              </template>
-            </NDynamicInput>
+            <div class="field-stack">
+              <div
+                ref="localizedNamesFieldRef"
+                class="field-error-shell"
+                :class="{ 'field-error-shell--active': !!fieldErrors.localizedNames }"
+              >
+                <NDynamicInput v-model:value="localizedNames" :on-create="createLocalizedName" style="width:100%">
+                  <template #default="{ index }">
+                    <div class="localized-row">
+                      <NSelect v-model:value="localizedNames[index].lang"
+                        :options="constantsStore.mostUsedLanguagesSimple" filterable style="width:140px" />
+                      <NInput v-model:value="localizedNames[index].name" class="localized-row__input" />
+                    </div>
+                  </template>
+                </NDynamicInput>
+              </div>
+              <div v-if="fieldErrors.localizedNames" class="field-error-label">{{ fieldErrors.localizedNames }}</div>
+            </div>
           </NFormItem>
 
           <NFormItem :label="t('brandForm.country')">
-            <NSelect v-model:value="formData.country" :options="constantsStore.countries"
-              filterable clearable style="width: 250px" />
+            <div class="field-stack">
+              <div
+                ref="countryFieldRef"
+                class="field-error-shell"
+                :class="{ 'field-error-shell--active': !!fieldErrors.country }"
+              >
+                <NSelect v-model:value="formData.country" :options="constantsStore.countries"
+                  filterable clearable style="width: 250px" />
+              </div>
+              <div v-if="fieldErrors.country" class="field-error-label">{{ fieldErrors.country }}</div>
+            </div>
           </NFormItem>
 
           <NFormItem :label="t('brandForm.description')">
-            <NInput v-model:value="formData.description" type="textarea"
-              :autosize="{ minRows: 3, maxRows: 6 }" style="width: 100%" />
+            <div class="field-shell-plain">
+              <NInput v-model:value="formData.description" type="textarea"
+                :autosize="{ minRows: 3, maxRows: 6 }" style="width: 100%" />
+            </div>
           </NFormItem>
 
           <NFormItem :label="t('brandForm.time_zone')">
-            <NSelect v-model:value="formData.timeZone" :options="constantsStore.timezones"
-              filterable clearable style="width: 280px" />
+            <div class="field-stack">
+              <div
+                ref="timeZoneFieldRef"
+                class="field-error-shell"
+                :class="{ 'field-error-shell--active': !!fieldErrors.timeZone }"
+              >
+                <NSelect v-model:value="formData.timeZone" :options="constantsStore.timezones"
+                  filterable clearable style="width: 280px" />
+              </div>
+              <div v-if="fieldErrors.timeZone" class="field-error-label">{{ fieldErrors.timeZone }}</div>
+            </div>
           </NFormItem>
 
           <NFormItem :label="t('brandForm.bit_rate')">
-            <NSelect v-model:value="formData.bitRate" :options="constantsStore.bitRateOptions" style="width: 160px" />
+            <div class="field-shell-plain">
+              <NSelect v-model:value="formData.bitRate" :options="constantsStore.bitRateOptions" style="width: 160px" />
+            </div>
           </NFormItem>
 
           <NFormItem :label="t('brandForm.public')">
-            <NSwitch :value="formData.publicBrand === 1" @update:value="(v) => formData.publicBrand = v ? 1 : 0" />
+            <div class="field-shell-plain">
+              <NSwitch :value="formData.publicBrand === 1" @update:value="(v) => formData.publicBrand = v ? 1 : 0" />
+            </div>
           </NFormItem>
         </NForm>
       </NTabPane>
@@ -396,17 +569,30 @@ watch(
       <NTabPane name="dj" :tab="t('brandForm.tab_dj')">
         <NForm label-placement="left" label-width="160" :disabled="loading">
           <NFormItem :label="t('brandForm.ai_agent')">
-            <NSelect v-model:value="formData.aiAgentId" :options="agentOptions"
-              :render-label="renderAgentOptionLabel" style="width: 100%" />
+            <div class="field-stack">
+              <div
+                ref="aiAgentFieldRef"
+                class="field-error-shell"
+                :class="{ 'field-error-shell--active': !!fieldErrors.aiAgentId }"
+              >
+                <NSelect v-model:value="formData.aiAgentId" :options="agentOptions"
+                  :render-label="renderAgentOptionLabel" style="width: 100%" />
+              </div>
+              <div v-if="fieldErrors.aiAgentId" class="field-error-label">{{ fieldErrors.aiAgentId }}</div>
+            </div>
           </NFormItem>
 
           <NFormItem v-if="selectedAgent?.description" :label="t('fragmentForm.description')">
-            <span style="color: #888; font-size: 13px;">{{ selectedAgent.description }}</span>
+            <div class="field-shell-plain">
+              <span style="color: #888; font-size: 13px;">{{ selectedAgent.description }}</span>
+            </div>
           </NFormItem>
 
           <NFormItem :label="t('brandForm.ai_override')">
-            <NInput v-model:value="formData.aiOverriding.prompt" type="textarea"
-              :autosize="{ minRows: 3, maxRows: 6 }" style="width: 100%" />
+            <div class="field-shell-plain">
+              <NInput v-model:value="formData.aiOverriding.prompt" type="textarea"
+                :autosize="{ minRows: 3, maxRows: 6 }" style="width: 100%" />
+            </div>
           </NFormItem>
         </NForm>
       </NTabPane>
@@ -414,17 +600,28 @@ watch(
       <NTabPane name="script" :tab="t('brandForm.tab_script')">
         <NForm label-placement="left" label-width="140" :disabled="loading">
           <NFormItem :label="t('brandForm.script')">
-            <NSelect v-model:value="formData.scriptId" :options="scriptOptions"
-              :render-label="renderScriptOptionLabel" filterable style="width: 100%; max-width: 500px" />
+            <div class="field-stack">
+              <div
+                ref="scriptFieldRef"
+                class="field-error-shell"
+                :class="{ 'field-error-shell--active': !!fieldErrors.scriptId }"
+              >
+                <NSelect v-model:value="formData.scriptId" :options="scriptOptions"
+                  :render-label="renderScriptOptionLabel" filterable style="width: 100%; max-width: 500px" />
+              </div>
+              <div v-if="fieldErrors.scriptId" class="field-error-label">{{ fieldErrors.scriptId }}</div>
+            </div>
           </NFormItem>
 
           <NFormItem v-if="selectedScript?.description" :label="t('fragmentForm.description')">
-            <span style="color: #888; font-size: 13px;">{{ selectedScript.description }}</span>
+            <div class="field-shell-plain">
+              <span style="color: #888; font-size: 13px;">{{ selectedScript.description }}</span>
+            </div>
           </NFormItem>
 
           <template v-if="selectedScript?.requiredVariables?.length">
             <NFormItem :label="t('brandForm.variables')">
-              <div style="width: 100%; max-width: 500px">
+              <div class="field-shell-plain" style="max-width: 500px">
                 <div v-for="variable in selectedScript.requiredVariables" :key="variable.name"
                   style="margin-bottom: 12px">
                   <div style="margin-bottom: 4px; font-size: 13px">
@@ -446,19 +643,25 @@ watch(
       <NTabPane name="audience" :tab="t('brandForm.tab_audience')">
         <NForm label-placement="left" label-width="160" :disabled="loading">
           <NFormItem :label="t('brandForm.audience_type')">
-            <NSelect v-model:value="formData.profileId" :options="profileOptions"
-              filterable clearable style="width: 100%; max-width: 500px" />
+            <div class="field-shell-plain">
+              <NSelect v-model:value="formData.profileId" :options="profileOptions"
+                filterable clearable style="width: 100%; max-width: 500px" />
+            </div>
           </NFormItem>
 
           <NFormItem v-if="formData.profileId" :label="t('brandForm.local_name')">
-            <NInput v-model:value="formData.profileOverriding.name"
-              :placeholder="t('brandForm.optional_override')" style="width: 100%; max-width: 500px" />
+            <div class="field-shell-plain">
+              <NInput v-model:value="formData.profileOverriding.name"
+                :placeholder="t('brandForm.optional_override')" style="width: 100%; max-width: 500px" />
+            </div>
           </NFormItem>
 
           <NFormItem v-if="formData.profileId" :label="t('brandForm.additional_info')">
-            <NInput v-model:value="formData.profileOverriding.description"
-              type="textarea" :autosize="{ minRows: 3, maxRows: 5 }"
-              :placeholder="t('brandForm.optional_override')" style="width: 100%; max-width: 500px" />
+            <div class="field-shell-plain">
+              <NInput v-model:value="formData.profileOverriding.description"
+                type="textarea" :autosize="{ minRows: 3, maxRows: 5 }"
+                :placeholder="t('brandForm.optional_override')" style="width: 100%; max-width: 500px" />
+            </div>
           </NFormItem>
         </NForm>
       </NTabPane>
@@ -466,10 +669,14 @@ watch(
       <NTabPane name="contribution" :tab="t('brandForm.tab_contribution')">
         <NForm label-placement="left" label-width="180" :disabled="loading">
           <NFormItem :label="t('brandForm.one_time_stream')">
-            <NSelect v-model:value="formData.oneTimeStreamPolicy" :options="SUBMISSION_POLICY_OPTIONS" style="width: 220px" />
+            <div class="field-shell-plain">
+              <NSelect v-model:value="formData.oneTimeStreamPolicy" :options="SUBMISSION_POLICY_OPTIONS" style="width: 220px" />
+            </div>
           </NFormItem>
           <NFormItem :label="t('brandForm.song_submission')">
-            <NSelect v-model:value="formData.submissionPolicy" :options="SUBMISSION_POLICY_OPTIONS" style="width: 220px" />
+            <div class="field-shell-plain">
+              <NSelect v-model:value="formData.submissionPolicy" :options="SUBMISSION_POLICY_OPTIONS" style="width: 220px" />
+            </div>
           </NFormItem>
         </NForm>
       </NTabPane>
@@ -477,24 +684,30 @@ watch(
       <NTabPane name="playerUi" :tab="t('brandForm.tab_player_ui')">
         <NForm label-placement="left" label-width="120" :disabled="loading">
           <NFormItem v-if="localizedNames[0]?.name" :label="t('brandForm.preview')">
-            <div :style="{
-              fontFamily: formData.titleFont || undefined,
-              fontSize: '34px',
-              lineHeight: '1.1',
-              color: formData.color,
-              padding: '8px 0',
-            }">
-              {{ localizedNames[0].name }}
+            <div class="field-shell-plain">
+              <div :style="{
+                fontFamily: formData.titleFont || undefined,
+                fontSize: '34px',
+                lineHeight: '1.1',
+                color: formData.color,
+                padding: '8px 0',
+              }">
+                {{ localizedNames[0].name }}
+              </div>
             </div>
           </NFormItem>
 
           <NFormItem :label="t('brandForm.title_font')">
-            <NSelect v-model:value="formData.titleFont" :options="constantsStore.stationFontOptions"
-              filterable clearable style="width: 280px" />
+            <div class="field-shell-plain">
+              <NSelect v-model:value="formData.titleFont" :options="constantsStore.stationFontOptions"
+                filterable clearable style="width: 280px" />
+            </div>
           </NFormItem>
 
           <NFormItem :label="t('brandForm.color')">
-            <NColorPicker v-model:value="formData.color" style="width: 200px" />
+            <div class="field-shell-plain">
+              <NColorPicker v-model:value="formData.color" style="width: 200px" />
+            </div>
           </NFormItem>
         </NForm>
       </NTabPane>
@@ -502,12 +715,16 @@ watch(
       <NTabPane name="owner" :tab="t('brandForm.tab_owner')">
         <NForm label-placement="left" label-width="120" :disabled="loading">
           <NFormItem :label="t('brandForm.owner_name')">
-            <NInput v-model:value="formData.owner.name"
-              :placeholder="t('brandForm.owner_name')" style="width: 100%; max-width: 400px" />
+            <div class="field-shell-plain">
+              <NInput v-model:value="formData.owner.name"
+                :placeholder="t('brandForm.owner_name')" style="width: 100%; max-width: 400px" />
+            </div>
           </NFormItem>
           <NFormItem :label="t('brandForm.owner_email')">
-            <NInput v-model:value="formData.owner.email"
-              placeholder="owner@example.com" style="width: 100%; max-width: 400px" />
+            <div class="field-shell-plain">
+              <NInput v-model:value="formData.owner.email"
+                placeholder="owner@example.com" style="width: 100%; max-width: 400px" />
+            </div>
           </NFormItem>
         </NForm>
 
@@ -535,3 +752,49 @@ watch(
     </NTabs>
   </FormWrapper>
 </template>
+
+<style scoped>
+.field-stack {
+  width: 100%;
+  display: block;
+}
+
+.field-error-shell {
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 8px;
+  transition: border-color 0.2s ease;
+}
+
+.field-shell-plain {
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 8px;
+}
+
+.field-error-shell--active {
+  border-color: rgba(255, 77, 79, 0.95);
+}
+
+.field-error-label {
+  margin-top: 6px;
+  color: #ff4d4f;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.localized-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.localized-row__input {
+  flex: 1;
+  min-width: 0;
+}
+</style>
