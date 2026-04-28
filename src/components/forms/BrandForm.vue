@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import {
   NButton, NSpace, NForm, NFormItem, NInput, NSelect, NSwitch,
   NTabs, NTabPane, NDynamicInput, NInputNumber,
-  NColorPicker, NTag, NPopconfirm, useMessage
+  NColorPicker, NTag, NPopconfirm, NAnchor, NAnchorLink, useMessage
 } from 'naive-ui'
 import type { SelectOption } from 'naive-ui'
 import FormWrapper from '@/components/FormWrapper.vue'
@@ -349,16 +349,6 @@ watch(
   >
     <template #actions>
       <NSpace>
-        <NPopconfirm
-          v-if="isEditing"
-          :disabled="loading"
-          @positive-click="handleCloseBrand"
-        >
-          <template #trigger>
-            <NButton type="error" :disabled="loading">{{ t('common.close') }}</NButton>
-          </template>
-          Close this brand?
-        </NPopconfirm>
         <NButton type="primary" :disabled="loading" @click="handleSave">{{ t('common.save') }}</NButton>
       </NSpace>
     </template>
@@ -520,6 +510,27 @@ watch(
               placeholder="owner@example.com" style="width: 100%; max-width: 400px" />
           </NFormItem>
         </NForm>
+
+        <div
+          v-if="isEditing"
+          style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255, 0, 0, 0.28);"
+        >
+          <div style="font-weight: 600; color: #ff6b6b; margin-bottom: 6px;">Danger zone</div>
+          <NAnchor style="margin-bottom: 12px;">
+            <NAnchorLink
+              title="Close this brand and remove it from your brands list."
+            />
+          </NAnchor>
+          <NPopconfirm
+            :disabled="loading"
+            @positive-click="handleCloseBrand"
+          >
+            <template #trigger>
+              <NButton type="error" :disabled="loading">Close Brand</NButton>
+            </template>
+            Close this brand?
+          </NPopconfirm>
+        </div>
       </NTabPane>
     </NTabs>
   </FormWrapper>

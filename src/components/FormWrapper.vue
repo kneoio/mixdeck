@@ -17,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import { watch } from 'vue'
+import { watch, onBeforeUnmount } from 'vue'
 import { useLoadingBar } from 'naive-ui'
 import PageHeader from './PageHeader.vue'
 import ActionBar from './ActionBar.vue'
@@ -35,6 +35,10 @@ const loadingBar = useLoadingBar()
 watch(() => props.loading, (val, prev) => {
   if (val && !prev) loadingBar.start()
   else if (!val && prev) loadingBar.finish()
+})
+
+onBeforeUnmount(() => {
+  if (props.loading) loadingBar.finish()
 })
 </script>
 
