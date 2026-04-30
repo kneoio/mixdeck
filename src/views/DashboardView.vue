@@ -89,6 +89,9 @@ watch(
 // Derive active menu key from current route
 const activeKey = computed(() => {
   const path = route.path
+  if (path === '/my-sounds/songs') return 'my-sounds-songs'
+  if (path === '/my-sounds/advertisement') return 'my-sounds-advertisement'
+  if (path === '/my-sounds/sound-design') return 'my-sounds-sound-design'
   const m = path.match(/^\/brands\/([^/]+)\/(\w+)$/)
   if (m) return `brand-${m[1]}-${m[2]}`
   if (path === '/brands/new') return 'brands-manage'
@@ -96,7 +99,7 @@ const activeKey = computed(() => {
 })
 
 // Manually controlled expanded keys so user can expand/collapse brand rows
-const expandedKeys = ref<string[]>(['brands-group'])
+const expandedKeys = ref<string[]>(['my-sounds-root', 'brands-group'])
 
 // When route changes to a brand sub-page, auto-expand that brand
 watch(
@@ -121,6 +124,25 @@ const brandLabel = (brand: any) =>
   brand.localizedName?.['en'] || brand.title || brand.slugName || brand.id
 
 const menuOptions = computed<MenuOption[]>(() => [
+  {
+    label: () => h('span', { style: 'font-weight: 700;' }, 'My sounds'),
+    key: 'my-sounds-root',
+    icon: () => h(NIcon, null, { default: () => h(PlaylistIcon) }),
+    children: [
+      {
+        label: 'Songs',
+        key: 'my-sounds-songs',
+      },
+      {
+        label: 'ADVERTISEMENT',
+        key: 'my-sounds-advertisement',
+      },
+      {
+        label: 'Sound design',
+        key: 'my-sounds-sound-design',
+      },
+    ],
+  },
   {
     label: () => h('span', { style: 'font-weight: 700;' }, t('menu.my_brands')),
     key: 'brands-group',
@@ -183,6 +205,12 @@ const handleMenuSelect = async (key: string) => {
 
   if (key === 'brands-manage') {
     router.push('/brands')
+  } else if (key === 'my-sounds-songs') {
+    router.push('/my-sounds/songs')
+  } else if (key === 'my-sounds-advertisement') {
+    router.push('/my-sounds/advertisement')
+  } else if (key === 'my-sounds-sound-design') {
+    router.push('/my-sounds/sound-design')
   } else if (key === 'brands-new') {
     router.push('/brands/new')
   } else if (key.startsWith('brand-') && key.endsWith('-dashboard')) {
@@ -254,6 +282,7 @@ const handleUserMenuSelect = async (key: string) => {
         :value="activeKey"
         :expanded-keys="expandedKeys"
         :theme-overrides="menuThemeOverrides"
+        style="margin-top: 65px;"
         @update:expanded-keys="handleUpdateExpandedKeys"
         @update:value="handleMenuSelect"
       />
@@ -275,6 +304,7 @@ const handleUserMenuSelect = async (key: string) => {
           :value="activeKey"
           :expanded-keys="expandedKeys"
           :theme-overrides="menuThemeOverrides"
+          style="margin-top: 10px;"
           @update:expanded-keys="handleUpdateExpandedKeys"
           @update:value="handleMenuSelect"
         />

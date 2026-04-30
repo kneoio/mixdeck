@@ -51,6 +51,30 @@ class DatanestApiService extends ApiClient {
     }
   }
 
+  async getMyPlaylist(
+    page = 1,
+    pageSize = 10,
+    filters: { searchTerm?: string; type?: string[] } = {}
+  ): Promise<PagedResult<any>> {
+    const params = new URLSearchParams()
+    params.set('page', String(page))
+    params.set('size', String(pageSize))
+    const cleanFilters: Record<string, any> = {}
+    if (filters.searchTerm) cleanFilters.searchTerm = filters.searchTerm
+    if (filters.type?.length) cleanFilters.type = filters.type
+    if (Object.keys(cleanFilters).length) params.set('filter', JSON.stringify(cleanFilters))
+    const response = await this.request<any>(`/soundfragments?${params}`)
+    const viewData = response?.payload?.viewData ?? response?.viewData
+    if (!viewData) throw new Error('Unexpected response format')
+    return {
+      entries: viewData.entries ?? [],
+      count: viewData.count ?? 0,
+      pageNum: viewData.pageNum ?? page,
+      maxPage: viewData.maxPage ?? 1,
+      pageSize: viewData.pageSize ?? pageSize,
+    }
+  }
+
   async deleteSoundFragment(id: string): Promise<void> {
     await this.request<void>(`/soundfragments/${id}`, { method: 'DELETE' })
   }
