@@ -728,7 +728,9 @@ watch(activeTab, () => {
 
           <NFormItem :label="t('brandForm.color')">
             <div class="field-shell-plain">
-              <NColorPicker v-model:value="formData.color" style="width: 200px" />
+              <div style="width: 200px;">
+                <NColorPicker v-model:value="formData.color" />
+              </div>
             </div>
           </NFormItem>
         </NForm>
