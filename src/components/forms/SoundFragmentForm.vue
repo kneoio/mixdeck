@@ -52,6 +52,9 @@ const fieldErrors = ref<Record<ValidationField, string>>({
   audioFile: '',
 })
 
+const regDate = ref('')
+const lastModifiedDate = ref('')
+
 // File upload state
 const existingUrl = ref('')
 const existingFileName = ref('')
@@ -307,6 +310,8 @@ onMounted(async () => {
           ? frag.length
           : (typeof frag.length === 'string' ? parseInt(frag.length) || null : null),
       }
+      regDate.value = frag.regDate || ''
+      lastModifiedDate.value = frag.lastModifiedDate || ''
       const f0 = frag.uploadedFiles?.[0]
       const fileUrl = f0?.url || frag.url || ''
       existingUrl.value = fileUrl.startsWith('http')
@@ -358,6 +363,13 @@ watch(activeTab, () => {
     :subtitle="formSubtitle"
     :loading="loading"
   >
+    <template #header-actions>
+      <div v-if="regDate" style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;font-size:12px;opacity:0.5;line-height:1.4;">
+        <span>Created: {{ regDate }}</span>
+        <span v-if="lastModifiedDate !== regDate">Modified: {{ lastModifiedDate }}</span>
+      </div>
+    </template>
+
     <template #actions>
       <NSpace>
         <NButton @click="router.push(backRoute)">{{ t('common.close') }}</NButton>

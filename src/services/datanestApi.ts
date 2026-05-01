@@ -118,7 +118,8 @@ class DatanestApiService extends ApiClient {
     fileId: string,
     batchId: string,
     brandSlug: string,
-    onProgress: (percent: number) => void
+    onProgress: (percent: number) => void,
+    signal?: AbortSignal
   ): Promise<void> {
     return new Promise((resolve, reject) => {
       const url = `${this.baseUrl}/soundfragments-bulk/files?batchId=${encodeURIComponent(batchId)}&brandSlug=${encodeURIComponent(brandSlug)}&fileId=${encodeURIComponent(fileId)}`
@@ -134,6 +135,9 @@ class DatanestApiService extends ApiClient {
         else reject(new Error(`Upload failed (${xhr.status}): ${xhr.statusText}`))
       }
       xhr.onerror = () => reject(new Error('Network error during upload'))
+      xhr.onabort = () => reject(new DOMException('Upload cancelled', 'AbortError'))
+
+      signal?.addEventListener('abort', () => xhr.abort())
 
       xhr.open('POST', url)
       const authHeaders = authService.getAuthHeader()

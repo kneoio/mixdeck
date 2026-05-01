@@ -23,11 +23,20 @@
       >
         <template #empty></template>
       </n-data-table>
+
+      <NAlert
+        v-if="inlineAlert"
+        :type="inlineAlert.type"
+        :show-icon="true"
+        style="margin-top: 12px;"
+      >
+        {{ inlineAlert.text }}
+      </NAlert>
     </n-space>
 
     <template #action>
       <n-space>
-        <n-button v-if="!uploadCompleted" @click="handleCancel" :disabled="isUploading">Cancel</n-button>
+        <n-button v-if="!uploadCompleted" @click="handleCancel">Cancel</n-button>
         <n-button v-if="uploadCompleted" @click="handleCancel">Close</n-button>
         <n-button
           v-if="!uploadCompleted"
@@ -55,7 +64,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, h, onMounted, onBeforeUnmount } from 'vue'
-import { NModal, NUpload, NButton, NSpace, NProgress, NDataTable, NText, useMessage } from 'naive-ui'
+import { NModal, NUpload, NButton, NSpace, NProgress, NDataTable, NText, NAlert } from 'naive-ui'
 import type { UploadCustomRequestOptions } from 'naive-ui'
 import LedIndicator from '@/components/LedIndicator.vue'
 import YellowLed from '@/components/YellowLed.vue'
@@ -71,14 +80,14 @@ const emit = defineEmits<{
   'upload-complete': []
 }>()
 
-const message = useMessage()
 const isMobile = ref(false)
+const inlineAlert = ref<{ type: 'success' | 'warning' | 'error'; text: string } | null>(null)
 
 function updateIsMobile() { isMobile.value = window.innerWidth <= 768 }
 onMounted(() => { updateIsMobile(); window.addEventListener('resize', updateIsMobile) })
 onBeforeUnmount(() => window.removeEventListener('resize', updateIsMobile))
 
-const MAX_CONCURRENT = 5
+const MAX_CONCURRENT = 3
 
 const uploadRef = ref()
 const showDialog = ref(props.show)
@@ -92,6 +101,7 @@ const totalFiles = ref(0)
 const eventSource = ref<EventSource | null>(null)
 const batchId = ref('')
 const uploadCompleted = ref(false)
+const abortController = ref<AbortController | null>(null)
 
 watch(() => props.show, (v) => {
   showDialog.value = v
@@ -104,6 +114,8 @@ watch(() => props.show, (v) => {
     uploadQueue.length = 0
     uploadCompleted.value = false
     totalFiles.value = 0
+    abortController.value = null
+    inlineAlert.value = null
     if (eventSource.value) {
       eventSource.value.close()
       eventSource.value = null
@@ -236,23 +248,25 @@ function startSSE() {
       const warnings = Object.values(next).filter((f: any) => f.classification === 'warning').length
       const ok = Object.values(next).filter((f: any) => f.classification === 'ok').length
       if (errors > 0 && warnings > 0)
-        message.warning(`Done: ${ok} ok, ${warnings} without metadata, ${errors} failed`)
+        inlineAlert.value = { type: 'warning', text: `Done: ${ok} ok, ${warnings} without metadata, ${errors} failed` }
       else if (errors > 0)
-        message.warning(`Processing completed: ${ok} succeeded, ${errors} failed`)
+        inlineAlert.value = { type: 'error', text: `Processing completed: ${ok} succeeded, ${errors} failed` }
       else if (warnings > 0)
-        message.warning(`Done: ${ok} ok, ${warnings} saved without metadata`)
+        inlineAlert.value = { type: 'warning', text: `Done: ${ok} ok, ${warnings} saved without metadata` }
       else
-        message.success(`All ${ok} files processed successfully`)
+        inlineAlert.value = { type: 'success', text: `All ${ok} files processed successfully` }
       uploadCompleted.value = true
     }
   }
 
   es.onerror = () => {
-    if (eventSource.value) {
-      eventSource.value.close()
-      eventSource.value = null
-      if (!uploadCompleted.value) message.error('Lost connection to server — processing status unknown')
-    }
+    if (!eventSource.value || uploadCompleted.value) return
+    eventSource.value.close()
+    eventSource.value = null
+    // Reconnect after 2s — handles Cloudflare 504 gateway timeouts on long uploads
+    setTimeout(() => {
+      if (!uploadCompleted.value && batchId.value) startSSE()
+    }, 2000)
   }
 }
 
@@ -277,22 +291,28 @@ async function handleFileUpload({ file, onProgress, onFinish, onError }: UploadC
     batchId.value = `batch-${Date.now()}`
     totalFiles.value = fileList.value.length
     fileStatuses.value = {}
+    abortController.value = new AbortController()
     startSSE()
   }
   activeUploads.value++
 
   uploadQueue.push(async () => {
+    if (abortController.value?.signal.aborted) {
+      activeUploads.value--
+      return
+    }
     try {
       await datanestApiService.bulkUploadFile(
         file.file!,
         file.id,
         batchId.value,
         props.slugName,
-        (percent) => onProgress?.({ percent })
+        (percent) => onProgress?.({ percent }),
+        abortController.value?.signal
       )
       onFinish?.()
     } catch (err: any) {
-      message.error(err.message || `Upload failed: ${file.name}`)
+      // per-file errors are already visible in the Status column
       onError?.()
     } finally {
       activeUploads.value--
@@ -303,10 +323,15 @@ async function handleFileUpload({ file, onProgress, onFinish, onError }: UploadC
 }
 
 function handleUpload() {
-  if (fileList.value.length === 0) message.warning('Please select files to upload')
+  if (fileList.value.length === 0) inlineAlert.value = { type: 'warning', text: 'Please select files to upload' }
 }
 
 function handleCancel() {
+  abortController.value?.abort()
+  abortController.value = null
+  uploadQueue.length = 0
+  activeUploads.value = 0
+  runningUploads.value = 0
   if (eventSource.value) {
     eventSource.value.close()
     eventSource.value = null
