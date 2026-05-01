@@ -78,11 +78,15 @@ function updateIsMobile() { isMobile.value = window.innerWidth <= 768 }
 onMounted(() => { updateIsMobile(); window.addEventListener('resize', updateIsMobile) })
 onBeforeUnmount(() => window.removeEventListener('resize', updateIsMobile))
 
+const MAX_CONCURRENT = 5
+
 const uploadRef = ref()
 const showDialog = ref(props.show)
 const fileList = ref<any[]>([])
 const fileStatuses = ref<Record<string, any>>({})
 const activeUploads = ref(0)
+const runningUploads = ref(0)
+const uploadQueue: Array<() => Promise<void>> = []
 const isUploading = computed(() => activeUploads.value > 0)
 const totalFiles = ref(0)
 const eventSource = ref<EventSource | null>(null)
@@ -96,6 +100,8 @@ watch(() => props.show, (v) => {
     fileList.value = []
     fileStatuses.value = {}
     activeUploads.value = 0
+    runningUploads.value = 0
+    uploadQueue.length = 0
     uploadCompleted.value = false
     totalFiles.value = 0
     if (eventSource.value) {
@@ -250,6 +256,17 @@ function startSSE() {
   }
 }
 
+function processQueue() {
+  while (runningUploads.value < MAX_CONCURRENT && uploadQueue.length > 0) {
+    const task = uploadQueue.shift()!
+    runningUploads.value++
+    task().finally(() => {
+      runningUploads.value--
+      processQueue()
+    })
+  }
+}
+
 async function handleFileUpload({ file, onProgress, onFinish, onError }: UploadCustomRequestOptions) {
   if (!file.file) {
     onError?.()
@@ -260,25 +277,29 @@ async function handleFileUpload({ file, onProgress, onFinish, onError }: UploadC
     batchId.value = `batch-${Date.now()}`
     totalFiles.value = fileList.value.length
     fileStatuses.value = {}
-    startSSE()  // subscribe before any upload so we never miss server events
+    startSSE()
   }
   activeUploads.value++
 
-  try {
-    await datanestApiService.bulkUploadFile(
-      file.file,
-      file.id,
-      batchId.value,
-      props.slugName,
-      (percent) => onProgress?.({ percent })
-    )
-    onFinish?.()
-  } catch (err: any) {
-    message.error(err.message || `Upload failed: ${file.name}`)
-    onError?.()
-  } finally {
-    activeUploads.value--
-  }
+  uploadQueue.push(async () => {
+    try {
+      await datanestApiService.bulkUploadFile(
+        file.file!,
+        file.id,
+        batchId.value,
+        props.slugName,
+        (percent) => onProgress?.({ percent })
+      )
+      onFinish?.()
+    } catch (err: any) {
+      message.error(err.message || `Upload failed: ${file.name}`)
+      onError?.()
+    } finally {
+      activeUploads.value--
+    }
+  })
+
+  processQueue()
 }
 
 function handleUpload() {
