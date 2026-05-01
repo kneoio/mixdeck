@@ -34,7 +34,7 @@
           type="primary"
           @click="handleUpload"
           :disabled="fileList.length === 0 || isUploading || (totalFiles > 0 && !uploadCompleted)"
-          :loading="isUploading || (totalFiles > 0 && !uploadCompleted)"
+          :loading="isUploading"
         >
           Upload
         </n-button>
