@@ -24,14 +24,15 @@
         <template #empty></template>
       </n-data-table>
 
-      <NAlert
-        v-if="inlineAlert"
-        :type="inlineAlert.type"
-        :show-icon="true"
-        style="margin-top: 12px;"
-      >
-        {{ inlineAlert.text }}
-      </NAlert>
+      <div style="margin-top: 12px; min-height: 40px;">
+        <NAlert
+          v-if="inlineAlert"
+          :type="inlineAlert.type"
+          :show-icon="true"
+        >
+          {{ inlineAlert.text }}
+        </NAlert>
+      </div>
     </n-space>
 
     <template #action>
@@ -64,6 +65,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, h, onMounted, onBeforeUnmount } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { NModal, NUpload, NButton, NSpace, NProgress, NDataTable, NText, NAlert } from 'naive-ui'
 import type { UploadCustomRequestOptions } from 'naive-ui'
 import LedIndicator from '@/components/LedIndicator.vue'
@@ -80,6 +82,7 @@ const emit = defineEmits<{
   'upload-complete': []
 }>()
 
+const { t } = useI18n()
 const isMobile = ref(false)
 const inlineAlert = ref<{ type: 'success' | 'warning' | 'error'; text: string } | null>(null)
 
@@ -135,8 +138,8 @@ watch(fileList, (n, o) => {
 const modalTitle = computed(() => {
   const uploading = fileList.value.filter(f => f.status === 'uploading').length
   return uploading > 0
-    ? `Bulk Upload Sound Fragments (${uploading} uploading)`
-    : 'Bulk Upload Sound Fragments'
+    ? t('bulkUpload.title_uploading', { n: uploading })
+    : t('bulkUpload.title')
 })
 
 const tableData = computed(() =>
@@ -152,13 +155,13 @@ const columns = computed(() => {
   const mobile = isMobile.value
   return [
     {
-      title: 'File',
+      title: t('bulkUpload.col_file'),
       key: 'name',
       ellipsis: { tooltip: true },
       ...(mobile ? {} : { width: 320 }),
     },
     {
-      title: 'Upload',
+      title: t('bulkUpload.col_upload'),
       key: 'upload',
       width: mobile ? 80 : 120,
       render(row: any) {
@@ -188,18 +191,19 @@ const columns = computed(() => {
       }
     },
     ...(!mobile ? [{
-      title: 'Status',
+      title: t('bulkUpload.col_status'),
       key: 'serverStatus',
       render(row: any) {
         const st = fileStatuses.value[row.id]
         if (!st) return null
         if (st.classification === 'error')
-          return h(NText, { type: 'error', style: 'font-size:12px;' }, { default: () => st.errorMessage || 'Error' })
+          return h(NText, { type: 'error', style: 'font-size:12px;' }, { default: () => st.errorMessage || t('bulkUpload.status_error') })
         if (st.classification === 'warning')
-          return h(NText, { type: 'warning', style: 'font-size:12px;' }, { default: () => 'Saved, no metadata — title/artist from filename.' })
+          return h(NText, { type: 'warning', style: 'font-size:12px;' }, { default: () => t('bulkUpload.status_warning') })
         if (st.classification === 'ok')
-          return h(NText, { type: 'success', style: 'font-size:12px;' }, { default: () => 'Done' })
-        return h(NText, { style: 'font-size:12px;opacity:0.5;' }, { default: () => st.status })
+          return h(NText, { type: 'success', style: 'font-size:12px;' }, { default: () => t('bulkUpload.status_done') })
+        const statusKey = `bulkUpload.status_${st.status}`
+        return h(NText, { style: 'font-size:12px;opacity:0.5;' }, { default: () => t(statusKey, st.status) })
       }
     }] : [])
   ]
@@ -222,7 +226,7 @@ function startSSE() {
   eventSource.value = es
 
   es.onmessage = (event) => {
-    if (inlineAlert.value?.text === 'Connection interrupted, reconnecting…') inlineAlert.value = null
+    if (inlineAlert.value?.text === t('bulkUpload.alert_reconnecting')) inlineAlert.value = null
     const data = JSON.parse(event.data)
     const next = { ...fileStatuses.value }
     for (const [id, fd] of Object.entries(data) as [string, any][]) {
@@ -249,13 +253,13 @@ function startSSE() {
       const warnings = Object.values(next).filter((f: any) => f.classification === 'warning').length
       const ok = Object.values(next).filter((f: any) => f.classification === 'ok').length
       if (errors > 0 && warnings > 0)
-        inlineAlert.value = { type: 'warning', text: `Done: ${ok} ok, ${warnings} without metadata, ${errors} failed` }
+        inlineAlert.value = { type: 'warning', text: t('bulkUpload.summary_mixed', { ok, warnings, errors }) }
       else if (errors > 0)
-        inlineAlert.value = { type: 'error', text: `Processing completed: ${ok} succeeded, ${errors} failed` }
+        inlineAlert.value = { type: 'error', text: t('bulkUpload.summary_errors', { ok, errors }) }
       else if (warnings > 0)
-        inlineAlert.value = { type: 'warning', text: `Done: ${ok} ok, ${warnings} saved without metadata` }
+        inlineAlert.value = { type: 'warning', text: t('bulkUpload.summary_warnings', { ok, warnings }) }
       else
-        inlineAlert.value = { type: 'success', text: `All ${ok} files processed successfully` }
+        inlineAlert.value = { type: 'success', text: t('bulkUpload.summary_success', { ok }) }
       uploadCompleted.value = true
     }
   }
@@ -264,7 +268,7 @@ function startSSE() {
     if (!eventSource.value || uploadCompleted.value) return
     eventSource.value.close()
     eventSource.value = null
-    inlineAlert.value = { type: 'warning', text: 'Connection interrupted, reconnecting…' }
+    inlineAlert.value = { type: 'warning', text: t('bulkUpload.alert_reconnecting') }
     setTimeout(() => {
       if (!uploadCompleted.value && batchId.value) startSSE()
     }, 2000)
@@ -324,7 +328,7 @@ async function handleFileUpload({ file, onProgress, onFinish, onError }: UploadC
 }
 
 function handleUpload() {
-  if (fileList.value.length === 0) inlineAlert.value = { type: 'warning', text: 'Please select files to upload' }
+  if (fileList.value.length === 0) inlineAlert.value = { type: 'warning', text: t('bulkUpload.alert_no_files') }
 }
 
 function handleCancel() {
