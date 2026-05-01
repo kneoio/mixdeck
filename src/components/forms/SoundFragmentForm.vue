@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { gsap } from 'gsap'
 import {
@@ -34,6 +34,7 @@ const isEditing = computed(() => !!route.params.fragmentId && route.params.fragm
 const loading = ref(false)
 const activeTab = ref('properties')
 const isTabChangeFromValidation = ref(false)
+const isMobile = ref(false)
 
 const titleFieldRef = ref<HTMLElement | null>(null)
 const artistFieldRef = ref<HTMLElement | null>(null)
@@ -104,6 +105,11 @@ const brandOptions = computed(() =>
 
 
 const backRoute = computed(() => `/brands/${brandId.value}/playlist`)
+const formLabelPlacement = computed(() => (isMobile.value ? 'top' : 'left'))
+
+function updateIsMobile() {
+  isMobile.value = window.innerWidth <= 768
+}
 
 const formTitle = computed(() => {
   const title = formData.value.title.trim()
@@ -268,7 +274,13 @@ async function handleSave() {
   }
 }
 
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateIsMobile)
+})
+
 onMounted(async () => {
+  updateIsMobile()
+  window.addEventListener('resize', updateIsMobile)
   try {
     loading.value = true
 
@@ -355,7 +367,7 @@ watch(activeTab, () => {
 
     <NTabs v-model:value="activeTab">
       <NTabPane name="properties" :tab="t('fragmentForm.tab_properties')">
-        <NForm label-placement="left" label-width="120" :disabled="loading || isUploading">
+        <NForm :label-placement="formLabelPlacement" label-width="120" :disabled="loading || isUploading">
 
           <NFormItem :label="t('fragmentForm.type')">
             <div class="field-stack">
@@ -514,7 +526,7 @@ watch(activeTab, () => {
       </NTabPane>
 
       <NTabPane name="description" :tab="t('fragmentForm.tab_description')">
-        <NForm label-placement="left" label-width="120" :disabled="loading || isUploading">
+        <NForm :label-placement="formLabelPlacement" label-width="120" :disabled="loading || isUploading">
           <NFormItem :label="t('fragmentForm.description')">
             <div class="field-stack">
               <div class="field-error-shell">

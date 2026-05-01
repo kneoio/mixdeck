@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   NButton, NSpace, NForm, NFormItem, NInput, NSelect,
@@ -25,6 +25,7 @@ const pageTitle = computed(() =>
 )
 
 const loading = ref(false)
+const isMobile = ref(false)
 
 // Form fields
 const userId = ref<number | string>('')
@@ -46,8 +47,19 @@ function buildUserData(): Record<string, string> {
 }
 
 const backRoute = computed(() => `/brands/${brandId.value}/listeners`)
+const formLabelPlacement = computed(() => (isMobile.value ? 'top' : 'left'))
+
+function updateIsMobile() {
+  isMobile.value = window.innerWidth <= 768
+}
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateIsMobile)
+})
 
 onMounted(async () => {
+  updateIsMobile()
+  window.addEventListener('resize', updateIsMobile)
   try {
     loading.value = true
 
@@ -87,7 +99,7 @@ onMounted(async () => {
       </NSpace>
     </template>
 
-    <NForm label-placement="left" label-width="140" disabled>
+    <NForm :label-placement="formLabelPlacement" label-width="140" disabled>
       <NFormItem :label="t('listenerForm.user_data')">
         <NDynamicInput v-model:value="userDataArray" :on-create="createUserData" style="width:100%" disabled>
           <template #default="{ value }">
