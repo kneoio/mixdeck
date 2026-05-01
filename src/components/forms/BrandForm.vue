@@ -596,6 +596,7 @@ watch(activeTab, () => {
                 <NInput v-model:value="formData.description" type="textarea"
                   :autosize="{ minRows: 3, maxRows: 6 }" style="width: 100%" />
               </div>
+              <div class="field-error-label"></div>
             </div>
           </NFormItem>
 
@@ -642,6 +643,7 @@ watch(activeTab, () => {
               <div class="field-error-shell">
                 <NSelect v-model:value="formData.bitRate" :options="constantsStore.bitRateOptions" style="width: 160px" />
               </div>
+              <div class="field-error-label"></div>
             </div>
           </NFormItem>
 
@@ -650,6 +652,7 @@ watch(activeTab, () => {
               <div class="field-error-shell">
                 <NSwitch :value="formData.publicBrand === 1" @update:value="(v) => formData.publicBrand = v ? 1 : 0" />
               </div>
+              <div class="field-error-label"></div>
             </div>
           </NFormItem>
         </NForm>
@@ -678,6 +681,7 @@ watch(activeTab, () => {
               <div class="field-error-shell">
                 <span style="color: #888; font-size: 13px;">{{ selectedAgent.description }}</span>
               </div>
+              <div class="field-error-label"></div>
             </div>
           </NFormItem>
 
@@ -687,6 +691,7 @@ watch(activeTab, () => {
                 <NInput v-model:value="formData.aiOverriding.prompt" type="textarea"
                   :autosize="{ minRows: 3, maxRows: 6 }" style="width: 100%" />
               </div>
+              <div class="field-error-label"></div>
             </div>
           </NFormItem>
         </NForm>
@@ -715,6 +720,7 @@ watch(activeTab, () => {
               <div class="field-error-shell">
                 <span style="color: #888; font-size: 13px;">{{ selectedScript.description }}</span>
               </div>
+              <div class="field-error-label"></div>
             </div>
           </NFormItem>
 
@@ -736,6 +742,7 @@ watch(activeTab, () => {
                   </div>
                 </div>
               </div>
+              <div class="field-error-label"></div>
             </NFormItem>
           </template>
         </NForm>
@@ -749,6 +756,7 @@ watch(activeTab, () => {
                 <NSelect v-model:value="formData.profileId" :options="profileOptions"
                   filterable clearable style="width: 100%; max-width: 500px" />
               </div>
+              <div class="field-error-label"></div>
             </div>
           </NFormItem>
 
@@ -758,6 +766,7 @@ watch(activeTab, () => {
                 <NInput v-model:value="formData.profileOverriding.name"
                   :placeholder="t('brandForm.optional_override')" style="width: 100%; max-width: 500px" />
               </div>
+              <div class="field-error-label"></div>
             </div>
           </NFormItem>
 
@@ -768,6 +777,7 @@ watch(activeTab, () => {
                   type="textarea" :autosize="{ minRows: 3, maxRows: 5 }"
                   :placeholder="t('brandForm.optional_override')" style="width: 100%; max-width: 500px" />
               </div>
+              <div class="field-error-label"></div>
             </div>
           </NFormItem>
         </NForm>
@@ -780,6 +790,7 @@ watch(activeTab, () => {
               <div class="field-error-shell">
                 <NSelect v-model:value="formData.oneTimeStreamPolicy" :options="SUBMISSION_POLICY_OPTIONS" style="width: 220px" />
               </div>
+              <div class="field-error-label"></div>
             </div>
           </NFormItem>
           <NFormItem :label="t('brandForm.song_submission')">
@@ -787,6 +798,7 @@ watch(activeTab, () => {
               <div class="field-error-shell">
                 <NSelect v-model:value="formData.submissionPolicy" :options="SUBMISSION_POLICY_OPTIONS" style="width: 220px" />
               </div>
+              <div class="field-error-label"></div>
             </div>
           </NFormItem>
         </NForm>
@@ -807,6 +819,7 @@ watch(activeTab, () => {
                   {{ localizedNames[0].name }}
                 </div>
               </div>
+              <div class="field-error-label"></div>
             </div>
           </NFormItem>
 
@@ -816,6 +829,7 @@ watch(activeTab, () => {
                 <NSelect v-model:value="formData.titleFont" :options="constantsStore.stationFontOptions"
                   filterable clearable style="width: 280px" />
               </div>
+              <div class="field-error-label"></div>
             </div>
           </NFormItem>
 
@@ -826,6 +840,7 @@ watch(activeTab, () => {
                   <NColorPicker v-model:value="formData.color" />
                 </div>
               </div>
+              <div class="field-error-label"></div>
             </div>
           </NFormItem>
         </NForm>
@@ -839,6 +854,7 @@ watch(activeTab, () => {
                 <NInput v-model:value="formData.owner.name"
                   :placeholder="t('brandForm.owner_name')" style="width: 100%; max-width: 400px" />
               </div>
+              <div class="field-error-label"></div>
             </div>
           </NFormItem>
           <NFormItem :label="t('brandForm.owner_email')">
@@ -847,6 +863,7 @@ watch(activeTab, () => {
                 <NInput v-model:value="formData.owner.email"
                   placeholder="owner@example.com" style="width: 100%; max-width: 400px" />
               </div>
+              <div class="field-error-label"></div>
             </div>
           </NFormItem>
         </NForm>

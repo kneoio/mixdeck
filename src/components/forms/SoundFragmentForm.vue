@@ -37,14 +37,16 @@ const isTabChangeFromValidation = ref(false)
 
 const titleFieldRef = ref<HTMLElement | null>(null)
 const artistFieldRef = ref<HTMLElement | null>(null)
+const genresFieldRef = ref<HTMLElement | null>(null)
 const representedInBrandsFieldRef = ref<HTMLElement | null>(null)
 const audioFileFieldRef = ref<HTMLElement | null>(null)
 
-type ValidationField = 'title' | 'artist' | 'representedInBrands' | 'audioFile'
+type ValidationField = 'title' | 'artist' | 'genres' | 'representedInBrands' | 'audioFile'
 
 const fieldErrors = ref<Record<ValidationField, string>>({
   title: '',
   artist: '',
+  genres: '',
   representedInBrands: '',
   audioFile: '',
 })
@@ -120,6 +122,7 @@ const formSubtitle = computed(() =>
 function getFieldRef(field: ValidationField) {
   if (field === 'title') return titleFieldRef.value
   if (field === 'artist') return artistFieldRef.value
+  if (field === 'genres') return genresFieldRef.value
   if (field === 'representedInBrands') return representedInBrandsFieldRef.value
   return audioFileFieldRef.value
 }
@@ -127,6 +130,7 @@ function getFieldRef(field: ValidationField) {
 function getFieldLabel(field: ValidationField) {
   if (field === 'title') return t('fragmentForm.title')
   if (field === 'artist') return t('fragmentForm.artist')
+  if (field === 'genres') return t('fragmentForm.genres')
   if (field === 'representedInBrands') return t('fragmentForm.assign_to')
   return t('fragmentForm.audio_file')
 }
@@ -145,30 +149,22 @@ function clearFieldError(field: ValidationField) {
 }
 
 function clearAllFieldErrors() {
-  const allFields: ValidationField[] = ['title', 'artist', 'representedInBrands', 'audioFile']
+  const allFields: ValidationField[] = ['title', 'artist', 'genres', 'representedInBrands', 'audioFile']
   for (const field of allFields) {
     clearFieldError(field)
   }
 }
 
-async function showFieldError(field: ValidationField) {
-  fieldErrors.value[field] = t('common.required_field', { field: getFieldLabel(field) })
+async function showFieldError(field: ValidationField, customMessage?: string) {
+  fieldErrors.value[field] = customMessage ?? t('common.required_field', { field: getFieldLabel(field) })
   await nextTick()
   const target = getFieldRef(field)
   if (!target) return
   gsap.killTweensOf(target)
   gsap.fromTo(
     target,
-    {
-      borderLeftColor: 'rgba(255,77,79,0)',
-    },
-    {
-      borderLeftColor: 'rgba(255,77,79,0.95)',
-      duration: 0.24,
-      repeat: 1,
-      yoyo: true,
-      ease: 'power1.out',
-    }
+    { borderLeftColor: 'rgba(255,77,79,0)' },
+    { borderLeftColor: 'rgba(255,77,79,0.95)', duration: 0.24, repeat: 1, yoyo: true, ease: 'power1.out' }
   )
 }
 
@@ -177,10 +173,11 @@ async function validateBeforeSave() {
 
   if (!formData.value.title.trim()) invalidFields.push('title')
   if (!formData.value.artist.trim()) invalidFields.push('artist')
+  if (!Array.isArray(formData.value.genres) || !formData.value.genres.length) invalidFields.push('genres')
   if (!formData.value.representedInBrands.length) invalidFields.push('representedInBrands')
   if (!existingUrl.value && !uploadedFileNames.value.length) invalidFields.push('audioFile')
 
-  const allFields: ValidationField[] = ['title', 'artist', 'representedInBrands', 'audioFile']
+  const allFields: ValidationField[] = ['title', 'artist', 'genres', 'representedInBrands', 'audioFile']
   for (const field of allFields) {
     if (!invalidFields.includes(field)) clearFieldError(field)
   }
@@ -191,7 +188,7 @@ async function validateBeforeSave() {
   activeTab.value = 'properties'
   await nextTick()
   isTabChangeFromValidation.value = false
-  await Promise.all(invalidFields.map(showFieldError))
+  await Promise.all(invalidFields.map(field => showFieldError(field)))
   return false
 }
 
@@ -321,6 +318,10 @@ watch(() => formData.value.artist, (value) => {
   if (value.trim()) clearFieldError('artist')
 })
 
+watch(() => formData.value.genres, (value) => {
+  if (Array.isArray(value) && value.length) clearFieldError('genres')
+}, { deep: true })
+
 watch(() => formData.value.representedInBrands, (value) => {
   if (value.length) clearFieldError('representedInBrands')
 }, { deep: true })
@@ -357,17 +358,20 @@ watch(activeTab, () => {
         <NForm label-placement="left" label-width="120" :disabled="loading || isUploading">
 
           <NFormItem :label="t('fragmentForm.type')">
-            <div class="field-shell-plain">
-              <NSpace align="center">
-                <NSelect v-model:value="formData.type" :options="FRAGMENT_TYPES" style="width: 200px" />
-                <template v-if="formData.length != null">
-                  <span style="opacity: 0.45; font-size: 13px;">{{ t('fragmentForm.length') }}</span>
-                  <NInput
-                    :value="((formData.length as number) / 60).toFixed(2)"
-                    readonly style="width: 90px"
-                  />
-                </template>
-              </NSpace>
+            <div class="field-stack">
+              <div class="field-error-shell">
+                <NSpace align="center">
+                  <NSelect v-model:value="formData.type" :options="FRAGMENT_TYPES" style="width: 200px" />
+                  <template v-if="formData.length != null">
+                    <span style="opacity: 0.45; font-size: 13px;">{{ t('fragmentForm.length') }}</span>
+                    <NInput
+                      :value="((formData.length as number) / 60).toFixed(2)"
+                      readonly style="width: 90px"
+                    />
+                  </template>
+                </NSpace>
+              </div>
+              <div class="field-error-label"></div>
             </div>
           </NFormItem>
 
@@ -402,29 +406,44 @@ watch(activeTab, () => {
           </NFormItem>
 
           <NFormItem :label="t('fragmentForm.album')">
-            <div class="field-shell-plain">
-              <NInput v-model:value="formData.album" style="width: 100%" />
+            <div class="field-stack">
+              <div class="field-error-shell">
+                <NInput v-model:value="formData.album" style="width: 100%" />
+              </div>
+              <div class="field-error-label"></div>
             </div>
           </NFormItem>
 
           <NFormItem :label="t('fragmentForm.genres')">
-            <div class="field-shell-plain">
-              <NTreeSelect
-                v-model:value="formData.genres"
-                :options="genreTreeOptions"
-                multiple
-                checkable
-                clear-filter-after-select
-                filterable
-                style="width: 100%"
-              />
+            <div class="field-stack">
+              <div
+                ref="genresFieldRef"
+                class="field-error-shell"
+                :class="{ 'field-error-shell--active': !!fieldErrors.genres }"
+              >
+                <NTreeSelect
+                  v-model:value="formData.genres"
+                  :options="genreTreeOptions"
+                  multiple
+                  checkable
+                  clear-filter-after-select
+                  filterable
+                  style="width: 100%"
+                />
+              </div>
+              <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.genres }">
+                {{ fieldErrors.genres || ' ' }}
+              </div>
             </div>
           </NFormItem>
 
           <NFormItem :label="t('fragmentForm.labels')">
-            <div class="field-shell-plain">
-              <NSelect v-model:value="formData.labels" :options="labelOptions"
-                multiple filterable style="width: 100%" />
+            <div class="field-stack">
+              <div class="field-error-shell">
+                <NSelect v-model:value="formData.labels" :options="labelOptions"
+                  multiple filterable style="width: 100%" />
+              </div>
+              <div class="field-error-label"></div>
             </div>
           </NFormItem>
 
@@ -483,8 +502,11 @@ watch(activeTab, () => {
           </NFormItem>
 
           <NFormItem v-if="formData.expiresAt" :label="t('fragmentForm.expires_at')">
-            <div class="field-shell-plain">
-              <NInput :value="formData.expiresAt" readonly style="width: 200px" />
+            <div class="field-stack">
+              <div class="field-error-shell">
+                <NInput :value="formData.expiresAt" readonly style="width: 200px" />
+              </div>
+              <div class="field-error-label"></div>
             </div>
           </NFormItem>
 
@@ -494,9 +516,11 @@ watch(activeTab, () => {
       <NTabPane name="description" :tab="t('fragmentForm.tab_description')">
         <NForm label-placement="left" label-width="120" :disabled="loading || isUploading">
           <NFormItem :label="t('fragmentForm.description')">
-            <div class="field-shell-plain">
-              <NInput v-model:value="formData.description" type="textarea"
-                :autosize="{ minRows: 8, maxRows: 20 }" style="width: 100%" />
+            <div class="field-stack">
+              <div class="field-error-shell">
+                <NInput v-model:value="formData.description" type="textarea"
+                  :autosize="{ minRows: 8, maxRows: 20 }" style="width: 100%" />
+              </div>
             </div>
           </NFormItem>
         </NForm>
@@ -518,23 +542,16 @@ watch(activeTab, () => {
   transition: border-left-color 0.2s ease;
 }
 
-.field-shell-plain {
-  width: 100%;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  padding: 8px;
-}
-
 .field-error-shell--active {
   border-left-color: rgba(255, 77, 79, 0.95);
 }
 
 .field-error-label {
-  margin-top: 6px;
-  min-height: 16px;
+  margin-top: 3px;
+  min-height: 12px;
   padding-left: 10px;
   color: #ff4d4f;
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.3;
   visibility: hidden;
 }
