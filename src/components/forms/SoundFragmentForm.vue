@@ -584,4 +584,10 @@ watch(activeTab, () => {
 :deep(.n-form-item:last-child) {
   margin-bottom: 0;
 }
+
+@media (max-width: 768px) {
+  :deep(.n-form-item-label) {
+    padding-left: 10px !important;
+  }
+}
 </style>
