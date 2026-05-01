@@ -40,6 +40,10 @@ export default {
     footer_status: '● Эфирде — 24/7 жұмыс істейді',
   },
   menu: {
+    my_sounds: 'Менің дыбыстарым',
+    songs: 'Әндер',
+    ads: 'Жарнама',
+    sound_design: 'Дыбыс дизайны',
     my_brands: 'Менің брендтерім',
     dashboard: 'Басқару панелі',
     listeners: 'Тыңдармандар',

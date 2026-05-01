@@ -40,6 +40,10 @@ export default {
     footer_status: '● Em directo — 24/7',
   },
   menu: {
+    my_sounds: 'Meus sons',
+    songs: 'Músicas',
+    ads: 'Publicidade',
+    sound_design: 'Design de som',
     my_brands: 'As minhas marcas',
     dashboard: 'Painel',
     listeners: 'Ouvintes',

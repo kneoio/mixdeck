@@ -40,6 +40,10 @@ export default {
     footer_status: '● ライブ — 24時間365日稼働',
   },
   menu: {
+    my_sounds: 'マイサウンド',
+    songs: '楽曲',
+    ads: '広告',
+    sound_design: 'サウンドデザイン',
     my_brands: 'マイブランド',
     dashboard: 'ダッシュボード',
     listeners: 'リスナー',

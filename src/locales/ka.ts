@@ -40,6 +40,10 @@ export default {
     footer_status: '● ეთერშია — მუშაობს 24/7',
   },
   menu: {
+    my_sounds: 'ჩემი ხმები',
+    songs: 'სიმღერები',
+    ads: 'რეკლამა',
+    sound_design: 'ხმის დიზაინი',
     my_brands: 'ჩემი ბრენდები',
     dashboard: 'დაშბორდი',
     listeners: 'მსმენელები',

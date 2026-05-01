@@ -40,6 +40,10 @@ export default {
     footer_status: '● Live — Läuft 24/7',
   },
   menu: {
+    my_sounds: 'Meine Sounds',
+    songs: 'Songs',
+    ads: 'Werbung',
+    sound_design: 'Sounddesign',
     my_brands: 'Meine Marken',
     dashboard: 'Dashboard',
     listeners: 'Hörer',

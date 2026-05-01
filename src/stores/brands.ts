@@ -38,6 +38,7 @@ export interface Brand {
   owner?: { name?: string; email?: string }
   publicBrand?: number
   bitRate?: number
+  genres?: string[]
   labels?: string[]
 }
 

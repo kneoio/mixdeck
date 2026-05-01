@@ -1,5 +1,10 @@
 <template>
-  <NConfigProvider :theme="naiveTheme" :theme-overrides="themeOverrides">
+  <NConfigProvider
+    :theme="naiveTheme"
+    :theme-overrides="themeOverrides"
+    :locale="naiveLocale"
+    :date-locale="naiveDateLocale"
+  >
     <NLoadingBarProvider :theme-overrides="{
     colorLoading: '#eff605',
     colorError: '#f10505'
@@ -16,6 +21,11 @@
 import { RouterView } from 'vue-router'
 import { NMessageProvider, NLoadingBarProvider, NGlobalStyle, NConfigProvider } from 'naive-ui'
 import { darkTheme, type GlobalThemeOverrides } from 'naive-ui'
+import {
+  enUS, deDE, esAR, frFR, jaJP, ptBR, ruRU, ukUA, arDZ,
+  dateEnUS, dateDeDE, dateEsAR, dateFrFR, dateJaJP, datePtBR, dateRuRU, dateUkUA, dateArDZ,
+  type NLocale, type NDateLocale,
+} from 'naive-ui'
 import { useThemeStore } from '@/stores/theme'
 import { onMounted, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -49,6 +59,40 @@ const themeOverrides = computed<GlobalThemeOverrides>(() => ({
 }))
 
 const naiveTheme = computed(() => themeStore.isDark ? darkTheme : null)
+
+const naiveLocaleMap: Record<SupportedLocale, NLocale> = {
+  en: enUS,
+  de: deDE,
+  es: esAR,
+  fr: frFR,
+  ja: jaJP,
+  pt: ptBR,
+  ru: ruRU,
+  uk: ukUA,
+  ar: arDZ,
+  // Fallback to English where Naive UI doesn't provide built-in locales.
+  hi: enUS,
+  kk: enUS,
+  ka: enUS,
+}
+
+const naiveDateLocaleMap: Record<SupportedLocale, NDateLocale> = {
+  en: dateEnUS,
+  de: dateDeDE,
+  es: dateEsAR,
+  fr: dateFrFR,
+  ja: dateJaJP,
+  pt: datePtBR,
+  ru: dateRuRU,
+  uk: dateUkUA,
+  ar: dateArDZ,
+  hi: dateEnUS,
+  kk: dateEnUS,
+  ka: dateEnUS,
+}
+
+const naiveLocale = computed(() => naiveLocaleMap[locale.value as SupportedLocale] ?? enUS)
+const naiveDateLocale = computed(() => naiveDateLocaleMap[locale.value as SupportedLocale] ?? dateEnUS)
 
 watch(locale, (val) => applyDirection(val as SupportedLocale), { immediate: true })
 

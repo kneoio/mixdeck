@@ -39,10 +39,10 @@ const activeTypeFilter = computed<string[]>(() => {
 
 const pageTitle = computed(() => {
   const path = route.path
-  if (path === '/my-sounds/songs') return 'My sounds / Songs'
-  if (path === '/my-sounds/advertisement') return 'My sounds / ADVERTISEMENT'
-  if (path === '/my-sounds/sound-design') return 'My sounds / Sound design'
-  return 'My sounds'
+  if (path === '/my-sounds/songs') return `${t('menu.my_sounds')} / ${t('menu.songs')}`
+  if (path === '/my-sounds/advertisement') return `${t('menu.my_sounds')} / ${t('menu.ads')}`
+  if (path === '/my-sounds/sound-design') return `${t('menu.my_sounds')} / ${t('menu.sound_design')}`
+  return t('menu.my_sounds')
 })
 
 async function loadDictionaries() {

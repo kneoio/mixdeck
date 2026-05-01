@@ -125,20 +125,19 @@ const brandLabel = (brand: any) =>
 
 const menuOptions = computed<MenuOption[]>(() => [
   {
-    label: () => h('span', { style: 'font-weight: 700;' }, 'My sounds'),
+    label: () => h('span', { style: 'font-weight: 700;' }, t('menu.my_sounds')),
     key: 'my-sounds-root',
-    icon: () => h(NIcon, null, { default: () => h(PlaylistIcon) }),
     children: [
       {
-        label: 'Songs',
+        label: t('menu.songs'),
         key: 'my-sounds-songs',
       },
       {
-        label: 'ADVERTISEMENT',
+        label: t('menu.ads'),
         key: 'my-sounds-advertisement',
       },
       {
-        label: 'Sound design',
+        label: t('menu.sound_design'),
         key: 'my-sounds-sound-design',
       },
     ],

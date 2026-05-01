@@ -40,6 +40,10 @@ export default {
     footer_status: '● लाइव — 24/7 चल रहा है',
   },
   menu: {
+    my_sounds: 'मेरी ध्वनियाँ',
+    songs: 'गाने',
+    ads: 'विज्ञापन',
+    sound_design: 'साउंड डिज़ाइन',
     my_brands: 'मेरे ब्रांड',
     dashboard: 'डैशबोर्ड',
     listeners: 'श्रोता',

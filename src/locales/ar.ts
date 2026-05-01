@@ -40,6 +40,10 @@ export default {
     footer_status: '● مباشر — يعمل 24/7',
   },
   menu: {
+    my_sounds: 'أصواتي',
+    songs: 'الأغاني',
+    ads: 'الإعلانات',
+    sound_design: 'التصميم الصوتي',
     my_brands: 'علاماتي التجارية',
     dashboard: 'لوحة التحكم',
     listeners: 'المستمعون',

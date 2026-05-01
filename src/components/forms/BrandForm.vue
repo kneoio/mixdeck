@@ -44,19 +44,22 @@ const formTitle = computed(() => {
 const loading = ref(false)
 const activeTab = ref('properties')
 const isTabChangeFromValidation = ref(false)
+const saveAttempted = ref(false)
 const isMobile = ref(false)
 const localizedNamesFieldRef = ref<HTMLElement | null>(null)
 const countryFieldRef = ref<HTMLElement | null>(null)
 const timeZoneFieldRef = ref<HTMLElement | null>(null)
 const aiAgentFieldRef = ref<HTMLElement | null>(null)
 const scriptFieldRef = ref<HTMLElement | null>(null)
+const genresFieldRef = ref<HTMLElement | null>(null)
 
-type ValidationField = 'localizedNames' | 'country' | 'timeZone' | 'aiAgentId' | 'scriptId'
+type ValidationField = 'localizedNames' | 'country' | 'timeZone' | 'genres' | 'aiAgentId' | 'scriptId'
 
 const fieldErrors = ref<Record<ValidationField, string>>({
   localizedNames: '',
   country: '',
   timeZone: '',
+  genres: '',
   aiAgentId: '',
   scriptId: '',
 })
@@ -79,6 +82,7 @@ const formData = ref({
   color: '#000000',
   titleFont: null as string | null,
   owner: { name: '', email: '' },
+  genres: [] as string[],
   labels: [] as string[],
 })
 
@@ -106,7 +110,7 @@ const agentOptions = ref<AgentOption[]>([])
 const agentsList = ref<Array<{ id: string; description?: string; labels?: AgentLabel[]; name?: string }>>([])
 const profileOptions = ref<{ label: string; value: string }[]>([])
 const scriptOptions = ref<ScriptOption[]>([])
-const labelOptions = ref<{ label: string; value: string }[]>([])
+const genreOptions = ref<{ label: string; value: string }[]>([])
 
 const selectedScript = computed(() =>
   formData.value.scriptId
@@ -118,6 +122,10 @@ const selectedAgent = computed(() =>
   formData.value.aiAgentId
     ? agentsList.value.find(a => a.id === formData.value.aiAgentId) ?? null
     : null
+)
+
+const genresRequiredMessage = computed(() =>
+  t('common.required_field', { field: t('fragmentForm.genres') })
 )
 
 const formLabelPlacement = computed(() => (isMobile.value ? 'top' : 'left'))
@@ -135,6 +143,7 @@ function getFieldRef(field: ValidationField) {
   if (field === 'localizedNames') return localizedNamesFieldRef.value
   if (field === 'country') return countryFieldRef.value
   if (field === 'timeZone') return timeZoneFieldRef.value
+  if (field === 'genres') return genresFieldRef.value
   if (field === 'aiAgentId') return aiAgentFieldRef.value
   return scriptFieldRef.value
 }
@@ -143,12 +152,13 @@ function getFieldLabel(field: ValidationField) {
   if (field === 'localizedNames') return t('brandForm.localized_names')
   if (field === 'country') return t('brandForm.country')
   if (field === 'timeZone') return t('brandForm.time_zone')
+  if (field === 'genres') return t('fragmentForm.genres')
   if (field === 'aiAgentId') return t('brandForm.ai_agent')
   return t('brandForm.script')
 }
 
 function getFieldTab(field: ValidationField) {
-  if (field === 'localizedNames' || field === 'country' || field === 'timeZone') return 'properties'
+  if (field === 'localizedNames' || field === 'country' || field === 'timeZone' || field === 'genres') return 'properties'
   if (field === 'aiAgentId') return 'dj'
   return 'script'
 }
@@ -167,7 +177,7 @@ function clearFieldError(field: ValidationField) {
 }
 
 function clearAllFieldErrors() {
-  const allFields: ValidationField[] = ['localizedNames', 'country', 'timeZone', 'aiAgentId', 'scriptId']
+  const allFields: ValidationField[] = ['localizedNames', 'country', 'timeZone', 'genres', 'aiAgentId', 'scriptId']
   for (const field of allFields) {
     clearFieldError(field)
   }
@@ -201,10 +211,11 @@ async function validateBeforeSave() {
   if (!hasName) invalidFields.push('localizedNames')
   if (!formData.value.country) invalidFields.push('country')
   if (!formData.value.timeZone) invalidFields.push('timeZone')
+  if (!Array.isArray(formData.value.genres) || formData.value.genres.length === 0) invalidFields.push('genres')
   if (!formData.value.aiAgentId) invalidFields.push('aiAgentId')
   if (!formData.value.scriptId) invalidFields.push('scriptId')
 
-  const allFields: ValidationField[] = ['localizedNames', 'country', 'timeZone', 'aiAgentId', 'scriptId']
+  const allFields: ValidationField[] = ['localizedNames', 'country', 'timeZone', 'genres', 'aiAgentId', 'scriptId']
   for (const field of allFields) {
     if (!invalidFields.includes(field)) clearFieldError(field)
   }
@@ -292,6 +303,18 @@ function renderScriptOptionLabel(option: SelectOption) {
 }
 
 async function handleSave() {
+  saveAttempted.value = true
+  if (!Array.isArray(formData.value.genres) || formData.value.genres.length === 0) {
+    fieldErrors.value.genres = genresRequiredMessage.value
+    activeTab.value = 'properties'
+    await nextTick()
+    const target = genresFieldRef.value
+    if (target) {
+      gsap.killTweensOf(target)
+      gsap.set(target, { borderLeftColor: 'rgba(255,77,79,0.95)' })
+    }
+    return
+  }
   const valid = await validateBeforeSave()
   if (!valid) return
   try {
@@ -377,6 +400,7 @@ function applyBrandToForm(brand: any) {
     color: brand.color || '#000000',
     titleFont: brand.titleFont || null,
     owner: { name: brand.owner?.name || '', email: brand.owner?.email || '' },
+    genres: (brand as any).genres || [],
     labels: (brand as any).labels || [],
   }
   userVariables.value = firstScript?.userVariables ? { ...firstScript.userVariables } : {}
@@ -387,11 +411,11 @@ onMounted(async () => {
   window.addEventListener('resize', updateIsMobile)
   try {
     loading.value = true
-    const [agents, profiles, scripts, lbls] = await Promise.allSettled([
+    const [agents, profiles, scripts, genres] = await Promise.allSettled([
       datanestApiService.getPagedDictionary<any>('/dictionary/agents', 1, 100),
       datanestApiService.getPagedDictionary<any>('/profiles', 1, 100),
       scriptsStore.loadScripts(1, 200),
-      dictionaryApiService.getLabelsByCategory('brand'),
+      dictionaryApiService.getGenres(),
     ])
     if (agents.status === 'fulfilled') {
       const entries = agents.value.entries as any[]
@@ -417,9 +441,9 @@ onMounted(async () => {
         label: p.name || p.id, value: p.id
       }))
     }
-    if (lbls.status === 'fulfilled') {
-      labelOptions.value = lbls.value.map((l: any) => ({
-        label: l.identifier || l.title || l.id, value: l.id
+    if (genres.status === 'fulfilled') {
+      genreOptions.value = genres.value.map((g: any) => ({
+        label: g.localizedName?.en || g.name || g.identifier || g.id, value: g.id
       }))
     }
     scriptOptions.value = scriptsStore.scripts.map((s: any) => ({
@@ -478,6 +502,15 @@ watch(() => formData.value.country, (value) => {
 watch(() => formData.value.timeZone, (value) => {
   if (value) clearFieldError('timeZone')
 })
+
+watch(() => formData.value.genres, (value) => {
+  if (Array.isArray(value) && value.length > 0) {
+    clearFieldError('genres')
+    saveAttempted.value = false
+  } else if (saveAttempted.value) {
+    fieldErrors.value.genres = genresRequiredMessage.value
+  }
+}, { deep: true })
 
 watch(() => formData.value.aiAgentId, (value) => {
   if (value) clearFieldError('aiAgentId')
@@ -566,6 +599,29 @@ watch(activeTab, () => {
               </div>
               <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.timeZone }">
                 {{ fieldErrors.timeZone || '\u00A0' }}
+              </div>
+            </div>
+          </NFormItem>
+
+          <NFormItem :label="t('fragmentForm.genres')">
+            <div class="field-stack">
+              <div
+                ref="genresFieldRef"
+                class="field-error-shell"
+                :class="{ 'field-error-shell--active': !!fieldErrors.genres }"
+                :style="fieldErrors.genres ? 'border-left-color: rgba(255, 77, 79, 0.95);' : ''"
+              >
+                <NSelect
+                  v-model:value="formData.genres"
+                  :options="genreOptions"
+                  filterable
+                  multiple
+                  clearable
+                  style="width: 100%; max-width: 500px"
+                />
+              </div>
+              <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.genres }">
+                {{ fieldErrors.genres || '\u00A0' }}
               </div>
             </div>
           </NFormItem>

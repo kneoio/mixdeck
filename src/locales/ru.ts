@@ -40,6 +40,10 @@ export default {
     footer_status: '● Работает — 24/7',
   },
   menu: {
+    my_sounds: 'Мои звуки',
+    songs: 'Песни',
+    ads: 'Реклама',
+    sound_design: 'Саунд-дизайн',
     my_brands: 'Мои бренды',
     dashboard: 'Обзор',
     listeners: 'Слушатели',

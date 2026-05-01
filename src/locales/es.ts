@@ -40,6 +40,10 @@ export default {
     footer_status: '● En vivo — 24/7',
   },
   menu: {
+    my_sounds: 'Mis sonidos',
+    songs: 'Canciones',
+    ads: 'Publicidad',
+    sound_design: 'Diseño de sonido',
     my_brands: 'Mis marcas',
     dashboard: 'Panel',
     listeners: 'Oyentes',
