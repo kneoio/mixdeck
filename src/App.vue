@@ -55,7 +55,17 @@ const themeOverrides = computed<GlobalThemeOverrides>(() => ({
     textColorHoverError: '#ffffff',
     textColorPressedError: '#ffffff',
     textColorFocusError: '#ffffff',
-  }
+  },
+  ...(themeStore.isDark ? {
+    Select: {
+      optionTextColorActive: '#ffffff',
+      optionCheckColor: '#9d5bf4',
+    },
+    InternalSelectMenu: {
+      optionTextColorActive: '#ffffff',
+      optionCheckColor: '#9d5bf4',
+    },
+  } : {}),
 }))
 
 const naiveTheme = computed(() => themeStore.isDark ? darkTheme : null)
