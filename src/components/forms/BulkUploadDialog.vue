@@ -175,17 +175,27 @@ const columns = computed(() => {
       render(row: any) {
         const st = fileStatuses.value[row.id]
         if (!st) return null
-        if (st.status === 'error') {
+        if (st.classification === 'error')
           return h(NText, { type: 'error', style: 'font-size:12px;' }, { default: () => st.errorMessage || 'Error' })
-        }
-        if (st.status === 'finished') {
+        if (st.classification === 'warning')
+          return h(NText, { type: 'warning', style: 'font-size:12px;' }, { default: () => 'Saved, no metadata — title/artist from filename.' })
+        if (st.classification === 'ok')
           return h(NText, { type: 'success', style: 'font-size:12px;' }, { default: () => 'Done' })
-        }
         return h(NText, { style: 'font-size:12px;opacity:0.5;' }, { default: () => st.status })
       }
     }] : [])
   ]
 })
+
+function classifyStatus(fd: any): 'error' | 'warning' | 'ok' | 'pending' {
+  if (fd.status === 'error') return 'error'
+  if (fd.status === 'finished') {
+    const meta = fd.metadata
+    if (!meta || (typeof meta === 'object' && Object.keys(meta).length === 0)) return 'warning'
+    return 'ok'
+  }
+  return 'pending'
+}
 
 function startSSE() {
   if (eventSource.value) return
@@ -197,11 +207,17 @@ function startSSE() {
     const data = JSON.parse(event.data)
     const next = { ...fileStatuses.value }
     for (const [id, fd] of Object.entries(data) as [string, any][]) {
-      next[id] = {
-        fileId: id,
-        fileName: fd.fileName,
-        status: fd.status,
-        errorMessage: fd.errorMessage
+      const classification = classifyStatus(fd)
+      const prev = next[id]
+      if (!prev || prev.status !== fd.status || prev.classification !== classification) {
+        next[id] = {
+          fileId: id,
+          fileName: fd.fileName,
+          status: fd.status,
+          errorMessage: fd.errorMessage,
+          metadata: fd.metadata ?? null,
+          classification,
+        }
       }
     }
     fileStatuses.value = next
@@ -210,10 +226,17 @@ function startSSE() {
     if (done === totalFiles.value && totalFiles.value > 0) {
       eventSource.value?.close()
       eventSource.value = null
-      const errors = Object.values(next).filter((f: any) => f.status === 'error').length
-      const ok = Object.values(next).filter((f: any) => f.status === 'finished').length
-      if (errors > 0) message.warning(`Processing completed: ${ok} succeeded, ${errors} failed`)
-      else message.success(`All ${ok} files processed successfully`)
+      const errors = Object.values(next).filter((f: any) => f.classification === 'error').length
+      const warnings = Object.values(next).filter((f: any) => f.classification === 'warning').length
+      const ok = Object.values(next).filter((f: any) => f.classification === 'ok').length
+      if (errors > 0 && warnings > 0)
+        message.warning(`Done: ${ok} ok, ${warnings} without metadata, ${errors} failed`)
+      else if (errors > 0)
+        message.warning(`Processing completed: ${ok} succeeded, ${errors} failed`)
+      else if (warnings > 0)
+        message.warning(`Done: ${ok} ok, ${warnings} saved without metadata`)
+      else
+        message.success(`All ${ok} files processed successfully`)
       uploadCompleted.value = true
     }
   }
