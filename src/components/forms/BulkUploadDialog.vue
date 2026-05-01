@@ -1,5 +1,5 @@
 <template>
-  <n-modal v-model:show="showDialog" preset="dialog" :title="modalTitle" style="width: 700px;">
+  <n-modal v-model:show="showDialog" preset="dialog" :title="modalTitle" :style="{ width: isMobile ? '95vw' : '700px' }">
     <n-space vertical>
       <n-upload
         ref="uploadRef"
@@ -54,7 +54,7 @@
 </style>
 
 <script setup lang="ts">
-import { ref, computed, watch, h } from 'vue'
+import { ref, computed, watch, h, onMounted, onBeforeUnmount } from 'vue'
 import { NModal, NUpload, NButton, NSpace, NProgress, NDataTable, NText, useMessage } from 'naive-ui'
 import type { UploadCustomRequestOptions } from 'naive-ui'
 import LedIndicator from '@/components/LedIndicator.vue'
@@ -72,6 +72,12 @@ const emit = defineEmits<{
 }>()
 
 const message = useMessage()
+const isMobile = ref(false)
+
+function updateIsMobile() { isMobile.value = window.innerWidth <= 768 }
+onMounted(() => { updateIsMobile(); window.addEventListener('resize', updateIsMobile) })
+onBeforeUnmount(() => window.removeEventListener('resize', updateIsMobile))
+
 const uploadRef = ref()
 const showDialog = ref(props.show)
 const fileList = ref<any[]>([])
@@ -124,55 +130,58 @@ const tableData = computed(() =>
   }))
 )
 
-const columns = [
-  {
-    title: 'File',
-    key: 'name',
-    ellipsis: { tooltip: true },
-    width: 320
-  },
-  {
-    title: 'Upload',
-    key: 'upload',
-    width: 120,
-    render(row: any) {
-      const st = fileStatuses.value[row.id]
-      const hasProcessing = !!st
-      const isProcessing = hasProcessing && st.status !== 'finished' && st.status !== 'error'
+const columns = computed(() => {
+  const mobile = isMobile.value
+  return [
+    {
+      title: 'File',
+      key: 'name',
+      ellipsis: { tooltip: true },
+      ...(mobile ? {} : { width: 320 }),
+    },
+    {
+      title: 'Upload',
+      key: 'upload',
+      width: mobile ? 80 : 120,
+      render(row: any) {
+        const st = fileStatuses.value[row.id]
+        const hasProcessing = !!st
+        const isProcessing = hasProcessing && st.status !== 'finished' && st.status !== 'error'
 
-      return h(
-        'div',
-        { style: 'display:flex;align-items:center;gap:6px;' },
-        [
-          h(NProgress, {
-            type: 'line',
-            percentage: row.percentage || 0,
-            showIndicator: true,
-            borderRadius: 2,
-            railBorderRadius: 2
-          }),
-          h(LedIndicator, { active: row.status === 'finished' }),
-          h(YellowLed, { active: hasProcessing, pulse: isProcessing })
-        ]
-      )
-    }
-  },
-  {
-    title: 'Status',
-    key: 'serverStatus',
-    render(row: any) {
-      const st = fileStatuses.value[row.id]
-      if (!st) return null
-      if (st.status === 'error') {
-        return h(NText, { type: 'error', style: 'font-size:12px;' }, { default: () => st.errorMessage || 'Error' })
+        return h(
+          'div',
+          { style: 'display:flex;align-items:center;gap:4px;' },
+          [
+            h(NProgress, {
+              type: 'line',
+              percentage: row.percentage || 0,
+              showIndicator: !mobile,
+              borderRadius: 2,
+              railBorderRadius: 2
+            }),
+            h(LedIndicator, { active: row.status === 'finished' }),
+            h(YellowLed, { active: hasProcessing, pulse: isProcessing })
+          ]
+        )
       }
-      if (st.status === 'finished') {
-        return h(NText, { type: 'success', style: 'font-size:12px;' }, { default: () => 'Done' })
+    },
+    ...(!mobile ? [{
+      title: 'Status',
+      key: 'serverStatus',
+      render(row: any) {
+        const st = fileStatuses.value[row.id]
+        if (!st) return null
+        if (st.status === 'error') {
+          return h(NText, { type: 'error', style: 'font-size:12px;' }, { default: () => st.errorMessage || 'Error' })
+        }
+        if (st.status === 'finished') {
+          return h(NText, { type: 'success', style: 'font-size:12px;' }, { default: () => 'Done' })
+        }
+        return h(NText, { style: 'font-size:12px;opacity:0.5;' }, { default: () => st.status })
       }
-      return h(NText, { style: 'font-size:12px;opacity:0.5;' }, { default: () => st.status })
-    }
-  }
-]
+    }] : [])
+  ]
+})
 
 function startSSE() {
   if (eventSource.value) return
