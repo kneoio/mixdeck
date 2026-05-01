@@ -37,6 +37,18 @@ const router = createRouter({
           meta: { requiresAuth: true }
         },
         {
+          path: '/sound-library/contributed',
+          name: 'sound-library-contributed',
+          component: () => import('../views/MyPlaylistView.vue'),
+          meta: { requiresAuth: true }
+        },
+        {
+          path: '/sound-library/pending-review',
+          name: 'sound-library-pending-review',
+          component: () => import('../views/MyPlaylistView.vue'),
+          meta: { requiresAuth: true }
+        },
+        {
           path: '/brands/new',
           name: 'brand-new',
           component: () => import('../components/forms/BrandForm.vue'),

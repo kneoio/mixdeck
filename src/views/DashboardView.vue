@@ -89,9 +89,8 @@ watch(
 // Derive active menu key from current route
 const activeKey = computed(() => {
   const path = route.path
-  if (path === '/my-sounds/songs') return 'my-sounds-songs'
-  if (path === '/my-sounds/advertisement') return 'my-sounds-advertisement'
-  if (path === '/my-sounds/sound-design') return 'my-sounds-sound-design'
+  if (path === '/sound-library/contributed') return 'my-sounds-contributed'
+  if (path === '/sound-library/pending-review') return 'my-sounds-pending-review'
   const m = path.match(/^\/brands\/([^/]+)\/(\w+)$/)
   if (m) return `brand-${m[1]}-${m[2]}`
   if (path === '/brands/new') return 'brands-manage'
@@ -124,24 +123,6 @@ const brandLabel = (brand: any) =>
   brand.localizedName?.['en'] || brand.title || brand.slugName || brand.id
 
 const menuOptions = computed<MenuOption[]>(() => [
-  {
-    label: () => h('span', { style: 'font-weight: 700;' }, t('menu.my_sounds')),
-    key: 'my-sounds-root',
-    children: [
-      {
-        label: t('menu.songs'),
-        key: 'my-sounds-songs',
-      },
-      {
-        label: t('menu.ads'),
-        key: 'my-sounds-advertisement',
-      },
-      {
-        label: t('menu.sound_design'),
-        key: 'my-sounds-sound-design',
-      },
-    ],
-  },
   {
     label: () => h('span', { style: 'font-weight: 700;' }, t('menu.my_brands')),
     key: 'brands-group',
@@ -193,6 +174,20 @@ const menuOptions = computed<MenuOption[]>(() => [
       },
     ],
   },
+  {
+    label: () => h('span', { style: 'font-weight: 700;' }, t('menu.my_sounds')),
+    key: 'my-sounds-root',
+    children: [
+      {
+        label: t('menu.songs'),
+        key: 'my-sounds-contributed',
+      },
+      {
+        label: t('menu.ads'),
+        key: 'my-sounds-pending-review',
+      },
+    ],
+  },
 ])
 
 const handleMenuSelect = async (key: string) => {
@@ -204,12 +199,10 @@ const handleMenuSelect = async (key: string) => {
 
   if (key === 'brands-manage') {
     router.push('/brands')
-  } else if (key === 'my-sounds-songs') {
-    router.push('/my-sounds/songs')
-  } else if (key === 'my-sounds-advertisement') {
-    router.push('/my-sounds/advertisement')
-  } else if (key === 'my-sounds-sound-design') {
-    router.push('/my-sounds/sound-design')
+  } else if (key === 'my-sounds-contributed') {
+    router.push('/sound-library/contributed')
+  } else if (key === 'my-sounds-pending-review') {
+    router.push('/sound-library/pending-review')
   } else if (key === 'brands-new') {
     router.push('/brands/new')
   } else if (key.startsWith('brand-') && key.endsWith('-dashboard')) {
@@ -281,7 +274,7 @@ const handleUserMenuSelect = async (key: string) => {
         :value="activeKey"
         :expanded-keys="expandedKeys"
         :theme-overrides="menuThemeOverrides"
-        style="margin-top: 65px;"
+        style="margin-top: 40px;"
         @update:expanded-keys="handleUpdateExpandedKeys"
         @update:value="handleMenuSelect"
       />

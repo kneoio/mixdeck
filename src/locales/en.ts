@@ -40,9 +40,9 @@ export default {
     footer_status: '● Live — Running 24/7',
   },
   menu: {
-    my_sounds: 'My sounds',
-    songs: 'Songs',
-    ads: 'Ads',
+    my_sounds: 'Sound Library',
+    songs: 'Contributed',
+    ads: 'Pending Review',
     sound_design: 'Sound design',
     my_brands: 'My brands',
     dashboard: 'Dashboard',

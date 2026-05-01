@@ -42,6 +42,8 @@ const pageTitle = computed(() => {
   if (path === '/my-sounds/songs') return `${t('menu.my_sounds')} / ${t('menu.songs')}`
   if (path === '/my-sounds/advertisement') return `${t('menu.my_sounds')} / ${t('menu.ads')}`
   if (path === '/my-sounds/sound-design') return `${t('menu.my_sounds')} / ${t('menu.sound_design')}`
+  if (path === '/sound-library/contributed') return t('menu.songs')
+  if (path === '/sound-library/pending-review') return t('menu.ads')
   return t('menu.my_sounds')
 })
 
@@ -124,14 +126,22 @@ const columns = computed<DataTableColumns<any>>(() => [
 async function fetchData(page = pageNum.value, size = pageSize.value) {
   loading.value = true
   try {
-    const result = await datanestApiService.getMyPlaylist(
-      page,
-      size,
-      {
-        ...(searchTerm.value ? { searchTerm: searchTerm.value } : {}),
-        ...(activeTypeFilter.value.length ? { type: activeTypeFilter.value } : {}),
-      }
-    )
+    const path = route.path
+    let result
+    if (path === '/sound-library/contributed') {
+      result = await datanestApiService.getContributed(page, size)
+    } else if (path === '/sound-library/pending-review') {
+      result = await datanestApiService.getPendingReview(page, size)
+    } else {
+      result = await datanestApiService.getMyPlaylist(
+        page,
+        size,
+        {
+          ...(searchTerm.value ? { searchTerm: searchTerm.value } : {}),
+          ...(activeTypeFilter.value.length ? { type: activeTypeFilter.value } : {}),
+        }
+      )
+    }
     entries.value = result.entries
     totalCount.value = result.count
     pageNum.value = result.pageNum
