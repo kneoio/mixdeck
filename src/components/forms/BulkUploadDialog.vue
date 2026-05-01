@@ -148,17 +148,21 @@ const columns = computed(() => {
         const hasProcessing = !!st
         const isProcessing = hasProcessing && st.status !== 'finished' && st.status !== 'error'
 
+        if (mobile) {
+          return h('div', { style: 'display:flex;flex-direction:column;gap:4px;' }, [
+            h(NProgress, { type: 'line', percentage: row.percentage || 0, showIndicator: false, borderRadius: 2, railBorderRadius: 2 }),
+            h('div', { style: 'display:flex;gap:4px;' }, [
+              h(LedIndicator, { active: row.status === 'finished' }),
+              h(YellowLed, { active: hasProcessing, pulse: isProcessing })
+            ])
+          ])
+        }
+
         return h(
           'div',
-          { style: 'display:flex;align-items:center;gap:4px;' },
+          { style: 'display:flex;align-items:center;gap:6px;' },
           [
-            h(NProgress, {
-              type: 'line',
-              percentage: row.percentage || 0,
-              showIndicator: !mobile,
-              borderRadius: 2,
-              railBorderRadius: 2
-            }),
+            h(NProgress, { type: 'line', percentage: row.percentage || 0, showIndicator: true, borderRadius: 2, railBorderRadius: 2 }),
             h(LedIndicator, { active: row.status === 'finished' }),
             h(YellowLed, { active: hasProcessing, pulse: isProcessing })
           ]
