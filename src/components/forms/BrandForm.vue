@@ -954,5 +954,9 @@ watch(activeTab, () => {
   :deep(.n-form-item-label) {
     padding-left: 10px !important;
   }
+
+  .field-stack {
+    padding-right: 10px;
+  }
 }
 </style>
