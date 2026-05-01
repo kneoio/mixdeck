@@ -222,6 +222,7 @@ function startSSE() {
   eventSource.value = es
 
   es.onmessage = (event) => {
+    if (inlineAlert.value?.text === 'Connection interrupted, reconnecting…') inlineAlert.value = null
     const data = JSON.parse(event.data)
     const next = { ...fileStatuses.value }
     for (const [id, fd] of Object.entries(data) as [string, any][]) {
@@ -263,7 +264,7 @@ function startSSE() {
     if (!eventSource.value || uploadCompleted.value) return
     eventSource.value.close()
     eventSource.value = null
-    // Reconnect after 2s — handles Cloudflare 504 gateway timeouts on long uploads
+    inlineAlert.value = { type: 'warning', text: 'Connection interrupted, reconnecting…' }
     setTimeout(() => {
       if (!uploadCompleted.value && batchId.value) startSSE()
     }, 2000)
@@ -312,7 +313,7 @@ async function handleFileUpload({ file, onProgress, onFinish, onError }: UploadC
       )
       onFinish?.()
     } catch (err: any) {
-      // per-file errors are already visible in the Status column
+      if (err?.name !== 'AbortError') inlineAlert.value = { type: 'error', text: err.message || `Upload failed: ${file.name}` }
       onError?.()
     } finally {
       activeUploads.value--
