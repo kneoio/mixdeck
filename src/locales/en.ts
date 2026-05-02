@@ -41,7 +41,7 @@ export default {
   },
   menu: {
     my_sounds: 'Sound Library',
-    songs: 'Contributed',
+    songs: 'Shared',
     ads: 'Pending Review',
     sound_design: 'Sound design',
     my_brands: 'My brands',
