@@ -8,7 +8,7 @@
       <NCard style="flex: 1; min-width: 240px; max-width: 320px;">
         <div style="margin-bottom: 16px;">
           <div style="font-size: 18px; font-weight: 700;">{{ t('plans.free') }}</div>
-          <div style="font-size: 28px; font-weight: 800; margin: 8px 0;">$0 <span style="font-size: 14px; font-weight: 400; opacity: 0.5;">/ mo</span></div>
+          <div style="font-size: 28px; font-weight: 800; margin: 8px 0;">€0 <span style="font-size: 14px; font-weight: 400; opacity: 0.5;">/ mo</span></div>
           <div style="font-size: 13px; opacity: 0.55;">{{ t('plans.free_desc') }}</div>
         </div>
         <NDivider style="margin: 0 0 16px;" />
@@ -25,7 +25,7 @@
             <div style="font-size: 18px; font-weight: 700;">{{ t('plans.plus') }}</div>
             <NTag type="info" size="small" round>{{ t('plans.popular') }}</NTag>
           </NFlex>
-          <div style="font-size: 28px; font-weight: 800; margin: 8px 0;">$19 <span style="font-size: 14px; font-weight: 400; opacity: 0.5;">/ mo</span></div>
+          <div style="font-size: 28px; font-weight: 800; margin: 8px 0;">€15 <span style="font-size: 14px; font-weight: 400; opacity: 0.5;">/ mo</span></div>
           <div style="font-size: 13px; opacity: 0.55;">{{ t('plans.plus_desc') }}</div>
         </div>
         <NDivider style="margin: 0 0 16px;" />
@@ -39,7 +39,7 @@
       <NCard style="flex: 1; min-width: 240px; max-width: 320px;">
         <div style="margin-bottom: 16px;">
           <div style="font-size: 18px; font-weight: 700;">{{ t('plans.premium') }}</div>
-          <div style="font-size: 28px; font-weight: 800; margin: 8px 0;">$49 <span style="font-size: 14px; font-weight: 400; opacity: 0.5;">/ mo</span></div>
+          <div style="font-size: 28px; font-weight: 800; margin: 8px 0;">€30 <span style="font-size: 14px; font-weight: 400; opacity: 0.5;">/ mo</span></div>
           <div style="font-size: 13px; opacity: 0.55;">{{ t('plans.premium_desc') }}</div>
         </div>
         <NDivider style="margin: 0 0 16px;" />
