@@ -1,6 +1,10 @@
 <template>
   <div>
-    <PageHeader :title="t('plans.title')" :subtitle="t('plans.subtitle')" />
+    <PageHeader :title="t('plans.title')" :subtitle="t('plans.subtitle')">
+      <template #actions>
+        <NButton @click="router.back()">{{ t('common.close') }}</NButton>
+      </template>
+    </PageHeader>
 
     <div style="display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start;">
 
@@ -55,10 +59,12 @@
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { NCard, NButton, NTag, NDivider, NFlex } from 'naive-ui'
 import PageHeader from '@/components/PageHeader.vue'
 
 const { t } = useI18n()
+const router = useRouter()
 
 const freeFeatures = [
   '1 station',
