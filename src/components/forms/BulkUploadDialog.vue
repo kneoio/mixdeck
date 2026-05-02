@@ -90,7 +90,7 @@ function updateIsMobile() { isMobile.value = window.innerWidth <= 768 }
 onMounted(() => { updateIsMobile(); window.addEventListener('resize', updateIsMobile) })
 onBeforeUnmount(() => window.removeEventListener('resize', updateIsMobile))
 
-const MAX_CONCURRENT = 1
+const MAX_CONCURRENT = 5
 
 const uploadRef = ref()
 const showDialog = ref(props.show)
