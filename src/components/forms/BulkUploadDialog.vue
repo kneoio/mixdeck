@@ -226,7 +226,6 @@ function startSSE() {
   eventSource.value = es
 
   es.onmessage = (event) => {
-    if (inlineAlert.value?.text === t('bulkUpload.alert_reconnecting')) inlineAlert.value = null
     const data = JSON.parse(event.data)
     const next = { ...fileStatuses.value }
     for (const [id, fd] of Object.entries(data) as [string, any][]) {
@@ -268,7 +267,6 @@ function startSSE() {
     if (!eventSource.value || uploadCompleted.value) return
     eventSource.value.close()
     eventSource.value = null
-    inlineAlert.value = { type: 'warning', text: t('bulkUpload.alert_reconnecting') }
     setTimeout(() => {
       if (!uploadCompleted.value && batchId.value) startSSE()
     }, 2000)
