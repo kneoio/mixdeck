@@ -223,6 +223,7 @@ function startSSE() {
   if (eventSource.value) return
 
   const es = new EventSource(datanestApiService.getBulkStatusStreamUrl(batchId.value))
+  es.addEventListener('error', () => {}) // prevent unhandled rejection noise in Firefox
   eventSource.value = es
 
   es.onmessage = (event) => {

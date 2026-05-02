@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import {
   NAvatar, NButton, NTag, NDescriptions, NDescriptionsItem,
   NCard, NSpace, NFlex, NDivider, NSelect
@@ -11,6 +12,7 @@ import { LOCALE_LABELS, SUPPORTED_LOCALES, saveLocale, type SupportedLocale } fr
 
 const { t, locale } = useI18n()
 const authStore = useAuthStore()
+const router = useRouter()
 
 const profile = computed(() => authStore.userProfile ?? {})
 
@@ -105,21 +107,18 @@ function onLocaleChange(val: SupportedLocale) {
         <NDivider style="margin: 0 0 16px;" />
 
         <NDescriptions label-placement="left" :column="1" label-style="width: 180px; opacity: 0.55;">
-          <NDescriptionsItem :label="t('profile.brands')">3 / 3</NDescriptionsItem>
-          <NDescriptionsItem :label="t('profile.listeners_quota')">100 / 100</NDescriptionsItem>
-          <NDescriptionsItem :label="t('profile.storage')">5 GB / 5 GB</NDescriptionsItem>
+          <NDescriptionsItem :label="t('profile.brands')">1 / 1</NDescriptionsItem>
+          <NDescriptionsItem :label="t('profile.listeners_quota')">0 / 100</NDescriptionsItem>
+          <NDescriptionsItem :label="t('profile.storage')">0 / 2 GB</NDescriptionsItem>
           <NDescriptionsItem :label="t('profile.bulk_upload')">
             <NTag type="success" size="small" round>{{ t('profile.enabled') }}</NTag>
           </NDescriptionsItem>
-          <NDescriptionsItem :label="t('profile.ai_dj')">
-            <NTag type="warning" size="small" round>{{ t('profile.pro_only') }}</NTag>
-          </NDescriptionsItem>
-          <NDescriptionsItem :label="t('profile.renewal')">—</NDescriptionsItem>
+          <NDescriptionsItem :label="t('profile.ai_dj')">{{ t('profile.ai_dj_free') }}</NDescriptionsItem>
         </NDescriptions>
 
         <NDivider style="margin: 16px 0;" />
 
-        <NButton type="primary" style="background: #7C3AED; border-color: #7C3AED;">
+        <NButton type="primary" style="background: #7C3AED; border-color: #7C3AED;" @click="router.push('/plans')">
           {{ t('profile.upgrade') }}
         </NButton>
       </NCard>

@@ -110,6 +110,12 @@ const router = createRouter({
           meta: { requiresAuth: true }
         },
         {
+          path: '/plans',
+          name: 'plans',
+          component: () => import('../views/PlansView.vue'),
+          meta: { requiresAuth: true }
+        },
+        {
           path: '/broadcaster-welcome',
           name: 'broadcaster-welcome',
           component: () => import('../views/BroadcasterWelcome.vue'),
