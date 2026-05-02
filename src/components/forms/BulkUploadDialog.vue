@@ -90,11 +90,15 @@ function updateIsMobile() { isMobile.value = window.innerWidth <= 768 }
 onMounted(() => { updateIsMobile(); window.addEventListener('resize', updateIsMobile) })
 onBeforeUnmount(() => window.removeEventListener('resize', updateIsMobile))
 
+const MAX_CONCURRENT = 1
+
 const uploadRef = ref()
 const showDialog = ref(props.show)
 const fileList = ref<any[]>([])
 const fileStatuses = ref<Record<string, any>>({})
 const activeUploads = ref(0)
+let runningUploads = 0
+const uploadQueue: Array<() => Promise<void>> = []
 const isUploading = computed(() => activeUploads.value > 0)
 const totalFiles = ref(0)
 const eventSource = ref<EventSource | null>(null)
@@ -108,6 +112,8 @@ watch(() => props.show, (v) => {
     if (uploadCompleted.value) emit('upload-complete')
     fileList.value = []
     fileStatuses.value = {}
+    uploadQueue.length = 0
+    runningUploads = 0
     activeUploads.value = 0
     uploadCompleted.value = false
     totalFiles.value = 0
@@ -269,6 +275,17 @@ function startSSE() {
   }
 }
 
+function processQueue() {
+  while (runningUploads < MAX_CONCURRENT && uploadQueue.length > 0) {
+    const task = uploadQueue.shift()!
+    runningUploads++
+    task().finally(() => {
+      runningUploads--
+      processQueue()
+    })
+  }
+}
+
 async function handleFileUpload({ file, onProgress, onFinish, onError }: UploadCustomRequestOptions) {
   if (!file.file) {
     onError?.()
@@ -280,27 +297,36 @@ async function handleFileUpload({ file, onProgress, onFinish, onError }: UploadC
     totalFiles.value = 0
     fileStatuses.value = {}
     abortController.value = new AbortController()
+    startSSE()
   }
   activeUploads.value++
   totalFiles.value++
 
-  try {
-    await datanestApiService.bulkUploadFile(
-      file.file,
-      file.id,
-      batchId.value,
-      props.slugName,
-      (percent) => onProgress?.({ percent }),
-      abortController.value?.signal
-    )
-    onFinish?.()
-    if (!eventSource.value) startSSE()
-  } catch (err: any) {
-    if (err?.name !== 'AbortError') inlineAlert.value = { type: 'error', text: err.message || `Upload failed: ${file.name}` }
-    onError?.()
-  } finally {
-    activeUploads.value--
-  }
+  uploadQueue.push(async () => {
+    if (abortController.value?.signal.aborted) {
+      activeUploads.value--
+      onError?.()
+      return
+    }
+    try {
+      await datanestApiService.bulkUploadFile(
+        file.file!,
+        file.id,
+        batchId.value,
+        props.slugName,
+        (percent) => onProgress?.({ percent }),
+        abortController.value?.signal
+      )
+      onFinish?.()
+    } catch (err: any) {
+      if (err?.name !== 'AbortError') inlineAlert.value = { type: 'error', text: err.message || `Upload failed: ${file.name}` }
+      onError?.()
+    } finally {
+      activeUploads.value--
+    }
+  })
+
+  processQueue()
 }
 
 function handleUpload() {
@@ -310,6 +336,8 @@ function handleUpload() {
 function handleCancel() {
   abortController.value?.abort()
   abortController.value = null
+  uploadQueue.length = 0
+  runningUploads = 0
   activeUploads.value = 0
   batchId.value = ''
   if (eventSource.value) {

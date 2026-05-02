@@ -132,7 +132,17 @@ class DatanestApiService extends ApiClient {
       }
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) resolve()
-        else reject(new Error(`Upload failed (${xhr.status}): ${xhr.statusText}`))
+        else {
+          let msg = `Upload failed (${xhr.status})`
+          try {
+            const body = JSON.parse(xhr.responseText)
+            const detail = body?.message || body?.error || body?.detail
+            if (detail) msg += `: ${detail}`
+          } catch {
+            if (xhr.responseText?.trim()) msg += `: ${xhr.responseText.trim().slice(0, 120)}`
+          }
+          reject(new Error(msg))
+        }
       }
       xhr.onerror = () => reject(new Error('Network error during upload'))
       xhr.onabort = () => reject(new DOMException('Upload cancelled', 'AbortError'))
