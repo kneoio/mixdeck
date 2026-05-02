@@ -2,6 +2,11 @@ import { ApiClient, type PagedResult } from './base'
 import { appConfig } from '@/config/appConfig'
 import authService from './auth'
 
+/** Chunked bulk upload: chunk body size (per POST). */
+export const BULK_UPLOAD_CHUNK_SIZE = 5 * 1024 * 1024
+/** Files larger than this use POST …/chunk; smaller files use the single-request /files path. */
+export const BULK_UPLOAD_CHUNKED_THRESHOLD = 20 * 1024 * 1024
+
 class DatanestApiService extends ApiClient {
   constructor() {
     super(appConfig.datanestServer)
@@ -121,6 +126,20 @@ class DatanestApiService extends ApiClient {
     onProgress: (percent: number) => void,
     signal?: AbortSignal
   ): Promise<void> {
+    if (file.size <= BULK_UPLOAD_CHUNKED_THRESHOLD) {
+      return this.bulkUploadFileSingle(file, fileId, batchId, brandSlug, onProgress, signal)
+    }
+    return this.bulkUploadFileChunked(file, fileId, batchId, brandSlug, onProgress, signal)
+  }
+
+  private bulkUploadFileSingle(
+    file: File,
+    fileId: string,
+    batchId: string,
+    brandSlug: string,
+    onProgress: (percent: number) => void,
+    signal?: AbortSignal
+  ): Promise<void> {
     return new Promise((resolve, reject) => {
       const url = `${this.baseUrl}/soundfragments-bulk/files?batchId=${encodeURIComponent(batchId)}&brandSlug=${encodeURIComponent(brandSlug)}&fileId=${encodeURIComponent(fileId)}`
       const formData = new FormData()
@@ -156,6 +175,65 @@ class DatanestApiService extends ApiClient {
       }
       xhr.send(formData)
     })
+  }
+
+  private async bulkUploadFileChunked(
+    file: File,
+    fileId: string,
+    batchId: string,
+    brandSlug: string,
+    onProgress: (percent: number) => void,
+    signal?: AbortSignal
+  ): Promise<void> {
+    const authHeaders = authService.getAuthHeader()
+    const totalChunks = Math.ceil(file.size / BULK_UPLOAD_CHUNK_SIZE)
+
+    for (let i = 0; i < totalChunks; i++) {
+      if (signal?.aborted) {
+        throw new DOMException('Upload cancelled', 'AbortError')
+      }
+      const start = i * BULK_UPLOAD_CHUNK_SIZE
+      const blob = file.slice(start, Math.min(start + BULK_UPLOAD_CHUNK_SIZE, file.size))
+      const form = new FormData()
+      form.append('chunk', blob, file.name)
+
+      const params = new URLSearchParams({
+        batchId,
+        fileId,
+        fileName: file.name,
+        chunkIndex: String(i),
+        totalChunks: String(totalChunks),
+      })
+      if (brandSlug) params.set('brandSlug', brandSlug)
+
+      const res = await fetch(`${this.baseUrl}/soundfragments-bulk/chunk?${params}`, {
+        method: 'POST',
+        headers: authHeaders as HeadersInit,
+        body: form,
+        signal,
+      })
+
+      if (!res.ok) {
+        let msg = `Chunk ${i + 1}/${totalChunks} failed (${res.status})`
+        try {
+          const text = (await res.text()).trim()
+          if (text) {
+            try {
+              const body = JSON.parse(text)
+              const detail = body?.message || body?.error || body?.detail
+              msg += detail ? `: ${detail}` : `: ${text.slice(0, 120)}`
+            } catch {
+              msg += `: ${text.slice(0, 120)}`
+            }
+          }
+        } catch {
+          /* ignore */
+        }
+        throw new Error(msg)
+      }
+
+      onProgress(Math.round(((i + 1) / totalChunks) * 100))
+    }
   }
 
   getBulkStatusStreamUrl(batchId: string): string {

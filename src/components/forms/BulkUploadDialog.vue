@@ -70,7 +70,7 @@ import { NModal, NUpload, NButton, NSpace, NProgress, NDataTable, NText, NAlert 
 import type { UploadCustomRequestOptions } from 'naive-ui'
 import LedIndicator from '@/components/LedIndicator.vue'
 import YellowLed from '@/components/YellowLed.vue'
-import datanestApiService from '@/services/datanestApi'
+import datanestApiService, { BULK_UPLOAD_CHUNKED_THRESHOLD } from '@/services/datanestApi'
 
 const props = defineProps<{
   show: boolean
@@ -145,7 +145,7 @@ const modalTitle = computed(() => {
 
 const tableData = computed(() =>
   fileList.value.map(f => ({
-    id: f.id,
+    id: (f as { serverBulkId?: string }).serverBulkId ?? f.id,
     name: f.name,
     status: f.status,
     percentage: f.percentage
@@ -292,6 +292,10 @@ async function handleFileUpload({ file, onProgress, onFinish, onError }: UploadC
     return
   }
 
+  if (file.file.size > BULK_UPLOAD_CHUNKED_THRESHOLD) {
+    (file as { serverBulkId?: string }).serverBulkId = crypto.randomUUID().replace(/-/g, '')
+  }
+
   if (activeUploads.value === 0) {
     batchId.value = `batch-${Date.now()}`
     totalFiles.value = 0
@@ -309,9 +313,10 @@ async function handleFileUpload({ file, onProgress, onFinish, onError }: UploadC
       return
     }
     try {
+      const apiFileId = (file as { serverBulkId?: string }).serverBulkId ?? file.id
       await datanestApiService.bulkUploadFile(
         file.file!,
-        file.id,
+        apiFileId,
         batchId.value,
         props.slugName,
         (percent) => onProgress?.({ percent }),
