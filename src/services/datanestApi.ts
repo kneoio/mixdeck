@@ -177,19 +177,25 @@ class DatanestApiService extends ApiClient {
     })
   }
 
-  private async bulkUploadFileChunked(
+  /**
+   * POST /soundfragments-bulk/chunk — shared by bulk (omit entityId, use SSE after) and
+   * single-entity upload (set entityId; final JSON body is the complete DTO).
+   */
+  async uploadFileChunked(
     file: File,
-    fileId: string,
     batchId: string,
-    brandSlug: string,
+    brandSlug: string | null | undefined,
+    entityId: string | null | undefined,
     onProgress: (percent: number) => void,
-    signal?: AbortSignal
-  ): Promise<void> {
+    options?: { signal?: AbortSignal; fileId?: string }
+  ): Promise<any> {
+    const fileId = options?.fileId ?? crypto.randomUUID().replace(/-/g, '')
     const authHeaders = authService.getAuthHeader()
     const totalChunks = Math.ceil(file.size / BULK_UPLOAD_CHUNK_SIZE)
+    let lastResponse: any
 
     for (let i = 0; i < totalChunks; i++) {
-      if (signal?.aborted) {
+      if (options?.signal?.aborted) {
         throw new DOMException('Upload cancelled', 'AbortError')
       }
       const start = i * BULK_UPLOAD_CHUNK_SIZE
@@ -205,12 +211,13 @@ class DatanestApiService extends ApiClient {
         totalChunks: String(totalChunks),
       })
       if (brandSlug) params.set('brandSlug', brandSlug)
+      if (entityId) params.set('entityId', entityId)
 
       const res = await fetch(`${this.baseUrl}/soundfragments-bulk/chunk?${params}`, {
         method: 'POST',
         headers: authHeaders as HeadersInit,
         body: form,
-        signal,
+        signal: options?.signal,
       })
 
       if (!res.ok) {
@@ -232,8 +239,29 @@ class DatanestApiService extends ApiClient {
         throw new Error(msg)
       }
 
+      try {
+        lastResponse = await res.json()
+      } catch {
+        lastResponse = null
+      }
       onProgress(Math.round(((i + 1) / totalChunks) * 100))
     }
+
+    return lastResponse
+  }
+
+  private async bulkUploadFileChunked(
+    file: File,
+    fileId: string,
+    batchId: string,
+    brandSlug: string,
+    onProgress: (percent: number) => void,
+    signal?: AbortSignal
+  ): Promise<void> {
+    await this.uploadFileChunked(file, batchId, brandSlug || undefined, undefined, onProgress, {
+      signal,
+      fileId,
+    })
   }
 
   getBulkStatusStreamUrl(batchId: string): string {
@@ -263,37 +291,10 @@ class DatanestApiService extends ApiClient {
     URL.revokeObjectURL(objectUrl)
   }
 
-  uploadFragmentFile(
-    fragmentId: string,
-    file: File,
-    onProgress: (percent: number) => void
-  ): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const uploadId = crypto.randomUUID()
-      const url = `${this.baseUrl}/soundfragments/files/${encodeURIComponent(fragmentId)}?uploadId=${encodeURIComponent(uploadId)}`
-      const formData = new FormData()
-      formData.append('file', file)
-
-      const xhr = new XMLHttpRequest()
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) onProgress(Math.round((e.loaded * 100) / e.total))
-      }
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try { resolve(JSON.parse(xhr.responseText)) } catch { resolve(null) }
-        } else {
-          reject(new Error(`Upload failed (${xhr.status}): ${xhr.statusText}`))
-        }
-      }
-      xhr.onerror = () => reject(new Error('Network error during upload'))
-
-      xhr.open('POST', url)
-      const authHeaders = authService.getAuthHeader()
-      for (const [key, value] of Object.entries(authHeaders)) {
-        xhr.setRequestHeader(key, value)
-      }
-      xhr.send(formData)
-    })
+  /** Single-entity audio upload (chunked); final response is the complete DTO ({ status, url, metadata, … }). */
+  uploadFragmentFile(fragmentId: string, file: File, onProgress: (percent: number) => void): Promise<any> {
+    const batchId = crypto.randomUUID()
+    return this.uploadFileChunked(file, batchId, undefined, fragmentId, onProgress)
   }
 }
 
