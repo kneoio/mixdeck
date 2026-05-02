@@ -174,8 +174,8 @@ const columns = computed(() => {
           return h('div', { style: 'display:flex;flex-direction:column;gap:4px;' }, [
             h(NProgress, { type: 'line', percentage: row.percentage || 0, showIndicator: false, borderRadius: 2, railBorderRadius: 2 }),
             h('div', { style: 'display:flex;gap:4px;' }, [
-              h(YellowLed, { active: row.status === 'finished' }),
-              h(LedIndicator, { active: hasProcessing, pulse: isProcessing })
+              h(LedIndicator, { active: hasProcessing, pulse: isProcessing }),
+              h(YellowLed, { active: row.status === 'finished' })
             ])
           ])
         }
@@ -185,8 +185,8 @@ const columns = computed(() => {
           { style: 'display:flex;align-items:center;gap:6px;' },
           [
             h(NProgress, { type: 'line', percentage: row.percentage || 0, showIndicator: true, borderRadius: 2, railBorderRadius: 2 }),
-            h(YellowLed, { active: row.status === 'finished' }),
-            h(LedIndicator, { active: hasProcessing, pulse: isProcessing })
+            h(LedIndicator, { active: hasProcessing, pulse: isProcessing }),
+            h(YellowLed, { active: row.status === 'finished' })
           ]
         )
       }
