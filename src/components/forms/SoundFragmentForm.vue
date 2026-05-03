@@ -676,13 +676,18 @@ watch(activeTab, () => {
                         <div class="audio-mini-player__top-row">
                           <div class="audio-mini-player__play-col">
                             <NButton
-                              circle
-                              size="small"
+                              text
+                              quaternary
                               :loading="isFetchingAudio"
+                              class="audio-mini-player__play-icon-btn"
+                              :aria-label="isPlaying ? 'Pause' : 'Play'"
                               @click="togglePlay"
                             >
                               <template #icon>
-                                <NIcon><PauseOutline v-if="isPlaying" /><PlayOutline v-else /></NIcon>
+                                <NIcon :size="22">
+                                  <PauseOutline v-if="isPlaying" />
+                                  <PlayOutline v-else />
+                                </NIcon>
                               </template>
                             </NButton>
                           </div>
@@ -881,6 +886,15 @@ watch(activeTab, () => {
   flex-shrink: 0;
   display: flex;
   align-items: center;
+}
+
+.audio-mini-player__play-icon-btn {
+  padding: 2px !important;
+  min-width: auto !important;
+}
+
+.audio-mini-player__play-icon-btn :deep(.n-icon) {
+  color: inherit;
 }
 
 .audio-mini-player__bar-area {
