@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, h, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, h, watch, nextTick } from 'vue'
+import gsap from 'gsap'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
@@ -54,9 +55,68 @@ const windowWidth = ref(window.innerWidth)
 const isMobile = computed(() => windowWidth.value < 768)
 const mobileDrawerOpen = ref(false)
 
+const HEADER_STRIPE_PURPLE = '#7C3AED'
+const HEADER_STRIPE_BLACK = '#000000'
+/** Pairs of (purple, black) vertical lines; purple share shrinks left→right so black dominates on the edge. */
+const HEADER_LINE_PAIRS = 140
+
+const headerVerticalLines = (() => {
+  const out: { widthPct: number; color: string }[] = []
+  const n = HEADER_LINE_PAIRS
+  for (let p = 0; p < n; p++) {
+    const t = n <= 1 ? 0 : p / (n - 1)
+    const blueShare = 0.06 + 0.79 * (1 - t) ** 1.2
+    const blackShare = 1 - blueShare
+    const pairPct = 100 / n
+    out.push({ widthPct: pairPct * blueShare, color: HEADER_STRIPE_PURPLE })
+    out.push({ widthPct: pairPct * blackShare, color: HEADER_STRIPE_BLACK })
+  }
+  return out
+})()
+
+const headerFirstLine = headerVerticalLines[0]!
+const headerLastLine = headerVerticalLines[headerVerticalLines.length - 1]!
+const headerMiddleLines = headerVerticalLines.slice(1, -1)
+
+const headerLineZoneRef = ref<HTMLElement | null>(null)
+let headerLineGsapCtx: gsap.Context | null = null
+
 const onResize = () => { windowWidth.value = window.innerWidth }
 onMounted(() => window.addEventListener('resize', onResize))
 onUnmounted(() => window.removeEventListener('resize', onResize))
+
+onMounted(() => {
+  nextTick(() => {
+    const zone = headerLineZoneRef.value
+    if (!zone) return
+    const lines = zone.querySelectorAll<HTMLElement>('.dashboard-header-line-mid .dashboard-header-line')
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    headerLineGsapCtx = gsap.context(() => {
+      if (reduceMotion) return
+
+      gsap.set(lines, { transformOrigin: 'right center', scaleX: 1.35 })
+      gsap.set(zone, { xPercent: 100 })
+
+      const tl = gsap.timeline({ defaults: { ease: 'power2.out' } })
+      tl.to(zone, { xPercent: 0, duration: 1.1 }, 0)
+      tl.to(
+        lines,
+        {
+          scaleX: 1,
+          duration: 1.05,
+          stagger: { each: 0.0016, from: 'end' },
+        },
+        0.06
+      )
+    }, zone)
+  })
+})
+
+onUnmounted(() => {
+  headerLineGsapCtx?.revert()
+  headerLineGsapCtx = null
+})
 
 onMounted(async () => {
   if (!authStore.isAuthenticated) {
@@ -248,6 +308,50 @@ const handleUserMenuSelect = async (key: string) => {
   font-display: swap;
 }
 
+.dashboard-layout-header {
+  position: relative;
+  overflow: hidden;
+  background-color: #7C3AED !important;
+}
+
+.dashboard-header-line-zone {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 12%;
+  z-index: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.dashboard-header-line-mid {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  box-sizing: border-box;
+}
+
+.dashboard-header-line-mid .dashboard-header-line {
+  min-width: 0;
+  height: 100%;
+  will-change: transform;
+}
+
+.dashboard-header-toolbar-wrap {
+  position: relative;
+  z-index: 1;
+}
+
+.dashboard-layout-header :deep(.dashboard-header-actions .n-button) {
+  color: rgba(255, 255, 255, 0.92);
+}
+
 </style>
 
 <template>
@@ -306,48 +410,72 @@ const handleUserMenuSelect = async (key: string) => {
     <NLayout style="flex: 1; min-width: 0;">
       <NLayoutHeader
         bordered
-        :style="isMobile
-          ? 'padding: 8px; background: linear-gradient(90deg, #7C3AED 0%, transparent 100%);'
-          : 'padding: 16px; background: linear-gradient(90deg, #7C3AED 0%, transparent 100%);'"
+        class="dashboard-layout-header"
+        :style="{ padding: isMobile ? '8px' : '16px' }"
       >
-        <NFlex justify="space-between" align="center">
-          <NFlex align="center" :size="8">
-            <NButton
-              v-if="isMobile"
-              circle quaternary
-              @click="mobileDrawerOpen = true"
-              style="color: white;"
-            >
-              <template #icon><NIcon size="26"><HamburgerIcon /></NIcon></template>
-            </NButton>
-            <h1 style="color: white; margin: 0; font-size: 14px; font-weight: 100; font-family: 'Goldman', 'Inter', sans-serif; letter-spacing: 0.24em;">M I X D E C K</h1>
-          </NFlex>
-          <NSpace>
-            <NButton
-              circle quaternary
-              @click="themeStore.toggleTheme"
-              :title="themeStore.isDark ? t('theme.to_light') : t('theme.to_dark')"
-            >
-              <template #icon>
-                <NIcon>
-                  <LightIcon v-if="themeStore.isDark" />
-                  <DarkIcon v-else />
-                </NIcon>
-              </template>
-            </NButton>
-
-            <NDropdown :options="userMenuOptions" @select="handleUserMenuSelect">
-              <NButton text>
-                <NSpace align="center" :size="8">
-                  <NAvatar size="small">
-                    {{ authStore.userName.charAt(0).toUpperCase() }}
-                  </NAvatar>
-                  <span v-if="!isMobile">{{ authStore.userName }}</span>
-                </NSpace>
+        <div
+          ref="headerLineZoneRef"
+          class="dashboard-header-line-zone"
+          aria-hidden="true"
+        >
+          <div
+            class="dashboard-header-line-mid"
+            :style="{
+              borderLeft: `0.5px solid ${headerFirstLine.color}`,
+              borderRight: `0.5px solid ${headerLastLine.color}`,
+            }"
+          >
+            <div
+              v-for="(line, i) in headerMiddleLines"
+              :key="i"
+              class="dashboard-header-line"
+              :style="{
+                flex: `${line.widthPct} 0 0`,
+                backgroundColor: line.color,
+              }"
+            />
+          </div>
+        </div>
+        <div class="dashboard-header-toolbar-wrap">
+          <NFlex justify="space-between" align="center">
+            <NFlex align="center" :size="8">
+              <NButton
+                v-if="isMobile"
+                circle quaternary
+                @click="mobileDrawerOpen = true"
+                style="color: white;"
+              >
+                <template #icon><NIcon size="26"><HamburgerIcon /></NIcon></template>
               </NButton>
-            </NDropdown>
-          </NSpace>
-        </NFlex>
+              <h1 style="color: white; margin: 0; font-size: 14px; font-weight: 100; font-family: 'Goldman', 'Inter', sans-serif; letter-spacing: 0.24em;">M I X D E C K</h1>
+            </NFlex>
+            <NSpace class="dashboard-header-actions">
+              <NButton
+                circle quaternary
+                @click="themeStore.toggleTheme"
+                :title="themeStore.isDark ? t('theme.to_light') : t('theme.to_dark')"
+              >
+                <template #icon>
+                  <NIcon>
+                    <LightIcon v-if="themeStore.isDark" />
+                    <DarkIcon v-else />
+                  </NIcon>
+                </template>
+              </NButton>
+
+              <NDropdown :options="userMenuOptions" @select="handleUserMenuSelect">
+                <NButton text>
+                  <NSpace align="center" :size="8">
+                    <NAvatar size="small">
+                      {{ authStore.userName.charAt(0).toUpperCase() }}
+                    </NAvatar>
+                    <span v-if="!isMobile">{{ authStore.userName }}</span>
+                  </NSpace>
+                </NButton>
+              </NDropdown>
+            </NSpace>
+          </NFlex>
+        </div>
       </NLayoutHeader>
 
       <NLayoutContent :style="isMobile ? 'padding: 8px 4px' : 'padding: 24px'">
