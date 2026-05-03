@@ -61,6 +61,7 @@ const existingUrl = ref('')
 const existingFileName = ref('')
 let cachedBlobUrl = ''
 const audioEl = ref<HTMLAudioElement | null>(null)
+const audioSeekBarRef = ref<HTMLElement | null>(null)
 const isPlaying = ref(false)
 const isFetchingAudio = ref(false)
 const playbackPercent = ref(0)
@@ -240,12 +241,9 @@ function syncPlaybackProgress() {
   playbackPercent.value = Math.min(100, (el.currentTime / el.duration) * 100)
 }
 
-async function togglePlay() {
-  if (!existingUrl.value) return
-  if (isPlaying.value) {
-    audioEl.value?.pause()
-    return
-  }
+/** Load blob URL + wait for duration so play/seek can run. */
+async function ensureAudioSrcLoaded(): Promise<boolean> {
+  if (!existingUrl.value) return false
   if (!cachedBlobUrl) {
     isFetchingAudio.value = true
     try {
@@ -253,11 +251,105 @@ async function togglePlay() {
       if (audioEl.value) audioEl.value.src = cachedBlobUrl
     } catch (e: any) {
       handleApiError(e, message)
-      return
+      return false
     } finally {
       isFetchingAudio.value = false
     }
   }
+  const audio = audioEl.value
+  if (!audio) return false
+  if (Number.isFinite(audio.duration) && audio.duration > 0) return true
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const el = audio
+      const t = window.setTimeout(() => {
+        cleanup()
+        reject(new Error('timeout'))
+      }, 20000)
+      function cleanup() {
+        clearTimeout(t)
+        el.removeEventListener('loadedmetadata', onMeta)
+        el.removeEventListener('error', onErr)
+      }
+      function onMeta() {
+        cleanup()
+        resolve()
+      }
+      function onErr() {
+        cleanup()
+        reject(new Error('audio'))
+      }
+      el.addEventListener('loadedmetadata', onMeta, { once: true })
+      el.addEventListener('error', onErr, { once: true })
+      el.load()
+    })
+  } catch {
+    return false
+  }
+  return Number.isFinite(audio.duration) && audio.duration > 0
+}
+
+function applySeekClientX(clientX: number) {
+  const bar = audioSeekBarRef.value
+  const a = audioEl.value
+  if (!bar || !a || !Number.isFinite(a.duration) || a.duration <= 0) return
+  const rect = bar.getBoundingClientRect()
+  if (rect.width <= 0) return
+  const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
+  a.currentTime = ratio * a.duration
+  syncPlaybackProgress()
+}
+
+let seekDocMove: ((e: MouseEvent) => void) | null = null
+let seekDocUp: (() => void) | null = null
+
+function detachSeekDocumentListeners() {
+  if (seekDocMove) {
+    document.removeEventListener('mousemove', seekDocMove)
+    seekDocMove = null
+  }
+  if (seekDocUp) {
+    document.removeEventListener('mouseup', seekDocUp)
+    seekDocUp = null
+  }
+}
+
+async function onSeekBarMouseDown(e: MouseEvent) {
+  if (e.button !== 0) return
+  e.preventDefault()
+
+  let ended = false
+  function onUp() {
+    if (ended) return
+    ended = true
+    detachSeekDocumentListeners()
+  }
+  function onMove(ev: MouseEvent) {
+    if (ended) return
+    applySeekClientX(ev.clientX)
+  }
+
+  seekDocMove = onMove
+  seekDocUp = onUp
+  document.addEventListener('mousemove', onMove)
+  document.addEventListener('mouseup', onUp, { once: true })
+
+  const ok = await ensureAudioSrcLoaded()
+  if (!ok) {
+    onUp()
+    return
+  }
+  applySeekClientX(e.clientX)
+}
+
+async function togglePlay() {
+  if (!existingUrl.value) return
+  if (isPlaying.value) {
+    audioEl.value?.pause()
+    return
+  }
+  const ok = await ensureAudioSrcLoaded()
+  if (!ok) return
   try {
     await audioEl.value?.play()
   } catch (e: any) {
@@ -347,6 +439,7 @@ async function handleSave() {
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', updateIsMobile)
+  detachSeekDocumentListeners()
   audioEl.value?.pause()
   if (cachedBlobUrl) {
     URL.revokeObjectURL(cachedBlobUrl)
@@ -580,31 +673,45 @@ watch(activeTab, () => {
                   <div v-if="existingUrl" class="audio-mini-player">
                     <div class="audio-mini-player__row">
                       <div class="audio-mini-player__main">
-                        <div class="audio-mini-player__bar-wrap">
-                          <div class="audio-mini-player__bar-layer" aria-hidden="true">
-                            <NProgress
-                              type="line"
-                              :percentage="playbackPercent"
-                              :show-indicator="false"
-                              :height="2"
-                              :border-radius="1"
-                              :fill-border-radius="1"
-                              color="#eff605"
-                              rail-color="rgba(255,255,255,0.12)"
-                            />
-                          </div>
-                          <div class="audio-mini-player__play-layer">
+                        <div class="audio-mini-player__top-row">
+                          <div class="audio-mini-player__play-col">
                             <NButton
                               circle
                               size="small"
                               :loading="isFetchingAudio"
-                              class="audio-mini-player__play-btn"
                               @click="togglePlay"
                             >
                               <template #icon>
                                 <NIcon><PauseOutline v-if="isPlaying" /><PlayOutline v-else /></NIcon>
                               </template>
                             </NButton>
+                          </div>
+                          <div class="audio-mini-player__bar-area">
+                            <div class="audio-mini-player__bar-wrap">
+                              <div class="audio-mini-player__bar-layer" aria-hidden="true">
+                                <NProgress
+                                  type="line"
+                                  :percentage="playbackPercent"
+                                  :show-indicator="false"
+                                  :height="2"
+                                  :border-radius="1"
+                                  :fill-border-radius="1"
+                                  color="#eff605"
+                                  rail-color="rgba(255,255,255,0.12)"
+                                />
+                              </div>
+                              <div
+                                ref="audioSeekBarRef"
+                                class="audio-mini-player__seek-hit"
+                                role="slider"
+                                tabindex="-1"
+                                aria-label="Seek audio"
+                                :aria-valuenow="Math.round(playbackPercent)"
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                                @mousedown="onSeekBarMouseDown"
+                              />
+                            </div>
                           </div>
                         </div>
                         <div class="audio-mini-player__times">
@@ -762,13 +869,31 @@ watch(activeTab, () => {
   gap: 4px;
 }
 
+.audio-mini-player__top-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.audio-mini-player__play-col {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.audio-mini-player__bar-area {
+  flex: 1;
+  min-width: 0;
+}
+
 .audio-mini-player__bar-wrap {
   position: relative;
   width: 100%;
-  min-height: 30px;
+  min-height: 22px;
   display: flex;
   align-items: center;
-  justify-content: center;
 }
 
 .audio-mini-player__bar-layer {
@@ -781,18 +906,16 @@ watch(activeTab, () => {
   pointer-events: none;
 }
 
-.audio-mini-player__play-layer {
-  position: relative;
+.audio-mini-player__seek-hit {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 22px;
   z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  min-height: 30px;
-}
-
-.audio-mini-player__play-btn {
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  user-select: none;
 }
 
 .audio-mini-player__times {
