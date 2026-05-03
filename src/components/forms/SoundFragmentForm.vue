@@ -579,24 +579,34 @@ watch(activeTab, () => {
                 <NSpace vertical style="width: 100%">
                   <div v-if="existingUrl" class="audio-mini-player">
                     <div class="audio-mini-player__row">
-                      <NButton
-                        circle
-                        size="small"
-                        :loading="isFetchingAudio"
-                        @click="togglePlay"
-                      >
-                        <template #icon>
-                          <NIcon><PauseOutline v-if="isPlaying" /><PlayOutline v-else /></NIcon>
-                        </template>
-                      </NButton>
-                      <div class="audio-mini-player__track">
-                        <NProgress
-                          type="line"
-                          :percentage="playbackPercent"
-                          :show-indicator="false"
-                          :border-radius="2"
-                          :rail-border-radius="2"
-                        />
+                      <div class="audio-mini-player__main">
+                        <div class="audio-mini-player__bar-wrap">
+                          <div class="audio-mini-player__bar-layer" aria-hidden="true">
+                            <NProgress
+                              type="line"
+                              :percentage="playbackPercent"
+                              :show-indicator="false"
+                              :height="2"
+                              :border-radius="1"
+                              :fill-border-radius="1"
+                              color="#eff605"
+                              rail-color="rgba(255,255,255,0.12)"
+                            />
+                          </div>
+                          <div class="audio-mini-player__play-layer">
+                            <NButton
+                              circle
+                              size="small"
+                              :loading="isFetchingAudio"
+                              class="audio-mini-player__play-btn"
+                              @click="togglePlay"
+                            >
+                              <template #icon>
+                                <NIcon><PauseOutline v-if="isPlaying" /><PlayOutline v-else /></NIcon>
+                              </template>
+                            </NButton>
+                          </div>
+                        </div>
                         <div class="audio-mini-player__times">
                           <span>{{ formatTime(audioCurrent) }}</span>
                           <span class="audio-mini-player__sep">/</span>
@@ -608,6 +618,7 @@ watch(activeTab, () => {
                         size="small"
                         quaternary
                         :title="existingFileName"
+                        class="audio-mini-player__dl"
                         @click="handleDownload(existingUrl, existingFileName)"
                       >
                         <template #icon>
@@ -743,12 +754,45 @@ watch(activeTab, () => {
   flex-wrap: nowrap;
 }
 
-.audio-mini-player__track {
+.audio-mini-player__main {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.audio-mini-player__bar-wrap {
+  position: relative;
+  width: 100%;
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.audio-mini-player__bar-layer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.audio-mini-player__play-layer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 30px;
+}
+
+.audio-mini-player__play-btn {
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35);
 }
 
 .audio-mini-player__times {
