@@ -26,24 +26,35 @@ const sortedQueueEntries = computed(() =>
     .sort((a, b) => a.pos - b.pos)
 )
 
-async function poll() {
-  if (!props.brandSlug) return
+async function fetchHeartbeatAlive(): Promise<boolean> {
+  if (!props.brandSlug) return false
   const val = await aivoxApiService.heartbeat(props.brandSlug)
   if (val !== alive.value) emit('update:alive', val)
   alive.value = val
   brandsStore.setStreamingState(props.brandSlug, val)
+  return val
+}
+
+async function poll() {
+  await fetchHeartbeatAlive()
 }
 
 async function handleClick() {
+  if (loading.value) return
   loading.value = true
+  const targetAlive = !alive.value
   try {
-    const result = alive.value
-      ? await aivoxApiService.stop(props.brandSlug)
-      : await aivoxApiService.start(props.brandSlug)
-    const val = !['stopped', 'error'].includes(result.status)
-    if (val !== alive.value) emit('update:alive', val)
-    alive.value = val
-    brandsStore.setStreamingState(props.brandSlug, val)
+    if (alive.value) await aivoxApiService.stop(props.brandSlug)
+    else await aivoxApiService.start(props.brandSlug)
+
+    const deadline = Date.now() + 20_000
+    while (Date.now() < deadline && alive.value !== targetAlive) {
+      await fetchHeartbeatAlive()
+      if (alive.value === targetAlive) break
+      await new Promise(r => setTimeout(r, 400))
+    }
+  } catch {
+    await fetchHeartbeatAlive()
   } finally {
     loading.value = false
   }
@@ -142,6 +153,7 @@ onUnmounted(() => {
       <NButton
         :type="alive ? 'error' : 'primary'"
         :loading="loading"
+        :disabled="loading"
         @click="handleClick"
       >
         {{ alive ? 'Stop' : 'Start' }}

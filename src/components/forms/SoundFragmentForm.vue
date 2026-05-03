@@ -4,8 +4,9 @@ import { useI18n } from 'vue-i18n'
 import { gsap } from 'gsap'
 import {
   NButton, NSpace, NForm, NFormItem, NInput, NSelect, NTreeSelect,
-  NTabs, NTabPane, NUpload, NProgress, useMessage, useLoadingBar
+  NTabs, NTabPane, NUpload, NProgress, NIcon, useMessage, useLoadingBar,
 } from 'naive-ui'
+import { PlayOutline, PauseOutline, DownloadOutline } from '@vicons/ionicons5'
 import type { UploadCustomRequestOptions } from 'naive-ui'
 import FormWrapper from '@/components/FormWrapper.vue'
 import { useSoundFragmentsStore, FRAGMENT_TYPES } from '@/stores/soundFragments'
@@ -58,6 +59,13 @@ const lastModifiedDate = ref('')
 // File upload state
 const existingUrl = ref('')
 const existingFileName = ref('')
+let cachedBlobUrl = ''
+const audioEl = ref<HTMLAudioElement | null>(null)
+const isPlaying = ref(false)
+const isFetchingAudio = ref(false)
+const playbackPercent = ref(0)
+const audioCurrent = ref(0)
+const audioDuration = ref(0)
 const uploadProgress = ref(0)
 const isUploading = ref(false)
 const uploadedFileNames = ref<string[]>([])  // newly uploaded during this session
@@ -212,6 +220,66 @@ function normalizeIdList(input: unknown): string[] {
     .filter((v): v is string => Boolean(v))
 }
 
+function formatTime(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds < 0) return '0:00'
+  const m = Math.floor(seconds / 60)
+  const s = Math.floor(seconds % 60)
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
+function syncPlaybackProgress() {
+  const el = audioEl.value
+  if (!el || !el.duration || !Number.isFinite(el.duration)) {
+    playbackPercent.value = 0
+    audioDuration.value = 0
+    audioCurrent.value = el?.currentTime ?? 0
+    return
+  }
+  audioDuration.value = el.duration
+  audioCurrent.value = el.currentTime
+  playbackPercent.value = Math.min(100, (el.currentTime / el.duration) * 100)
+}
+
+async function togglePlay() {
+  if (!existingUrl.value) return
+  if (isPlaying.value) {
+    audioEl.value?.pause()
+    return
+  }
+  if (!cachedBlobUrl) {
+    isFetchingAudio.value = true
+    try {
+      cachedBlobUrl = await datanestApiService.fetchBlobUrl(existingUrl.value)
+      if (audioEl.value) audioEl.value.src = cachedBlobUrl
+    } catch (e: any) {
+      handleApiError(e, message)
+      return
+    } finally {
+      isFetchingAudio.value = false
+    }
+  }
+  try {
+    await audioEl.value?.play()
+  } catch (e: any) {
+    handleApiError(e, message)
+  }
+}
+
+function onAudioPlay() {
+  isPlaying.value = true
+}
+function onAudioPause() {
+  isPlaying.value = false
+}
+function onAudioEnded() {
+  isPlaying.value = false
+  playbackPercent.value = 0
+  audioCurrent.value = 0
+  if (audioEl.value && audioEl.value.duration) {
+    audioDuration.value = audioEl.value.duration
+  }
+}
+
 async function handleDownload(url: string, filename: string) {
   loadingBar.start()
   try {
@@ -279,6 +347,11 @@ async function handleSave() {
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', updateIsMobile)
+  audioEl.value?.pause()
+  if (cachedBlobUrl) {
+    URL.revokeObjectURL(cachedBlobUrl)
+    cachedBlobUrl = ''
+  }
 })
 
 onMounted(async () => {
@@ -348,6 +421,15 @@ watch(uploadedFileNames, (value) => {
 }, { deep: true })
 
 watch(existingUrl, (value) => {
+  isPlaying.value = false
+  playbackPercent.value = 0
+  audioCurrent.value = 0
+  audioDuration.value = 0
+  if (cachedBlobUrl) {
+    URL.revokeObjectURL(cachedBlobUrl)
+    cachedBlobUrl = ''
+  }
+  if (audioEl.value) audioEl.value.src = ''
   if (value || uploadedFileNames.value.length) clearFieldError('audioFile')
 })
 
@@ -495,12 +577,53 @@ watch(activeTab, () => {
                 :class="{ 'field-error-shell--active': !!fieldErrors.audioFile }"
               >
                 <NSpace vertical style="width: 100%">
-                  <a
-                    v-if="existingUrl"
-                    href="#"
-                    style="font-size: 13px;"
-                    @click.prevent="handleDownload(existingUrl, existingFileName)"
-                  >{{ existingFileName }}</a>
+                  <div v-if="existingUrl" class="audio-mini-player">
+                    <div class="audio-mini-player__row">
+                      <NButton
+                        circle
+                        size="small"
+                        :loading="isFetchingAudio"
+                        @click="togglePlay"
+                      >
+                        <template #icon>
+                          <NIcon><PauseOutline v-if="isPlaying" /><PlayOutline v-else /></NIcon>
+                        </template>
+                      </NButton>
+                      <div class="audio-mini-player__track">
+                        <NProgress
+                          type="line"
+                          :percentage="playbackPercent"
+                          :show-indicator="false"
+                          :border-radius="2"
+                          :rail-border-radius="2"
+                        />
+                        <div class="audio-mini-player__times">
+                          <span>{{ formatTime(audioCurrent) }}</span>
+                          <span class="audio-mini-player__sep">/</span>
+                          <span>{{ formatTime(audioDuration) }}</span>
+                        </div>
+                      </div>
+                      <NButton
+                        circle
+                        size="small"
+                        quaternary
+                        :title="existingFileName"
+                        @click="handleDownload(existingUrl, existingFileName)"
+                      >
+                        <template #icon>
+                          <NIcon><DownloadOutline /></NIcon>
+                        </template>
+                      </NButton>
+                      <audio
+                        ref="audioEl"
+                        @play="onAudioPlay"
+                        @pause="onAudioPause"
+                        @ended="onAudioEnded"
+                        @timeupdate="syncPlaybackProgress"
+                        @loadedmetadata="syncPlaybackProgress"
+                      />
+                    </div>
+                  </div>
                   <NUpload
                     :max="1"
                     :custom-request="handleFileCapture"
@@ -605,5 +728,40 @@ watch(activeTab, () => {
   .field-stack {
     padding-right: 10px;
   }
+}
+
+.audio-mini-player {
+  width: 100%;
+  max-width: 420px;
+}
+
+.audio-mini-player__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  flex-wrap: nowrap;
+}
+
+.audio-mini-player__track {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.audio-mini-player__times {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  line-height: 1.2;
+  opacity: 0.55;
+  font-variant-numeric: tabular-nums;
+}
+
+.audio-mini-player__sep {
+  opacity: 0.7;
 }
 </style>

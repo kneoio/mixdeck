@@ -291,6 +291,15 @@ class DatanestApiService extends ApiClient {
     URL.revokeObjectURL(objectUrl)
   }
 
+  /** Fetch authenticated audio (or any binary) as a blob URL for `<audio src>`. Caller must `URL.revokeObjectURL` when done. */
+  async fetchBlobUrl(url: string): Promise<string> {
+    const authHeaders = authService.getAuthHeader()
+    const response = await fetch(url, { headers: authHeaders })
+    if (!response.ok) throw new Error(`Failed to load file (${response.status})`)
+    const blob = await response.blob()
+    return URL.createObjectURL(blob)
+  }
+
   /** Single-entity audio upload (chunked); final response is the complete DTO ({ status, url, metadata, … }). */
   uploadFragmentFile(fragmentId: string, file: File, onProgress: (percent: number) => void): Promise<any> {
     const batchId = crypto.randomUUID()
