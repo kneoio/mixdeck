@@ -69,7 +69,6 @@ import { useI18n } from 'vue-i18n'
 import { NModal, NUpload, NButton, NSpace, NProgress, NDataTable, NText, NAlert } from 'naive-ui'
 import type { UploadCustomRequestOptions } from 'naive-ui'
 import LedIndicator from '@/components/LedIndicator.vue'
-import YellowLed from '@/components/YellowLed.vue'
 import datanestApiService, { BULK_UPLOAD_CHUNKED_THRESHOLD } from '@/services/datanestApi'
 
 const props = defineProps<{
@@ -174,8 +173,8 @@ const columns = computed(() => {
           return h('div', { style: 'display:flex;flex-direction:column;gap:4px;' }, [
             h(NProgress, { type: 'line', percentage: row.percentage || 0, showIndicator: false, borderRadius: 2, railBorderRadius: 2 }),
             h('div', { style: 'display:flex;gap:4px;' }, [
-              h(LedIndicator, { active: hasProcessing, pulse: isProcessing }),
-              h(YellowLed, { active: row.status === 'finished' })
+              h(LedIndicator, { active: row.status === 'finished', color: '#00FF3C' }),
+              h(LedIndicator, { active: hasProcessing, pulse: isProcessing, color: '#FFC400' }),
             ])
           ])
         }
@@ -185,8 +184,8 @@ const columns = computed(() => {
           { style: 'display:flex;align-items:center;gap:6px;' },
           [
             h(NProgress, { type: 'line', percentage: row.percentage || 0, showIndicator: true, borderRadius: 2, railBorderRadius: 2 }),
-            h(LedIndicator, { active: hasProcessing, pulse: isProcessing }),
-            h(YellowLed, { active: row.status === 'finished' })
+            h(LedIndicator, { active: row.status === 'finished', color: '#00FF3C' }),
+            h(LedIndicator, { active: hasProcessing, pulse: isProcessing, color: '#FFC400' }),
           ]
         )
       }
