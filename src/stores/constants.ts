@@ -61,7 +61,11 @@ export const useConstantsStore = defineStore('constants', () => {
     ...stationFonts.map(f => ({ label: f, value: f })),
   ]
 
-  const bitRateOptions = [64, 96, 128, 160, 192, 256, 320].map(v => ({ label: `${v} kbps`, value: v }))
+  /** Values in bits per second (e.g. 192000), labels still in kbps for users. */
+  const bitRateOptions = [64, 96, 128, 160, 192, 256, 320].map(kbps => ({
+    label: `${kbps} kbps`,
+    value: kbps * 1000,
+  }))
 
   const countries = [
     { label: 'United States', value: 'US' }, { label: 'United Kingdom', value: 'GB' },

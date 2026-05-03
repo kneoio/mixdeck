@@ -72,7 +72,7 @@ const formData = ref({
   description: '',
   timeZone: null as string | null,
   publicBrand: 0,
-  bitRate: 128,
+  bitRate: 128_000,
   aiAgentId: null as string | null,
   profileId: null as string | null,
   oneTimeStreamPolicy: 'NOT_ALLOWED' as SubmissionPolicy,
@@ -385,6 +385,13 @@ async function handleCloseBrand() {
   }
 }
 
+/** Server uses bps (e.g. 192000). Values below 1000 are treated as legacy kbps. */
+function normalizeBitRateFromServer(raw: number | null | undefined): number {
+  if (raw == null || Number.isNaN(raw)) return 128_000
+  if (raw > 0 && raw < 1000) return Math.round(raw * 1000)
+  return raw
+}
+
 function applyBrandToForm(brand: any) {
   const ln = brand.localizedName || {}
   localizedNames.value = Object.entries(ln).map(([lang, name]) => ({ lang, name: String(name ?? '') }))
@@ -396,7 +403,7 @@ function applyBrandToForm(brand: any) {
     description: brand.description || '',
     timeZone: brand.timeZone || null,
     publicBrand: brand.publicBrand ?? 0,
-    bitRate: brand.bitRate ?? 128,
+    bitRate: normalizeBitRateFromServer(brand.bitRate),
     aiAgentId: brand.aiAgentId || null,
     profileId: brand.profileId || null,
     oneTimeStreamPolicy: brand.oneTimeStreamPolicy || 'NOT_ALLOWED',
