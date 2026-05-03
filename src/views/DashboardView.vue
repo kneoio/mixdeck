@@ -56,11 +56,13 @@ const isMobile = computed(() => windowWidth.value < 768)
 const mobileDrawerOpen = ref(false)
 
 const HEADER_STRIPE_PURPLE = '#7C3AED'
-const HEADER_STRIPE_BLACK = '#000000'
-/** Pairs of (purple, black) vertical lines; purple share shrinks left→right so black dominates on the edge. */
+/** Pairs of (purple, accent) vertical lines; accent is black in dark theme, white in light. */
 const HEADER_LINE_PAIRS = 140
 
-const headerVerticalLines = (() => {
+const headerStripeAccent = computed(() => (themeStore.isDark ? '#000000' : '#ffffff'))
+
+const headerVerticalLines = computed(() => {
+  const accent = headerStripeAccent.value
   const out: { widthPct: number; color: string }[] = []
   const n = HEADER_LINE_PAIRS
   for (let p = 0; p < n; p++) {
@@ -69,14 +71,14 @@ const headerVerticalLines = (() => {
     const blackShare = 1 - blueShare
     const pairPct = 100 / n
     out.push({ widthPct: pairPct * blueShare, color: HEADER_STRIPE_PURPLE })
-    out.push({ widthPct: pairPct * blackShare, color: HEADER_STRIPE_BLACK })
+    out.push({ widthPct: pairPct * blackShare, color: accent })
   }
   return out
-})()
+})
 
-const headerFirstLine = headerVerticalLines[0]!
-const headerLastLine = headerVerticalLines[headerVerticalLines.length - 1]!
-const headerMiddleLines = headerVerticalLines.slice(1, -1)
+const headerFirstLine = computed(() => headerVerticalLines.value[0]!)
+const headerLastLine = computed(() => headerVerticalLines.value[headerVerticalLines.value.length - 1]!)
+const headerMiddleLines = computed(() => headerVerticalLines.value.slice(1, -1))
 
 const headerLineZoneRef = ref<HTMLElement | null>(null)
 let headerLineGsapCtx: gsap.Context | null = null
@@ -312,6 +314,12 @@ const handleUserMenuSelect = async (key: string) => {
   position: relative;
   overflow: hidden;
   background-color: #7C3AED !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.dashboard-layout-header--light-stripe :deep(.dashboard-header-actions .n-button) {
+  color: rgba(0, 0, 0, 0.82) !important;
 }
 
 .dashboard-header-line-zone {
@@ -348,7 +356,7 @@ const handleUserMenuSelect = async (key: string) => {
   z-index: 1;
 }
 
-.dashboard-layout-header :deep(.dashboard-header-actions .n-button) {
+.dashboard-layout-header:not(.dashboard-layout-header--light-stripe) :deep(.dashboard-header-actions .n-button) {
   color: rgba(255, 255, 255, 0.92);
 }
 
@@ -409,8 +417,8 @@ const handleUserMenuSelect = async (key: string) => {
 
     <NLayout style="flex: 1; min-width: 0;">
       <NLayoutHeader
-        bordered
         class="dashboard-layout-header"
+        :class="{ 'dashboard-layout-header--light-stripe': !themeStore.isDark }"
         :style="{ padding: isMobile ? '8px' : '16px' }"
       >
         <div
