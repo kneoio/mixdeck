@@ -761,7 +761,12 @@ watch(activeTab, () => {
                     v-if="isUploading"
                     type="line"
                     :percentage="uploadProgress"
-                    :show-indicator="true"
+                    :show-indicator="false"
+                    :height="2"
+                    :border-radius="1"
+                    :fill-border-radius="1"
+                    color="#eff605"
+                    rail-color="rgba(255,255,255,0.12)"
                   />
                 </NSpace>
               </div>
