@@ -171,7 +171,16 @@ const columns = computed(() => {
 
         if (mobile) {
           return h('div', { style: 'display:flex;flex-direction:column;gap:4px;' }, [
-            h(NProgress, { type: 'line', percentage: row.percentage || 0, showIndicator: false, borderRadius: 2, railBorderRadius: 2 }),
+            h(NProgress, {
+              type: 'line',
+              percentage: row.percentage || 0,
+              showIndicator: false,
+              height: 2,
+              borderRadius: 1,
+              fillBorderRadius: 1,
+              color: '#eff605',
+              railColor: 'rgba(255,255,255,0.12)'
+            }),
             h('div', { style: 'display:flex;gap:4px;' }, [
               h(LedIndicator, { active: row.status === 'finished', color: '#00FF3C' }),
               h(LedIndicator, { active: hasProcessing, pulse: isProcessing, color: '#FFC400' }),
@@ -183,7 +192,16 @@ const columns = computed(() => {
           'div',
           { style: 'display:flex;align-items:center;gap:6px;' },
           [
-            h(NProgress, { type: 'line', percentage: row.percentage || 0, showIndicator: true, borderRadius: 2, railBorderRadius: 2 }),
+            h(NProgress, {
+              type: 'line',
+              percentage: row.percentage || 0,
+              showIndicator: false,
+              height: 2,
+              borderRadius: 1,
+              fillBorderRadius: 1,
+              color: '#eff605',
+              railColor: 'rgba(255,255,255,0.12)'
+            }),
             h(LedIndicator, { active: row.status === 'finished', color: '#00FF3C' }),
             h(LedIndicator, { active: hasProcessing, pulse: isProcessing, color: '#FFC400' }),
           ]

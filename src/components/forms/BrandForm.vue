@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { gsap } from 'gsap'
 import {
   NButton, NSpace, NForm, NFormItem, NInput, NSelect, NSwitch,
-  NTabs, NTabPane, NDynamicInput, NInputNumber,
+  NTabs, NTabPane, NDynamicInput, NInputNumber, NSlider,
   NColorPicker, NTag, NPopconfirm, NAnchor, NAnchorLink, useMessage
 } from 'naive-ui'
 import type { SelectOption } from 'naive-ui'
@@ -112,6 +112,23 @@ const agentsList = ref<Array<{ id: string; description?: string; labels?: AgentL
 const profileOptions = ref<{ label: string; value: string }[]>([])
 const scriptOptions = ref<ScriptOption[]>([])
 const genreOptions = ref<{ label: string; value: string }[]>([])
+
+const bitRateMarks = computed<Record<number, string>>(() => ({
+  64_000: t('brandForm.stream_quality_good'),
+  96_000: t('brandForm.stream_quality_great'),
+  128_000: t('brandForm.stream_quality_best'),
+}))
+
+function snapBrandBitRate(bps: number): number {
+  const allowed = [64_000, 96_000, 128_000]
+  return allowed.reduce((best, cur) =>
+    Math.abs(bps - cur) < Math.abs(bps - best) ? cur : best
+  )
+}
+
+function formatBitRateTooltip(value: number) {
+  return bitRateMarks.value[value] ?? `${value / 1000} kbps`
+}
 
 const selectedScript = computed(() =>
   formData.value.scriptId
@@ -403,7 +420,7 @@ function applyBrandToForm(brand: any) {
     description: brand.description || '',
     timeZone: brand.timeZone || null,
     publicBrand: brand.publicBrand ?? 0,
-    bitRate: normalizeBitRateFromServer(brand.bitRate),
+    bitRate: snapBrandBitRate(normalizeBitRateFromServer(brand.bitRate)),
     aiAgentId: brand.aiAgentId || null,
     profileId: brand.profileId || null,
     oneTimeStreamPolicy: brand.oneTimeStreamPolicy || 'NOT_ALLOWED',
@@ -648,7 +665,15 @@ watch(activeTab, () => {
           <NFormItem :label="t('brandForm.bit_rate')">
             <div class="field-stack">
               <div class="field-error-shell">
-                <NSelect v-model:value="formData.bitRate" :options="constantsStore.bitRateOptions" style="width: 160px" />
+                <NSlider
+                  v-model:value="formData.bitRate"
+                  :min="64_000"
+                  :max="128_000"
+                  :step="32_000"
+                  :marks="bitRateMarks"
+                  :format-tooltip="formatBitRateTooltip"
+                  style="max-width: 360px"
+                />
               </div>
               <div class="field-error-label"></div>
             </div>

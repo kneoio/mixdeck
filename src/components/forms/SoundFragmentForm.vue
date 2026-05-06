@@ -559,16 +559,7 @@ watch(activeTab, () => {
           <NFormItem :label="t('fragmentForm.type')">
             <div class="field-stack">
               <div class="field-error-shell">
-                <NSpace align="center">
-                  <NSelect v-model:value="formData.type" :options="FRAGMENT_TYPES" style="width: 200px" />
-                  <template v-if="formData.length != null">
-                    <span style="opacity: 0.45; font-size: 13px;">{{ t('fragmentForm.length') }}</span>
-                    <NInput
-                      :value="((formData.length as number) / 60).toFixed(2)"
-                      readonly style="width: 90px"
-                    />
-                  </template>
-                </NSpace>
+                <NSelect v-model:value="formData.type" :options="FRAGMENT_TYPES" style="width: 200px" />
               </div>
               <div class="field-error-label"></div>
             </div>
