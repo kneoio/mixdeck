@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, h, onMounted } from 'vue'
+import { ref, computed, h, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import {
   NDataTable, NButton, NSpace, NPopconfirm, NTag,
   type DataTableColumns, useMessage
@@ -15,6 +15,7 @@ import { handleApiError } from '@/utils/notificationService'
 const { t } = useI18n()
 const message = useMessage()
 const router = useRouter()
+const route = useRoute()
 
 const entries = ref<any[]>([])
 const loading = ref(false)
@@ -26,7 +27,10 @@ const selectedIds = ref<string[]>([])
 const genreMap = ref<Map<string, { name: string; color?: string; fontColor?: string }>>(new Map())
 const labelMap = ref<Map<string, { name: string; color?: string; fontColor?: string }>>(new Map())
 
-const pageTitle = computed(() => `${t('menu.my_sounds')} / ${t('menu.ads')}`)
+const isUnassignedBrandsRoute = computed(() => route.path === '/sound-library/unassigned-brands')
+const pageTitle = computed(() =>
+  `${t('menu.my_sounds')} / ${isUnassignedBrandsRoute.value ? t('menu.unassigned_brands') : t('menu.ads')}`
+)
 
 const pagination = computed(() => ({
   page: pageNum.value,
@@ -107,7 +111,9 @@ const columns = computed<DataTableColumns<any>>(() => [
 async function fetchData(page = pageNum.value, size = pageSize.value) {
   loading.value = true
   try {
-    const result = await datanestApiService.getPendingReview(page, size)
+    const result = isUnassignedBrandsRoute.value
+      ? await datanestApiService.getUnassignedBrands(page, size)
+      : await datanestApiService.getPendingReview(page, size)
     entries.value = result.entries
     totalCount.value = result.count
     pageNum.value = result.pageNum
@@ -137,6 +143,14 @@ onMounted(async () => {
   await loadDictionaries()
   await fetchData(1)
 })
+
+watch(
+  () => route.path,
+  async () => {
+    selectedIds.value = []
+    await fetchData(1)
+  }
+)
 </script>
 
 <template>
@@ -166,7 +180,8 @@ onMounted(async () => {
         style: 'cursor:pointer',
         onClick: (e: MouseEvent) => {
           if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return
-          router.push(`/sound-library/pending-review/${row.id}`)
+          const baseRoute = isUnassignedBrandsRoute.value ? '/sound-library/unassigned-brands' : '/sound-library/pending-review'
+          router.push(`${baseRoute}/${row.id}`)
         }
       })"
       @update:page="(p) => { pageNum = p; fetchData(p) }"

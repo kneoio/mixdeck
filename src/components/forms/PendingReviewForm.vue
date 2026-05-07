@@ -73,7 +73,15 @@ const formData = ref({
   length: null as number | null,
 })
 
-const backRoute = '/sound-library/pending-review'
+const backRoute = computed(() =>
+  route.path.startsWith('/sound-library/unassigned-brands')
+    ? '/sound-library/unassigned-brands'
+    : '/sound-library/pending-review'
+)
+
+function handleClose() {
+  router.push(backRoute.value)
+}
 
 function getGenreLabel(genre: GenreEntry): string {
   const directName = (genre as any).name
@@ -257,7 +265,7 @@ async function handleSave() {
     if (uploadedFileNames.value.length) payload.newlyUploaded = uploadedFileNames.value
     await store.saveFragment(fragmentId.value, payload)
     message.success(t('fragmentForm.saved'))
-    router.push(backRoute)
+    router.push(backRoute.value)
   } catch (error: any) {
     handleApiError(error, message)
   } finally {
@@ -307,7 +315,7 @@ onMounted(async () => {
     existingFileName.value = f0?.name || fileUrl.split('/').pop()?.split('?')[0] || ''
   } catch (error: any) {
     message.error(error?.message || t('fragmentForm.load_failed'))
-    router.push(backRoute)
+    router.push(backRoute.value)
   } finally {
     loading.value = false
   }
@@ -358,7 +366,7 @@ watch(activeTab, () => {
 
     <template #actions>
       <NSpace>
-        <NButton @click="router.push(backRoute)">{{ t('common.close') }}</NButton>
+        <NButton @click="handleClose">{{ t('common.close') }}</NButton>
         <NButton type="primary" @click="handleSave">{{ t('common.save') }}</NButton>
       </NSpace>
     </template>

@@ -43,6 +43,7 @@ export default {
     my_sounds: 'أصواتي',
     songs: 'الأغاني',
     ads: 'الإعلانات',
+    unassigned_brands: 'Archived',
     sound_design: 'التصميم الصوتي',
     my_brands: 'علاماتي التجارية',
     dashboard: 'لوحة التحكم',

@@ -43,6 +43,7 @@ export default {
     my_sounds: 'Sound Library',
     songs: 'Shared',
     ads: 'Pending Review',
+    unassigned_brands: 'Archived',
     sound_design: 'Sound design',
     my_brands: 'My brands',
     dashboard: 'Dashboard',

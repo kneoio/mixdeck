@@ -49,8 +49,20 @@ const router = createRouter({
           meta: { requiresAuth: true }
         },
         {
+          path: '/sound-library/unassigned-brands',
+          name: 'sound-library-unassigned-brands',
+          component: () => import('../views/PendingReviewView.vue'),
+          meta: { requiresAuth: true }
+        },
+        {
           path: '/sound-library/pending-review/:fragmentId',
           name: 'sound-library-pending-review-edit',
+          component: () => import('../components/forms/PendingReviewForm.vue'),
+          meta: { requiresAuth: true }
+        },
+        {
+          path: '/sound-library/unassigned-brands/:fragmentId',
+          name: 'sound-library-unassigned-brands-edit',
           component: () => import('../components/forms/PendingReviewForm.vue'),
           meta: { requiresAuth: true }
         },

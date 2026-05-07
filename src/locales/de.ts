@@ -43,6 +43,7 @@ export default {
     my_sounds: 'Meine Sounds',
     songs: 'Songs',
     ads: 'Werbung',
+    unassigned_brands: 'Archived',
     sound_design: 'Sounddesign',
     my_brands: 'Meine Marken',
     dashboard: 'Dashboard',

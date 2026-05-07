@@ -43,6 +43,7 @@ export default {
     my_sounds: 'ჩემი ხმები',
     songs: 'სიმღერები',
     ads: 'რეკლამა',
+    unassigned_brands: 'Archived',
     sound_design: 'ხმის დიზაინი',
     my_brands: 'ჩემი ბრენდები',
     dashboard: 'დაშბორდი',

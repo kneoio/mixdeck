@@ -43,6 +43,7 @@ export default {
     my_sounds: 'Мої звуки',
     songs: 'Пісні',
     ads: 'Реклама',
+    unassigned_brands: 'Archived',
     sound_design: 'Саунд-дизайн',
     my_brands: 'Мої бренди',
     dashboard: 'Панель керування',

@@ -108,6 +108,20 @@ class DatanestApiService extends ApiClient {
     }
   }
 
+  async getUnassignedBrands(page = 1, pageSize = 10): Promise<PagedResult<any>> {
+    const params = new URLSearchParams({ page: String(page), size: String(pageSize) })
+    const response = await this.request<any>(`/soundfragments/unassigned-brands?${params}`)
+    const viewData = response?.payload?.viewData ?? response?.viewData
+    if (!viewData) throw new Error('Unexpected response format')
+    return {
+      entries: viewData.entries ?? [],
+      count: viewData.count ?? 0,
+      pageNum: viewData.pageNum ?? page,
+      maxPage: viewData.maxPage ?? 1,
+      pageSize: viewData.pageSize ?? pageSize,
+    }
+  }
+
   async deleteSoundFragment(id: string): Promise<void> {
     await this.request<void>(`/soundfragments/${id}`, { method: 'DELETE' })
   }

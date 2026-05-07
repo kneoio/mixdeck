@@ -43,6 +43,7 @@ export default {
     my_sounds: 'Менің дыбыстарым',
     songs: 'Әндер',
     ads: 'Жарнама',
+    unassigned_brands: 'Archived',
     sound_design: 'Дыбыс дизайны',
     my_brands: 'Менің брендтерім',
     dashboard: 'Басқару панелі',
