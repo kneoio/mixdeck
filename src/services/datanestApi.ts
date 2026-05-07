@@ -126,6 +126,11 @@ class DatanestApiService extends ApiClient {
     await this.request<void>(`/soundfragments/${id}`, { method: 'DELETE' })
   }
 
+  /** Revoke current user's access to a sound fragment (backend: DELETE …/:id/access). */
+  async revokeSoundFragmentAccess(id: string): Promise<void> {
+    await this.request<void>(`/soundfragments/${id}/access`, { method: 'DELETE' })
+  }
+
   async rateSoundFragment(id: string, brandSlug: string, action: 'LIKE' | 'DISLIKE'): Promise<void> {
     await this.request<void>(`/soundfragments/${id}/rating?brand=${encodeURIComponent(brandSlug)}&action=${action}`, {
       method: 'PATCH',

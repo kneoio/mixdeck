@@ -51,7 +51,7 @@ const router = createRouter({
         {
           path: '/sound-library/unassigned-brands',
           name: 'sound-library-unassigned-brands',
-          component: () => import('../views/PendingReviewView.vue'),
+          component: () => import('../views/ArchivedView.vue'),
           meta: { requiresAuth: true }
         },
         {
