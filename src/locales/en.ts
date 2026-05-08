@@ -45,7 +45,7 @@ export default {
     ads: 'Pending Review',
     unassigned_brands: 'Archived',
     sound_design: 'Sound design',
-    my_brands: 'My brands',
+    my_brands: 'Brands',
     dashboard: 'Dashboard',
     listeners: 'Listeners',
     playlist: 'Playlist',
