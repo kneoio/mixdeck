@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watch, onMounted, onUnmounted } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { NCard, NButton } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import aivoxApiService from '@/services/aivoxApi'
