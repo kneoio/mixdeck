@@ -6,6 +6,7 @@ type KeycloakConfig = {
 
 type AppConfig = {
   datanestServer: string
+  coreServer: string
   aivoxServer: string
   jesoosServer: string
   keycloak: KeycloakConfig
@@ -33,6 +34,7 @@ function readRequiredEnvString(key: keyof ImportMetaEnv): string {
 
 export const appConfig: AppConfig = {
   datanestServer: normalizeUrl(readRequiredEnvString('VITE_DATANEST_SERVER')),
+  coreServer: normalizeUrl(readEnvString('VITE_CORE_SERVER', readRequiredEnvString('VITE_DATANEST_SERVER'))),
   aivoxServer: normalizeUrl(readRequiredEnvString('VITE_AIVOX_SERVER')),
   jesoosServer: normalizeUrl(readRequiredEnvString('VITE_JESOOS_SERVER')),
   keycloak: {
