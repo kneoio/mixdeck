@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
+import { computed, watch, onMounted, onUnmounted } from 'vue'
 import { NCard, NButton } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import aivoxApiService from '@/services/aivoxApi'
@@ -8,11 +8,10 @@ import LedIndicator from '@/components/LedIndicator.vue'
 import { useBrandsStore } from '@/stores/brands'
 
 const props = defineProps<{ brandSlug: string; timezone?: string }>()
-const emit = defineEmits<{ (e: 'update:alive', value: boolean): void }>()
 const { t } = useI18n()
 const brandsStore = useBrandsStore()
 
-const alive = ref(false)
+const alive = computed(() => brandsStore.streamingStates[props.brandSlug] ?? false)
 const loading = ref(false)
 const localTime = ref('')
 const queueEntries = ref<AivoxQueueEntry[]>([])
@@ -29,8 +28,6 @@ const sortedQueueEntries = computed(() =>
 async function fetchHeartbeatAlive(): Promise<boolean> {
   if (!props.brandSlug) return false
   const val = await aivoxApiService.heartbeat(props.brandSlug)
-  if (val !== alive.value) emit('update:alive', val)
-  alive.value = val
   brandsStore.setStreamingState(props.brandSlug, val)
   return val
 }

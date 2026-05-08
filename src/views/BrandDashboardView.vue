@@ -1,13 +1,13 @@
 <template>
   <div class="brand-dashboard">
     <PageHeader :title="brandName" :subtitle="t('menu.dashboard')" />
-    <AivoxCard v-if="brandSlug" :brand-slug="brandSlug" :timezone="brand?.timeZone" v-model:alive="streamAlive" />
+    <AivoxCard v-if="brandSlug" :brand-slug="brandSlug" :timezone="brand?.timeZone" />
     <AgendaCard :brand-slug="brandSlug" :alive="streamAlive" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { useBrandsStore } from '@/stores/brands'
@@ -29,7 +29,7 @@ const brandName = computed(() =>
 )
 
 const brandSlug = computed(() => brand.value?.slugName ?? '')
-const streamAlive = ref(false)
+const streamAlive = computed(() => brandsStore.streamingStates[brandSlug.value] ?? false)
 </script>
 
 <style scoped>

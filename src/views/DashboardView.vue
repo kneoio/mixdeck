@@ -120,6 +120,18 @@ onUnmounted(() => {
   headerLineGsapCtx = null
 })
 
+let brandsPollTimer: ReturnType<typeof setInterval> | null = null
+
+function pollAllBrandsHeartbeat() {
+  brandsStore.brands
+    .filter(b => b.slugName)
+    .forEach(b => {
+      aivoxApiService.heartbeat(b.slugName!).then(alive => {
+        brandsStore.setStreamingState(b.slugName!, alive)
+      })
+    })
+}
+
 onMounted(async () => {
   if (!authStore.isAuthenticated) {
     router.push('/')
@@ -130,13 +142,12 @@ onMounted(async () => {
     await router.replace('/broadcaster-welcome')
     return
   }
-  brandsStore.brands
-    .filter(b => b.slugName)
-    .forEach(b => {
-      aivoxApiService.heartbeat(b.slugName!).then(alive => {
-        brandsStore.setStreamingState(b.slugName!, alive)
-      })
-    })
+  pollAllBrandsHeartbeat()
+  brandsPollTimer = setInterval(pollAllBrandsHeartbeat, 10000)
+})
+
+onUnmounted(() => {
+  if (brandsPollTimer) { clearInterval(brandsPollTimer); brandsPollTimer = null }
 })
 
 watch(
