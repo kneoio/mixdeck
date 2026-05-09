@@ -3,7 +3,7 @@ import { ref, computed, watch, h, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
-  NDataTable, NButton, NSpace, NFlex, NPopconfirm, NInput, NTag,
+  NDataTable, NButton, NSpace, NPopconfirm, NInput, NTag,
   type DataTableColumns, useMessage
 } from 'naive-ui'
 import { useBrandsStore } from '@/stores/brands'
@@ -12,6 +12,7 @@ import dictionaryApiService from '@/services/dictionaryApi'
 import PageHeader from '@/components/PageHeader.vue'
 import ActionBar from '@/components/ActionBar.vue'
 import BulkUploadDialog from '@/components/forms/BulkUploadDialog.vue'
+import ShareToBrandsDialog from '@/components/forms/ShareToBrandsDialog.vue'
 import { handleApiError } from '@/utils/notificationService'
 
 const { t } = useI18n()
@@ -29,6 +30,8 @@ const pageSize = ref(10)
 const selectedIds = ref<string[]>([])
 const searchTerm = ref('')
 const showBulkUpload = ref(false)
+const showShareDialog = ref(false)
+const shareFragmentIds = ref<string[]>([])
 const brandDoc = ref<any | null>(null)
 
 // Lookup maps for resolving IDs → display names
@@ -125,18 +128,10 @@ const columns = computed<DataTableColumns<any>>(() => [
       const val = row.ratedByBrandCount ?? 0
       return h(NSpace, { size: 4, align: 'center', wrap: false }, {
         default: () => [
-          h(
-            NPopconfirm,
-            { onPositiveClick: () => shareRowToLibrary(row) },
-            {
-              trigger: () =>
-                h(NButton, {
-                  size: 'tiny', tertiary: true, type: 'primary',
-                  onClick: (e: MouseEvent) => { e.stopPropagation() },
-                }, { default: () => t('playlistView.share') }),
-              default: () => t('playlistView.share_confirm'),
-            }
-          ),
+          h(NButton, {
+            size: 'tiny', tertiary: true, type: 'primary',
+            onClick: (e: MouseEvent) => { e.stopPropagation(); openShareSingle(row) },
+          }, { default: () => t('playlistView.share') }),
           h(NButton, {
             size: 'tiny', tertiary: true,
             onClick: (e: MouseEvent) => { e.stopPropagation(); rateTrack(row, 'DISLIKE') }
@@ -208,33 +203,22 @@ async function rateTrack(row: any, action: 'LIKE' | 'DISLIKE') {
   }
 }
 
-async function shareRowToLibrary(row: any) {
+function openShareSingle(row: any) {
   const id = row.id || row.slugName
-  if (!id || !slugName.value) return
-  try {
-    await datanestApiService.shareSoundFragmentWithLibrary(String(id), slugName.value)
-    message.success(t('playlistView.shared'))
-    await fetchData()
-  } catch (e: any) {
-    handleApiError(e, message)
-  }
+  if (!id) return
+  shareFragmentIds.value = [String(id)]
+  showShareDialog.value = true
 }
 
-async function handleBulkShare() {
-  if (!slugName.value || selectedIds.value.length === 0) return
-  try {
-    loading.value = true
-    await Promise.all(
-      selectedIds.value.map(id => datanestApiService.shareSoundFragmentWithLibrary(String(id), slugName.value))
-    )
-    message.success(t('playlistView.shared_bulk', { count: selectedIds.value.length }))
-    selectedIds.value = []
-    await fetchData()
-  } catch (e: any) {
-    handleApiError(e, message)
-  } finally {
-    loading.value = false
-  }
+function openShareBulk() {
+  if (selectedIds.value.length === 0) return
+  shareFragmentIds.value = [...selectedIds.value]
+  showShareDialog.value = true
+}
+
+function onShareDialogDone() {
+  selectedIds.value = []
+  void fetchData()
 }
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null
@@ -266,43 +250,39 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
   <div>
     <PageHeader :title="brandName" :subtitle="t('playlistView.subtitle')" :count="totalCount" />
     <ActionBar>
-      <NFlex justify="space-between" align="center" wrap style="width: 100%; gap: 12px">
-        <NSpace>
-          <NButton type="primary" @click="router.push(`/brands/${route.params.id}/playlist/new`)">
-            {{ t('playlistView.new_track') }}
-          </NButton>
-          <NButton @click="showBulkUpload = true">{{ t('playlistView.bulk_upload') }}</NButton>
-          <NPopconfirm @positive-click="handleBulkShare" :disabled="selectedIds.length === 0">
-            <template #trigger>
-              <NButton type="primary" secondary :disabled="selectedIds.length === 0">
-                {{ t('playlistView.share_btn', { count: selectedIds.length }) }}
-              </NButton>
-            </template>
-            {{ t('playlistView.share_bulk_confirm', { count: selectedIds.length }) }}
-          </NPopconfirm>
-          <NPopconfirm @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
-            <template #trigger>
-              <NButton type="error" :disabled="selectedIds.length === 0">
-                {{ t('playlistView.delete_btn', { count: selectedIds.length }) }}
-              </NButton>
-            </template>
-            {{ t('playlistView.delete_confirm', { count: selectedIds.length }) }}
-          </NPopconfirm>
-        </NSpace>
-        <NSpace>
-          <NInput
-            v-model:value="searchTerm"
-            :placeholder="t('playlistView.search')"
-            clearable
-            style="width: 220px"
-            @update:value="onSearchChange"
-          />
-        </NSpace>
-      </NFlex>
+      <NSpace>
+        <NButton type="primary" @click="router.push(`/brands/${route.params.id}/playlist/new`)">
+          {{ t('playlistView.new_track') }}
+        </NButton>
+        <NButton @click="showBulkUpload = true">{{ t('playlistView.bulk_upload') }}</NButton>
+        <NButton :disabled="selectedIds.length === 0" @click="openShareBulk">
+          {{ t('playlistView.share_btn', { count: selectedIds.length }) }}
+        </NButton>
+        <NPopconfirm @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
+          <template #trigger>
+            <NButton type="error" :disabled="selectedIds.length === 0">
+              {{ t('playlistView.delete_btn', { count: selectedIds.length }) }}
+            </NButton>
+          </template>
+          {{ t('playlistView.delete_confirm', { count: selectedIds.length }) }}
+        </NPopconfirm>
+        <NInput
+          v-model:value="searchTerm"
+          :placeholder="t('playlistView.search')"
+          clearable
+          style="width: 220px"
+          @update:value="onSearchChange"
+        />
+      </NSpace>
     </ActionBar>
     <BulkUploadDialog
       v-model:show="showBulkUpload"
       :slug-name="slugName"
+    />
+    <ShareToBrandsDialog
+      v-model:show="showShareDialog"
+      :fragment-ids="shareFragmentIds"
+      @shared="onShareDialogDone"
     />
     <NDataTable
       :columns="columns"

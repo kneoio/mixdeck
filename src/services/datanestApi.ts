@@ -94,6 +94,7 @@ class DatanestApiService extends ApiClient {
     }
   }
 
+  /** PATCH body matches backend `SharedSoundFragmentPatchDTO`: `addBrandIds`, `removeBrandIds` (UUID strings). */
   async patchSharedSoundFragmentShares(fragmentId: string, body: unknown): Promise<void> {
     await this.request<void>(`/shared-sound-fragments/${encodeURIComponent(fragmentId)}`, {
       method: 'PATCH',
@@ -101,13 +102,64 @@ class DatanestApiService extends ApiClient {
     })
   }
 
-  /** Remove all shares for this fragment (PATCH body must match backend `patchShares` contract). */
-  async unshareSharedSoundFragment(fragmentId: string): Promise<void> {
-    await this.patchSharedSoundFragmentShares(fragmentId, { shares: [] })
+  /** Collect destination brand UUIDs from a shared-fragment document (GET) for unshare. */
+  private collectDestinationBrandIdsFromSharedDoc(doc: unknown): string[] {
+    if (!doc || typeof doc !== 'object') return []
+    const d = doc as Record<string, unknown>
+    const out = new Set<string>()
+    const take = (arr: unknown) => {
+      if (!Array.isArray(arr)) return
+      for (const x of arr) {
+        if (x != null && x !== '') out.add(String(x))
+      }
+    }
+    take(d.addBrandIds)
+    take(d.brandIds)
+    take(d.sharedBrandIds)
+    take(d.destinationBrandIds)
+    take(d.representedInBrands)
+    if (Array.isArray(d.shares)) {
+      for (const s of d.shares as unknown[]) {
+        if (!s || typeof s !== 'object') continue
+        const o = s as Record<string, unknown>
+        const id = o.brandId ?? o.sourceBrandId ?? o.destinationBrandId ?? o.id
+        if (id != null && id !== '') out.add(String(id))
+      }
+    }
+    const single = d.sourceBrandId ?? d.destinationBrandId
+    if (single != null && single !== '') out.add(String(single))
+    return [...out]
   }
 
-  async shareSoundFragmentWithLibrary(fragmentId: string, brandSlug: string): Promise<void> {
-    await this.patchSharedSoundFragmentShares(fragmentId, { shares: [brandSlug] })
+  /**
+   * Remove all share targets for this fragment.
+   * Loads the document first so `removeBrandIds` can be filled per `SharedSoundFragmentPatchDTO`.
+   */
+  async unshareSharedSoundFragment(fragmentId: string): Promise<void> {
+    const doc = await this.getDocument<unknown>('/shared-sound-fragments', fragmentId)
+    const removeIds = this.collectDestinationBrandIdsFromSharedDoc(doc)
+    await this.patchSharedSoundFragmentShares(fragmentId, { removeBrandIds: removeIds })
+  }
+
+  async shareSoundFragmentWithLibrary(fragmentId: string, brandId: string): Promise<void> {
+    await this.shareSoundFragmentsWithBrands([fragmentId], [brandId])
+  }
+
+  /**
+   * Brands that accept open contributions.
+   * GET `/brands?page=&size=&filter={"submissionPolicy":"NO_RESTRICTIONS"}` (relative to datanest base URL).
+   */
+  async getBrandsForOpenContribution(page = 1, pageSize = 20): Promise<PagedResult<any>> {
+    return this.getPagedDictionary('/brands', page, pageSize, { submissionPolicy: 'NO_RESTRICTIONS' })
+  }
+
+  /** Add share targets (brand document UUIDs) via `SharedSoundFragmentPatchDTO.addBrandIds`. */
+  async shareSoundFragmentsWithBrands(fragmentIds: string[], brandIds: string[]): Promise<void> {
+    const ids = [...new Set(brandIds.filter(Boolean))]
+    if (ids.length === 0) return
+    await Promise.all(
+      fragmentIds.map(id => this.patchSharedSoundFragmentShares(id, { addBrandIds: ids }))
+    )
   }
 
   async getPendingReview(page = 1, pageSize = 10): Promise<PagedResult<any>> {

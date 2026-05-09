@@ -125,24 +125,6 @@ const columns = computed<DataTableColumns<any>>(() => {
     },
     { title: t('playlistView.col_description'), key: 'description', minWidth: 160, ellipsis: { tooltip: true } },
   ]
-  if (isSharedLibraryRoute.value) {
-    cols.push({
-      title: t('playlistView.col_actions'),
-      key: 'actions',
-      width: 120,
-      fixed: 'right',
-      render: (row) =>
-        h(
-          NPopconfirm,
-          { onPositiveClick: () => handleUnshareOne(row) },
-          {
-            trigger: () =>
-              h(NButton, { size: 'small', tertiary: true, type: 'warning' }, { default: () => t('playlistView.unshare') }),
-            default: () => t('playlistView.unshare_confirm'),
-          }
-        ),
-    })
-  }
   return cols
 })
 
@@ -182,21 +164,6 @@ async function handleBulkDelete() {
     await Promise.all(selectedIds.value.map(id => datanestApiService.deleteSoundFragment(id)))
     message.success(t('playlistView.deleted', { count: selectedIds.value.length }))
     selectedIds.value = []
-    await fetchData()
-  } catch (e: any) {
-    handleApiError(e, message)
-  } finally {
-    loading.value = false
-  }
-}
-
-async function handleUnshareOne(row: any) {
-  const id = row.id || row.slugName
-  if (!id) return
-  try {
-    loading.value = true
-    await datanestApiService.unshareSharedSoundFragment(String(id))
-    message.success(t('playlistView.unshared'))
     await fetchData()
   } catch (e: any) {
     handleApiError(e, message)

@@ -147,14 +147,12 @@ async function pollAllBrandsHeartbeat() {
   if (brandsHeartbeatPollCancelled) return
   const slugs = brandsStore.brands.filter(b => b.slugName).map(b => b.slugName!)
   if (slugs.length > 0) {
-    const results = await Promise.all(slugs.map(slug => aivoxApiService.heartbeat(slug)))
+    const { byBrand, status } = await aivoxApiService.heartbeatBatch(slugs)
     if (brandsHeartbeatPollCancelled) return
-    let any401 = false
-    results.forEach((r, i) => {
-      brandsStore.setStreamingState(slugs[i]!, r.alive)
-      if (r.status === 401) any401 = true
-    })
-    if (any401) {
+    for (const slug of slugs) {
+      brandsStore.setStreamingState(slug, byBrand[slug] ?? false)
+    }
+    if (status === 401) {
       brandsPollIntervalMs = Math.min(brandsPollIntervalMs * 2, BRANDS_HEARTBEAT_MAX_MS)
     } else {
       brandsPollIntervalMs = BRANDS_HEARTBEAT_BASE_MS
