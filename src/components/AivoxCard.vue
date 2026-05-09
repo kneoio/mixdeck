@@ -16,7 +16,12 @@ const loading = ref(false)
 const localTime = ref('')
 const queueEntries = ref<AivoxQueueEntry[]>([])
 
-let pollTimer: ReturnType<typeof setInterval> | null = null
+const HEARTBEAT_POLL_BASE_MS = 5000
+const HEARTBEAT_POLL_MAX_MS = 180_000
+
+let pollTimer: ReturnType<typeof setTimeout> | null = null
+let pollIntervalMs = HEARTBEAT_POLL_BASE_MS
+let heartbeatPollCancelled = false
 let timeTimer: ReturnType<typeof setInterval> | null = null
 let queueTimer: ReturnType<typeof setInterval> | null = null
 
@@ -27,13 +32,31 @@ const sortedQueueEntries = computed(() =>
 
 async function fetchHeartbeatAlive(): Promise<boolean> {
   if (!props.brandSlug) return false
-  const val = await aivoxApiService.heartbeat(props.brandSlug)
-  brandsStore.setStreamingState(props.brandSlug, val)
-  return val
+  const { alive } = await aivoxApiService.heartbeat(props.brandSlug)
+  brandsStore.setStreamingState(props.brandSlug, alive)
+  return alive
 }
 
-async function poll() {
-  await fetchHeartbeatAlive()
+async function pollHeartbeatScheduled(): Promise<void> {
+  if (heartbeatPollCancelled || !props.brandSlug) return
+  const { alive, status } = await aivoxApiService.heartbeat(props.brandSlug)
+  if (heartbeatPollCancelled || !props.brandSlug) return
+  brandsStore.setStreamingState(props.brandSlug, alive)
+  if (status === 401) {
+    pollIntervalMs = Math.min(pollIntervalMs * 2, HEARTBEAT_POLL_MAX_MS)
+  } else {
+    pollIntervalMs = HEARTBEAT_POLL_BASE_MS
+  }
+  scheduleHeartbeatPoll()
+}
+
+function scheduleHeartbeatPoll() {
+  if (pollTimer) {
+    clearTimeout(pollTimer)
+    pollTimer = null
+  }
+  if (heartbeatPollCancelled || !props.brandSlug) return
+  pollTimer = setTimeout(() => void pollHeartbeatScheduled(), pollIntervalMs)
 }
 
 async function handleClick() {
@@ -58,12 +81,17 @@ async function handleClick() {
 }
 
 function startPolling() {
-  poll()
-  pollTimer = setInterval(poll, 5000)
+  heartbeatPollCancelled = false
+  pollIntervalMs = HEARTBEAT_POLL_BASE_MS
+  void pollHeartbeatScheduled()
 }
 
 function stopPolling() {
-  if (pollTimer) { clearInterval(pollTimer); pollTimer = null }
+  heartbeatPollCancelled = true
+  if (pollTimer) {
+    clearTimeout(pollTimer)
+    pollTimer = null
+  }
 }
 
 async function pollQueue() {

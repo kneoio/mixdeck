@@ -136,16 +136,40 @@ onUnmounted(() => {
   headerLineGsapCtx = null
 })
 
-let brandsPollTimer: ReturnType<typeof setInterval> | null = null
+const BRANDS_HEARTBEAT_BASE_MS = 10_000
+const BRANDS_HEARTBEAT_MAX_MS = 180_000
 
-function pollAllBrandsHeartbeat() {
-  brandsStore.brands
-    .filter(b => b.slugName)
-    .forEach(b => {
-      aivoxApiService.heartbeat(b.slugName!).then(alive => {
-        brandsStore.setStreamingState(b.slugName!, alive)
-      })
+let brandsPollTimer: ReturnType<typeof setTimeout> | null = null
+let brandsPollIntervalMs = BRANDS_HEARTBEAT_BASE_MS
+let brandsHeartbeatPollCancelled = false
+
+async function pollAllBrandsHeartbeat() {
+  if (brandsHeartbeatPollCancelled) return
+  const slugs = brandsStore.brands.filter(b => b.slugName).map(b => b.slugName!)
+  if (slugs.length > 0) {
+    const results = await Promise.all(slugs.map(slug => aivoxApiService.heartbeat(slug)))
+    if (brandsHeartbeatPollCancelled) return
+    let any401 = false
+    results.forEach((r, i) => {
+      brandsStore.setStreamingState(slugs[i]!, r.alive)
+      if (r.status === 401) any401 = true
     })
+    if (any401) {
+      brandsPollIntervalMs = Math.min(brandsPollIntervalMs * 2, BRANDS_HEARTBEAT_MAX_MS)
+    } else {
+      brandsPollIntervalMs = BRANDS_HEARTBEAT_BASE_MS
+    }
+  }
+  scheduleBrandsHeartbeatPoll()
+}
+
+function scheduleBrandsHeartbeatPoll() {
+  if (brandsHeartbeatPollCancelled) return
+  if (brandsPollTimer) {
+    clearTimeout(brandsPollTimer)
+    brandsPollTimer = null
+  }
+  brandsPollTimer = setTimeout(() => void pollAllBrandsHeartbeat(), brandsPollIntervalMs)
 }
 
 onMounted(async () => {
@@ -158,12 +182,17 @@ onMounted(async () => {
     await router.replace('/broadcaster-welcome')
     return
   }
-  pollAllBrandsHeartbeat()
-  brandsPollTimer = setInterval(pollAllBrandsHeartbeat, 10000)
+  brandsHeartbeatPollCancelled = false
+  brandsPollIntervalMs = BRANDS_HEARTBEAT_BASE_MS
+  void pollAllBrandsHeartbeat()
 })
 
 onUnmounted(() => {
-  if (brandsPollTimer) { clearInterval(brandsPollTimer); brandsPollTimer = null }
+  brandsHeartbeatPollCancelled = true
+  if (brandsPollTimer) {
+    clearTimeout(brandsPollTimer)
+    brandsPollTimer = null
+  }
 })
 
 watch(

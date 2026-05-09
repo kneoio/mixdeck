@@ -18,18 +18,30 @@ export interface AivoxQueueResponse {
   fullQueue: AivoxQueueEntry[]
 }
 
+export interface AivoxHeartbeatResult {
+  alive: boolean
+  /** Response status, or 0 if the request failed before a response (e.g. network). */
+  status: number
+}
+
 class AivoxApiService extends ApiClient {
   constructor() {
     super(appConfig.aivoxServer)
   }
 
-  async heartbeat(brandSlug: string): Promise<boolean> {
-    const response = await fetch(`${this.baseUrl}/info/heartbeat/${encodeURIComponent(brandSlug)}`, {
-      headers: { 'X-Client-ID': 'mixpla-web' },
-    })
-    if (!response.ok) return false
-    const text = await response.text()
-    return text.trim() === 'true'
+  async heartbeat(brandSlug: string): Promise<AivoxHeartbeatResult> {
+    try {
+      const response = await fetch(`${this.baseUrl}/info/heartbeat/${encodeURIComponent(brandSlug)}`, {
+        headers: { 'X-Client-ID': 'mixpla-web' },
+      })
+      if (!response.ok) {
+        return { alive: false, status: response.status }
+      }
+      const text = await response.text()
+      return { alive: text.trim() === 'true', status: response.status }
+    } catch {
+      return { alive: false, status: 0 }
+    }
   }
 
   async start(brandSlug: string): Promise<{ status: string }> {
