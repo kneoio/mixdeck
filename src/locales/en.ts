@@ -116,10 +116,8 @@ export default {
     plus_desc: 'For growing broadcasters',
     premium: 'Premium',
     premium_desc: 'For serious radio operators',
-    popular: 'Most popular',
     current: 'Current plan',
-    upgrade_plus: 'Upgrade to Plus',
-    upgrade_premium: 'Upgrade to Premium',
+    subscribe: 'Subscribe',
   },
   brandForm: {
     create_title: 'Create Brand',

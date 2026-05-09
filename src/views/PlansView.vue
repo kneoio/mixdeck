@@ -11,17 +11,10 @@
         <NCard
           v-for="card in cards"
           :key="card.id"
-          :style="card.identifier.includes('plus')
-            ? 'flex: 1; min-width: 240px; max-width: 320px; border: 1.5px solid #7C3AED;'
-            : 'flex: 1; min-width: 240px; max-width: 320px;'"
+          style="flex: 1; min-width: 240px; max-width: 320px;"
         >
           <div style="margin-bottom: 16px;">
-            <NFlex align="center" justify="space-between">
-              <div style="font-size: 18px; font-weight: 700;">{{ card.name }}</div>
-              <NTag v-if="card.identifier.includes('plus')" type="info" size="small" round>
-                {{ t('plans.popular') }}
-              </NTag>
-            </NFlex>
+            <div style="font-size: 18px; font-weight: 700;">{{ card.name }}</div>
             <div style="font-size: 28px; font-weight: 800; margin: 8px 0;">
               €{{ card.price }} <span style="font-size: 14px; font-weight: 400; opacity: 0.5;">/ mo</span>
             </div>
@@ -31,13 +24,8 @@
           <ul style="list-style: none; padding: 0; margin: 0 0 24px; display: flex; flex-direction: column; gap: 10px; font-size: 13px;">
             <li v-for="feature in card.features" :key="feature">✓ {{ feature }}</li>
           </ul>
-          <NButton
-            block
-            :disabled="card.price === 0"
-            :type="card.identifier.includes('plus') ? 'primary' : 'default'"
-            :style="card.identifier.includes('plus') ? 'background: #7C3AED; border-color: #7C3AED;' : undefined"
-          >
-            {{ getActionLabel(card.identifier, card.price) }}
+          <NButton block :disabled="card.price === 0" type="default">
+            {{ getActionLabel(card.price) }}
           </NButton>
         </NCard>
       </div>
@@ -50,10 +38,11 @@
 import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { NCard, NButton, NTag, NDivider, NFlex, NSpin, NEmpty } from 'naive-ui'
+import { NCard, NButton, NDivider, NSpin, NEmpty } from 'naive-ui'
 import PageHeader from '@/components/PageHeader.vue'
 import { useSubscriptionProductsStore } from '@/stores/subscriptionProducts'
 
+/** JSON inside each locale string of `localizedDescription` from the API */
 interface PlanDescription {
   name?: string
   price?: number
@@ -67,14 +56,41 @@ interface PlanDescription {
   custom_integrations?: boolean
 }
 
+/** One row from `payload.viewData.entries` for subscription products */
+interface SubscriptionProductViewEntry {
+  id: string
+  identifier: string
+  localizedName: Record<string, string>
+  localizedDescription: Record<string, string>
+  stripePriceId?: string
+  stripeProductId?: string
+  active?: boolean
+  author?: string
+  regDate?: string
+  lastModifier?: string
+  lastModifiedDate?: string
+}
+
 const { t, locale } = useI18n()
 const router = useRouter()
 const subscriptionProductsStore = useSubscriptionProductsStore()
 
+function pickLocalized(map: Record<string, string> | undefined, locale: string): string | undefined {
+  if (!map || typeof map !== 'object') return undefined
+  if (map[locale]) return map[locale]
+  const short = locale.split('-')[0]
+  if (short !== locale && map[short]) return map[short]
+  if (map.en) return map.en
+  const values = Object.values(map)
+  return values[0]
+}
+
 function parseDescription(raw: string | undefined): PlanDescription {
-  if (!raw) return {}
+  if (!raw || typeof raw !== 'string') return {}
+  const trimmed = raw.trim()
+  if (!trimmed) return {}
   try {
-    return JSON.parse(raw) as PlanDescription
+    return JSON.parse(trimmed) as PlanDescription
   } catch {
     return {}
   }
@@ -86,20 +102,19 @@ function valueOrUnlimited(value: number | undefined, unit: string): string {
   return `${value} ${unit}`
 }
 
-function getActionLabel(identifier: string, price: number): string {
+function getActionLabel(price: number): string {
   if (price === 0) return t('plans.current')
-  if (identifier.includes('plus')) return t('plans.upgrade_plus')
-  if (identifier.includes('premium')) return t('plans.upgrade_premium')
-  return t('plans.current')
+  return t('plans.subscribe')
 }
 
 const cards = computed(() =>
-  subscriptionProductsStore.products
+  (subscriptionProductsStore.products as SubscriptionProductViewEntry[])
     .filter((entry) => entry.active !== false)
     .map((entry) => {
       const selectedLocale = locale.value || 'en'
-      const name = entry.localizedName?.[selectedLocale] ?? entry.localizedName?.en ?? entry.identifier
-      const rawDescription = entry.localizedDescription?.[selectedLocale] ?? entry.localizedDescription?.en
+      const name =
+        pickLocalized(entry.localizedName, selectedLocale) ?? entry.identifier
+      const rawDescription = pickLocalized(entry.localizedDescription, selectedLocale)
       const details = parseDescription(rawDescription)
       const features: string[] = [
         `${valueOrUnlimited(details.stations, 'stations')}`,
