@@ -370,9 +370,9 @@ h1 {
     align-items: flex-start;
   }
   .waveform {
-    gap: 6px;
+    gap: 8px;
   }
-  .waveform span:nth-child(2n) {
+  .waveform span:not(:nth-child(3n)) {
     display: none;
   }
   .waveform span {
