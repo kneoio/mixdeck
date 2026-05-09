@@ -209,7 +209,7 @@ h1 {
   width: 4px;
   background: linear-gradient(180deg, #58d6ff, #7b5bff);
   border-radius: 2px;
-  animation: pulse 1.5s ease-in-out infinite;
+  animation: pulse 15s ease-in-out infinite;
   animation-delay: calc(var(--i) * 0.05s);
 }
 
@@ -376,7 +376,7 @@ h1 {
     display: none;
   }
   .waveform span {
-    animation-duration: 2.2s;
+    animation-duration: 15s;
   }
 }
 </style>
