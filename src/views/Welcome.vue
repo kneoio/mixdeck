@@ -369,5 +369,14 @@ h1 {
     flex-direction: column;
     align-items: flex-start;
   }
+  .waveform {
+    gap: 6px;
+  }
+  .waveform span:nth-child(2n) {
+    display: none;
+  }
+  .waveform span {
+    animation-duration: 2.2s;
+  }
 }
 </style>
