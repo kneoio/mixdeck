@@ -80,9 +80,9 @@ class DatanestApiService extends ApiClient {
     }
   }
 
-  async getContributed(page = 1, pageSize = 10): Promise<PagedResult<any>> {
+  async getSharedSoundFragments(page = 1, pageSize = 10): Promise<PagedResult<any>> {
     const params = new URLSearchParams({ page: String(page), size: String(pageSize) })
-    const response = await this.request<any>(`/soundfragments/contributed?${params}`)
+    const response = await this.request<any>(`/shared-sound-fragments?${params}`)
     const viewData = response?.payload?.viewData ?? response?.viewData
     if (!viewData) throw new Error('Unexpected response format')
     return {
@@ -92,6 +92,22 @@ class DatanestApiService extends ApiClient {
       maxPage: viewData.maxPage ?? 1,
       pageSize: viewData.pageSize ?? pageSize,
     }
+  }
+
+  async patchSharedSoundFragmentShares(fragmentId: string, body: unknown): Promise<void> {
+    await this.request<void>(`/shared-sound-fragments/${encodeURIComponent(fragmentId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body ?? {}),
+    })
+  }
+
+  /** Remove all shares for this fragment (PATCH body must match backend `patchShares` contract). */
+  async unshareSharedSoundFragment(fragmentId: string): Promise<void> {
+    await this.patchSharedSoundFragmentShares(fragmentId, { shares: [] })
+  }
+
+  async shareSoundFragmentWithLibrary(fragmentId: string, brandSlug: string): Promise<void> {
+    await this.patchSharedSoundFragmentShares(fragmentId, { shares: [brandSlug] })
   }
 
   async getPendingReview(page = 1, pageSize = 10): Promise<PagedResult<any>> {
@@ -284,7 +300,11 @@ class DatanestApiService extends ApiClient {
   }
 
   getBulkStatusStreamUrl(batchId: string): string {
-    return `${this.baseUrl}/soundfragments-bulk/status/${encodeURIComponent(batchId)}/stream`
+    const path = `${this.baseUrl}/soundfragments-bulk/status/${encodeURIComponent(batchId)}/stream`
+    const token = authService.getToken()
+    if (!token) return path
+    const sep = path.includes('?') ? '&' : '?'
+    return `${path}${sep}access_token=${encodeURIComponent(token)}`
   }
 
   async downloadFile(url: string, fallbackFilename: string): Promise<void> {

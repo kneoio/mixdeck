@@ -27,6 +27,8 @@ const searchTerm = ref('')
 const genreMap = ref<Map<string, { name: string; color?: string; fontColor?: string }>>(new Map())
 const labelMap = ref<Map<string, { name: string; color?: string; fontColor?: string }>>(new Map())
 
+const isSharedLibraryRoute = computed(() => route.path === '/sound-library/contributed')
+
 const activeTypeFilter = computed<string[]>(() => {
   const path = route.path
   if (path === '/my-sounds/songs') return ['SONG']
@@ -86,42 +88,63 @@ const pagination = computed(() => ({
   itemCount: totalCount.value,
 }))
 
-const columns = computed<DataTableColumns<any>>(() => [
-  { type: 'selection', multiple: true },
-  { title: t('playlistView.col_title'), key: 'title', minWidth: 200, render: (row) => row.title || '-' },
-  { title: t('playlistView.col_artist'), key: 'artist', minWidth: 160, render: (row) => row.artist || '-' },
-  {
-    title: t('playlistView.col_genres'), key: 'genres', width: 180,
-    render: (row) => {
-      if (!row.genres?.length) return '-'
-      return h(NSpace, { size: 4, wrap: true }, {
-        default: () => row.genres.map((g: any) => {
-          const r = resolveGenre(g)
-          return h(NTag, {
-            size: 'small',
-            style: r.color ? `background:${r.color};color:${r.fontColor || '#fff'}` : ''
-          }, { default: () => r.name })
+const columns = computed<DataTableColumns<any>>(() => {
+  const cols: DataTableColumns<any> = [
+    { type: 'selection', multiple: true },
+    { title: t('playlistView.col_title'), key: 'title', minWidth: 200, render: (row) => row.title || '-' },
+    { title: t('playlistView.col_artist'), key: 'artist', minWidth: 160, render: (row) => row.artist || '-' },
+    {
+      title: t('playlistView.col_genres'), key: 'genres', width: 180,
+      render: (row) => {
+        if (!row.genres?.length) return '-'
+        return h(NSpace, { size: 4, wrap: true }, {
+          default: () => row.genres.map((g: any) => {
+            const r = resolveGenre(g)
+            return h(NTag, {
+              size: 'small',
+              style: r.color ? `background:${r.color};color:${r.fontColor || '#fff'}` : ''
+            }, { default: () => r.name })
+          })
         })
-      })
-    }
-  },
-  {
-    title: t('playlistView.col_labels'), key: 'labels', width: 180,
-    render: (row) => {
-      if (!row.labels?.length) return '-'
-      return h(NSpace, { size: 4, wrap: true }, {
-        default: () => row.labels.map((l: any) => {
-          const r = resolveLabel(l)
-          return h(NTag, {
-            size: 'small',
-            style: r.color ? `background:${r.color};color:${r.fontColor || '#fff'}` : ''
-          }, { default: () => r.name })
+      }
+    },
+    {
+      title: t('playlistView.col_labels'), key: 'labels', width: 180,
+      render: (row) => {
+        if (!row.labels?.length) return '-'
+        return h(NSpace, { size: 4, wrap: true }, {
+          default: () => row.labels.map((l: any) => {
+            const r = resolveLabel(l)
+            return h(NTag, {
+              size: 'small',
+              style: r.color ? `background:${r.color};color:${r.fontColor || '#fff'}` : ''
+            }, { default: () => r.name })
+          })
         })
-      })
-    }
-  },
-  { title: t('playlistView.col_description'), key: 'description', minWidth: 160, ellipsis: { tooltip: true } },
-])
+      }
+    },
+    { title: t('playlistView.col_description'), key: 'description', minWidth: 160, ellipsis: { tooltip: true } },
+  ]
+  if (isSharedLibraryRoute.value) {
+    cols.push({
+      title: t('playlistView.col_actions'),
+      key: 'actions',
+      width: 120,
+      fixed: 'right',
+      render: (row) =>
+        h(
+          NPopconfirm,
+          { onPositiveClick: () => handleUnshareOne(row) },
+          {
+            trigger: () =>
+              h(NButton, { size: 'small', tertiary: true, type: 'warning' }, { default: () => t('playlistView.unshare') }),
+            default: () => t('playlistView.unshare_confirm'),
+          }
+        ),
+    })
+  }
+  return cols
+})
 
 async function fetchData(page = pageNum.value, size = pageSize.value) {
   loading.value = true
@@ -129,7 +152,7 @@ async function fetchData(page = pageNum.value, size = pageSize.value) {
     const path = route.path
     let result
     if (path === '/sound-library/contributed') {
-      result = await datanestApiService.getContributed(page, size)
+      result = await datanestApiService.getSharedSoundFragments(page, size)
     } else if (path === '/sound-library/pending-review') {
       result = await datanestApiService.getPendingReview(page, size)
     } else {
@@ -167,6 +190,36 @@ async function handleBulkDelete() {
   }
 }
 
+async function handleUnshareOne(row: any) {
+  const id = row.id || row.slugName
+  if (!id) return
+  try {
+    loading.value = true
+    await datanestApiService.unshareSharedSoundFragment(String(id))
+    message.success(t('playlistView.unshared'))
+    await fetchData()
+  } catch (e: any) {
+    handleApiError(e, message)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function handleBulkUnshare() {
+  if (selectedIds.value.length === 0) return
+  try {
+    loading.value = true
+    await Promise.all(selectedIds.value.map(id => datanestApiService.unshareSharedSoundFragment(String(id))))
+    message.success(t('playlistView.unshared_bulk', { count: selectedIds.value.length }))
+    selectedIds.value = []
+    await fetchData()
+  } catch (e: any) {
+    handleApiError(e, message)
+  } finally {
+    loading.value = false
+  }
+}
+
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 function onSearchChange() {
   if (searchTimer) clearTimeout(searchTimer)
@@ -193,7 +246,19 @@ watch(
     <PageHeader :title="pageTitle" :subtitle="t('playlistView.subtitle')" :count="totalCount" />
     <ActionBar>
       <NSpace>
-        <NPopconfirm @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
+        <NPopconfirm
+          v-if="isSharedLibraryRoute"
+          @positive-click="handleBulkUnshare"
+          :disabled="selectedIds.length === 0"
+        >
+          <template #trigger>
+            <NButton type="warning" :disabled="selectedIds.length === 0">
+              {{ t('playlistView.unshare_btn', { count: selectedIds.length }) }}
+            </NButton>
+          </template>
+          {{ t('playlistView.unshare_bulk_confirm', { count: selectedIds.length }) }}
+        </NPopconfirm>
+        <NPopconfirm v-else @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
           <template #trigger>
             <NButton type="error" :disabled="selectedIds.length === 0">
               {{ t('playlistView.delete_btn', { count: selectedIds.length }) }}
