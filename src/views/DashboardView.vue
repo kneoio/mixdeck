@@ -57,14 +57,19 @@ const mobileDrawerOpen = ref(false)
 
 const HEADER_STRIPE_PURPLE = '#7C3AED'
 /** Pairs of (purple, accent) vertical lines; accent is black in dark theme, white in light. */
-const HEADER_LINE_PAIRS = 140
+const HEADER_LINE_PAIRS_DESKTOP = 110
+const HEADER_LINE_PAIRS_MOBILE = 36
+
+const headerLinePairs = computed(() =>
+  isMobile.value ? HEADER_LINE_PAIRS_MOBILE : HEADER_LINE_PAIRS_DESKTOP
+)
 
 const headerStripeAccent = computed(() => (themeStore.isDark ? '#000000' : '#ffffff'))
 
 const headerVerticalLines = computed(() => {
   const accent = headerStripeAccent.value
   const out: { widthPct: number; color: string }[] = []
-  const n = HEADER_LINE_PAIRS
+  const n = headerLinePairs.value
   for (let p = 0; p < n; p++) {
     const t = n <= 1 ? 0 : p / (n - 1)
     const blueShare = 0.06 + 0.79 * (1 - t) ** 1.2
@@ -83,16 +88,15 @@ const headerMiddleLines = computed(() => headerVerticalLines.value.slice(1, -1))
 const headerLineZoneRef = ref<HTMLElement | null>(null)
 let headerLineGsapCtx: gsap.Context | null = null
 
-const onResize = () => { windowWidth.value = window.innerWidth }
-onMounted(() => window.addEventListener('resize', onResize))
-onUnmounted(() => window.removeEventListener('resize', onResize))
-
-onMounted(() => {
+function runHeaderLineAnimation() {
+  headerLineGsapCtx?.revert()
+  headerLineGsapCtx = null
   nextTick(() => {
     const zone = headerLineZoneRef.value
     if (!zone) return
     const lines = zone.querySelectorAll<HTMLElement>('.dashboard-header-line-mid .dashboard-header-line')
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const staggerEach = isMobile.value ? 0.005 : 0.0016
 
     headerLineGsapCtx = gsap.context(() => {
       if (reduceMotion) return
@@ -107,12 +111,24 @@ onMounted(() => {
         {
           scaleX: 1,
           duration: 1.05,
-          stagger: { each: 0.0016, from: 'end' },
+          stagger: { each: staggerEach, from: 'end' },
         },
         0.06
       )
     }, zone)
   })
+}
+
+const onResize = () => { windowWidth.value = window.innerWidth }
+onMounted(() => window.addEventListener('resize', onResize))
+onUnmounted(() => window.removeEventListener('resize', onResize))
+
+onMounted(() => {
+  runHeaderLineAnimation()
+})
+
+watch(headerLinePairs, () => {
+  runHeaderLineAnimation()
 })
 
 onUnmounted(() => {
