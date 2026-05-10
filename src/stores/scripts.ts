@@ -20,7 +20,6 @@ export interface Script {
     fontColor?: string
     category?: string
   }>
-  accessLevel?: number
   languageTag?: string
   timingMode?: string
   slugName?: string

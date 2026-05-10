@@ -136,26 +136,23 @@ onUnmounted(() => {
   headerLineGsapCtx = null
 })
 
-const BRANDS_HEARTBEAT_BASE_MS = 10_000
-const BRANDS_HEARTBEAT_MAX_MS = 180_000
+/** Wall-clock: first 30s → poll every 5s; after that → much slower steady polling. */
+const BRANDS_HEARTBEAT_FAST_MS = 5_000
+const BRANDS_HEARTBEAT_STEADY_MS = 300_000
+const BRANDS_HEARTBEAT_FAST_PHASE_MS = 30_000
 
 let brandsPollTimer: ReturnType<typeof setTimeout> | null = null
-let brandsPollIntervalMs = BRANDS_HEARTBEAT_BASE_MS
 let brandsHeartbeatPollCancelled = false
+let brandsHeartbeatFastPhaseStartMs = 0
 
 async function pollAllBrandsHeartbeat() {
   if (brandsHeartbeatPollCancelled) return
   const slugs = brandsStore.brands.filter(b => b.slugName).map(b => b.slugName!)
   if (slugs.length > 0) {
-    const { byBrand, status } = await aivoxApiService.heartbeatBatch(slugs)
+    const { byBrand } = await aivoxApiService.heartbeatBatch(slugs)
     if (brandsHeartbeatPollCancelled) return
     for (const slug of slugs) {
       brandsStore.setStreamingState(slug, byBrand[slug] ?? false)
-    }
-    if (status === 401) {
-      brandsPollIntervalMs = Math.min(brandsPollIntervalMs * 2, BRANDS_HEARTBEAT_MAX_MS)
-    } else {
-      brandsPollIntervalMs = BRANDS_HEARTBEAT_BASE_MS
     }
   }
   scheduleBrandsHeartbeatPoll()
@@ -167,7 +164,10 @@ function scheduleBrandsHeartbeatPoll() {
     clearTimeout(brandsPollTimer)
     brandsPollTimer = null
   }
-  brandsPollTimer = setTimeout(() => void pollAllBrandsHeartbeat(), brandsPollIntervalMs)
+  const elapsed = Date.now() - brandsHeartbeatFastPhaseStartMs
+  const inFastPhase = elapsed < BRANDS_HEARTBEAT_FAST_PHASE_MS
+  const delay = inFastPhase ? BRANDS_HEARTBEAT_FAST_MS : BRANDS_HEARTBEAT_STEADY_MS
+  brandsPollTimer = setTimeout(() => void pollAllBrandsHeartbeat(), delay)
 }
 
 onMounted(async () => {
@@ -181,7 +181,7 @@ onMounted(async () => {
     return
   }
   brandsHeartbeatPollCancelled = false
-  brandsPollIntervalMs = BRANDS_HEARTBEAT_BASE_MS
+  brandsHeartbeatFastPhaseStartMs = Date.now()
   void pollAllBrandsHeartbeat()
 })
 
