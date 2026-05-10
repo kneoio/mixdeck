@@ -3,7 +3,8 @@ import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { NCard, NButton } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import aivoxApiService from '@/services/aivoxApi'
-import type { AivoxQueueEntry } from '@/services/aivoxApi'
+import type { AivoxQueueEntry, AivoxQueueType } from '@/services/aivoxApi'
+import { mixingTypeLabel } from '@/constants/mixingTypeLabels'
 import LedIndicator from '@/components/LedIndicator.vue'
 import { useBrandsStore } from '@/stores/brands'
 
@@ -26,9 +27,52 @@ let timeTimer: ReturnType<typeof setInterval> | null = null
 let queueTimer: ReturnType<typeof setInterval> | null = null
 
 const sortedQueueEntries = computed(() =>
-  [...queueEntries.value]
-    .sort((a, b) => a.pos - b.pos)
+  [...queueEntries.value].sort((a, b) => a.tech.pos - b.tech.pos)
 )
+
+function normalizeQueueRow(raw: unknown): AivoxQueueEntry | null {
+  if (!raw || typeof raw !== 'object') return null
+  const r = raw as Record<string, unknown>
+  const dj = r.dj as Record<string, unknown> | undefined
+  const tech = r.tech as Record<string, unknown> | undefined
+  if (dj && tech && typeof tech.pos === 'number' && typeof tech.songId === 'string') {
+    return {
+      dj: {
+        label: String(dj.label ?? ''),
+        title: String(dj.title ?? ''),
+        artist: String(dj.artist ?? ''),
+      },
+      tech: {
+        pos: tech.pos,
+        queueType: (tech.queueType as AivoxQueueType) || 'regular',
+        priority: typeof tech.priority === 'number' ? tech.priority : 9,
+        songId: String(tech.songId),
+        slugName: tech.slugName != null ? String(tech.slugName) : undefined,
+        mergingMethod: tech.mergingMethod != null ? String(tech.mergingMethod) : undefined,
+        duration: typeof tech.duration === 'number' ? tech.duration : undefined,
+      },
+    }
+  }
+  if (typeof r.pos === 'number' && typeof r.songId === 'string') {
+    return {
+      dj: {
+        label: '',
+        title: String(r.title ?? ''),
+        artist: String(r.artist ?? ''),
+      },
+      tech: {
+        pos: r.pos,
+        queueType: (r.queueType as AivoxQueueType) || 'regular',
+        priority: typeof r.priority === 'number' ? r.priority : 9,
+        songId: String(r.songId),
+        slugName: r.slugName != null ? String(r.slugName) : undefined,
+        mergingMethod: r.mergingMethod != null ? String(r.mergingMethod) : undefined,
+        duration: typeof r.duration === 'number' ? r.duration : undefined,
+      },
+    }
+  }
+  return null
+}
 
 async function fetchHeartbeatAlive(): Promise<boolean> {
   if (!props.brandSlug) return false
@@ -98,7 +142,8 @@ async function pollQueue() {
   if (!props.brandSlug) return
   try {
     const response = await aivoxApiService.queue(props.brandSlug)
-    queueEntries.value = Array.isArray(response.fullQueue) ? response.fullQueue : []
+    const raw = Array.isArray(response.fullQueue) ? response.fullQueue : []
+    queueEntries.value = raw.map(normalizeQueueRow).filter((e): e is AivoxQueueEntry => e != null)
   } catch {
     queueEntries.value = []
   }
@@ -114,9 +159,10 @@ function stopQueuePolling() {
 }
 
 function queueTypeLabel(item: AivoxQueueEntry): string {
-  if (item.queueType === 'playing') return t('dashboard.queue.nowPlaying')
-  if (item.queueType === 'played') return t('dashboard.queue.played')
-  if (item.queueType === 'prioritized') return t('dashboard.queue.upNext')
+  const qt = item.tech.queueType
+  if (qt === 'playing') return t('dashboard.queue.nowPlaying')
+  if (qt === 'played') return t('dashboard.queue.played')
+  if (qt === 'prioritized') return t('dashboard.queue.upNext')
   return t('dashboard.queue.inQueue')
 }
 
@@ -201,29 +247,34 @@ onUnmounted(() => {
     <div class="queue-wrap">
       <div
         v-for="item in sortedQueueEntries"
-        :key="`${item.songId}-${item.pos}`"
+        :key="`${item.tech.songId}-${item.tech.pos}`"
         class="queue-item"
         :class="[
-          `queue-item--${item.queueType}`,
-          item.queueType === 'playing' ? 'queue-item--current' : ''
+          `queue-item--${item.tech.queueType}`,
+          item.tech.queueType === 'playing' ? 'queue-item--current' : ''
         ]"
       >
         <div class="queue-item-main">
-          <span class="queue-pos">#{{ item.pos }}</span>
-          <span class="queue-title">{{ item.title }}</span>
-          <span class="queue-artist"> - {{ item.artist }}</span>
+          <span class="queue-pos">#{{ item.tech.pos }}</span>
+          <span v-if="item.dj.label" class="queue-dj-label">{{ item.dj.label }}</span>
+          <span class="queue-title">{{ item.dj.title }}</span>
+          <span class="queue-artist"> - {{ item.dj.artist }}</span>
         </div>
         <div class="queue-meta">
           <span
-            v-if="item.priority !== undefined && item.priority !== 9 && item.queueType !== 'played'"
+            v-if="item.tech.mergingMethod"
+            class="queue-mixing"
+          >{{ mixingTypeLabel(item.tech.mergingMethod) }}</span>
+          <span
+            v-if="item.tech.priority !== undefined && item.tech.priority !== 9 && item.tech.queueType !== 'played'"
             class="queue-priority"
-            :class="item.priority <= 8 ? 'queue-priority--arrow' : ''"
+            :class="item.tech.priority <= 8 ? 'queue-priority--arrow' : ''"
           >
-            <template v-if="item.priority <= 8">
-              <span class="priority-arrow" :class="item.priority === 7 ? 'priority-arrow--high' : 'priority-arrow--med'">▲</span>
+            <template v-if="item.tech.priority <= 8">
+              <span class="priority-arrow" :class="item.tech.priority === 7 ? 'priority-arrow--high' : 'priority-arrow--med'">▲</span>
             </template>
             <template v-else>
-              {{ t('dashboard.queue.priority') }}: {{ item.priority }}
+              {{ t('dashboard.queue.priority') }}: {{ item.tech.priority }}
             </template>
           </span>
           <span class="queue-type">{{ queueTypeLabel(item) }}</span>
@@ -305,6 +356,19 @@ onUnmounted(() => {
 .queue-pos {
   font-weight: 700;
   opacity: 0.8;
+}
+.queue-dj-label {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.65;
+  flex-shrink: 0;
+}
+.queue-mixing {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.85;
+  max-width: 180px;
+  text-align: right;
 }
 .queue-title {
   font-weight: 600;

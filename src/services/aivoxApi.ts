@@ -3,13 +3,27 @@ import { appConfig } from '@/config/appConfig'
 
 export type AivoxQueueType = 'played' | 'playing' | 'prioritized' | 'regular'
 
-export interface AivoxQueueEntry {
-  pos: number
-  queueType: AivoxQueueType
-  songId: string
+/** DJ-facing copy for one queue row (from `/info/queue`). */
+export interface AivoxQueueDj {
+  label: string
   title: string
   artist: string
+}
+
+/** Technical queue fields for one row. */
+export interface AivoxQueueTech {
+  pos: number
+  queueType: AivoxQueueType
   priority: number
+  songId: string
+  slugName?: string
+  mergingMethod?: string
+  duration?: number
+}
+
+export interface AivoxQueueEntry {
+  dj: AivoxQueueDj
+  tech: AivoxQueueTech
 }
 
 export interface AivoxQueueResponse {
