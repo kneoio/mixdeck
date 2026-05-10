@@ -171,6 +171,15 @@ function mergingMethodLabel(method: string | undefined): string {
   return te(key) ? t(key) : method
 }
 
+/** Strip “(priority)” from API `dj.label`; keeps e.g. “Queued” with spacing before title. */
+function formatDjLabel(raw: string | undefined): string {
+  if (!raw) return ''
+  return raw
+    .replace(/\s*\(\s*priority\s*\)/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 function updateLocalTime() {
   if (props.timezone) {
     try {
@@ -261,7 +270,7 @@ onUnmounted(() => {
       >
         <div class="queue-item-main">
           <span class="queue-pos">#{{ item.tech.pos }}</span>
-          <span v-if="item.dj.label" class="queue-dj-label">{{ item.dj.label }}</span>
+          <span v-if="formatDjLabel(item.dj.label)" class="queue-dj-label">{{ formatDjLabel(item.dj.label) }}</span>
           <span class="queue-title">{{ item.dj.title }}</span>
           <span class="queue-artist"> - {{ item.dj.artist }}</span>
         </div>
@@ -270,18 +279,6 @@ onUnmounted(() => {
             v-if="item.tech.mergingMethod"
             class="queue-mixing"
           >{{ mergingMethodLabel(item.tech.mergingMethod) }}</span>
-          <span
-            v-if="item.tech.priority !== undefined && item.tech.priority !== 9 && item.tech.queueType !== 'played'"
-            class="queue-priority"
-            :class="item.tech.priority <= 8 ? 'queue-priority--arrow' : ''"
-          >
-            <template v-if="item.tech.priority <= 8">
-              <span class="priority-arrow" :class="item.tech.priority === 7 ? 'priority-arrow--high' : 'priority-arrow--med'">▲</span>
-            </template>
-            <template v-else>
-              {{ t('dashboard.queue.priority') }}: {{ item.tech.priority }}
-            </template>
-          </span>
           <span class="queue-type">{{ queueTypeLabel(item) }}</span>
         </div>
       </div>
@@ -362,18 +359,19 @@ onUnmounted(() => {
   font-weight: 700;
   opacity: 0.8;
 }
-.queue-dj-label {
-  font-size: 11px;
-  font-weight: 600;
-  opacity: 0.65;
-  flex-shrink: 0;
-}
 .queue-mixing {
   font-size: 11px;
   font-weight: 600;
   opacity: 0.85;
   max-width: 180px;
   text-align: right;
+}
+.queue-dj-label {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.65;
+  flex-shrink: 0;
+  margin-right: 6px;
 }
 .queue-title {
   font-weight: 600;
@@ -391,25 +389,6 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 10px;
-}
-.queue-priority {
-  font-size: 12px;
-  font-weight: 600;
-  opacity: 0.85;
-}
-.priority-arrow {
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1;
-}
-.priority-arrow--med {
-  color: #18a058;
-  opacity: 1;
-}
-.priority-arrow--high {
-  color: #f0a020;
-  opacity: 1;
-  text-shadow: 0 0 6px rgba(240, 160, 32, 0.6);
 }
 .queue-item--playing {
   border-color: rgba(255, 214, 0, 0.4);
