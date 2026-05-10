@@ -3,27 +3,13 @@ import { appConfig } from '@/config/appConfig'
 
 export type AivoxQueueType = 'played' | 'playing' | 'prioritized' | 'regular'
 
-/** DJ-facing copy for one queue row (from `/info/queue`). */
-export interface AivoxQueueDj {
-  label: string
-  title: string
-  artist: string
-}
-
-/** Technical queue fields for one row. */
-export interface AivoxQueueTech {
+export interface AivoxQueueEntry {
   pos: number
   queueType: AivoxQueueType
-  priority: number
   songId: string
-  slugName?: string
-  mergingMethod?: string
-  duration?: number
-}
-
-export interface AivoxQueueEntry {
-  dj: AivoxQueueDj
-  tech: AivoxQueueTech
+  title: string
+  artist: string
+  priority: number
 }
 
 export interface AivoxQueueResponse {
@@ -63,7 +49,6 @@ class AivoxApiService extends ApiClient {
     }
     const path = unique.map(s => encodeURIComponent(s)).join(',')
     try {
-      // No custom headers: avoids CORS preflight (OPTIONS) on cross-origin GET.
       const response = await fetch(`${this.baseUrl}/info/heartbeat/${path}`)
       const dead = (): AivoxHeartbeatBatchResult => ({
         byBrand: Object.fromEntries(unique.map(s => [s, false])),
@@ -102,19 +87,9 @@ class AivoxApiService extends ApiClient {
   }
 
   async queue(brandSlug: string): Promise<AivoxQueueResponse> {
-    const raw = await this.request<Record<string, unknown>>(`/info/queue/${encodeURIComponent(brandSlug)}`, {
+    return this.request<AivoxQueueResponse>(`/info/queue/${encodeURIComponent(brandSlug)}`, {
       headers: { 'X-Client-ID': 'mixpla-web' },
     })
-    const payload = raw?.payload
-    const body =
-      payload != null && typeof payload === 'object' && 'fullQueue' in (payload as object)
-        ? (payload as Record<string, unknown>)
-        : raw
-    return {
-      brandId: String(body.brandId ?? ''),
-      updatedAt: String(body.updatedAt ?? ''),
-      fullQueue: Array.isArray(body.fullQueue) ? (body.fullQueue as AivoxQueueResponse['fullQueue']) : [],
-    }
   }
 }
 

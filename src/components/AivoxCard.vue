@@ -3,12 +3,12 @@ import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { NCard, NButton } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import aivoxApiService from '@/services/aivoxApi'
-import type { AivoxQueueEntry, AivoxQueueType } from '@/services/aivoxApi'
+import type { AivoxQueueEntry } from '@/services/aivoxApi'
 import LedIndicator from '@/components/LedIndicator.vue'
 import { useBrandsStore } from '@/stores/brands'
 
 const props = defineProps<{ brandSlug: string; timezone?: string }>()
-const { t, te, locale } = useI18n()
+const { t } = useI18n()
 const brandsStore = useBrandsStore()
 
 const alive = computed(() => brandsStore.streamingStates[props.brandSlug] ?? false)
@@ -26,56 +26,8 @@ let timeTimer: ReturnType<typeof setInterval> | null = null
 let queueTimer: ReturnType<typeof setInterval> | null = null
 
 const sortedQueueEntries = computed(() =>
-  [...queueEntries.value].sort((a, b) => a.tech.pos - b.tech.pos)
+  [...queueEntries.value].sort((a, b) => a.pos - b.pos)
 )
-
-function normalizeQueueRow(raw: unknown): AivoxQueueEntry | null {
-  if (!raw || typeof raw !== 'object') return null
-  const r = raw as Record<string, unknown>
-  const djNode = r.dj ?? r.d
-  const dj =
-    djNode != null && typeof djNode === 'object'
-      ? (djNode as Record<string, unknown>)
-      : undefined
-  const tech = r.tech as Record<string, unknown> | undefined
-  if (dj && tech && typeof tech.pos === 'number' && typeof tech.songId === 'string') {
-    return {
-      dj: {
-        label: String(dj.label ?? ''),
-        title: String(dj.title ?? ''),
-        artist: String(dj.artist ?? ''),
-      },
-      tech: {
-        pos: tech.pos,
-        queueType: (tech.queueType as AivoxQueueType) || 'regular',
-        priority: typeof tech.priority === 'number' ? tech.priority : 9,
-        songId: String(tech.songId),
-        slugName: tech.slugName != null ? String(tech.slugName) : undefined,
-        mergingMethod: tech.mergingMethod != null ? String(tech.mergingMethod) : undefined,
-        duration: typeof tech.duration === 'number' ? tech.duration : undefined,
-      },
-    }
-  }
-  if (typeof r.pos === 'number' && typeof r.songId === 'string') {
-    return {
-      dj: {
-        label: '',
-        title: String(r.title ?? ''),
-        artist: String(r.artist ?? ''),
-      },
-      tech: {
-        pos: r.pos,
-        queueType: (r.queueType as AivoxQueueType) || 'regular',
-        priority: typeof r.priority === 'number' ? r.priority : 9,
-        songId: String(r.songId),
-        slugName: r.slugName != null ? String(r.slugName) : undefined,
-        mergingMethod: r.mergingMethod != null ? String(r.mergingMethod) : undefined,
-        duration: typeof r.duration === 'number' ? r.duration : undefined,
-      },
-    }
-  }
-  return null
-}
 
 async function fetchHeartbeatAlive(): Promise<boolean> {
   if (!props.brandSlug) return false
@@ -145,8 +97,7 @@ async function pollQueue() {
   if (!props.brandSlug) return
   try {
     const response = await aivoxApiService.queue(props.brandSlug)
-    const raw = Array.isArray(response.fullQueue) ? response.fullQueue : []
-    queueEntries.value = raw.map(normalizeQueueRow).filter((e): e is AivoxQueueEntry => e != null)
+    queueEntries.value = Array.isArray(response.fullQueue) ? response.fullQueue : []
   } catch {
     queueEntries.value = []
   }
@@ -162,33 +113,17 @@ function stopQueuePolling() {
 }
 
 function queueTypeLabel(item: AivoxQueueEntry): string {
-  const qt = item.tech.queueType
-  if (qt === 'playing') return t('dashboard.queue.nowPlaying')
-  if (qt === 'played') return t('dashboard.queue.played')
-  if (qt === 'prioritized') return t('dashboard.queue.upNext')
+  if (item.queueType === 'playing') return t('dashboard.queue.nowPlaying')
+  if (item.queueType === 'played') return t('dashboard.queue.played')
+  if (item.queueType === 'prioritized') return t('dashboard.queue.upNext')
   return t('dashboard.queue.inQueue')
-}
-
-function mergingMethodLabel(method: string | undefined): string {
-  if (!method) return ''
-  const key = `dashboard.queue.mixing.${method}`
-  return te(key) ? t(key) : method
-}
-
-/** Strip “(priority)” from API `dj.label`; keeps e.g. “Queued” with spacing before title. */
-function formatDjLabel(raw: string | undefined): string {
-  if (!raw) return ''
-  return raw
-    .replace(/\s*\(\s*priority\s*\)/gi, '')
-    .replace(/\s+/g, ' ')
-    .trim()
 }
 
 function updateLocalTime() {
   if (props.timezone) {
     try {
       const now = new Date()
-      localTime.value = now.toLocaleTimeString(locale.value || undefined, {
+      localTime.value = now.toLocaleTimeString('en-US', {
         timeZone: props.timezone,
         hour: '2-digit',
         minute: '2-digit',
@@ -197,7 +132,7 @@ function updateLocalTime() {
       })
     } catch (error) {
       console.error('Error formatting time:', error)
-      localTime.value = t('dashboard.invalid_timezone')
+      localTime.value = 'Invalid timezone'
     }
   }
 }
@@ -245,7 +180,7 @@ onUnmounted(() => {
         :disabled="loading"
         @click="handleClick"
       >
-        {{ alive ? t('dashboard.broadcast_stop') : t('dashboard.broadcast_start') }}
+        {{ alive ? 'Stop' : 'Start' }}
       </NButton>
       <div class="aivox-status">
         <LedIndicator :active="alive" :pulse="alive" color="#FFD600" :size="18" />
@@ -265,24 +200,31 @@ onUnmounted(() => {
     <div class="queue-wrap">
       <div
         v-for="item in sortedQueueEntries"
-        :key="`${item.tech.songId}-${item.tech.pos}`"
+        :key="`${item.songId}-${item.pos}`"
         class="queue-item"
         :class="[
-          `queue-item--${item.tech.queueType}`,
-          item.tech.queueType === 'playing' ? 'queue-item--current' : ''
+          `queue-item--${item.queueType}`,
+          item.queueType === 'playing' ? 'queue-item--current' : ''
         ]"
       >
         <div class="queue-item-main">
-          <span class="queue-pos">#{{ item.tech.pos }}</span>
-          <span v-if="formatDjLabel(item.dj.label)" class="queue-dj-label">{{ formatDjLabel(item.dj.label) }}</span>
-          <span class="queue-title">{{ item.dj.title }}</span>
-          <span class="queue-artist"> - {{ item.dj.artist }}</span>
+          <span class="queue-pos">#{{ item.pos }}</span>
+          <span class="queue-title">{{ item.title }}</span>
+          <span class="queue-artist"> - {{ item.artist }}</span>
         </div>
         <div class="queue-meta">
           <span
-            v-if="item.tech.mergingMethod"
-            class="queue-mixing"
-          >{{ mergingMethodLabel(item.tech.mergingMethod) }}</span>
+            v-if="item.priority !== undefined && item.priority !== 9 && item.queueType !== 'played'"
+            class="queue-priority"
+            :class="item.priority <= 8 ? 'queue-priority--arrow' : ''"
+          >
+            <template v-if="item.priority <= 8">
+              <span class="priority-arrow" :class="item.priority === 7 ? 'priority-arrow--high' : 'priority-arrow--med'">▲</span>
+            </template>
+            <template v-else>
+              {{ t('dashboard.queue.priority') }}: {{ item.priority }}
+            </template>
+          </span>
           <span class="queue-type">{{ queueTypeLabel(item) }}</span>
         </div>
       </div>
@@ -363,20 +305,6 @@ onUnmounted(() => {
   font-weight: 700;
   opacity: 0.8;
 }
-.queue-mixing {
-  font-size: 11px;
-  font-weight: 600;
-  opacity: 0.85;
-  max-width: 180px;
-  text-align: right;
-}
-.queue-dj-label {
-  font-size: 11px;
-  font-weight: 600;
-  opacity: 0.65;
-  flex-shrink: 0;
-  margin-right: 6px;
-}
 .queue-title {
   font-weight: 600;
 }
@@ -393,6 +321,25 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+.queue-priority {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+.priority-arrow {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+}
+.priority-arrow--med {
+  color: #18a058;
+  opacity: 1;
+}
+.priority-arrow--high {
+  color: #f0a020;
+  opacity: 1;
+  text-shadow: 0 0 6px rgba(240, 160, 32, 0.6);
 }
 .queue-item--playing {
   border-color: rgba(255, 214, 0, 0.4);
