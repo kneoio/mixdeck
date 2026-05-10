@@ -4,12 +4,20 @@ import { appConfig } from '@/config/appConfig'
 export type AivoxQueueType = 'played' | 'playing' | 'prioritized' | 'regular'
 
 export interface AivoxQueueEntry {
-  pos: number
-  queueType: AivoxQueueType
-  songId: string
-  title: string
-  artist: string
-  priority: number
+  dj: {
+    label: string
+    title: string
+    artist: string
+  }
+  tech: {
+    pos: number
+    queueType: AivoxQueueType
+    priority: number
+    songId: string | null
+    slugName: string
+    mergingMethod: string
+    duration: number | null
+  }
 }
 
 export interface AivoxQueueResponse {

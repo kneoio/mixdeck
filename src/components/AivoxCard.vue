@@ -26,7 +26,7 @@ let timeTimer: ReturnType<typeof setInterval> | null = null
 let queueTimer: ReturnType<typeof setInterval> | null = null
 
 const sortedQueueEntries = computed(() =>
-  [...queueEntries.value].sort((a, b) => a.pos - b.pos)
+  [...queueEntries.value].sort((a, b) => a.tech.pos - b.tech.pos)
 )
 
 async function fetchHeartbeatAlive(): Promise<boolean> {
@@ -113,10 +113,15 @@ function stopQueuePolling() {
 }
 
 function queueTypeLabel(item: AivoxQueueEntry): string {
-  if (item.queueType === 'playing') return t('dashboard.queue.nowPlaying')
-  if (item.queueType === 'played') return t('dashboard.queue.played')
-  if (item.queueType === 'prioritized') return t('dashboard.queue.upNext')
+  if (item.tech.queueType === 'playing') return t('dashboard.queue.nowPlaying')
+  if (item.tech.queueType === 'played') return t('dashboard.queue.played')
+  if (item.tech.queueType === 'prioritized') return t('dashboard.queue.upNext')
   return t('dashboard.queue.inQueue')
+}
+
+function mergingMethodLabel(item: AivoxQueueEntry): string {
+  const key = `dashboard.queue.mixing.${item.tech.mergingMethod}`
+  return t(key)
 }
 
 function updateLocalTime() {
@@ -200,29 +205,30 @@ onUnmounted(() => {
     <div class="queue-wrap">
       <div
         v-for="item in sortedQueueEntries"
-        :key="`${item.songId}-${item.pos}`"
+        :key="`${item.tech.slugName}-${item.tech.pos}`"
         class="queue-item"
         :class="[
-          `queue-item--${item.queueType}`,
-          item.queueType === 'playing' ? 'queue-item--current' : ''
+          `queue-item--${item.tech.queueType}`,
+          item.tech.queueType === 'playing' ? 'queue-item--current' : ''
         ]"
       >
         <div class="queue-item-main">
-          <span class="queue-pos">#{{ item.pos }}</span>
-          <span class="queue-title">{{ item.title }}</span>
-          <span class="queue-artist"> - {{ item.artist }}</span>
+          <span class="queue-pos">#{{ item.tech.pos }}</span>
+          <span class="queue-title">{{ item.dj.title }}</span>
+          <span class="queue-artist"> - {{ item.dj.artist }}</span>
         </div>
         <div class="queue-meta">
+          <span class="queue-mixing">{{ mergingMethodLabel(item) }}</span>
           <span
-            v-if="item.priority !== undefined && item.priority !== 9 && item.queueType !== 'played'"
+            v-if="item.tech.priority !== undefined && item.tech.priority !== 9 && item.tech.queueType !== 'played'"
             class="queue-priority"
-            :class="item.priority <= 8 ? 'queue-priority--arrow' : ''"
+            :class="item.tech.priority <= 8 ? 'queue-priority--arrow' : ''"
           >
-            <template v-if="item.priority <= 8">
-              <span class="priority-arrow" :class="item.priority === 7 ? 'priority-arrow--high' : 'priority-arrow--med'">▲</span>
+            <template v-if="item.tech.priority <= 8">
+              <span class="priority-arrow" :class="item.tech.priority === 7 ? 'priority-arrow--high' : 'priority-arrow--med'">▲</span>
             </template>
             <template v-else>
-              {{ t('dashboard.queue.priority') }}: {{ item.priority }}
+              {{ t('dashboard.queue.priority') }}: {{ item.tech.priority }}
             </template>
           </span>
           <span class="queue-type">{{ queueTypeLabel(item) }}</span>
@@ -310,6 +316,12 @@ onUnmounted(() => {
 }
 .queue-artist {
   opacity: 0.8;
+}
+.queue-mixing {
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.6;
+  font-style: italic;
 }
 .queue-type {
   font-size: 12px;
