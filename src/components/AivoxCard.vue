@@ -32,7 +32,11 @@ const sortedQueueEntries = computed(() =>
 function normalizeQueueRow(raw: unknown): AivoxQueueEntry | null {
   if (!raw || typeof raw !== 'object') return null
   const r = raw as Record<string, unknown>
-  const dj = r.dj as Record<string, unknown> | undefined
+  const djNode = r.dj ?? r.d
+  const dj =
+    djNode != null && typeof djNode === 'object'
+      ? (djNode as Record<string, unknown>)
+      : undefined
   const tech = r.tech as Record<string, unknown> | undefined
   if (dj && tech && typeof tech.pos === 'number' && typeof tech.songId === 'string') {
     return {
