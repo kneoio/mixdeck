@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, h, onMounted } from 'vue'
+import { ref, computed, watch, h, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
@@ -33,6 +33,14 @@ const showBulkUpload = ref(false)
 const showShareDialog = ref(false)
 const shareFragmentIds = ref<string[]>([])
 const brandDoc = ref<any | null>(null)
+
+/** When true, narrow genres / labels / played / description so title & artist keep space. */
+const narrowPlaylistTable = ref(false)
+let playlistTableMql: MediaQueryList | null = null
+
+function syncPlaylistTableNarrow() {
+  narrowPlaylistTable.value = playlistTableMql?.matches ?? false
+}
 
 // Lookup maps for resolving IDs → display names
 const genreMap = ref<Map<string, { name: string; color?: string; fontColor?: string }>>(new Map())
@@ -87,12 +95,34 @@ const pagination = computed(() => ({
   itemCount: totalCount.value,
 }))
 
-const columns = computed<DataTableColumns<any>>(() => [
+const columns = computed<DataTableColumns<any>>(() => {
+  const nw = narrowPlaylistTable.value
+  const genreW = nw ? 100 : 180
+  const labelW = nw ? 88 : 180
+  const playedW = nw ? 56 : 80
+  const descMin = nw ? 72 : 160
+  const titleMin = nw ? 220 : 200
+  const artistMin = nw ? 180 : 160
+  const ratingW = nw ? 132 : 148
+
+  return [
   { type: 'selection', multiple: true },
-  { title: t('playlistView.col_title'), key: 'title', minWidth: 200, render: (row) => row.title || '-' },
-  { title: t('playlistView.col_artist'), key: 'artist', minWidth: 160, render: (row) => row.artist || '-' },
   {
-    title: t('playlistView.col_genres'), key: 'genres', width: 180,
+    title: t('playlistView.col_title'),
+    key: 'title',
+    minWidth: titleMin,
+    ellipsis: { tooltip: true },
+    render: (row) => row.title || '-',
+  },
+  {
+    title: t('playlistView.col_artist'),
+    key: 'artist',
+    minWidth: artistMin,
+    ellipsis: { tooltip: true },
+    render: (row) => row.artist || '-',
+  },
+  {
+    title: t('playlistView.col_genres'), key: 'genres', width: genreW,
     render: (row) => {
       if (!row.genres?.length) return '-'
       return h(NSpace, { size: 4, wrap: true }, {
@@ -107,7 +137,7 @@ const columns = computed<DataTableColumns<any>>(() => [
     }
   },
   {
-    title: t('playlistView.col_labels'), key: 'labels', width: 180,
+    title: t('playlistView.col_labels'), key: 'labels', width: labelW,
     render: (row) => {
       if (!row.labels?.length) return '-'
       return h(NSpace, { size: 4, wrap: true }, {
@@ -121,17 +151,13 @@ const columns = computed<DataTableColumns<any>>(() => [
       })
     }
   },
-  { title: t('playlistView.col_played'), key: 'playedByBrandCount', width: 80, render: (row) => row.playedByBrandCount ?? 0 },
+  { title: t('playlistView.col_played'), key: 'playedByBrandCount', width: playedW, render: (row) => row.playedByBrandCount ?? 0 },
   {
-    title: t('playlistView.col_rating'), key: 'rating', width: 228,
+    title: t('playlistView.col_rating'), key: 'rating', width: ratingW,
     render: (row) => {
       const val = row.ratedByBrandCount ?? 0
       return h(NSpace, { size: 4, align: 'center', wrap: false }, {
         default: () => [
-          h(NButton, {
-            size: 'tiny', tertiary: true, type: 'primary',
-            onClick: (e: MouseEvent) => { e.stopPropagation(); openShareSingle(row) },
-          }, { default: () => t('playlistView.share') }),
           h(NButton, {
             size: 'tiny', tertiary: true,
             onClick: (e: MouseEvent) => { e.stopPropagation(); rateTrack(row, 'DISLIKE') }
@@ -146,8 +172,9 @@ const columns = computed<DataTableColumns<any>>(() => [
       })
     }
   },
-  { title: t('playlistView.col_description'), key: 'description', minWidth: 160, ellipsis: { tooltip: true } },
-])
+  { title: t('playlistView.col_description'), key: 'description', width: nw ? 100 : undefined, minWidth: descMin, ellipsis: { tooltip: true } },
+]
+})
 
 async function fetchData(page = pageNum.value, size = pageSize.value) {
   if (!slugName.value) return
@@ -203,13 +230,6 @@ async function rateTrack(row: any, action: 'LIKE' | 'DISLIKE') {
   }
 }
 
-function openShareSingle(row: any) {
-  const id = row.id || row.slugName
-  if (!id) return
-  shareFragmentIds.value = [String(id)]
-  showShareDialog.value = true
-}
-
 function openShareBulk() {
   if (selectedIds.value.length === 0) return
   shareFragmentIds.value = [...selectedIds.value]
@@ -228,7 +248,15 @@ function onSearchChange() {
 }
 
 onMounted(() => {
+  playlistTableMql = window.matchMedia('(max-width: 1100px)')
+  narrowPlaylistTable.value = playlistTableMql.matches
+  playlistTableMql.addEventListener('change', syncPlaylistTableNarrow)
   ensureBrandLoaded()
+})
+
+onUnmounted(() => {
+  playlistTableMql?.removeEventListener('change', syncPlaylistTableNarrow)
+  playlistTableMql = null
 })
 
 watch(
