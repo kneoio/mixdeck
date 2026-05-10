@@ -102,9 +102,19 @@ class AivoxApiService extends ApiClient {
   }
 
   async queue(brandSlug: string): Promise<AivoxQueueResponse> {
-    return this.request<AivoxQueueResponse>(`/info/queue/${encodeURIComponent(brandSlug)}`, {
+    const raw = await this.request<Record<string, unknown>>(`/info/queue/${encodeURIComponent(brandSlug)}`, {
       headers: { 'X-Client-ID': 'mixpla-web' },
     })
+    const payload = raw?.payload
+    const body =
+      payload != null && typeof payload === 'object' && 'fullQueue' in (payload as object)
+        ? (payload as Record<string, unknown>)
+        : raw
+    return {
+      brandId: String(body.brandId ?? ''),
+      updatedAt: String(body.updatedAt ?? ''),
+      fullQueue: Array.isArray(body.fullQueue) ? (body.fullQueue as AivoxQueueResponse['fullQueue']) : [],
+    }
   }
 }
 

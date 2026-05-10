@@ -29,44 +29,12 @@ const sortedQueueEntries = computed(() =>
   [...queueEntries.value].sort((a, b) => a.tech.pos - b.tech.pos)
 )
 
-function asFiniteNumber(v: unknown): number | undefined {
-  if (typeof v === 'number' && Number.isFinite(v)) return v
-  if (typeof v === 'string' && v.trim() !== '') {
-    const n = Number(v)
-    if (Number.isFinite(n)) return n
-  }
-  return undefined
-}
-
-function asNonEmptyStringId(v: unknown): string | undefined {
-  if (v == null) return undefined
-  if (typeof v === 'string' && v.length > 0) return v
-  if (typeof v === 'number' && Number.isFinite(v)) return String(v)
-  return undefined
-}
-
-/** Accept root `{ fullQueue }` or `{ payload: { fullQueue } }` from the API. */
-function fullQueueFromResponse(response: unknown): unknown[] {
-  if (!response || typeof response !== 'object') return []
-  const root = response as Record<string, unknown>
-  const payload = root.payload
-  const data =
-    payload != null && typeof payload === 'object' && 'fullQueue' in (payload as object)
-      ? (payload as Record<string, unknown>)
-      : root
-  const fq = data.fullQueue
-  return Array.isArray(fq) ? fq : []
-}
-
 function normalizeQueueRow(raw: unknown): AivoxQueueEntry | null {
   if (!raw || typeof raw !== 'object') return null
   const r = raw as Record<string, unknown>
   const dj = r.dj as Record<string, unknown> | undefined
   const tech = r.tech as Record<string, unknown> | undefined
-  if (dj && tech) {
-    const pos = asFiniteNumber(tech.pos)
-    const songId = asNonEmptyStringId(tech.songId)
-    if (pos === undefined || songId === undefined) return null
+  if (dj && tech && typeof tech.pos === 'number' && typeof tech.songId === 'string') {
     return {
       dj: {
         label: String(dj.label ?? ''),
@@ -74,19 +42,17 @@ function normalizeQueueRow(raw: unknown): AivoxQueueEntry | null {
         artist: String(dj.artist ?? ''),
       },
       tech: {
-        pos,
+        pos: tech.pos,
         queueType: (tech.queueType as AivoxQueueType) || 'regular',
-        priority: asFiniteNumber(tech.priority) ?? 9,
-        songId,
+        priority: typeof tech.priority === 'number' ? tech.priority : 9,
+        songId: String(tech.songId),
         slugName: tech.slugName != null ? String(tech.slugName) : undefined,
         mergingMethod: tech.mergingMethod != null ? String(tech.mergingMethod) : undefined,
-        duration: asFiniteNumber(tech.duration),
+        duration: typeof tech.duration === 'number' ? tech.duration : undefined,
       },
     }
   }
-  const flatPos = asFiniteNumber(r.pos)
-  const flatSongId = asNonEmptyStringId(r.songId)
-  if (flatPos !== undefined && flatSongId !== undefined) {
+  if (typeof r.pos === 'number' && typeof r.songId === 'string') {
     return {
       dj: {
         label: '',
@@ -94,13 +60,13 @@ function normalizeQueueRow(raw: unknown): AivoxQueueEntry | null {
         artist: String(r.artist ?? ''),
       },
       tech: {
-        pos: flatPos,
+        pos: r.pos,
         queueType: (r.queueType as AivoxQueueType) || 'regular',
-        priority: asFiniteNumber(r.priority) ?? 9,
-        songId: flatSongId,
+        priority: typeof r.priority === 'number' ? r.priority : 9,
+        songId: String(r.songId),
         slugName: r.slugName != null ? String(r.slugName) : undefined,
         mergingMethod: r.mergingMethod != null ? String(r.mergingMethod) : undefined,
-        duration: asFiniteNumber(r.duration),
+        duration: typeof r.duration === 'number' ? r.duration : undefined,
       },
     }
   }
@@ -175,7 +141,7 @@ async function pollQueue() {
   if (!props.brandSlug) return
   try {
     const response = await aivoxApiService.queue(props.brandSlug)
-    const raw = fullQueueFromResponse(response)
+    const raw = Array.isArray(response.fullQueue) ? response.fullQueue : []
     queueEntries.value = raw.map(normalizeQueueRow).filter((e): e is AivoxQueueEntry => e != null)
   } catch {
     queueEntries.value = []
