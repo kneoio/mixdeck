@@ -4,12 +4,11 @@ import { NCard, NButton } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import aivoxApiService from '@/services/aivoxApi'
 import type { AivoxQueueEntry, AivoxQueueType } from '@/services/aivoxApi'
-import { mixingTypeLabel } from '@/constants/mixingTypeLabels'
 import LedIndicator from '@/components/LedIndicator.vue'
 import { useBrandsStore } from '@/stores/brands'
 
 const props = defineProps<{ brandSlug: string; timezone?: string }>()
-const { t } = useI18n()
+const { t, te, locale } = useI18n()
 const brandsStore = useBrandsStore()
 
 const alive = computed(() => brandsStore.streamingStates[props.brandSlug] ?? false)
@@ -166,11 +165,17 @@ function queueTypeLabel(item: AivoxQueueEntry): string {
   return t('dashboard.queue.inQueue')
 }
 
+function mergingMethodLabel(method: string | undefined): string {
+  if (!method) return ''
+  const key = `dashboard.queue.mixing.${method}`
+  return te(key) ? t(key) : method
+}
+
 function updateLocalTime() {
   if (props.timezone) {
     try {
       const now = new Date()
-      localTime.value = now.toLocaleTimeString('en-US', {
+      localTime.value = now.toLocaleTimeString(locale.value || undefined, {
         timeZone: props.timezone,
         hour: '2-digit',
         minute: '2-digit',
@@ -179,7 +184,7 @@ function updateLocalTime() {
       })
     } catch (error) {
       console.error('Error formatting time:', error)
-      localTime.value = 'Invalid timezone'
+      localTime.value = t('dashboard.invalid_timezone')
     }
   }
 }
@@ -227,7 +232,7 @@ onUnmounted(() => {
         :disabled="loading"
         @click="handleClick"
       >
-        {{ alive ? 'Stop' : 'Start' }}
+        {{ alive ? t('dashboard.broadcast_stop') : t('dashboard.broadcast_start') }}
       </NButton>
       <div class="aivox-status">
         <LedIndicator :active="alive" :pulse="alive" color="#FFD600" :size="18" />
@@ -264,7 +269,7 @@ onUnmounted(() => {
           <span
             v-if="item.tech.mergingMethod"
             class="queue-mixing"
-          >{{ mixingTypeLabel(item.tech.mergingMethod) }}</span>
+          >{{ mergingMethodLabel(item.tech.mergingMethod) }}</span>
           <span
             v-if="item.tech.priority !== undefined && item.tech.priority !== 9 && item.tech.queueType !== 'played'"
             class="queue-priority"
