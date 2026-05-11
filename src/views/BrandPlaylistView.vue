@@ -162,10 +162,8 @@ const columns = computed<DataTableColumns<any>>(() => {
             size: 'tiny', tertiary: true,
             onClick: (e: MouseEvent) => { e.stopPropagation(); rateTrack(row, 'DISLIKE') }
           }, { default: () => '−' }),
-          h('span', { class: 'rating-display' }, [
-            h('span', { class: ratingDisplaySignClass(val) }, ratingDisplaySign(val)),
-            h('span', { class: 'rating-number' }, String(val)),
-          ]),
+          h('span', { style: 'font-size:13px;min-width:28px;text-align:center' },
+            val > 0 ? `+${val}` : String(val)),
           h(NButton, {
             size: 'tiny', tertiary: true,
             onClick: (e: MouseEvent) => { e.stopPropagation(); rateTrack(row, 'LIKE') }
@@ -249,18 +247,6 @@ function onSearchChange() {
   searchTimer = setTimeout(() => fetchData(1), 400)
 }
 
-function ratingDisplaySign(val: number): string {
-  if (val > 100) return '+'
-  if (val < 100) return '−'
-  return ''
-}
-
-function ratingDisplaySignClass(val: number): string {
-  if (val > 100) return 'rating-sign rating-sign--positive'
-  if (val < 100) return 'rating-sign rating-sign--negative'
-  return 'rating-sign'
-}
-
 onMounted(() => {
   playlistTableMql = window.matchMedia('(max-width: 1100px)')
   narrowPlaylistTable.value = playlistTableMql.matches
@@ -340,43 +326,3 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
     />
   </div>
 </template>
-
-<style scoped>
-.rating-display {
-  min-width: 40px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1px;
-  font-size: 13px;
-  text-align: center;
-}
-
-.rating-sign {
-  min-width: 10px;
-  opacity: 0.7;
-  transition: opacity 0.3s, text-shadow 0.3s;
-}
-
-.rating-sign--positive {
-  color: #00FF3C;
-  opacity: 1;
-  text-shadow:
-    0 0 5px currentColor,
-    0 0 15px currentColor,
-    0 0 30px currentColor;
-}
-
-.rating-sign--negative {
-  color: #ff4d4f;
-  opacity: 1;
-  text-shadow:
-    0 0 5px currentColor,
-    0 0 15px currentColor,
-    0 0 30px currentColor;
-}
-
-.rating-number {
-  min-width: 20px;
-}
-</style>
