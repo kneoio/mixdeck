@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, h, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import {
   NDataTable, NButton, NSpace, NPopconfirm, NInput, NTag,
   type DataTableColumns, useMessage
@@ -11,10 +11,13 @@ import dictionaryApiService from '@/services/dictionaryApi'
 import PageHeader from '@/components/PageHeader.vue'
 import ActionBar from '@/components/ActionBar.vue'
 import { handleApiError } from '@/utils/notificationService'
+import { useBrandsStore } from '@/stores/brands'
 
 const { t } = useI18n()
 const message = useMessage()
 const route = useRoute()
+const router = useRouter()
+const brandsStore = useBrandsStore()
 
 const entries = ref<any[]>([])
 const loading = ref(false)
@@ -193,6 +196,40 @@ function onSearchChange() {
   searchTimer = setTimeout(() => fetchData(1), 400)
 }
 
+function representedBrandIds(row: any): string[] {
+  const rb = row?.representedInBrands
+  if (!Array.isArray(rb)) return []
+  return rb
+    .map((x: any) => (typeof x === 'string' ? x : x?.id))
+    .filter(Boolean)
+}
+
+/** Brand segment for SoundFragmentForm URL — same fragment editor as brand playlist. */
+function resolveBrandIdForPlaylistRow(row: any): string | null {
+  const src = row?.sourceBrandId ?? row?.sourceBrand?.id
+  if (src) return String(src)
+  const owned = new Set(brandsStore.brands.map(b => b.id))
+  const fromRow = representedBrandIds(row).find(id => owned.has(id))
+  if (fromRow) return fromRow
+  const anyBrand = representedBrandIds(row)[0]
+  if (anyBrand) return anyBrand
+  return brandsStore.brands[0]?.id ?? null
+}
+
+function playlistRowProps(row: any) {
+  return {
+    style: 'cursor:pointer',
+    onClick: (e: MouseEvent) => {
+      if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return
+      const fragmentId = row.id
+      if (!fragmentId) return
+      const brandId = resolveBrandIdForPlaylistRow(row)
+      if (!brandId) return
+      router.push(`/brands/${brandId}/playlist/${fragmentId}`)
+    },
+  }
+}
+
 onMounted(async () => {
   await loadDictionaries()
   await fetchData(1)
@@ -250,6 +287,7 @@ watch(
       v-model:checked-row-keys="selectedIds"
       :pagination="pagination"
       remote
+      :row-props="playlistRowProps"
       @update:page="(p) => { pageNum = p; fetchData(p) }"
       @update:page-size="(s) => { pageSize = s; fetchData(1, s) }"
     />
