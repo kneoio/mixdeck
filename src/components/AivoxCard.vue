@@ -31,16 +31,19 @@ const sortedQueueEntries = computed(() =>
 
 async function fetchHeartbeatAlive(): Promise<boolean> {
   if (!props.brandSlug) return false
-  const { alive } = await aivoxApiService.heartbeat(props.brandSlug)
-  brandsStore.setStreamingState(props.brandSlug, alive)
+  const slug = props.brandSlug
+  const { alive } = await aivoxApiService.heartbeat(slug)
+  if (props.brandSlug !== slug) return alive
+  brandsStore.setStreamingState(slug, alive)
   return alive
 }
 
 async function pollHeartbeatScheduled(): Promise<void> {
   if (heartbeatPollCancelled || !props.brandSlug) return
-  const { alive, status } = await aivoxApiService.heartbeat(props.brandSlug)
-  if (heartbeatPollCancelled || !props.brandSlug) return
-  brandsStore.setStreamingState(props.brandSlug, alive)
+  const slug = props.brandSlug
+  const { alive, status } = await aivoxApiService.heartbeat(slug)
+  if (heartbeatPollCancelled || props.brandSlug !== slug) return
+  brandsStore.setStreamingState(slug, alive)
   if (status === 401) {
     pollIntervalMs = Math.min(pollIntervalMs * 2, HEARTBEAT_POLL_MAX_MS)
   } else {
@@ -60,20 +63,26 @@ function scheduleHeartbeatPoll() {
 
 async function handleClick() {
   if (loading.value) return
+  const slug = props.brandSlug
+  if (!slug) return
   loading.value = true
   const targetAlive = !alive.value
   try {
-    if (alive.value) await aivoxApiService.stop(props.brandSlug)
-    else await aivoxApiService.start(props.brandSlug)
+    if (alive.value) await aivoxApiService.stop(slug)
+    else await aivoxApiService.start(slug)
 
     const deadline = Date.now() + 20_000
-    while (Date.now() < deadline && alive.value !== targetAlive) {
+    while (
+      Date.now() < deadline
+      && props.brandSlug === slug
+      && alive.value !== targetAlive
+    ) {
       await fetchHeartbeatAlive()
       if (alive.value === targetAlive) break
       await new Promise(r => setTimeout(r, 400))
     }
   } catch {
-    await fetchHeartbeatAlive()
+    if (props.brandSlug === slug) await fetchHeartbeatAlive()
   } finally {
     loading.value = false
   }
@@ -95,10 +104,13 @@ function stopPolling() {
 
 async function pollQueue() {
   if (!props.brandSlug) return
+  const slug = props.brandSlug
   try {
-    const response = await aivoxApiService.queue(props.brandSlug)
+    const response = await aivoxApiService.queue(slug)
+    if (props.brandSlug !== slug) return
     queueEntries.value = Array.isArray(response.fullQueue) ? response.fullQueue : []
   } catch {
+    if (props.brandSlug !== slug) return
     queueEntries.value = []
   }
 }
