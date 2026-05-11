@@ -136,6 +136,10 @@ function mergingMethodLabel(item: AivoxQueueEntry): string {
   return t(key)
 }
 
+function hasDjInvolvement(item: AivoxQueueEntry): boolean {
+  return (item.tech.mergingMethod ?? '').includes('INTRO')
+}
+
 function updateLocalTime() {
   if (props.timezone) {
     try {
@@ -221,7 +225,8 @@ onUnmounted(() => {
         class="queue-item"
         :class="[
           `queue-item--${item.tech.queueType}`,
-          item.tech.queueType === 'playing' ? 'queue-item--current' : ''
+          item.tech.queueType === 'playing' ? 'queue-item--current' : '',
+          hasDjInvolvement(item) ? 'queue-item--dj' : 'queue-item--no-dj'
         ]"
       >
         <div class="queue-item-main">
@@ -384,5 +389,13 @@ onUnmounted(() => {
 .queue-item--regular {
   border-color: rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.03);
+}
+.queue-item--dj:not(.queue-item--played) {
+  border-color: rgba(33, 150, 243, 0.45);
+  background: rgba(33, 150, 243, 0.11);
+}
+.queue-item--no-dj:not(.queue-item--played) {
+  border-color: rgba(24, 160, 88, 0.35);
+  background: rgba(24, 160, 88, 0.08);
 }
 </style>
