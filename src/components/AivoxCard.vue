@@ -140,6 +140,20 @@ function hasDjInvolvement(item: AivoxQueueEntry): boolean {
   return (item.tech.mergingMethod ?? '').includes('INTRO')
 }
 
+/** Background (and border when not the current track) from queue priority; 9 = normal (no tint). */
+function queuePriorityStyle(item: AivoxQueueEntry): Record<string, string> | undefined {
+  if (item.tech.queueType === 'played') return undefined
+  const p = item.tech.priority
+  if (p === undefined || p === 9) return undefined
+  const hue = (p * 47) % 360
+  const bg = `hsla(${hue}, 46%, 46%, 0.2)`
+  const border = `hsla(${hue}, 52%, 58%, 0.48)`
+  if (item.tech.queueType === 'playing') {
+    return { background: bg }
+  }
+  return { background: bg, borderColor: border }
+}
+
 function updateLocalTime() {
   if (props.timezone) {
     try {
@@ -228,6 +242,7 @@ onUnmounted(() => {
           item.tech.queueType === 'playing' ? 'queue-item--current' : '',
           hasDjInvolvement(item) ? 'queue-item--dj' : 'queue-item--no-dj'
         ]"
+        :style="queuePriorityStyle(item)"
       >
         <div class="queue-item-main">
           <span class="queue-pos">#{{ item.tech.pos }}</span>
@@ -236,18 +251,6 @@ onUnmounted(() => {
         </div>
         <div class="queue-meta">
           <span class="queue-mixing">{{ mergingMethodLabel(item) }}</span>
-          <span
-            v-if="item.tech.priority !== undefined && item.tech.priority !== 9 && item.tech.queueType !== 'played'"
-            class="queue-priority"
-            :class="item.tech.priority <= 8 ? 'queue-priority--arrow' : ''"
-          >
-            <template v-if="item.tech.priority <= 8">
-              <span class="priority-arrow" :class="item.tech.priority === 7 ? 'priority-arrow--high' : 'priority-arrow--med'">▲</span>
-            </template>
-            <template v-else>
-              {{ t('dashboard.queue.priority') }}: {{ item.tech.priority }}
-            </template>
-          </span>
           <span class="queue-type">{{ queueTypeLabel(item) }}</span>
         </div>
       </div>
@@ -350,25 +353,6 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 10px;
-}
-.queue-priority {
-  font-size: 12px;
-  font-weight: 600;
-  opacity: 0.85;
-}
-.priority-arrow {
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1;
-}
-.priority-arrow--med {
-  color: #18a058;
-  opacity: 1;
-}
-.priority-arrow--high {
-  color: #f0a020;
-  opacity: 1;
-  text-shadow: 0 0 6px rgba(240, 160, 32, 0.6);
 }
 .queue-item--playing {
   border-color: rgba(255, 214, 0, 0.4);

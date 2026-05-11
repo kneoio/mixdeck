@@ -37,7 +37,7 @@ const router = createRouter({
           meta: { requiresAuth: true }
         },
         {
-          path: '/sound-library/contributed',
+          path: '/shared',
           name: 'sound-library-contributed',
           component: () => import('../views/MyPlaylistView.vue'),
           meta: { requiresAuth: true }

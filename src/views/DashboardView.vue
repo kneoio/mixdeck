@@ -205,7 +205,7 @@ watch(
 // Derive active menu key from current route
 const activeKey = computed(() => {
   const path = route.path
-  if (path === '/sound-library/contributed') return 'my-sounds-contributed'
+  if (path === '/shared') return 'my-sounds-contributed'
   if (path === '/sound-library/pending-review') return 'my-sounds-pending-review'
   if (path === '/sound-library/unassigned-brands') return 'my-sounds-unassigned-brands'
   const m = path.match(/^\/brands\/([^/]+)\/(\w+)$/)
@@ -321,7 +321,7 @@ const handleMenuSelect = async (key: string) => {
   if (key === 'brands-manage') {
     router.push('/brands')
   } else if (key === 'my-sounds-contributed') {
-    router.push('/sound-library/contributed')
+    router.push('/shared')
   } else if (key === 'my-sounds-pending-review') {
     router.push('/sound-library/pending-review')
   } else if (key === 'my-sounds-unassigned-brands') {
