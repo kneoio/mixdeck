@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import gsap from 'gsap'
 import { NCard, NButton } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import aivoxApiService from '@/services/aivoxApi'
@@ -15,6 +16,7 @@ const alive = computed(() => brandsStore.streamingStates[props.brandSlug] ?? fal
 const loading = ref(false)
 const localTime = ref('')
 const queueEntries = ref<AivoxQueueEntry[]>([])
+const playedTimelineRef = ref<HTMLElement | null>(null)
 
 const HEARTBEAT_POLL_BASE_MS = 5000
 const HEARTBEAT_POLL_MAX_MS = 180_000
@@ -24,10 +26,96 @@ let pollIntervalMs = HEARTBEAT_POLL_BASE_MS
 let heartbeatPollCancelled = false
 let timeTimer: ReturnType<typeof setInterval> | null = null
 let queueTimer: ReturnType<typeof setInterval> | null = null
+let playedTimelineGsapCtx: gsap.Context | null = null
 
 const sortedQueueEntries = computed(() =>
   [...queueEntries.value].sort((a, b) => a.tech.pos - b.tech.pos)
 )
+
+function normalizedQueueDuration(duration: number | null): number {
+  if (!duration || duration <= 0) return 0
+  return duration > 10_000 ? duration / 1000 : duration
+}
+
+function fmtQueueDuration(duration: number | null): string {
+  const totalSeconds = Math.round(normalizedQueueDuration(duration))
+  if (totalSeconds <= 0) return ''
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${minutes}:${String(seconds).padStart(2, '0')}`
+}
+
+const playedTimelineEntries = computed(() => {
+  const items = sortedQueueEntries.value.filter(item =>
+    item.tech.queueType === 'played' || item.tech.queueType === 'playing'
+  )
+  const normalizedDurations = items.map(item => Math.max(normalizedQueueDuration(item.tech.duration), 1))
+  const averageDuration = normalizedDurations.reduce((sum, duration) => sum + duration, 0) / (normalizedDurations.length || 1)
+
+  return items.map((item, index) => ({
+    item,
+    durationLabel: fmtQueueDuration(item.tech.duration),
+    flexGrow: Math.min(Math.max(normalizedDurations[index] / Math.max(averageDuration, 1), 0.85), 2.4),
+  }))
+})
+
+const playedTimelineSignature = computed(() =>
+  playedTimelineEntries.value
+    .map(({ item }) => `${item.tech.pos}:${item.tech.queueType}:${item.tech.songId ?? item.dj.title}`)
+    .join('|')
+)
+
+function runPlayedTimelineAnimation() {
+  playedTimelineGsapCtx?.revert()
+  playedTimelineGsapCtx = null
+
+  nextTick(() => {
+    const timeline = playedTimelineRef.value
+    if (!timeline) return
+
+    playedTimelineGsapCtx = gsap.context(() => {
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      const boxes = timeline.querySelectorAll<HTMLElement>('.played-timeline-box')
+      const currentBox = timeline.querySelector<HTMLElement>('.played-timeline-box--current')
+
+      if (!boxes.length || reduceMotion) return
+
+      gsap.set(boxes, { transformOrigin: 'left center' })
+
+      const tl = gsap.timeline({ defaults: { ease: 'power2.out' } })
+      tl.from('.played-timeline-rail', {
+        autoAlpha: 0,
+        y: 10,
+        duration: 0.24,
+      })
+      tl.from(
+        boxes,
+        {
+          autoAlpha: 0,
+          x: -18,
+          scaleX: 0.82,
+          duration: 0.52,
+          stagger: 0.06,
+        },
+        0.04
+      )
+
+      if (currentBox) {
+        tl.fromTo(
+          currentBox,
+          {
+            boxShadow: '0 0 0 0 rgba(255, 214, 0, 0)',
+          },
+          {
+            boxShadow: '0 0 0 1px rgba(255, 214, 0, 0.55), 0 12px 28px rgba(255, 214, 0, 0.18)',
+            duration: 0.38,
+          },
+          0.22
+        )
+      }
+    }, timeline)
+  })
+}
 
 async function fetchHeartbeatAlive(): Promise<boolean> {
   if (!props.brandSlug) return false
@@ -193,16 +281,23 @@ watch(() => props.timezone, (val) => {
   if (val) startTimeUpdate()
 })
 
+watch(playedTimelineSignature, () => {
+  runPlayedTimelineAnimation()
+})
+
 onMounted(() => {
   if (props.brandSlug) startPolling()
   if (props.brandSlug) startQueuePolling()
   if (props.timezone) startTimeUpdate()
+  runPlayedTimelineAnimation()
 })
 
 onUnmounted(() => {
   stopPolling()
   stopQueuePolling()
   stopTimeUpdate()
+  playedTimelineGsapCtx?.revert()
+  playedTimelineGsapCtx = null
 })
 </script>
 
@@ -229,6 +324,29 @@ onUnmounted(() => {
         <div class="timezone-display">
           <span class="label">{{ t('dashboard.timezone') }}:</span>
           <span class="timezone">{{ timezone }}</span>
+        </div>
+      </div>
+    </div>
+    <div
+      v-if="playedTimelineEntries.length"
+      ref="playedTimelineRef"
+      class="played-timeline"
+    >
+      <div class="played-timeline-header">
+        <span class="played-timeline-heading">{{ t('dashboard.queue.played') }}</span>
+      </div>
+      <div class="played-timeline-rail">
+        <div
+          v-for="entry in playedTimelineEntries"
+          :key="`${entry.item.tech.slugName}-${entry.item.tech.pos}-${entry.item.tech.queueType}`"
+          class="played-timeline-box"
+          :class="{ 'played-timeline-box--current': entry.item.tech.queueType === 'playing' }"
+          :style="{ flex: `${entry.flexGrow} 1 0` }"
+        >
+          <span class="played-timeline-state">{{ queueTypeLabel(entry.item) }}</span>
+          <span class="played-timeline-title">{{ entry.item.dj.title }}</span>
+          <span class="played-timeline-artist">{{ entry.item.dj.artist }}</span>
+          <span v-if="entry.durationLabel" class="played-timeline-duration">{{ entry.durationLabel }}</span>
         </div>
       </div>
     </div>
@@ -301,6 +419,88 @@ onUnmounted(() => {
 }
 .timezone {
   font-weight: 500;
+}
+.played-timeline {
+  margin-top: 18px;
+}
+.played-timeline-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.played-timeline-heading {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.56;
+}
+.played-timeline-rail {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scrollbar-width: thin;
+}
+.played-timeline-box {
+  position: relative;
+  min-width: 132px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(124, 58, 237, 0.22);
+  background:
+    linear-gradient(180deg, rgba(124, 58, 237, 0.12) 0%, rgba(124, 58, 237, 0.04) 100%);
+  overflow: hidden;
+}
+.played-timeline-box::after {
+  content: '';
+  position: absolute;
+  right: 12px;
+  bottom: 0;
+  left: 12px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(124, 58, 237, 0.9);
+}
+.played-timeline-box--current {
+  border-color: rgba(255, 214, 0, 0.46);
+  background:
+    linear-gradient(180deg, rgba(255, 214, 0, 0.18) 0%, rgba(255, 214, 0, 0.06) 100%);
+}
+.played-timeline-box--current::after {
+  background: #FFD600;
+}
+.played-timeline-state {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+.played-timeline-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.played-timeline-artist {
+  font-size: 0.76rem;
+  opacity: 0.72;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.played-timeline-duration {
+  margin-top: auto;
+  font-family: monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  opacity: 0.56;
 }
 .queue-wrap {
   margin-top: 8px;

@@ -116,7 +116,11 @@ const brandOptions = computed(() =>
 )
 
 
-const backRoute = computed(() => `/brands/${brandId.value}/playlist`)
+const returnToRoute = computed(() => {
+  const value = route.query.returnTo
+  return typeof value === 'string' && value ? value : null
+})
+const backRoute = computed(() => returnToRoute.value ?? `/brands/${brandId.value}/playlist`)
 const formLabelPlacement = computed(() => (isMobile.value ? 'top' : 'left'))
 
 function updateIsMobile() {
@@ -437,6 +441,10 @@ async function handleSave() {
   }
 }
 
+function navigateBack() {
+  router.push(backRoute.value)
+}
+
 onBeforeUnmount(() => {
   window.removeEventListener('resize', updateIsMobile)
   detachSeekDocumentListeners()
@@ -487,7 +495,7 @@ onMounted(async () => {
     }
   } catch (error: any) {
     message.error(error?.message || t('fragmentForm.load_failed'))
-    if (isEditing.value) router.push(backRoute.value)
+    if (isEditing.value) navigateBack()
   } finally {
     loading.value = false
   }
@@ -547,7 +555,7 @@ watch(activeTab, () => {
 
     <template #actions>
       <NSpace>
-        <NButton @click="router.push(backRoute)">{{ t('common.close') }}</NButton>
+        <NButton @click="navigateBack">{{ t('common.close') }}</NButton>
         <NButton type="primary" @click="handleSave">{{ t('common.save') }}</NButton>
       </NSpace>
     </template>

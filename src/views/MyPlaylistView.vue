@@ -225,7 +225,10 @@ function playlistRowProps(row: any) {
       if (!fragmentId) return
       const brandId = resolveBrandIdForPlaylistRow(row)
       if (!brandId) return
-      router.push(`/brands/${brandId}/playlist/${fragmentId}`)
+      router.push({
+        path: `/brands/${brandId}/playlist/${fragmentId}`,
+        query: { returnTo: route.fullPath },
+      })
     },
   }
 }
