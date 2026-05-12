@@ -57,7 +57,7 @@ const router = createRouter({
         {
           path: '/sound-library/pending-review/:fragmentId',
           name: 'sound-library-pending-review-edit',
-          component: () => import('../components/forms/PendingReviewForm.vue'),
+          component: () => import('../components/forms/SharedSoundPreviewForm.vue'),
           meta: { requiresAuth: true }
         },
         {

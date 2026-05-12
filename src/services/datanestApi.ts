@@ -94,7 +94,7 @@ class DatanestApiService extends ApiClient {
     }
   }
 
-  /** PATCH body matches backend `SharedSoundFragmentPatchDTO`: `addBrandIds`, `removeBrandIds` (UUID strings). */
+  /** PATCH body matches backend `SharedSoundFragmentPatchDTO`: `addTargetBrandIds`, `removeTargetBrandIds` (UUID strings). */
   async patchSharedSoundFragmentShares(fragmentId: string, body: unknown): Promise<void> {
     await this.request<void>(`/shared-sound-fragments/${encodeURIComponent(fragmentId)}`, {
       method: 'PATCH',
@@ -153,12 +153,12 @@ class DatanestApiService extends ApiClient {
     return this.getPagedDictionary('/brands', page, pageSize, { submissionPolicy: 'NO_RESTRICTIONS' })
   }
 
-  /** Add share targets (brand document UUIDs) via `SharedSoundFragmentPatchDTO.addBrandIds`. */
+  /** Add share targets (brand document UUIDs) via `SharedSoundFragmentPatchDTO.addTargetBrandIds`. */
   async shareSoundFragmentsWithBrands(fragmentIds: string[], brandIds: string[]): Promise<void> {
     const ids = [...new Set(brandIds.filter(Boolean))]
     if (ids.length === 0) return
     await Promise.all(
-      fragmentIds.map(id => this.patchSharedSoundFragmentShares(id, { addBrandIds: ids }))
+      fragmentIds.map(id => this.patchSharedSoundFragmentShares(id, { addTargetBrandIds: ids }))
     )
   }
 
@@ -174,6 +174,10 @@ class DatanestApiService extends ApiClient {
       maxPage: viewData.maxPage ?? 1,
       pageSize: viewData.pageSize ?? pageSize,
     }
+  }
+
+  async getPendingReviewItem(id: string): Promise<any> {
+    return this.getDocument<any>('/soundfragments/pending-review', id)
   }
 
   async getUnassignedBrands(page = 1, pageSize = 10): Promise<PagedResult<any>> {
