@@ -34,7 +34,7 @@ const formData = ref({
 
 const fragmentId = computed(() => String(route.params.fragmentId ?? ''))
 const formLabelPlacement = computed(() => (isMobile.value ? 'top' : 'left'))
-const formTitle = computed(() => 'Shared sound')
+const formTitle = computed(() => t('menu.songs'))
 const formSubtitle = computed(() => {
   const parts = [formData.value.title.trim(), formData.value.artist.trim()].filter(Boolean)
   return parts.join(' - ')
@@ -176,7 +176,7 @@ onBeforeUnmount(() => {
         </div>
       </NFormItem>
 
-      <NFormItem label="Sharer name">
+      <NFormItem :label="t('profile.username')">
         <div class="field-stack">
           <div class="field-shell">
             <NInput :value="formData.sharerUserName" readonly style="width: 100%" />
@@ -184,7 +184,7 @@ onBeforeUnmount(() => {
         </div>
       </NFormItem>
 
-      <NFormItem label="Sharer email">
+      <NFormItem :label="t('profile.email')">
         <div class="field-stack">
           <div class="field-shell">
             <NInput :value="formData.sharerUserEmail" readonly style="width: 100%" />

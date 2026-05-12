@@ -8,7 +8,7 @@ import LedIndicator from '@/components/LedIndicator.vue'
 import { useBrandsStore } from '@/stores/brands'
 
 const props = defineProps<{ brandSlug: string; timezone?: string }>()
-const { t } = useI18n()
+const { t, te } = useI18n()
 const brandsStore = useBrandsStore()
 
 const alive = computed(() => brandsStore.streamingStates[props.brandSlug] ?? false)
@@ -132,8 +132,10 @@ function queueTypeLabel(item: AivoxQueueEntry): string {
 }
 
 function mergingMethodLabel(item: AivoxQueueEntry): string {
-  const key = `dashboard.queue.mixing.${item.tech.mergingMethod}`
-  return t(key)
+  const method = String(item.tech.mergingMethod ?? 'NOT_MIXED').trim() || 'NOT_MIXED'
+  const key = `dashboard.queue.mixing.${method}`
+  if (te(key)) return t(key)
+  return method.replace(/_/g, ' ').toLowerCase()
 }
 
 function hasDjInvolvement(item: AivoxQueueEntry): boolean {

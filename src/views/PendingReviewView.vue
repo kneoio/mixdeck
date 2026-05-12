@@ -101,7 +101,7 @@ const columns = computed<DataTableColumns<any>>(() => [
       })
     }
   },
-  { title: 'Sharer name', key: 'sharerUserName', minWidth: 160, render: (row) => row.sharerUserName || '-' },
+  { title: t('profile.username'), key: 'sharerUserName', minWidth: 160, render: (row) => row.sharerUserName || '-' },
 ])
 
 async function fetchData(page = pageNum.value, size = pageSize.value) {
