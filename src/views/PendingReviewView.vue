@@ -101,7 +101,7 @@ const columns = computed<DataTableColumns<any>>(() => [
       })
     }
   },
-  { title: t('playlistView.col_description'), key: 'description', minWidth: 160, ellipsis: { tooltip: true } },
+  { title: 'Sharer name', key: 'sharerUserName', minWidth: 160, render: (row) => row.sharerUserName || '-' },
 ])
 
 async function fetchData(page = pageNum.value, size = pageSize.value) {

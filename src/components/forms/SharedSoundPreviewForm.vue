@@ -26,6 +26,8 @@ const formData = ref({
   title: '',
   artist: '',
   album: '',
+  sharerUserName: '',
+  sharerUserEmail: '',
   genres: [] as string[],
   labels: [] as string[],
 })
@@ -100,6 +102,8 @@ async function loadData() {
       title: fragment.value?.title || '',
       artist: fragment.value?.artist || '',
       album: fragment.value?.album || '',
+      sharerUserName: fragment.value?.sharerUserName || '',
+      sharerUserEmail: fragment.value?.sharerUserEmail || '',
       genres: normalizeIdList(fragment.value?.genres),
       labels: normalizeIdList(fragment.value?.labels),
     }
@@ -168,6 +172,22 @@ onBeforeUnmount(() => {
         <div class="field-stack">
           <div class="field-shell">
             <NInput :value="formData.album" readonly style="width: 100%" />
+          </div>
+        </div>
+      </NFormItem>
+
+      <NFormItem label="Sharer name">
+        <div class="field-stack">
+          <div class="field-shell">
+            <NInput :value="formData.sharerUserName" readonly style="width: 100%" />
+          </div>
+        </div>
+      </NFormItem>
+
+      <NFormItem label="Sharer email">
+        <div class="field-stack">
+          <div class="field-shell">
+            <NInput :value="formData.sharerUserEmail" readonly style="width: 100%" />
           </div>
         </div>
       </NFormItem>
