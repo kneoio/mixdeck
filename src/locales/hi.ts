@@ -252,6 +252,7 @@ export default {
     share_dialog_empty: 'कोई स्टेशन उपलब्ध नहीं।',
     share_dialog_submit: 'साझा करें',
     share_dialog_select_brands: 'कम से कम एक स्टेशन चुनें।',
+    share_dialog_stay_incognito: 'गुमनाम रहें',
   },
   bulkUpload: {
     title: 'ध्वनि खंडों का बल्क अपलोड',

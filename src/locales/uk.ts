@@ -253,6 +253,7 @@ export default {
     share_dialog_empty: 'Немає доступних станцій.',
     share_dialog_submit: 'Поділитися',
     share_dialog_select_brands: 'Оберіть принаймні одну станцію.',
+    share_dialog_stay_incognito: 'Залишитися інкогніто',
   },
   bulkUpload: {
     title: 'Масове завантаження аудіофрагментів',

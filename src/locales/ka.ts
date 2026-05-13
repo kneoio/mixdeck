@@ -253,6 +253,7 @@ export default {
     share_dialog_empty: 'სადგურები არ არის ხელმისაწვდომი.',
     share_dialog_submit: 'გაზიარება',
     share_dialog_select_brands: 'აირჩიეთ მინიმუმ ერთი სადგური.',
+    share_dialog_stay_incognito: 'ინკოგნიტოდ დარჩენა',
   },
   bulkUpload: {
     title: 'ხმის ფრაგმენტების ჯგუფური ატვირთვა',

@@ -252,6 +252,7 @@ export default {
     share_dialog_empty: 'Нет доступных станций.',
     share_dialog_submit: 'Поделиться',
     share_dialog_select_brands: 'Выберите хотя бы одну станцию.',
+    share_dialog_stay_incognito: 'Остаться инкогнито',
   },
   bulkUpload: {
     title: 'Массовая загрузка аудиофрагментов',

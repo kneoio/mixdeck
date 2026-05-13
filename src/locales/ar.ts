@@ -252,6 +252,7 @@ export default {
     share_dialog_empty: 'لا توجد محطات متاحة.',
     share_dialog_submit: 'مشاركة',
     share_dialog_select_brands: 'اختر محطة واحدة على الأقل.',
+    share_dialog_stay_incognito: 'البقاء مجهول الهوية',
   },
   bulkUpload: {
     title: 'تحميل مجمع لشظايا الصوت',

@@ -252,6 +252,7 @@ export default {
     share_dialog_empty: '利用できるステーションがありません。',
     share_dialog_submit: '共有',
     share_dialog_select_brands: 'ステーションを1つ以上選んでください。',
+    share_dialog_stay_incognito: '匿名のままにする',
   },
   bulkUpload: {
     title: '音声フラグメントの一括アップロード',

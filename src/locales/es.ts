@@ -252,6 +252,7 @@ export default {
     share_dialog_empty: 'No hay emisoras disponibles.',
     share_dialog_submit: 'Compartir',
     share_dialog_select_brands: 'Selecciona al menos una emisora.',
+    share_dialog_stay_incognito: 'Permanecer en incógnito',
   },
   bulkUpload: {
     title: 'Carga masiva de fragmentos de audio',

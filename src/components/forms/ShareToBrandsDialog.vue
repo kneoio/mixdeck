@@ -24,6 +24,9 @@
           <span v-if="!loading">{{ t('playlistView.share_dialog_empty') }}</span>
         </template>
       </n-data-table>
+      <n-checkbox v-model:checked="stayIncognito" class="share-incognito">
+        {{ t('playlistView.share_dialog_stay_incognito') }}
+      </n-checkbox>
       <div style="margin-top: 12px; min-height: 40px" />
     </n-space>
 
@@ -46,7 +49,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NModal, NButton, NSpace, NDataTable, useMessage, type DataTableColumns } from 'naive-ui'
+import { NModal, NButton, NSpace, NDataTable, NCheckbox, useMessage, type DataTableColumns } from 'naive-ui'
 import datanestApiService from '@/services/datanestApi'
 import { handleApiError } from '@/utils/notificationService'
 
@@ -80,6 +83,7 @@ watch(
     showDialog.value = v
     if (v && props.fragmentIds.length > 0) {
       selectedBrandIds.value = []
+      stayIncognito.value = false
       pageNum.value = 1
       void fetchBrands(1)
     }
@@ -93,6 +97,7 @@ const pageNum = ref(1)
 const pageSize = ref(10)
 const totalCount = ref(0)
 const selectedBrandIds = ref<string[]>([])
+const stayIncognito = ref(false)
 const submitting = ref(false)
 
 const modalTitle = computed(() =>
@@ -167,7 +172,11 @@ async function handleSubmit() {
   if (props.fragmentIds.length === 0) return
   submitting.value = true
   try {
-    await datanestApiService.shareSoundFragmentsWithBrands(props.fragmentIds, selectedBrandIds.value as string[])
+    await datanestApiService.shareSoundFragmentsWithBrands(
+      props.fragmentIds,
+      selectedBrandIds.value as string[],
+      { stayIncognito: stayIncognito.value }
+    )
     message.success(
       props.fragmentIds.length > 1
         ? t('playlistView.shared_bulk', { count: props.fragmentIds.length })
@@ -193,5 +202,8 @@ function handleCancel() {
   font-size: 13px;
   opacity: 0.85;
   line-height: 1.45;
+}
+.share-incognito {
+  margin-top: 4px;
 }
 </style>

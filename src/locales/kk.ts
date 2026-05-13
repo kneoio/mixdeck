@@ -253,6 +253,7 @@ export default {
     share_dialog_empty: 'Қолжетімді станция жоқ.',
     share_dialog_submit: 'Бөлісу',
     share_dialog_select_brands: 'Кем дегенде бір станцияны таңдаңыз.',
+    share_dialog_stay_incognito: 'Инкогнито қалу',
   },
   bulkUpload: {
     title: 'Аудио фрагменттерді жаппай жүктеу',

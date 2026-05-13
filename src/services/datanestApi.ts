@@ -94,7 +94,7 @@ class DatanestApiService extends ApiClient {
     }
   }
 
-  /** PATCH body matches backend `SharedSoundFragmentPatchDTO`: `addTargetBrandIds`, `removeTargetBrandIds` (UUID strings). */
+  /** PATCH body matches backend `SharedSoundFragmentPatchDTO`: `addTargetBrandIds`, `removeTargetBrandIds`, `stayIncognito` (UUID strings). */
   async patchSharedSoundFragmentShares(fragmentId: string, body: unknown): Promise<void> {
     await this.request<void>(`/shared-sound-fragments/${encodeURIComponent(fragmentId)}`, {
       method: 'PATCH',
@@ -154,11 +154,19 @@ class DatanestApiService extends ApiClient {
   }
 
   /** Add share targets (brand document UUIDs) via `SharedSoundFragmentPatchDTO.addTargetBrandIds`. */
-  async shareSoundFragmentsWithBrands(fragmentIds: string[], brandIds: string[]): Promise<void> {
+  async shareSoundFragmentsWithBrands(
+    fragmentIds: string[],
+    brandIds: string[],
+    options?: { stayIncognito?: boolean }
+  ): Promise<void> {
     const ids = [...new Set(brandIds.filter(Boolean))]
     if (ids.length === 0) return
+    const body = {
+      addTargetBrandIds: ids,
+      stayIncognito: options?.stayIncognito ?? false,
+    }
     await Promise.all(
-      fragmentIds.map(id => this.patchSharedSoundFragmentShares(id, { addTargetBrandIds: ids }))
+      fragmentIds.map(id => this.patchSharedSoundFragmentShares(id, body))
     )
   }
 

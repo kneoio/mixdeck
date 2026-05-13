@@ -252,6 +252,7 @@ export default {
     share_dialog_empty: 'Nenhuma estação disponível.',
     share_dialog_submit: 'Partilhar',
     share_dialog_select_brands: 'Selecione pelo menos uma estação.',
+    share_dialog_stay_incognito: 'Permanecer incógnito',
   },
   bulkUpload: {
     title: 'Upload em massa de fragmentos de áudio',

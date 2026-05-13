@@ -252,6 +252,7 @@ export default {
     share_dialog_empty: 'Keine Stationen verfügbar.',
     share_dialog_submit: 'Teilen',
     share_dialog_select_brands: 'Wählen Sie mindestens eine Station.',
+    share_dialog_stay_incognito: 'Inkognito bleiben',
   },
   bulkUpload: {
     title: 'Soundfragmente massenhaft hochladen',
