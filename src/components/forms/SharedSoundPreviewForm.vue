@@ -41,7 +41,7 @@ const formSubtitle = computed(() => {
 })
 
 function handleClose() {
-  router.push('/sound-library/pending-review')
+  router.push('/sound-library/received')
 }
 
 function updateIsMobile() {
@@ -90,7 +90,7 @@ async function loadData() {
     const [genres, labels, fragment] = await Promise.allSettled([
       dictionaryApiService.getGenres(),
       dictionaryApiService.getLabelsByCategory('sound_fragment'),
-      datanestApiService.getPendingReviewItem(fragmentId.value),
+      datanestApiService.getReceivedItem(fragmentId.value),
     ])
 
     if (genres.status === 'fulfilled') genreList.value = genres.value

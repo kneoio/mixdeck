@@ -80,9 +80,9 @@ class DatanestApiService extends ApiClient {
     }
   }
 
-  async getSharedSoundFragments(page = 1, pageSize = 10): Promise<PagedResult<any>> {
+  async getShared(page = 1, pageSize = 10): Promise<PagedResult<any>> {
     const params = new URLSearchParams({ page: String(page), size: String(pageSize) })
-    const response = await this.request<any>(`/shared-sound-fragments?${params}`)
+    const response = await this.request<any>(`/sound-fragments/shared?${params}`)
     const viewData = response?.payload?.viewData ?? response?.viewData
     if (!viewData) throw new Error('Unexpected response format')
     return {
@@ -95,14 +95,13 @@ class DatanestApiService extends ApiClient {
   }
 
   /** PATCH body matches backend `SharedSoundFragmentPatchDTO`: `addTargetBrandIds`, `removeTargetBrandIds`, `stayIncognito` (UUID strings). */
-  async patchSharedSoundFragmentShares(fragmentId: string, body: unknown): Promise<void> {
-    await this.request<void>(`/shared-sound-fragments/${encodeURIComponent(fragmentId)}`, {
+  async patchShared(fragmentId: string, body: unknown): Promise<void> {
+    await this.request<void>(`/sound-fragments/shared/${encodeURIComponent(fragmentId)}`, {
       method: 'PATCH',
       body: JSON.stringify(body ?? {}),
     })
   }
 
-  /** Collect destination brand UUIDs from a shared-fragment document (GET) for unshare. */
   private collectDestinationBrandIdsFromSharedDoc(doc: unknown): string[] {
     if (!doc || typeof doc !== 'object') return []
     const d = doc as Record<string, unknown>
@@ -131,14 +130,10 @@ class DatanestApiService extends ApiClient {
     return [...out]
   }
 
-  /**
-   * Remove all share targets for this fragment.
-   * Loads the document first so `removeBrandIds` can be filled per `SharedSoundFragmentPatchDTO`.
-   */
-  async unshareSharedSoundFragment(fragmentId: string): Promise<void> {
-    const doc = await this.getDocument<unknown>('/shared-sound-fragments', fragmentId)
+  async unshare(fragmentId: string): Promise<void> {
+    const doc = await this.getDocument<unknown>('/sound-fragments/shared', fragmentId)
     const removeIds = this.collectDestinationBrandIdsFromSharedDoc(doc)
-    await this.patchSharedSoundFragmentShares(fragmentId, { removeBrandIds: removeIds })
+    await this.patchShared(fragmentId, { removeBrandIds: removeIds })
   }
 
   async shareSoundFragmentWithLibrary(fragmentId: string, brandId: string): Promise<void> {
@@ -166,13 +161,13 @@ class DatanestApiService extends ApiClient {
       stayIncognito: options?.stayIncognito ?? false,
     }
     await Promise.all(
-      fragmentIds.map(id => this.patchSharedSoundFragmentShares(id, body))
+      fragmentIds.map(id => this.patchShared(id, body))
     )
   }
 
-  async getPendingReview(page = 1, pageSize = 10): Promise<PagedResult<any>> {
+  async getReceived(page = 1, pageSize = 10): Promise<PagedResult<any>> {
     const params = new URLSearchParams({ page: String(page), size: String(pageSize) })
-    const response = await this.request<any>(`/soundfragments/pending-review?${params}`)
+    const response = await this.request<any>(`/sound-fragments/received?${params}`)
     const viewData = response?.payload?.viewData ?? response?.viewData
     if (!viewData) throw new Error('Unexpected response format')
     return {
@@ -184,8 +179,8 @@ class DatanestApiService extends ApiClient {
     }
   }
 
-  async getPendingReviewItem(id: string): Promise<any> {
-    return this.getDocument<any>('/soundfragments/pending-review', id)
+  async getReceivedItem(id: string): Promise<any> {
+    return this.getDocument<any>('/sound-fragments/received', id)
   }
 
   async getUnassignedBrands(page = 1, pageSize = 10): Promise<PagedResult<any>> {

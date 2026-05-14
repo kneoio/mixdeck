@@ -76,7 +76,7 @@ const formData = ref({
 const backRoute = computed(() =>
   route.path.startsWith('/sound-library/unassigned-brands')
     ? '/sound-library/unassigned-brands'
-    : '/sound-library/pending-review'
+    : '/sound-library/received'
 )
 
 function handleClose() {

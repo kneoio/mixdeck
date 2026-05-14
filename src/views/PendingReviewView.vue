@@ -26,7 +26,7 @@ const selectedIds = ref<string[]>([])
 const genreMap = ref<Map<string, { name: string; color?: string; fontColor?: string }>>(new Map())
 const labelMap = ref<Map<string, { name: string; color?: string; fontColor?: string }>>(new Map())
 
-const pageTitle = computed(() => `${t('menu.my_sounds')} / ${t('menu.ads')}`)
+const pageTitle = computed(() => `${t('menu.my_sounds')} / ${t('menu.received')}`)
 
 const pagination = computed(() => ({
   page: pageNum.value,
@@ -107,7 +107,7 @@ const columns = computed<DataTableColumns<any>>(() => [
 async function fetchData(page = pageNum.value, size = pageSize.value) {
   loading.value = true
   try {
-    const result = await datanestApiService.getPendingReview(page, size)
+    const result = await datanestApiService.getReceived(page, size)
     entries.value = result.entries
     totalCount.value = result.count
     pageNum.value = result.pageNum
@@ -166,7 +166,7 @@ onMounted(async () => {
         style: 'cursor:pointer',
         onClick: (e: MouseEvent) => {
           if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return
-          router.push(`/sound-library/pending-review/${row.id}`)
+          router.push(`/sound-library/received/${row.id}`)
         }
       })"
       @update:page="(p) => { pageNum = p; fetchData(p) }"

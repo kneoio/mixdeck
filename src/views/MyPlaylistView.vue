@@ -48,7 +48,7 @@ const pageTitle = computed(() => {
   if (path === '/my-sounds/advertisement') return `${t('menu.my_sounds')} / ${t('menu.ads')}`
   if (path === '/my-sounds/sound-design') return `${t('menu.my_sounds')} / ${t('menu.sound_design')}`
   if (path === '/shared') return t('menu.songs')
-  if (path === '/sound-library/pending-review') return t('menu.ads')
+  if (path === '/sound-library/received') return t('menu.received')
   return t('menu.my_sounds')
 })
 
@@ -137,9 +137,9 @@ async function fetchData(page = pageNum.value, size = pageSize.value) {
     const path = route.path
     let result
     if (path === '/shared') {
-      result = await datanestApiService.getSharedSoundFragments(page, size)
-    } else if (path === '/sound-library/pending-review') {
-      result = await datanestApiService.getPendingReview(page, size)
+      result = await datanestApiService.getShared(page, size)
+    } else if (path === '/sound-library/received') {
+      result = await datanestApiService.getReceived(page, size)
     } else {
       result = await datanestApiService.getMyPlaylist(
         page,
@@ -179,7 +179,7 @@ async function handleBulkUnshare() {
   if (selectedIds.value.length === 0) return
   try {
     loading.value = true
-    await Promise.all(selectedIds.value.map(id => datanestApiService.unshareSharedSoundFragment(String(id))))
+    await Promise.all(selectedIds.value.map(id => datanestApiService.unshare(String(id))))
     message.success(t('playlistView.unshared_bulk', { count: selectedIds.value.length }))
     selectedIds.value = []
     await fetchData()

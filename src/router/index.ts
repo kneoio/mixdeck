@@ -43,8 +43,8 @@ const router = createRouter({
           meta: { requiresAuth: true }
         },
         {
-          path: '/sound-library/pending-review',
-          name: 'sound-library-pending-review',
+          path: '/sound-library/received',
+          name: 'sound-library-received',
           component: () => import('../views/PendingReviewView.vue'),
           meta: { requiresAuth: true }
         },
@@ -55,8 +55,8 @@ const router = createRouter({
           meta: { requiresAuth: true }
         },
         {
-          path: '/sound-library/pending-review/:fragmentId',
-          name: 'sound-library-pending-review-edit',
+          path: '/sound-library/received/:fragmentId',
+          name: 'sound-library-received-edit',
           component: () => import('../components/forms/SharedSoundPreviewForm.vue'),
           meta: { requiresAuth: true }
         },

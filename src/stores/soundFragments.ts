@@ -68,13 +68,13 @@ export const useSoundFragmentsStore = defineStore('soundFragments', () => {
     return datanestApiService.deleteDictionaryItem('/soundfragments', id)
   }
 
-  async function fetchSharedSoundFragments(page = 1, pageSize = 10) {
-    return datanestApiService.getSharedSoundFragments(page, pageSize)
+  async function fetchShared(page = 1, pageSize = 10) {
+    return datanestApiService.getShared(page, pageSize)
   }
 
-  async function fetchPendingReview(page = 1, pageSize = 10) {
-    return datanestApiService.getPendingReview(page, pageSize)
+  async function fetchReceived(page = 1, pageSize = 10) {
+    return datanestApiService.getReceived(page, pageSize)
   }
 
-  return { loading, fetchFragment, saveFragment, deleteFragment, fetchSharedSoundFragments, fetchPendingReview }
+  return { loading, fetchFragment, saveFragment, deleteFragment, fetchShared, fetchReceived }
 })

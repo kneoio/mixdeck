@@ -206,7 +206,7 @@ watch(
 const activeKey = computed(() => {
   const path = route.path
   if (path === '/shared') return 'my-sounds-contributed'
-  if (path === '/sound-library/pending-review') return 'my-sounds-pending-review'
+  if (path === '/sound-library/received') return 'my-sounds-received'
   if (path === '/sound-library/unassigned-brands') return 'my-sounds-unassigned-brands'
   const m = path.match(/^\/brands\/([^/]+)\/(\w+)$/)
   if (m) return `brand-${m[1]}-${m[2]}`
@@ -300,8 +300,8 @@ const menuOptions = computed<MenuOption[]>(() => [
         key: 'my-sounds-contributed',
       },
       {
-        label: t('menu.ads'),
-        key: 'my-sounds-pending-review',
+        label: t('menu.received'),
+        key: 'my-sounds-received',
       },
       {
         label: t('menu.unassigned_brands'),
@@ -322,8 +322,8 @@ const handleMenuSelect = async (key: string) => {
     router.push('/brands')
   } else if (key === 'my-sounds-contributed') {
     router.push('/shared')
-  } else if (key === 'my-sounds-pending-review') {
-    router.push('/sound-library/pending-review')
+  } else if (key === 'my-sounds-received') {
+    router.push('/sound-library/received')
   } else if (key === 'my-sounds-unassigned-brands') {
     router.push('/sound-library/unassigned-brands')
   } else if (key === 'brands-new') {

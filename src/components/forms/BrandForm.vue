@@ -815,7 +815,7 @@ watch(activeTab, () => {
         </NForm>
       </NTabPane>
 
-      <NTabPane name="contribution" :tab="t('brandForm.tab_contribution')">
+      <NTabPane name="features" :tab="t('brandForm.tab_features')">
         <NForm :label-placement="formLabelPlacement" label-width="180" :disabled="loading">
           <NFormItem :label="t('brandForm.one_time_stream')">
             <div class="field-stack">
@@ -825,7 +825,7 @@ watch(activeTab, () => {
               <div class="field-error-label"></div>
             </div>
           </NFormItem>
-          <NFormItem :label="t('brandForm.song_submission')">
+          <NFormItem :label="t('brandForm.accept_shared_sounds')">
             <div class="field-stack">
               <div class="field-error-shell">
                 <NSelect v-model:value="formData.submissionPolicy" :options="SUBMISSION_POLICY_OPTIONS" style="width: 220px" />
