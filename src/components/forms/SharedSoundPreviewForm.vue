@@ -176,7 +176,7 @@ onBeforeUnmount(() => {
         </div>
       </NFormItem>
 
-      <NFormItem :label="t('profile.username')">
+      <NFormItem :label="t('profile.sharer')">
         <div class="field-stack">
           <div class="field-shell">
             <NInput :value="formData.sharerUserName" readonly style="width: 100%" />

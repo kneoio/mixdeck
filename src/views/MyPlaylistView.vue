@@ -31,6 +31,7 @@ const genreMap = ref<Map<string, { name: string; color?: string; fontColor?: str
 const labelMap = ref<Map<string, { name: string; color?: string; fontColor?: string }>>(new Map())
 
 const isSharedLibraryRoute = computed(() => route.path === '/shared')
+const isReceivedRoute = computed(() => route.path === '/sound-library/received')
 
 const activeTypeFilter = computed<string[]>(() => {
   const path = route.path
@@ -164,8 +165,12 @@ async function fetchData(page = pageNum.value, size = pageSize.value) {
 async function handleBulkDelete() {
   try {
     loading.value = true
-    await Promise.all(selectedIds.value.map(id => datanestApiService.deleteSoundFragment(id)))
-    message.success(t('playlistView.deleted', { count: selectedIds.value.length }))
+    const deleteFn = route.path === '/sound-library/received'
+      ? datanestApiService.rejectReceivedSoundFragment.bind(datanestApiService)
+      : datanestApiService.deleteSoundFragment.bind(datanestApiService)
+    await Promise.all(selectedIds.value.map(id => deleteFn(id)))
+    const successKey = isReceivedRoute.value ? 'playlistView.received_removed' : 'playlistView.deleted'
+    message.success(t(successKey, { count: selectedIds.value.length }))
     selectedIds.value = []
     await fetchData()
   } catch (e: any) {
@@ -268,10 +273,10 @@ watch(
         <NPopconfirm v-else @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
           <template #trigger>
             <NButton type="error" :disabled="selectedIds.length === 0">
-              {{ t('playlistView.delete_btn', { count: selectedIds.length }) }}
+              {{ t(isReceivedRoute ? 'playlistView.received_remove_btn' : 'playlistView.delete_btn', { count: selectedIds.length }) }}
             </NButton>
           </template>
-          {{ t('playlistView.delete_confirm', { count: selectedIds.length }) }}
+          {{ t(isReceivedRoute ? 'playlistView.received_remove_confirm' : 'playlistView.delete_confirm', { count: selectedIds.length }) }}
         </NPopconfirm>
         <NInput
           v-model:value="searchTerm"

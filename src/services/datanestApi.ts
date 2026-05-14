@@ -201,6 +201,11 @@ class DatanestApiService extends ApiClient {
     await this.request<void>(`/soundfragments/${id}`, { method: 'DELETE' })
   }
 
+  /** Remove a received share for the current user (rejectShare). */
+  async rejectReceivedSoundFragment(id: string): Promise<void> {
+    await this.deleteDictionaryItem('/sound-fragments/received', id)
+  }
+
   /** Revoke current user's access to a sound fragment (backend: DELETE …/:id/access). */
   async revokeSoundFragmentAccess(id: string): Promise<void> {
     await this.request<void>(`/soundfragments/${id}/access`, { method: 'DELETE' })

@@ -101,7 +101,7 @@ const columns = computed<DataTableColumns<any>>(() => [
       })
     }
   },
-  { title: t('profile.username'), key: 'sharerUserName', minWidth: 160, render: (row) => row.sharerUserName || '-' },
+  { title: t('profile.sharer'), key: 'sharerUserName', minWidth: 160, render: (row) => row.sharerUserName || '-' },
 ])
 
 async function fetchData(page = pageNum.value, size = pageSize.value) {
@@ -122,8 +122,8 @@ async function fetchData(page = pageNum.value, size = pageSize.value) {
 async function handleBulkDelete() {
   try {
     loading.value = true
-    await Promise.all(selectedIds.value.map(id => datanestApiService.deleteSoundFragment(id)))
-    message.success(t('playlistView.deleted', { count: selectedIds.value.length }))
+    await Promise.all(selectedIds.value.map(id => datanestApiService.rejectReceivedSoundFragment(id)))
+    message.success(t('playlistView.received_removed', { count: selectedIds.value.length }))
     selectedIds.value = []
     await fetchData()
   } catch (e: any) {
@@ -147,10 +147,10 @@ onMounted(async () => {
         <NPopconfirm @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
           <template #trigger>
             <NButton type="error" :disabled="selectedIds.length === 0">
-              {{ t('playlistView.delete_btn', { count: selectedIds.length }) }}
+              {{ t('playlistView.received_remove_btn', { count: selectedIds.length }) }}
             </NButton>
           </template>
-          {{ t('playlistView.delete_confirm', { count: selectedIds.length }) }}
+          {{ t('playlistView.received_remove_confirm', { count: selectedIds.length }) }}
         </NPopconfirm>
       </NSpace>
     </ActionBar>
