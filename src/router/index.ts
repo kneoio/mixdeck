@@ -145,6 +145,12 @@ const router = createRouter({
           component: () => import('../views/BrandsRedirectView.vue'),
           meta: { requiresAuth: true }
         },
+        {
+          path: '/mixdeck',
+          name: 'mixdeck-redirect',
+          component: () => import('../views/BrandsRedirectView.vue'),
+          meta: { requiresAuth: true }
+        },
       ]
     }
   ],
