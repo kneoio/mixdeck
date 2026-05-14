@@ -141,11 +141,11 @@ class DatanestApiService extends ApiClient {
   }
 
   /**
-   * Brands that accept open contributions.
-   * GET `/brands?page=&size=&filter={"submissionPolicy":"NO_RESTRICTIONS"}` (relative to datanest base URL).
+   * Brands open for submission (share dialog).
+   * GET `/brands/discover?page=&size=` — same paged DTO as `/brands`.
    */
   async getBrandsForOpenContribution(page = 1, pageSize = 20): Promise<PagedResult<any>> {
-    return this.getPagedDictionary('/brands', page, pageSize, { submissionPolicy: 'NO_RESTRICTIONS' })
+    return this.getPagedDictionary('/brands/discover', page, pageSize)
   }
 
   /** Add share targets (brand document UUIDs) via `SharedSoundFragmentPatchDTO.addTargetBrandIds`. */

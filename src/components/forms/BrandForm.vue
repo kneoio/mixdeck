@@ -717,15 +717,6 @@ watch(activeTab, () => {
             </div>
           </NFormItem>
 
-          <NFormItem :label="t('brandForm.ai_override')">
-            <div class="field-stack">
-              <div class="field-error-shell">
-                <NInput v-model:value="formData.aiOverriding.prompt" type="textarea"
-                  :autosize="{ minRows: 3, maxRows: 6 }" style="width: 100%" />
-              </div>
-              <div class="field-error-label"></div>
-            </div>
-          </NFormItem>
         </NForm>
       </NTabPane>
 
