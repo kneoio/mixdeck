@@ -291,8 +291,6 @@ export default {
     no_data: 'لا تتوفر بيانات الأجندة',
     no_songs: 'لا توجد أغاني في هذا المشهد',
     songs_count: '{n} أغاني',
-    edit_song: 'Edit song',
-    replace_song: 'Replace song',
   },
   broadcasterWelcome: {
     heading: 'مرحباً بك في Mixdeck',

@@ -292,8 +292,6 @@ export default {
     no_data: 'Порядок денний недоступний',
     no_songs: 'Немає пісень у цій сцені',
     songs_count: '{n} пісень',
-    edit_song: 'Edit song',
-    replace_song: 'Replace song',
   },
   broadcasterWelcome: {
     heading: 'Ласкаво просимо до Mixdeck',

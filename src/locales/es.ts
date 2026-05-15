@@ -291,8 +291,6 @@ export default {
     no_data: 'No hay datos del programa disponibles',
     no_songs: 'No hay canciones en esta escena',
     songs_count: '{n} canciones',
-    edit_song: 'Edit song',
-    replace_song: 'Replace song',
   },
   broadcasterWelcome: {
     heading: 'Bienvenido a Mixdeck',

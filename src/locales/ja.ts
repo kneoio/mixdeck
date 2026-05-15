@@ -291,8 +291,6 @@ export default {
     no_data: 'アジェンダデータがありません',
     no_songs: 'このシーンに楽曲がありません',
     songs_count: '{n}曲',
-    edit_song: 'Edit song',
-    replace_song: 'Replace song',
   },
   broadcasterWelcome: {
     heading: 'Mixdeckへようこそ',
