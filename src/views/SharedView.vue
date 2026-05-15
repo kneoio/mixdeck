@@ -123,7 +123,13 @@ async function handleBulkUnshare() {
   if (selectedIds.value.length === 0) return
   try {
     loading.value = true
-    await Promise.all(selectedIds.value.map(id => datanestApiService.unshare(String(id))))
+    await Promise.all(selectedIds.value.map(id => {
+      const row = entries.value.find((e: any) => e.id === id)
+      const brandIds: string[] = Array.isArray(row?.sharedWith)
+        ? row.sharedWith.map((s: any) => s.targetBrandId).filter(Boolean)
+        : []
+      return datanestApiService.unshare(String(id), brandIds)
+    }))
     message.success(t('playlistView.unshared_bulk', { count: selectedIds.value.length }))
     selectedIds.value = []
     await fetchData()

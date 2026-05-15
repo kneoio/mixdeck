@@ -109,10 +109,8 @@ class DatanestApiService extends ApiClient {
     return [...out]
   }
 
-  async unshare(fragmentId: string): Promise<void> {
-    const doc = await this.getDocument<unknown>('/shared-sound-fragments/shared', fragmentId)
-    const removeIds = this.collectDestinationBrandIdsFromSharedDoc(doc)
-    await this.patchShared(fragmentId, { removeBrandIds: removeIds })
+  async unshare(fragmentId: string, targetBrandIds: string[]): Promise<void> {
+    await this.patchShared(fragmentId, { removeTargetBrandIds: targetBrandIds })
   }
 
   async shareSoundFragmentWithLibrary(fragmentId: string, brandId: string): Promise<void> {
