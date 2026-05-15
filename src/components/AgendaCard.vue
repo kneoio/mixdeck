@@ -169,7 +169,8 @@ onUnmounted(() => stopRefresh())
                     <div class="song-main">
                       <span class="song-title">{{ song.songTitle }}</span>
                       <span v-if="song.shared && song.sharerName" class="song-sharer">
-                        {{ t('profile.sharer') }}: {{ song.sharerName }}
+                        {{ t('profile.sharer') }}:
+                        <span class="song-sharer-name">{{ song.sharerName }}</span>
                       </span>
                     </div>
                     <span class="song-artist">{{ song.artist }}</span>
@@ -314,7 +315,25 @@ onUnmounted(() => stopRefresh())
 }
 .song-main   { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .song-title  { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.song-sharer { font-size: 0.65rem; opacity: 0.65; color: #7C3AED; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.song-sharer {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 4px;
+  max-width: 100%;
+  margin-top: 2px;
+  padding: 2px 8px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #7C3AED;
+  background: rgba(124, 58, 237, 0.18);
+  border: 1px solid rgba(124, 58, 237, 0.4);
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.song-sharer-name { font-weight: 700; }
 .song-artist { font-size: 0.7rem; opacity: 0.55; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .song-dur    { font-family: monospace; font-size: 0.65rem; opacity: 0.5; white-space: nowrap; }
 
