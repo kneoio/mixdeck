@@ -7,7 +7,6 @@ import {
   type DataTableColumns, useMessage
 } from 'naive-ui'
 import datanestApiService from '@/services/datanestApi'
-import { useSoundFragmentsStore } from '@/stores/soundFragments'
 import dictionaryApiService from '@/services/dictionaryApi'
 import PageHeader from '@/components/PageHeader.vue'
 import ActionBar from '@/components/ActionBar.vue'
@@ -18,7 +17,6 @@ const { t } = useI18n()
 const message = useMessage()
 const router = useRouter()
 const brandsStore = useBrandsStore()
-const soundFragmentsStore = useSoundFragmentsStore()
 
 const entries = ref<any[]>([])
 const loading = ref(false)
@@ -126,7 +124,8 @@ async function handleBulkUnshare() {
   try {
     loading.value = true
     await Promise.all(selectedIds.value.map(async id => {
-      const frag = await soundFragmentsStore.fetchFragment(String(id))
+      const raw = await datanestApiService.getDocument<any>('/soundfragments', String(id))
+      const frag = raw?.payload?.docData ?? raw?.docData ?? raw
       const brandIds: string[] = Array.isArray(frag?.sharedWith)
         ? frag.sharedWith.map((s: any) => s.targetBrandId).filter(Boolean)
         : []
