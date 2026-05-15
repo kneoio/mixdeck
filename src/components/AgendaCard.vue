@@ -166,7 +166,12 @@ onUnmounted(() => stopRefresh())
                     <span v-if="block.hasJingle" class="flag flag-jingle">J</span>
                   </div>
                   <div v-for="song in block.songs" :key="song.songId" class="song-row">
-                    <span class="song-title">{{ song.songTitle }}</span>
+                    <div class="song-main">
+                      <span class="song-title">{{ song.songTitle }}</span>
+                      <span v-if="song.shared && song.sharerName" class="song-sharer">
+                        {{ t('profile.sharer') }}: {{ song.sharerName }}
+                      </span>
+                    </div>
                     <span class="song-artist">{{ song.artist }}</span>
                     <span class="song-dur">{{ fmtDurSec(song.durationSeconds) }}</span>
                   </div>
@@ -307,7 +312,9 @@ onUnmounted(() => stopRefresh())
   font-size: 0.8rem;
   background: rgba(128, 128, 128, 0.07);
 }
+.song-main   { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .song-title  { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.song-sharer { font-size: 0.65rem; opacity: 0.65; color: #7C3AED; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .song-artist { font-size: 0.7rem; opacity: 0.55; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .song-dur    { font-family: monospace; font-size: 0.65rem; opacity: 0.5; white-space: nowrap; }
 

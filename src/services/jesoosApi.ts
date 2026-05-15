@@ -6,6 +6,8 @@ export interface AgendaSong {
   songTitle: string
   artist: string
   durationSeconds: number
+  shared?: boolean
+  sharerName?: string
 }
 
 export interface AgendaTimelineBlock {
