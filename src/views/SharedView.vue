@@ -128,6 +128,7 @@ async function handleBulkUnshare() {
       const brandIds: string[] = Array.isArray(row?.sharedWith)
         ? row.sharedWith.map((s: any) => s.targetBrandId).filter(Boolean)
         : []
+      if (!brandIds.length) return Promise.resolve()
       return datanestApiService.unshare(String(id), brandIds)
     }))
     message.success(t('playlistView.unshared_bulk', { count: selectedIds.value.length }))
