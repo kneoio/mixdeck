@@ -211,12 +211,6 @@ class DatanestApiService extends ApiClient {
     await this.request<void>(`/soundfragments/${id}/access`, { method: 'DELETE' })
   }
 
-  async rateSoundFragment(id: string, brandSlug: string, action: 'LIKE' | 'DISLIKE'): Promise<void> {
-    await this.request<void>(`/soundfragments/${id}/rating?brand=${encodeURIComponent(brandSlug)}&action=${action}`, {
-      method: 'PATCH',
-    })
-  }
-
   bulkUploadFile(
     file: File,
     fileId: string,

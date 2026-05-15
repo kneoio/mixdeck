@@ -103,7 +103,7 @@ const columns = computed<DataTableColumns<any>>(() => {
   const descMin = nw ? 72 : 160
   const titleMin = nw ? 220 : 200
   const artistMin = nw ? 180 : 160
-  const ratingW = nw ? 132 : 148
+  const ratingW = nw ? 56 : 72
 
   return [
   { type: 'selection', multiple: true },
@@ -156,20 +156,7 @@ const columns = computed<DataTableColumns<any>>(() => {
     title: t('playlistView.col_rating'), key: 'rating', width: ratingW,
     render: (row) => {
       const val = row.ratedByBrandCount ?? 0
-      return h(NSpace, { size: 4, align: 'center', wrap: false }, {
-        default: () => [
-          h(NButton, {
-            size: 'tiny', tertiary: true,
-            onClick: (e: MouseEvent) => { e.stopPropagation(); rateTrack(row, 'DISLIKE') }
-          }, { default: () => '−' }),
-          h('span', { style: 'font-size:13px;min-width:28px;text-align:center' },
-            val > 0 ? `+${val}` : String(val)),
-          h(NButton, {
-            size: 'tiny', tertiary: true,
-            onClick: (e: MouseEvent) => { e.stopPropagation(); rateTrack(row, 'LIKE') }
-          }, { default: () => '+' }),
-        ]
-      })
+      return val > 0 ? `+${val}` : String(val)
     }
   },
   { title: t('playlistView.col_description'), key: 'description', width: nw ? 100 : undefined, minWidth: descMin, ellipsis: { tooltip: true } },
@@ -218,15 +205,6 @@ async function handleBulkDelete() {
     handleApiError(e, message)
   } finally {
     loading.value = false
-  }
-}
-
-async function rateTrack(row: any, action: 'LIKE' | 'DISLIKE') {
-  try {
-    await datanestApiService.rateSoundFragment(row.id, slugName.value, action)
-    await fetchData()
-  } catch (e: any) {
-    handleApiError(e, message)
   }
 }
 
