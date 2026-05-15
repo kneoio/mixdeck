@@ -291,6 +291,8 @@ export default {
     no_data: 'Agenda não está disponível',
     no_songs: 'Nenhuma música nesta cena',
     songs_count: '{n} músicas',
+    edit_song: 'Edit song',
+    replace_song: 'Replace song',
   },
   broadcasterWelcome: {
     heading: 'Bem-vindo ao Mixdeck',

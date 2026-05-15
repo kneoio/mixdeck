@@ -292,6 +292,8 @@ export default {
     no_data: 'დღის წესრიგი მიუწვდომელია',
     no_songs: 'ამ სცენაში სიმღერები არ არის',
     songs_count: '{n} სიმღერა',
+    edit_song: 'Edit song',
+    replace_song: 'Replace song',
   },
   broadcasterWelcome: {
     heading: 'მოგესალმებით Mixdeck-ში',

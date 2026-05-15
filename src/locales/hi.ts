@@ -291,6 +291,8 @@ export default {
     no_data: 'कोई एजेंडा डेटा उपलब्ध नहीं',
     no_songs: 'इस दृश्य में कोई गाना नहीं',
     songs_count: '{n} गाने',
+    edit_song: 'Edit song',
+    replace_song: 'Replace song',
   },
   broadcasterWelcome: {
     heading: 'Mixdeck में आपका स्वागत है',

@@ -292,6 +292,8 @@ export default {
     no_data: 'Күн тәртібі қолжетімсіз',
     no_songs: 'Бұл сахнада ән жоқ',
     songs_count: '{n} ән',
+    edit_song: 'Edit song',
+    replace_song: 'Replace song',
   },
   broadcasterWelcome: {
     heading: 'Mixdeck-ке қош келдіңіз',

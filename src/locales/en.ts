@@ -307,6 +307,8 @@ export default {
     no_data: 'Agenda is not available',
     no_songs: 'No songs in this scene',
     songs_count: '{n} songs',
+    edit_song: 'Edit song',
+    replace_song: 'Replace song',
     status: {
       emitting: 'emitting',
       failed: 'failed',
