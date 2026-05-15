@@ -19,27 +19,9 @@ const router = createRouter({
       meta: { requiresAuth: true },
       children: [
         {
-          path: '/my-sounds/songs',
-          name: 'my-sounds-songs',
-          component: () => import('../views/MyPlaylistView.vue'),
-          meta: { requiresAuth: true }
-        },
-        {
-          path: '/my-sounds/advertisement',
-          name: 'my-sounds-advertisement',
-          component: () => import('../views/MyPlaylistView.vue'),
-          meta: { requiresAuth: true }
-        },
-        {
-          path: '/my-sounds/sound-design',
-          name: 'my-sounds-sound-design',
-          component: () => import('../views/MyPlaylistView.vue'),
-          meta: { requiresAuth: true }
-        },
-        {
           path: '/shared',
           name: 'sound-library-contributed',
-          component: () => import('../views/MyPlaylistView.vue'),
+          component: () => import('../views/SharedView.vue'),
           meta: { requiresAuth: true }
         },
         {
