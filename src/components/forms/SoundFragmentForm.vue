@@ -56,6 +56,14 @@ const fieldErrors = ref<Record<ValidationField, string>>({
 const regDate = ref('')
 const lastModifiedDate = ref('')
 
+interface SharedWithEntry {
+  id: string
+  sourceUserName: string
+  sourceUserEmail: string
+  targetBrandId: string
+}
+const sharedWith = ref<SharedWithEntry[]>([])
+
 // File upload state
 const existingUrl = ref('')
 const existingFileName = ref('')
@@ -114,6 +122,11 @@ const brandOptions = computed(() =>
     value: b.id,
   }))
 )
+
+function resolveBrandName(id: string): string {
+  const brand = brandsStore.brands.find(b => b.id === id)
+  return brand ? (brand.localizedName?.['en'] || brand.slugName || id) : id
+}
 
 
 const returnToRoute = computed(() => {
@@ -486,6 +499,7 @@ onMounted(async () => {
       }
       regDate.value = frag.regDate || ''
       lastModifiedDate.value = frag.lastModifiedDate || ''
+      sharedWith.value = Array.isArray(frag.sharedWith) ? frag.sharedWith : []
       const f0 = frag.uploadedFiles?.[0]
       const fileUrl = f0?.url || frag.url || ''
       existingUrl.value = fileUrl.startsWith('http')
@@ -799,6 +813,24 @@ watch(activeTab, () => {
           </NFormItem>
         </NForm>
       </NTabPane>
+
+      <NTabPane name="sharing" :tab="t('fragmentForm.tab_sharing')">
+        <div v-if="sharedWith.length" class="sharing-list">
+          <div v-for="entry in sharedWith" :key="entry.id" class="sharing-card">
+            <div class="sharing-card__row">
+              <span class="sharing-card__label">{{ entry.sourceUserName }}</span>
+              <span class="sharing-card__email">{{ entry.sourceUserEmail }}</span>
+            </div>
+            <div class="sharing-card__brand">
+              <span class="sharing-card__brand-label">{{ t('fragmentForm.sharing_target_brand') }}:</span>
+              <span class="sharing-card__brand-value">{{ resolveBrandName(entry.targetBrandId) }}</span>
+            </div>
+          </div>
+        </div>
+        <div v-else class="sharing-empty">
+          {{ t('fragmentForm.sharing_empty') }}
+        </div>
+      </NTabPane>
     </NTabs>
   </FormWrapper>
 </template>
@@ -948,5 +980,63 @@ watch(activeTab, () => {
 
 .audio-mini-player__sep {
   opacity: 0.7;
+}
+
+.sharing-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.sharing-card {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.sharing-card__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.sharing-card__label {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.sharing-card__email {
+  font-size: 13px;
+  opacity: 0.6;
+}
+
+.sharing-card__brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.sharing-card__brand-label {
+  opacity: 0.5;
+}
+
+.sharing-card__brand-value {
+  font-family: monospace;
+  opacity: 0.75;
+  font-size: 11px;
+}
+
+.sharing-empty {
+  padding: 24px 0;
+  text-align: center;
+  opacity: 0.45;
+  font-size: 14px;
 }
 </style>
