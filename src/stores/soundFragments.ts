@@ -43,6 +43,12 @@ export interface SoundFragment {
   length?: string | number
   expiresAt?: string
   uploadedFiles?: UploadedFile[]
+  sharedWith?: Array<{
+    id: string
+    sourceUserName: string
+    sourceUserEmail: string
+    targetBrandId: string
+  }>
 }
 
 export const useSoundFragmentsStore = defineStore('soundFragments', () => {
