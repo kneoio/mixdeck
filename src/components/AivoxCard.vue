@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import aivoxApiService from '@/services/aivoxApi'
 import type { AivoxQueueEntry } from '@/services/aivoxApi'
 import LedIndicator from '@/components/LedIndicator.vue'
+import LoaderProgress from '@/components/LoaderProgress.vue'
 import { useBrandsStore } from '@/stores/brands'
 
 const props = defineProps<{ brandSlug: string; timezone?: string }>()
@@ -213,10 +214,12 @@ onUnmounted(() => {
     <div class="aivox-row">
       <NButton
         :type="alive ? 'error' : 'primary'"
-        :loading="loading"
         :disabled="loading"
         @click="handleClick"
       >
+        <template v-if="loading" #icon>
+          <LoaderProgress />
+        </template>
         {{ alive ? 'Stop' : 'Start' }}
       </NButton>
       <div class="aivox-status">

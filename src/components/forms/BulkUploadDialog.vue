@@ -44,8 +44,10 @@
           type="primary"
           @click="handleUpload"
           :disabled="fileList.length === 0 || isUploading || (totalFiles > 0 && !uploadCompleted)"
-          :loading="isUploading"
         >
+          <template v-if="isUploading" #icon>
+            <LoaderProgress />
+          </template>
           Upload
         </n-button>
       </n-space>
@@ -69,6 +71,7 @@ import { useI18n } from 'vue-i18n'
 import { NModal, NUpload, NButton, NSpace, NProgress, NDataTable, NText, NAlert } from 'naive-ui'
 import type { UploadCustomRequestOptions } from 'naive-ui'
 import LedIndicator from '@/components/LedIndicator.vue'
+import LoaderProgress from '@/components/LoaderProgress.vue'
 import datanestApiService, { BULK_UPLOAD_CHUNKED_THRESHOLD } from '@/services/datanestApi'
 
 const props = defineProps<{

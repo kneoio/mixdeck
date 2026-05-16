@@ -9,6 +9,7 @@ import {
 import { PlayOutline, PauseOutline, DownloadOutline } from '@vicons/ionicons5'
 import type { UploadCustomRequestOptions } from 'naive-ui'
 import FormWrapper from '@/components/FormWrapper.vue'
+import LoaderProgress from '@/components/LoaderProgress.vue'
 import { useSoundFragmentsStore, FRAGMENT_TYPES } from '@/stores/soundFragments'
 import { useBrandsStore } from '@/stores/brands'
 import dictionaryApiService from '@/services/dictionaryApi'
@@ -699,13 +700,14 @@ watch(activeTab, () => {
                             <NButton
                               text
                               quaternary
-                              :loading="isFetchingAudio"
+                              :disabled="isFetchingAudio"
                               class="audio-mini-player__play-icon-btn"
                               :aria-label="isPlaying ? 'Pause' : 'Play'"
                               @click="togglePlay"
                             >
                               <template #icon>
-                                <NIcon :size="22">
+                                <LoaderProgress v-if="isFetchingAudio" :size="22" />
+                                <NIcon v-else :size="22">
                                   <PauseOutline v-if="isPlaying" />
                                   <PlayOutline v-else />
                                 </NIcon>

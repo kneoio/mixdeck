@@ -42,10 +42,12 @@
         <n-button @click="handleCancel">{{ t('common.close') }}</n-button>
         <n-button
           type="primary"
-          :loading="submitting"
           :disabled="fragmentIds.length === 0 || selectedBrandIds.length === 0"
           @click="handleSubmit"
         >
+          <template v-if="submitting" #icon>
+            <LoaderProgress />
+          </template>
           {{ t('playlistView.share_dialog_submit') }}
         </n-button>
       </n-space>
@@ -59,6 +61,7 @@ import { useI18n } from 'vue-i18n'
 import { NModal, NButton, NSpace, NCheckbox, NCheckboxGroup, NSpin, NPagination, useMessage } from 'naive-ui'
 import datanestApiService from '@/services/datanestApi'
 import { handleApiError } from '@/utils/notificationService'
+import LoaderProgress from '@/components/LoaderProgress.vue'
 
 const props = defineProps<{
   show: boolean
