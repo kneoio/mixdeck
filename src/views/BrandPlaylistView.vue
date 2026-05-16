@@ -3,9 +3,10 @@ import { ref, computed, watch, h, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
-  NDataTable, NButton, NSpace, NPopconfirm, NInput, NTag,
+  NDataTable, NButton, NSpace, NPopconfirm, NInput, NTag, NIcon,
   type DataTableColumns, useMessage
 } from 'naive-ui'
+import { ShareSocialOutline } from '@vicons/ionicons5'
 import { useBrandsStore } from '@/stores/brands'
 import datanestApiService from '@/services/datanestApi'
 import dictionaryApiService from '@/services/dictionaryApi'
@@ -104,6 +105,7 @@ const columns = computed<DataTableColumns<any>>(() => {
   const titleMin = nw ? 220 : 200
   const artistMin = nw ? 180 : 160
   const ratingW = nw ? 56 : 72
+  const sharedW = nw ? 56 : 72
 
   return [
   { type: 'selection', multiple: true },
@@ -158,6 +160,15 @@ const columns = computed<DataTableColumns<any>>(() => {
       const val = row.ratedByBrandCount ?? 0
       return val > 0 ? `+${val}` : String(val)
     }
+  },
+  {
+    title: t('playlistView.col_shared'),
+    key: 'shared',
+    width: sharedW,
+    align: 'center',
+    render: (row) => row.shared
+      ? h(NIcon, { size: 18, color: '#7C3AED' }, { default: () => h(ShareSocialOutline) })
+      : null,
   },
   { title: t('playlistView.col_description'), key: 'description', width: nw ? 100 : undefined, minWidth: descMin, ellipsis: { tooltip: true } },
 ]
