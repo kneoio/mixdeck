@@ -207,6 +207,7 @@ export default {
     tab_sharing: 'Sharing',
     sharing_empty: 'Song not shared',
     sharing_target_brand: 'Brand',
+    sharing_shared_with: 'Shared with',
     type: 'Type',
     length: 'Length',
     title: 'Title',

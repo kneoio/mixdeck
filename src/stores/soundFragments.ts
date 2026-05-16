@@ -44,10 +44,9 @@ export interface SoundFragment {
   expiresAt?: string
   uploadedFiles?: UploadedFile[]
   sharedWith?: Array<{
-    id: string
-    sourceUserName: string
-    sourceUserEmail: string
-    targetBrandId: string
+    targetBrand: string
+    status?: number
+    shared?: boolean
   }>
 }
 

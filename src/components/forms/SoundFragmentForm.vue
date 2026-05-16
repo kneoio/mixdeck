@@ -57,12 +57,26 @@ const regDate = ref('')
 const lastModifiedDate = ref('')
 
 interface SharedWithEntry {
-  id: string
-  sourceUserName: string
-  sourceUserEmail: string
-  targetBrandId: string
+  targetBrand: string
+  status?: number
+  shared?: boolean
 }
 const sharedWith = ref<SharedWithEntry[]>([])
+
+const activeSharedWith = computed(() =>
+  sharedWith.value.filter(e => e.targetBrand && e.shared !== false)
+)
+
+function normalizeSharedWith(raw: unknown): SharedWithEntry[] {
+  if (!Array.isArray(raw)) return []
+  return raw
+    .map((e: any) => ({
+      targetBrand: String(e?.targetBrand ?? '').trim(),
+      status: typeof e?.status === 'number' ? e.status : undefined,
+      shared: typeof e?.shared === 'boolean' ? e.shared : undefined,
+    }))
+    .filter(e => e.targetBrand)
+}
 
 // File upload state
 const existingUrl = ref('')
@@ -122,12 +136,6 @@ const brandOptions = computed(() =>
     value: b.id,
   }))
 )
-
-function resolveBrandName(id: string): string {
-  const brand = brandsStore.brands.find(b => b.id === id)
-  return brand ? (brand.localizedName?.['en'] || brand.slugName || id) : id
-}
-
 
 const returnToRoute = computed(() => {
   const value = route.query.returnTo
@@ -499,7 +507,7 @@ onMounted(async () => {
       }
       regDate.value = frag.regDate || ''
       lastModifiedDate.value = frag.lastModifiedDate || ''
-      sharedWith.value = Array.isArray(frag.sharedWith) ? frag.sharedWith : []
+      sharedWith.value = normalizeSharedWith(frag.sharedWith)
       const f0 = frag.uploadedFiles?.[0]
       const fileUrl = f0?.url || frag.url || ''
       existingUrl.value = fileUrl.startsWith('http')
@@ -815,16 +823,10 @@ watch(activeTab, () => {
       </NTabPane>
 
       <NTabPane name="sharing" :tab="t('fragmentForm.tab_sharing')">
-        <div v-if="sharedWith.length" class="sharing-list">
-          <div v-for="entry in sharedWith" :key="entry.id" class="sharing-card">
-            <div class="sharing-card__row">
-              <span class="sharing-card__label">{{ entry.sourceUserName }}</span>
-              <span class="sharing-card__email">{{ entry.sourceUserEmail }}</span>
-            </div>
-            <div class="sharing-card__brand">
-              <span class="sharing-card__brand-label">{{ t('fragmentForm.sharing_target_brand') }}:</span>
-              <span class="sharing-card__brand-value">{{ resolveBrandName(entry.targetBrandId) }}</span>
-            </div>
+        <div v-if="activeSharedWith.length" class="sharing-list">
+          <div v-for="(entry, idx) in activeSharedWith" :key="`${entry.targetBrand}-${idx}`" class="sharing-row">
+            <span class="sharing-row__label">{{ t('fragmentForm.sharing_shared_with') }}</span>
+            <span class="sharing-row__value">{{ entry.targetBrand }}</span>
           </div>
         </div>
         <div v-else class="sharing-empty">
@@ -989,48 +991,24 @@ watch(activeTab, () => {
   padding: 4px 0;
 }
 
-.sharing-card {
+.sharing-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 6px;
-  padding: 12px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
   background: rgba(255, 255, 255, 0.03);
 }
 
-.sharing-card__row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.sharing-card__label {
-  font-weight: 600;
-  font-size: 14px;
-}
-
-.sharing-card__email {
+.sharing-row__label {
   font-size: 13px;
-  opacity: 0.6;
+  opacity: 0.55;
 }
 
-.sharing-card__brand {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-}
-
-.sharing-card__brand-label {
-  opacity: 0.5;
-}
-
-.sharing-card__brand-value {
-  font-family: monospace;
-  opacity: 0.75;
-  font-size: 11px;
+.sharing-row__value {
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .sharing-empty {
