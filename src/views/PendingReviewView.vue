@@ -7,7 +7,7 @@ import {
   type DataTableColumns, useMessage
 } from 'naive-ui'
 import datanestApiService from '@/services/datanestApi'
-import dictionaryApiService from '@/services/dictionaryApi'
+import dictionaryApiService, { type GenreEntry } from '@/services/dictionaryApi'
 import PageHeader from '@/components/PageHeader.vue'
 import ActionBar from '@/components/ActionBar.vue'
 import { handleApiError } from '@/utils/notificationService'
@@ -36,13 +36,17 @@ const pagination = computed(() => ({
   itemCount: totalCount.value,
 }))
 
+function flattenGenres(genres: GenreEntry[]): GenreEntry[] {
+  return genres.flatMap(g => [g, ...(g.children?.length ? flattenGenres(g.children) : [])])
+}
+
 async function loadDictionaries() {
   const [genres, labels] = await Promise.allSettled([
     dictionaryApiService.getGenres(),
     dictionaryApiService.getLabelsByCategory('sound_fragment'),
   ])
   if (genres.status === 'fulfilled') {
-    genreMap.value = new Map(genres.value.map(g => [g.id, {
+    genreMap.value = new Map(flattenGenres(genres.value).map(g => [g.id, {
       name: g.localizedName?.en || Object.values(g.localizedName || {})[0] || g.identifier || g.id,
       color: g.color,
       fontColor: g.fontColor,
