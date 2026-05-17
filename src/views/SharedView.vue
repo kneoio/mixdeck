@@ -130,7 +130,9 @@ async function handleBulkUnshare() {
         ? frag.sharedWith.map((s: any) => s.targetBrandId).filter(Boolean)
         : []
       if (!brandIds.length) return
-      return datanestApiService.unshare(String(id), brandIds)
+      const slug = resolveBrandSlugFromFragment(frag)
+      if (!slug) return
+      return datanestApiService.unshare(slug, String(id), brandIds)
     }))
     message.success(t('playlistView.unshared_bulk', { count: selectedIds.value.length }))
     selectedIds.value = []
@@ -157,6 +159,27 @@ function resolveBrandIdForRow(row: any): string | null {
   const anyBrand = representedBrandIds(row)[0]
   if (anyBrand) return anyBrand
   return brandsStore.brands[0]?.id ?? null
+}
+
+function resolveBrandSlug(brandId: string | null, row?: any): string | null {
+  if (row?.sourceBrandSlug) return String(row.sourceBrandSlug)
+  if (brandId) {
+    const slug = brandsStore.brands.find(b => b.id === brandId)?.slugName
+    if (slug) return slug
+  }
+  return null
+}
+
+function resolveBrandSlugForRow(row: any): string | null {
+  return resolveBrandSlug(resolveBrandIdForRow(row), row)
+}
+
+function resolveBrandSlugFromFragment(frag: any): string | null {
+  const owned = new Set(brandsStore.brands.map(b => b.id))
+  const brandId = (Array.isArray(frag?.representedInBrands) ? frag.representedInBrands : [])
+    .map((x: any) => (typeof x === 'string' ? x : x?.id))
+    .find((id: string) => owned.has(id))
+  return resolveBrandSlug(brandId ?? null, frag)
 }
 
 function rowProps(row: any) {

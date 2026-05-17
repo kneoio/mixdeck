@@ -299,6 +299,7 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
     <ShareToBrandsDialog
       v-model:show="showShareDialog"
       :fragment-ids="shareFragmentIds"
+      :brand-slug="slugName"
       @shared="onShareDialogDone"
     />
     <NDataTable

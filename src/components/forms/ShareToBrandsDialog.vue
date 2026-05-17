@@ -66,6 +66,7 @@ import LoaderProgress from '@/components/LoaderProgress.vue'
 const props = defineProps<{
   show: boolean
   fragmentIds: string[]
+  brandSlug: string
 }>()
 
 const emit = defineEmits<{
@@ -150,10 +151,11 @@ async function handleSubmit() {
     message.warning(t('playlistView.share_dialog_select_brands'))
     return
   }
-  if (props.fragmentIds.length === 0) return
+  if (props.fragmentIds.length === 0 || !props.brandSlug) return
   submitting.value = true
   try {
     await datanestApiService.shareSoundFragmentsWithBrands(
+      props.brandSlug,
       props.fragmentIds,
       selectedBrandIds.value as string[],
       { stayIncognito: stayIncognito.value }

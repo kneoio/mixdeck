@@ -74,11 +74,14 @@ class DatanestApiService extends ApiClient {
   }
 
   /** PATCH body matches backend `SharedSoundFragmentPatchDTO`: `addTargetBrandIds`, `removeTargetBrandIds`, `stayIncognito` (UUID strings). */
-  async patchShared(fragmentId: string, body: unknown): Promise<void> {
-    await this.request<void>(`/shared-sound-fragments/shared/${encodeURIComponent(fragmentId)}`, {
-      method: 'PATCH',
-      body: JSON.stringify(body ?? {}),
-    })
+  async patchShared(slug: string, fragmentId: string, body: unknown): Promise<void> {
+    await this.request<void>(
+      `/shared-sound-fragments/shared/${encodeURIComponent(slug)}/${encodeURIComponent(fragmentId)}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(body ?? {}),
+      }
+    )
   }
 
   private collectDestinationBrandIdsFromSharedDoc(doc: unknown): string[] {
@@ -109,12 +112,12 @@ class DatanestApiService extends ApiClient {
     return [...out]
   }
 
-  async unshare(fragmentId: string, targetBrandIds: string[]): Promise<void> {
-    await this.patchShared(fragmentId, { removeTargetBrandIds: targetBrandIds })
+  async unshare(slug: string, fragmentId: string, targetBrandIds: string[]): Promise<void> {
+    await this.patchShared(slug, fragmentId, { removeTargetBrandIds: targetBrandIds })
   }
 
-  async shareSoundFragmentWithLibrary(fragmentId: string, brandId: string): Promise<void> {
-    await this.shareSoundFragmentsWithBrands([fragmentId], [brandId])
+  async shareSoundFragmentWithLibrary(slug: string, fragmentId: string, brandId: string): Promise<void> {
+    await this.shareSoundFragmentsWithBrands(slug, [fragmentId], [brandId])
   }
 
   /**
@@ -127,18 +130,19 @@ class DatanestApiService extends ApiClient {
 
   /** Add share targets (brand document UUIDs) via `SharedSoundFragmentPatchDTO.addTargetBrandIds`. */
   async shareSoundFragmentsWithBrands(
+    slug: string,
     fragmentIds: string[],
     brandIds: string[],
     options?: { stayIncognito?: boolean }
   ): Promise<void> {
     const ids = [...new Set(brandIds.filter(Boolean))]
-    if (ids.length === 0) return
+    if (ids.length === 0 || !slug) return
     const body = {
       addTargetBrandIds: ids,
       stayIncognito: options?.stayIncognito ?? false,
     }
     await Promise.all(
-      fragmentIds.map(id => this.patchShared(id, body))
+      fragmentIds.map(id => this.patchShared(slug, id, body))
     )
   }
 
