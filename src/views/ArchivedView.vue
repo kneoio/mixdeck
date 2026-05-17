@@ -166,7 +166,7 @@ onMounted(async () => {
         style: 'cursor:pointer',
         onClick: (e: MouseEvent) => {
           if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return
-          router.push(`/sound-library/unassigned-brands/${row.id}`)
+          router.push(`/sound-library/unassigned-to-brands/${row.id}`)
         }
       })"
       @update:page="(p) => { pageNum = p; fetchData(p) }"

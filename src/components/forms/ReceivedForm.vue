@@ -74,8 +74,8 @@ const formData = ref({
 })
 
 const backRoute = computed(() =>
-  route.path.startsWith('/sound-library/unassigned-brands')
-    ? '/sound-library/unassigned-brands'
+  route.path.startsWith('/sound-library/unassigned-to-brands')
+    ? '/sound-library/unassigned-to-brands'
     : '/sound-library/received'
 )
 

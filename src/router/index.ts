@@ -31,8 +31,8 @@ const router = createRouter({
           meta: { requiresAuth: true }
         },
         {
-          path: '/sound-library/unassigned-brands',
-          name: 'sound-library-unassigned-brands',
+          path: '/sound-library/unassigned-to-brands',
+          name: 'sound-library-unassigned-to-brands',
           component: () => import('../views/ArchivedView.vue'),
           meta: { requiresAuth: true }
         },
@@ -43,9 +43,9 @@ const router = createRouter({
           meta: { requiresAuth: true }
         },
         {
-          path: '/sound-library/unassigned-brands/:fragmentId',
-          name: 'sound-library-unassigned-brands-edit',
-          component: () => import('../components/forms/PendingReviewForm.vue'),
+          path: '/sound-library/unassigned-to-brands/:fragmentId',
+          name: 'sound-library-unassigned-to-brands-edit',
+          component: () => import('../components/forms/ReceivedForm.vue'),
           meta: { requiresAuth: true }
         },
         {
