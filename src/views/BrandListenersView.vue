@@ -47,21 +47,6 @@ const columns = computed<DataTableColumns<any>>(() => [
     render: (row) => row.listener?.localizedName?.en || row.listener?.localizedName?.ru || '-'
   },
   {
-    title: t('listenersView.col_nickname'), key: 'nickname', minWidth: 140,
-    render: (row) => {
-      const nn = row.listener?.nickName ?? row.listener?.nickname
-      if (!nn) return '-'
-      if (typeof nn === 'string') return nn
-      const vals = Object.values(nn as Record<string, any>)
-      const first = vals[0]
-      return Array.isArray(first) ? first.join(', ') : String(first ?? '-')
-    }
-  },
-  {
-    title: t('listenersView.col_type'), key: 'listenerType', width: 130,
-    render: (row) => row.listenerType || row.listener?.listenerType || '-'
-  },
-  {
     title: t('listenersView.col_user_data'), key: 'userData', minWidth: 200,
     render: (row) => {
       const ud = row.listener?.userData
