@@ -268,22 +268,24 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
   <div>
     <PageHeader :title="brandName" :subtitle="t('playlistView.subtitle')" :count="totalCount" />
     <ActionBar>
-      <div class="gsap-row" style="padding-left:0">
-        <GsapButton type="primary" @click="router.push({ path: `/brands/${route.params.id}/playlist/new`, query: { returnTo: route.fullPath } })">
-          <span>{{ t('playlistView.new_track') }}</span>
-        </GsapButton>
-        <GsapButton @click="showBulkUpload = true"><span>{{ t('playlistView.bulk_upload') }}</span></GsapButton>
-        <GsapButton :disabled="selectedIds.length === 0" @click="openShareBulk">
-          <span>{{ t('playlistView.share_btn', { count: selectedIds.length }) }}</span>
-        </GsapButton>
-        <NPopconfirm @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
-          <template #trigger>
-            <GsapButton type="error" :disabled="selectedIds.length === 0">
-              <span>{{ t('playlistView.delete_btn', { count: selectedIds.length }) }}</span>
-            </GsapButton>
-          </template>
-          {{ t('playlistView.delete_confirm', { count: selectedIds.length }) }}
-        </NPopconfirm>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:24px">
+        <div class="gsap-row" style="padding-left:0">
+          <GsapButton type="primary" @click="router.push({ path: `/brands/${route.params.id}/playlist/new`, query: { returnTo: route.fullPath } })">
+            <span>{{ t('playlistView.new_track') }}</span>
+          </GsapButton>
+          <GsapButton @click="showBulkUpload = true"><span>{{ t('playlistView.bulk_upload') }}</span></GsapButton>
+          <GsapButton :disabled="selectedIds.length === 0" @click="openShareBulk">
+            <span>{{ t('playlistView.share_btn', { count: selectedIds.length }) }}</span>
+          </GsapButton>
+          <NPopconfirm @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
+            <template #trigger>
+              <GsapButton type="error" :disabled="selectedIds.length === 0">
+                <span>{{ t('playlistView.delete_btn', { count: selectedIds.length }) }}</span>
+              </GsapButton>
+            </template>
+            {{ t('playlistView.delete_confirm', { count: selectedIds.length }) }}
+          </NPopconfirm>
+        </div>
         <NInput
           v-model:value="searchTerm"
           :placeholder="t('playlistView.search')"

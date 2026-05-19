@@ -902,6 +902,7 @@ watch(activeTab, () => {
               title="Close this brand and remove it from your brands list."
             />
           </NAnchor>
+          <div style="padding-left:10px">
           <NPopconfirm
             :disabled="loading"
             @positive-click="handleCloseBrand"
@@ -911,6 +912,7 @@ watch(activeTab, () => {
             </template>
             Close this brand?
           </NPopconfirm>
+          </div>
         </div>
       </NTabPane>
     </NTabs>

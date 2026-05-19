@@ -84,7 +84,7 @@ onMounted(() => {
   cursor: pointer;
   outline: none;
   white-space: nowrap;
-  transform: skewX(-15deg);
+  transform: skewX(-10deg);
   will-change: transform;
   transition: opacity 0.15s;
 }
@@ -96,7 +96,7 @@ onMounted(() => {
   font-size: 0.82rem;
   font-weight: 500;
   letter-spacing: 0.04em;
-  transform: skewX(15deg);
+  transform: skewX(10deg);
 }
 
 .gsap-btn--small        { height: 28px; padding: 0 14px; }
