@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GSAP Button Demo</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #101014;
+      color: #f0f0f0;
+      font-family: 'Inter', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 60px 24px;
+      gap: 48px;
+    }
+
+    h1 { font-size: 0.85rem; letter-spacing: 0.3em; text-transform: uppercase; color: #444; }
+
+    .row    { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .section{ display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 800px; }
+    .section-title { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: #333; }
+    hr { width: 100%; max-width: 800px; border: none; border-top: 1px solid #1a1a1e; }
+    .col { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .label { font-size: 0.65rem; color: #333; letter-spacing: 0.12em; }
+
+    /* ── button ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 36px;
+      padding: 0 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      outline: none;
+      overflow: hidden;
+      white-space: nowrap;
+      transform: skewX(-15deg);
+    }
+
+    /* counter-skew so text stays upright */
+    .btn > span {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      transform: skewX(15deg);
+    }
+
+    .btn--large        { height: 44px; padding: 0 26px; }
+    .btn--large > span { font-size: 0.9rem; }
+    .btn--small        { height: 28px; padding: 0 14px; }
+    .btn--small > span { font-size: 0.75rem; }
+
+    /* block: wrap in .block-wrap so the slanted ends show inside the container */
+    .block-wrap {
+      width: 100%;
+      overflow: hidden;
+      padding-inline: 14px;
+    }
+    .btn--block {
+      width: 100%;
+    }
+
+    .btn--default      { background: #1f1f23; color: rgba(255,255,255,0.82); }
+    .btn--primary      { background: #7C3AED; color: #fff; }
+    .btn--error        { background: #2a0a18; color: #FF2D95; }
+    .btn--error-filled { background: #FF2D95; color: #fff; }
+    .btn--warning      { background: #1e1500; color: #F0A020; }
+    .btn--success      { background: #041509; color: #18A058; }
+    .btn--text         { background: transparent; color: rgba(255,255,255,0.5); transform: none; }
+    .btn--text > span  { transform: none; }
+
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
+  </style>
+</head>
+<body>
+
+<h1>Parallelogram Button — 15°</h1>
+
+<div class="section">
+  <span class="section-title">Types</span>
+  <div class="row">
+    <div class="col"><button class="btn btn--default"><span>Default</span></button><span class="label">default</span></div>
+    <div class="col"><button class="btn btn--primary"><span>Primary</span></button><span class="label">primary</span></div>
+    <div class="col"><button class="btn btn--error"><span>Delete</span></button><span class="label">error</span></div>
+    <div class="col"><button class="btn btn--error-filled"><span>Delete</span></button><span class="label">error filled</span></div>
+    <div class="col"><button class="btn btn--warning"><span>Pending</span></button><span class="label">warning</span></div>
+    <div class="col"><button class="btn btn--success"><span>Saved</span></button><span class="label">success</span></div>
+    <div class="col"><button class="btn btn--text"><span>Text</span></button><span class="label">text</span></div>
+  </div>
+</div>
+
+<hr />
+
+<div class="section">
+  <span class="section-title">Sizes</span>
+  <div class="row" style="align-items:flex-end">
+    <div class="col"><button class="btn btn--primary btn--small"><span>Small</span></button><span class="label">small</span></div>
+    <div class="col"><button class="btn btn--primary"><span>Default</span></button><span class="label">default</span></div>
+    <div class="col"><button class="btn btn--primary btn--large"><span>Large</span></button><span class="label">large</span></div>
+  </div>
+</div>
+
+<hr />
+
+<div class="section">
+  <span class="section-title">With Icons</span>
+  <div class="row">
+    <button class="btn btn--primary">
+      <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>Download</span>
+    </button>
+    <button class="btn btn--default">
+      <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share</span>
+    </button>
+    <button class="btn btn--error-filled">
+      <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>Delete</span>
+    </button>
+    <button class="btn btn--success">
+      <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Save</span>
+    </button>
+    <button class="btn btn--default"><span>Close</span></button>
+  </div>
+</div>
+
+<hr />
+
+<div class="section">
+  <span class="section-title">Disabled</span>
+  <div class="row">
+    <button class="btn btn--default" disabled><span>Default</span></button>
+    <button class="btn btn--primary" disabled><span>Primary</span></button>
+    <button class="btn btn--error-filled" disabled><span>Delete</span></button>
+  </div>
+</div>
+
+<hr />
+
+<div class="section">
+  <span class="section-title">Block</span>
+  <div class="block-wrap">
+    <button class="btn btn--primary btn--block btn--large"><span>Confirm</span></button>
+  </div>
+  <div class="block-wrap">
+    <button class="btn btn--default btn--block"><span>Cancel</span></button>
+  </div>
+</div>
+
+<hr />
+
+<div class="section">
+  <span class="section-title">Form Footer</span>
+  <div class="row">
+    <button class="btn btn--default"><span>Close</span></button>
+    <button class="btn btn--primary"><span>Save</span></button>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.btn').forEach((btn, i) => {
+    gsap.from(btn, { y: 12, opacity: 0, duration: 0.4, delay: 0.03 * i, ease: 'power3.out' });
+    if (btn.disabled) return;
+
+    btn.addEventListener('mouseenter', () => {
+      gsap.to(btn, { scale: 1.03, duration: 0.18, ease: 'power2.out' });
+    });
+    btn.addEventListener('mouseleave', () => {
+      gsap.to(btn, { scale: 1, duration: 0.22, ease: 'power2.out' });
+    });
+    btn.addEventListener('mousedown', () => {
+      gsap.to(btn, { scale: 0.96, duration: 0.08, ease: 'power2.in' });
+    });
+    btn.addEventListener('mouseup', () => {
+      gsap.to(btn, { scale: 1.03, duration: 0.15, ease: 'power2.out' });
+    });
+  });
+</script>
+</body>
+</html>
