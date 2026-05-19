@@ -11,8 +11,8 @@
           <h1>{{ t('welcome.headline') }}</h1>
           <p class="subline">{{ t('welcome.subline') }}</p>
           <div class="hero-ctas">
-            <GsapButton type="primary" size="large" @click="goToMixpla"><span>{{ t('welcome.cta_mixplay') }}</span></GsapButton>
-            <GsapButton size="large" @click="goToBrands"><span>{{ t('welcome.cta_portal') }}</span></GsapButton>
+            <n-button type="primary" size="large" class="cta-button" @click="goToMixpla">{{ t('welcome.cta_mixplay') }}</n-button>
+            <n-button size="large" @click="goToBrands">{{ t('welcome.cta_portal') }}</n-button>
           </div>
         </div>
         <div class="waveform" aria-hidden="true">
@@ -57,7 +57,7 @@
           <span class="badge">{{ t('welcome.portal_badge') }}</span>
         </div>
         <div class="portal-access">
-          <GsapButton type="primary" size="large" @click="goToBrands"><span>{{ t('welcome.cta_portal') }}</span></GsapButton>
+          <n-button type="primary" size="large" @click="goToBrands">{{ t('welcome.cta_portal') }}</n-button>
           <p class="portal-note">{{ t('welcome.portal_note') }}</p>
         </div>
       </section>
@@ -83,8 +83,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { NConfigProvider, darkTheme } from 'naive-ui'
-import GsapButton from '@/components/GsapButton.vue'
+import { NButton, NConfigProvider, darkTheme } from 'naive-ui'
 
 const { t } = useI18n()
 const router = useRouter()
