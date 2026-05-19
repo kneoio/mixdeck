@@ -80,13 +80,17 @@ onMounted(() => {
   height: 34px;
   padding: 0 20px;
   border: none;
-  border-radius: 5px;
+  border-radius: 3px;
   cursor: pointer;
   outline: none;
   white-space: nowrap;
   transform: skewX(-15deg);
   will-change: transform;
   transition: opacity 0.15s;
+  /* left: clear the slant overhang from container edges
+     right: collapse dead bounding-box space to tighten inter-button gap */
+  margin-left: 10px;
+  margin-right: -8px;
 }
 
 .gsap-btn__inner {
