@@ -134,9 +134,9 @@ onBeforeUnmount(() => {
     :loading="loading"
   >
     <template #actions>
-      <NSpace>
+      <div class="gsap-row">
         <GsapButton @click="handleClose"><span>{{ t('common.close') }}</span></GsapButton>
-      </NSpace>
+      </div>
     </template>
 
     <NForm :label-placement="formLabelPlacement" label-width="120" :disabled="loading">

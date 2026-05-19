@@ -568,9 +568,9 @@ watch(activeTab, () => {
     :loading="loading"
   >
     <template #actions>
-      <NSpace>
+      <div class="gsap-row">
         <GsapButton type="primary" :disabled="loading" @click="handleSave"><span>{{ t('common.save') }}</span></GsapButton>
-      </NSpace>
+      </div>
     </template>
 
     <NTabs v-model:value="activeTab">

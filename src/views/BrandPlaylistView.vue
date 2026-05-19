@@ -268,7 +268,7 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
   <div>
     <PageHeader :title="brandName" :subtitle="t('playlistView.subtitle')" :count="totalCount" />
     <ActionBar>
-      <NSpace>
+      <div class="gsap-row" style="padding-left:0">
         <GsapButton type="primary" @click="router.push({ path: `/brands/${route.params.id}/playlist/new`, query: { returnTo: route.fullPath } })">
           <span>{{ t('playlistView.new_track') }}</span>
         </GsapButton>
@@ -291,7 +291,7 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
           style="width: 220px"
           @update:value="onSearchChange"
         />
-      </NSpace>
+      </div>
     </ActionBar>
     <BulkUploadDialog
       v-model:show="showBulkUpload"

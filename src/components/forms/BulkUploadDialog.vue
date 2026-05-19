@@ -36,7 +36,7 @@
     </n-space>
 
     <template #action>
-      <n-space>
+      <div class="gsap-row">
         <GsapButton v-if="!uploadCompleted" @click="handleCancel"><span>Cancel</span></GsapButton>
         <GsapButton v-if="uploadCompleted" @click="handleCancel"><span>Close</span></GsapButton>
         <GsapButton
@@ -47,7 +47,7 @@
         >
           <span>Upload</span>
         </GsapButton>
-      </n-space>
+      </div>
     </template>
   </n-modal>
 </template>

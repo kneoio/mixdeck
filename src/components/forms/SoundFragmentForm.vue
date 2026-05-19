@@ -578,10 +578,10 @@ watch(activeTab, () => {
     </template>
 
     <template #actions>
-      <NSpace>
+      <div class="gsap-row">
         <GsapButton @click="navigateBack"><span>{{ t('common.close') }}</span></GsapButton>
         <GsapButton type="primary" @click="handleSave"><span>{{ t('common.save') }}</span></GsapButton>
-      </NSpace>
+      </div>
     </template>
 
     <NTabs v-model:value="activeTab">

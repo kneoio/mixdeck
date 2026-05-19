@@ -38,7 +38,7 @@
     </n-space>
 
     <template #action>
-      <n-space>
+      <div class="gsap-row">
         <GsapButton @click="handleCancel"><span>{{ t('common.close') }}</span></GsapButton>
         <GsapButton
           type="primary"
@@ -47,7 +47,7 @@
         >
           <span>{{ t('playlistView.share_dialog_submit') }}</span>
         </GsapButton>
-      </n-space>
+      </div>
     </template>
   </n-modal>
 </template>

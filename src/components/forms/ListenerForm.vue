@@ -95,9 +95,9 @@ onMounted(async () => {
     :loading="loading"
   >
     <template #actions>
-      <NSpace>
+      <div class="gsap-row">
         <GsapButton @click="router.push(backRoute)"><span>{{ t('common.close') }}</span></GsapButton>
-      </NSpace>
+      </div>
     </template>
 
     <NForm :label-placement="formLabelPlacement" label-width="140" disabled>

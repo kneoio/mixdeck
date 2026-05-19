@@ -87,10 +87,6 @@ onMounted(() => {
   transform: skewX(-15deg);
   will-change: transform;
   transition: opacity 0.15s;
-  /* left: clear the slant overhang from container edges
-     right: collapse dead bounding-box space to tighten inter-button gap */
-  margin-left: 10px;
-  margin-right: -8px;
 }
 
 .gsap-btn__inner {
@@ -129,5 +125,15 @@ onMounted(() => {
 :global(.n-config-provider:not([class*="dark"])) .gsap-btn--default {
   background: #f0f0f5;
   color: rgba(0,0,0,0.75);
+}
+</style>
+
+<style>
+/* Use <div class="gsap-row"> instead of NSpace around GsapButtons */
+.gsap-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding-left: 10px;
 }
 </style>
