@@ -11,5 +11,6 @@
 .action-bar {
   margin-top: 16px;
   margin-bottom: 16px;
+  padding-left: 12px;
 }
 </style>

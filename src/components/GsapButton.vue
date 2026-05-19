@@ -83,7 +83,6 @@ onMounted(() => {
   border-radius: 5px;
   cursor: pointer;
   outline: none;
-  overflow: hidden;
   white-space: nowrap;
   transform: skewX(-15deg);
   will-change: transform;
