@@ -894,7 +894,7 @@ watch(activeTab, () => {
 
         <div
           v-if="isEditing"
-          style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255, 0, 0, 0.28);"
+          style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255, 0, 0, 0.28); padding-left: 10px;"
         >
           <div style="font-weight: 600; color: #ff6b6b; margin-bottom: 6px;">Danger zone</div>
           <NAnchor style="margin-bottom: 12px;">
@@ -902,7 +902,6 @@ watch(activeTab, () => {
               title="Close this brand and remove it from your brands list."
             />
           </NAnchor>
-          <div style="padding-left:10px">
           <NPopconfirm
             :disabled="loading"
             @positive-click="handleCloseBrand"
@@ -912,7 +911,6 @@ watch(activeTab, () => {
             </template>
             Close this brand?
           </NPopconfirm>
-          </div>
         </div>
       </NTabPane>
     </NTabs>
