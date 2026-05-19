@@ -3,13 +3,14 @@ import { ref, computed, h, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import {
-  NDataTable, NButton, NSpace, NPopconfirm, NTag,
+  NDataTable, NSpace, NPopconfirm, NTag,
   type DataTableColumns, useMessage
 } from 'naive-ui'
 import datanestApiService from '@/services/datanestApi'
 import dictionaryApiService from '@/services/dictionaryApi'
 import PageHeader from '@/components/PageHeader.vue'
 import ActionBar from '@/components/ActionBar.vue'
+import GsapButton from '@/components/GsapButton.vue'
 import { handleApiError } from '@/utils/notificationService'
 
 const { t } = useI18n()
@@ -146,9 +147,9 @@ onMounted(async () => {
       <NSpace>
         <NPopconfirm @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
           <template #trigger>
-            <NButton type="error" :disabled="selectedIds.length === 0">
-              {{ t('playlistView.delete_btn', { count: selectedIds.length }) }}
-            </NButton>
+            <GsapButton type="error" :disabled="selectedIds.length === 0">
+              <span>{{ t('playlistView.delete_btn', { count: selectedIds.length }) }}</span>
+            </GsapButton>
           </template>
           {{ t('playlistView.delete_confirm', { count: selectedIds.length }) }}
         </NPopconfirm>

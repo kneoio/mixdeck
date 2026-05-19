@@ -39,17 +39,14 @@
 
     <template #action>
       <n-space>
-        <n-button @click="handleCancel">{{ t('common.close') }}</n-button>
-        <n-button
+        <GsapButton @click="handleCancel"><span>{{ t('common.close') }}</span></GsapButton>
+        <GsapButton
           type="primary"
           :disabled="fragmentIds.length === 0 || selectedBrandIds.length === 0"
           @click="handleSubmit"
         >
-          <template v-if="submitting" #icon>
-            <LoaderProgress />
-          </template>
-          {{ t('playlistView.share_dialog_submit') }}
-        </n-button>
+          <span>{{ t('playlistView.share_dialog_submit') }}</span>
+        </GsapButton>
       </n-space>
     </template>
   </n-modal>
@@ -58,7 +55,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NModal, NButton, NSpace, NCheckbox, NCheckboxGroup, NSpin, NPagination, useMessage } from 'naive-ui'
+import { NModal, NSpace, NCheckbox, NCheckboxGroup, NSpin, NPagination, useMessage } from 'naive-ui'
+import GsapButton from '@/components/GsapButton.vue'
 import datanestApiService from '@/services/datanestApi'
 import { handleApiError } from '@/utils/notificationService'
 import LoaderProgress from '@/components/LoaderProgress.vue'

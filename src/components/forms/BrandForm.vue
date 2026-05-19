@@ -3,10 +3,11 @@ import { ref, computed, onMounted, onBeforeUnmount, h, watch, nextTick } from 'v
 import { useI18n } from 'vue-i18n'
 import { gsap } from 'gsap'
 import {
-  NButton, NSpace, NForm, NFormItem, NInput, NSelect, NSwitch,
+  NSpace, NForm, NFormItem, NInput, NSelect, NSwitch,
   NTabs, NTabPane, NDynamicInput, NInputNumber, NSlider,
   NColorPicker, NTag, NPopconfirm, NAnchor, NAnchorLink, useMessage
 } from 'naive-ui'
+import GsapButton from '@/components/GsapButton.vue'
 import type { SelectOption } from 'naive-ui'
 import FormWrapper from '@/components/FormWrapper.vue'
 import { useBrandsStore, SUBMISSION_POLICY_OPTIONS, type SubmissionPolicy } from '@/stores/brands'
@@ -568,7 +569,7 @@ watch(activeTab, () => {
   >
     <template #actions>
       <NSpace>
-        <NButton type="primary" :disabled="loading" @click="handleSave">{{ t('common.save') }}</NButton>
+        <GsapButton type="primary" :disabled="loading" @click="handleSave"><span>{{ t('common.save') }}</span></GsapButton>
       </NSpace>
     </template>
 
@@ -906,7 +907,7 @@ watch(activeTab, () => {
             @positive-click="handleCloseBrand"
           >
             <template #trigger>
-              <NButton type="error" :disabled="loading">Close Brand</NButton>
+              <GsapButton type="error" :disabled="loading"><span>Close Brand</span></GsapButton>
             </template>
             Close this brand?
           </NPopconfirm>

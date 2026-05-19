@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
-import { NCard, NButton } from 'naive-ui'
+import { NCard } from 'naive-ui'
+import GsapButton from '@/components/GsapButton.vue'
 import { useI18n } from 'vue-i18n'
 import aivoxApiService from '@/services/aivoxApi'
 import type { AivoxQueueEntry } from '@/services/aivoxApi'
@@ -212,16 +213,13 @@ onUnmounted(() => {
 <template>
   <NCard class="aivox-card">
     <div class="aivox-row">
-      <NButton
+      <GsapButton
         :type="alive ? 'error' : 'primary'"
         :disabled="loading"
         @click="handleClick"
       >
-        <template v-if="loading" #icon>
-          <LoaderProgress />
-        </template>
-        {{ alive ? 'Stop' : 'Start' }}
-      </NButton>
+        <span>{{ alive ? 'Stop' : 'Start' }}</span>
+      </GsapButton>
       <div class="aivox-status">
         <LedIndicator :active="alive" :pulse="alive" color="#FFD600" :size="18" />
         <span class="aivox-label">{{ t('dashboard.onAir') }}</span>

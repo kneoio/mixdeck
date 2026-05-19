@@ -5,9 +5,9 @@
     <p style="color: #888; max-width: 480px; margin: 0;">
       {{ t('broadcasterWelcome.body') }}
     </p>
-    <n-button type="primary" size="large" @click="router.push('/brands/new')">
-      {{ t('broadcasterWelcome.cta') }}
-    </n-button>
+    <GsapButton type="primary" size="large" @click="router.push('/brands/new')">
+      <span>{{ t('broadcasterWelcome.cta') }}</span>
+    </GsapButton>
   </div>
 </template>
 
@@ -15,7 +15,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { NButton } from 'naive-ui'
+import GsapButton from '@/components/GsapButton.vue'
 import { useThemeStore } from '@/stores/theme'
 
 const { t } = useI18n()

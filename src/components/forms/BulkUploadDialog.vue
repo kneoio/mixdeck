@@ -11,7 +11,7 @@
         :custom-request="handleFileUpload"
         :disabled="uploadCompleted"
       >
-        <n-button :disabled="uploadCompleted">Choose Files</n-button>
+        <GsapButton :disabled="uploadCompleted"><span>Choose Files</span></GsapButton>
       </n-upload>
 
       <n-data-table
@@ -37,19 +37,16 @@
 
     <template #action>
       <n-space>
-        <n-button v-if="!uploadCompleted" @click="handleCancel">Cancel</n-button>
-        <n-button v-if="uploadCompleted" @click="handleCancel">Close</n-button>
-        <n-button
+        <GsapButton v-if="!uploadCompleted" @click="handleCancel"><span>Cancel</span></GsapButton>
+        <GsapButton v-if="uploadCompleted" @click="handleCancel"><span>Close</span></GsapButton>
+        <GsapButton
           v-if="!uploadCompleted"
           type="primary"
-          @click="handleUpload"
           :disabled="fileList.length === 0 || isUploading || (totalFiles > 0 && !uploadCompleted)"
+          @click="handleUpload"
         >
-          <template v-if="isUploading" #icon>
-            <LoaderProgress />
-          </template>
-          Upload
-        </n-button>
+          <span>Upload</span>
+        </GsapButton>
       </n-space>
     </template>
   </n-modal>
@@ -68,7 +65,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, h, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NModal, NUpload, NButton, NSpace, NProgress, NDataTable, NText, NAlert } from 'naive-ui'
+import { NModal, NUpload, NSpace, NProgress, NDataTable, NText, NAlert } from 'naive-ui'
+import GsapButton from '@/components/GsapButton.vue'
 import type { UploadCustomRequestOptions } from 'naive-ui'
 import LedIndicator from '@/components/LedIndicator.vue'
 import LoaderProgress from '@/components/LoaderProgress.vue'

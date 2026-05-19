@@ -2,7 +2,7 @@
   <div>
     <PageHeader :title="t('plans.title')" :subtitle="t('plans.subtitle')">
       <template #actions>
-        <NButton @click="router.back()">{{ t('common.close') }}</NButton>
+        <GsapButton @click="router.back()"><span>{{ t('common.close') }}</span></GsapButton>
       </template>
     </PageHeader>
 
@@ -24,9 +24,9 @@
           <ul style="list-style: none; padding: 0; margin: 0 0 24px; display: flex; flex-direction: column; gap: 10px; font-size: 13px;">
             <li v-for="feature in card.features" :key="feature">✓ {{ feature }}</li>
           </ul>
-          <NButton block :disabled="card.price === 0" type="default">
-            {{ getActionLabel(card.price) }}
-          </NButton>
+          <GsapButton block :disabled="card.price === 0">
+            <span>{{ getActionLabel(card.price) }}</span>
+          </GsapButton>
         </NCard>
       </div>
       <NEmpty v-else :description="t('common.no_data')" />
@@ -38,7 +38,8 @@
 import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { NCard, NButton, NDivider, NSpin, NEmpty } from 'naive-ui'
+import { NCard, NDivider, NSpin, NEmpty } from 'naive-ui'
+import GsapButton from '@/components/GsapButton.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { useSubscriptionProductsStore } from '@/stores/subscriptionProducts'
 

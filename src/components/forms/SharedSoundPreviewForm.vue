@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NButton, NSpace, NForm, NFormItem, NInput, NSelect, NTreeSelect, useMessage } from 'naive-ui'
+import { NSpace, NForm, NFormItem, NInput, NSelect, NTreeSelect, useMessage } from 'naive-ui'
+import GsapButton from '@/components/GsapButton.vue'
 import { useRoute, useRouter } from 'vue-router'
 import FormWrapper from '@/components/FormWrapper.vue'
 import { FRAGMENT_TYPES } from '@/stores/soundFragments'
@@ -134,7 +135,7 @@ onBeforeUnmount(() => {
   >
     <template #actions>
       <NSpace>
-        <NButton @click="handleClose">{{ t('common.close') }}</NButton>
+        <GsapButton @click="handleClose"><span>{{ t('common.close') }}</span></GsapButton>
       </NSpace>
     </template>
 

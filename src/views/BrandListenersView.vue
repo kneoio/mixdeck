@@ -3,12 +3,13 @@ import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
-  NDataTable, NButton, NSpace, useMessage, type DataTableColumns
+  NDataTable, NSpace, useMessage, type DataTableColumns
 } from 'naive-ui'
 import { useBrandsStore } from '@/stores/brands'
 import datanestApiService from '@/services/datanestApi'
 import PageHeader from '@/components/PageHeader.vue'
 import ActionBar from '@/components/ActionBar.vue'
+import GsapButton from '@/components/GsapButton.vue'
 import { handleApiError } from '@/utils/notificationService'
 
 const { t } = useI18n()
@@ -87,9 +88,9 @@ watch(slugName, (val) => { if (val) fetchData(1) }, { immediate: true })
     <PageHeader :title="brandName" :subtitle="t('listenersView.subtitle')" :count="totalCount" />
     <ActionBar>
       <NSpace>
-        <NButton type="error" @click="message.info('Bulk actions coming soon — currently view-only')">
-          {{ t('listenersView.ban_btn', { count: selectedIds.length }) }}
-        </NButton>
+        <GsapButton type="error" @click="message.info('Bulk actions coming soon — currently view-only')">
+          <span>{{ t('listenersView.ban_btn', { count: selectedIds.length }) }}</span>
+        </GsapButton>
       </NSpace>
     </ActionBar>
     <NDataTable

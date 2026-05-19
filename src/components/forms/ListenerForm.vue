@@ -2,9 +2,10 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
-  NButton, NSpace, NForm, NFormItem, NInput, NSelect,
+  NSpace, NForm, NFormItem, NInput, NSelect,
   NDynamicInput, useMessage
 } from 'naive-ui'
+import GsapButton from '@/components/GsapButton.vue'
 import FormWrapper from '@/components/FormWrapper.vue'
 import { useListenersStore } from '@/stores/listeners'
 import { useRoute, useRouter } from 'vue-router'
@@ -95,7 +96,7 @@ onMounted(async () => {
   >
     <template #actions>
       <NSpace>
-        <NButton @click="router.push(backRoute)">{{ t('common.close') }}</NButton>
+        <GsapButton @click="router.push(backRoute)"><span>{{ t('common.close') }}</span></GsapButton>
       </NSpace>
     </template>
 

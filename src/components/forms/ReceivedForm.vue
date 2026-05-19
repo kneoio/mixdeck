@@ -3,9 +3,10 @@ import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { gsap } from 'gsap'
 import {
-  NButton, NSpace, NForm, NFormItem, NInput, NSelect, NTreeSelect,
+  NSpace, NForm, NFormItem, NInput, NSelect, NTreeSelect,
   NTabs, NTabPane, NUpload, NProgress, useMessage, useLoadingBar
 } from 'naive-ui'
+import GsapButton from '@/components/GsapButton.vue'
 import type { UploadCustomRequestOptions } from 'naive-ui'
 import FormWrapper from '@/components/FormWrapper.vue'
 import { useSoundFragmentsStore, FRAGMENT_TYPES } from '@/stores/soundFragments'
@@ -366,8 +367,8 @@ watch(activeTab, () => {
 
     <template #actions>
       <NSpace>
-        <NButton @click="handleClose">{{ t('common.close') }}</NButton>
-        <NButton type="primary" @click="handleSave">{{ t('common.save') }}</NButton>
+        <GsapButton @click="handleClose"><span>{{ t('common.close') }}</span></GsapButton>
+        <GsapButton type="primary" @click="handleSave"><span>{{ t('common.save') }}</span></GsapButton>
       </NSpace>
     </template>
 
@@ -492,9 +493,9 @@ watch(activeTab, () => {
                     accept=".mp3,.wav,.flac,.ogg,.m4a,.aac"
                     :disabled="isUploading"
                   >
-                    <NButton :disabled="isUploading">
-                      {{ existingUrl ? t('fragmentForm.replace_file') : t('fragmentForm.choose_file') }}
-                    </NButton>
+                    <GsapButton :disabled="isUploading">
+                      <span>{{ existingUrl ? t('fragmentForm.replace_file') : t('fragmentForm.choose_file') }}</span>
+                    </GsapButton>
                   </NUpload>
                   <NProgress
                     v-if="isUploading"

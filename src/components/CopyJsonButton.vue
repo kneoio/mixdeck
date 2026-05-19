@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { NButton } from 'naive-ui'
+import GsapButton from '@/components/GsapButton.vue'
 
 const props = defineProps<{ data: unknown[] }>()
 const copied = ref(false)
@@ -13,7 +13,7 @@ function copy() {
 </script>
 
 <template>
-  <NButton @click="copy">
-    {{ copied ? 'Copied!' : 'Copy JSON' }}
-  </NButton>
+  <GsapButton @click="copy">
+    <span>{{ copied ? 'Copied!' : 'Copy JSON' }}</span>
+  </GsapButton>
 </template>

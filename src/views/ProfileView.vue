@@ -3,11 +3,12 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import {
-  NAvatar, NButton, NTag, NDescriptions, NDescriptionsItem,
+  NAvatar, NTag, NDescriptions, NDescriptionsItem,
   NCard, NSpace, NFlex, NDivider, NSelect
 } from 'naive-ui'
 import { useAuthStore } from '@/stores/auth'
 import PageHeader from '@/components/PageHeader.vue'
+import GsapButton from '@/components/GsapButton.vue'
 import { LOCALE_LABELS, SUPPORTED_LOCALES, saveLocale, type SupportedLocale } from '@/i18n'
 
 const { t, locale } = useI18n()
@@ -118,9 +119,9 @@ function onLocaleChange(val: SupportedLocale) {
 
         <NDivider style="margin: 16px 0;" />
 
-        <NButton type="primary" style="background: #7C3AED; border-color: #7C3AED;" @click="router.push('/plans')">
-          {{ t('profile.upgrade') }}
-        </NButton>
+        <GsapButton type="primary" @click="router.push('/plans')">
+          <span>{{ t('profile.upgrade') }}</span>
+        </GsapButton>
       </NCard>
 
       <!-- About -->

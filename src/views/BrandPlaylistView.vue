@@ -3,7 +3,7 @@ import { ref, computed, watch, h, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
-  NDataTable, NButton, NSpace, NPopconfirm, NInput, NTag, NIcon,
+  NDataTable, NSpace, NPopconfirm, NInput, NTag, NIcon,
   type DataTableColumns, useMessage
 } from 'naive-ui'
 import { ShareSocialOutline } from '@vicons/ionicons5'
@@ -12,6 +12,7 @@ import datanestApiService from '@/services/datanestApi'
 import dictionaryApiService from '@/services/dictionaryApi'
 import PageHeader from '@/components/PageHeader.vue'
 import ActionBar from '@/components/ActionBar.vue'
+import GsapButton from '@/components/GsapButton.vue'
 import BulkUploadDialog from '@/components/forms/BulkUploadDialog.vue'
 import ShareToBrandsDialog from '@/components/forms/ShareToBrandsDialog.vue'
 import { handleApiError } from '@/utils/notificationService'
@@ -268,18 +269,18 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
     <PageHeader :title="brandName" :subtitle="t('playlistView.subtitle')" :count="totalCount" />
     <ActionBar>
       <NSpace>
-        <NButton type="primary" @click="router.push({ path: `/brands/${route.params.id}/playlist/new`, query: { returnTo: route.fullPath } })">
-          {{ t('playlistView.new_track') }}
-        </NButton>
-        <NButton @click="showBulkUpload = true">{{ t('playlistView.bulk_upload') }}</NButton>
-        <NButton :disabled="selectedIds.length === 0" @click="openShareBulk">
-          {{ t('playlistView.share_btn', { count: selectedIds.length }) }}
-        </NButton>
+        <GsapButton type="primary" @click="router.push({ path: `/brands/${route.params.id}/playlist/new`, query: { returnTo: route.fullPath } })">
+          <span>{{ t('playlistView.new_track') }}</span>
+        </GsapButton>
+        <GsapButton @click="showBulkUpload = true"><span>{{ t('playlistView.bulk_upload') }}</span></GsapButton>
+        <GsapButton :disabled="selectedIds.length === 0" @click="openShareBulk">
+          <span>{{ t('playlistView.share_btn', { count: selectedIds.length }) }}</span>
+        </GsapButton>
         <NPopconfirm @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
           <template #trigger>
-            <NButton type="error" :disabled="selectedIds.length === 0">
-              {{ t('playlistView.delete_btn', { count: selectedIds.length }) }}
-            </NButton>
+            <GsapButton type="error" :disabled="selectedIds.length === 0">
+              <span>{{ t('playlistView.delete_btn', { count: selectedIds.length }) }}</span>
+            </GsapButton>
           </template>
           {{ t('playlistView.delete_confirm', { count: selectedIds.length }) }}
         </NPopconfirm>

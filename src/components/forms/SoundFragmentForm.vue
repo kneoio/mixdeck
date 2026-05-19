@@ -6,6 +6,7 @@ import {
   NButton, NSpace, NForm, NFormItem, NInput, NSelect, NTreeSelect,
   NTabs, NTabPane, NUpload, NProgress, NIcon, useMessage, useLoadingBar,
 } from 'naive-ui'
+import GsapButton from '@/components/GsapButton.vue'
 import { PlayOutline, PauseOutline, DownloadOutline } from '@vicons/ionicons5'
 import type { UploadCustomRequestOptions } from 'naive-ui'
 import FormWrapper from '@/components/FormWrapper.vue'
@@ -578,8 +579,8 @@ watch(activeTab, () => {
 
     <template #actions>
       <NSpace>
-        <NButton @click="navigateBack">{{ t('common.close') }}</NButton>
-        <NButton type="primary" @click="handleSave">{{ t('common.save') }}</NButton>
+        <GsapButton @click="navigateBack"><span>{{ t('common.close') }}</span></GsapButton>
+        <GsapButton type="primary" @click="handleSave"><span>{{ t('common.save') }}</span></GsapButton>
       </NSpace>
     </template>
 
@@ -776,9 +777,9 @@ watch(activeTab, () => {
                     accept=".mp3,.wav,.flac,.ogg,.m4a,.aac"
                     :disabled="isUploading"
                   >
-                    <NButton :disabled="isUploading">
-                      {{ existingUrl ? t('fragmentForm.replace_file') : t('fragmentForm.choose_file') }}
-                    </NButton>
+                    <GsapButton :disabled="isUploading">
+                      <span>{{ existingUrl ? t('fragmentForm.replace_file') : t('fragmentForm.choose_file') }}</span>
+                    </GsapButton>
                   </NUpload>
                   <NProgress
                     v-if="isUploading"
