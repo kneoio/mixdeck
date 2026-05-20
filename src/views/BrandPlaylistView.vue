@@ -167,15 +167,16 @@ const columns = computed<DataTableColumns<any>>(() => {
     render: (row) => {
       const isRowPlaying = playingId.value === row.id
       const isRowLoading = loadingPlayId.value === row.id
+      const iconClass = isRowLoading ? 'play-icon--loading' : isRowPlaying ? 'play-icon--playing' : ''
       return h(NButton, {
         text: true,
         quaternary: true,
         disabled: isRowLoading,
         onClick: (e: MouseEvent) => toggleRowPlay(row, e),
       }, {
-        icon: () => h(NIcon, { size: 18 }, {
-          default: () => isRowPlaying ? h(PauseOutline) : h(PlayOutline)
-        })
+        icon: () => h('span', { class: iconClass }, [
+          h(NIcon, { size: 18 }, { default: () => isRowPlaying ? h(PauseOutline) : h(PlayOutline) })
+        ])
       })
     },
   },
@@ -375,3 +376,18 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
     />
   </div>
 </template>
+
+<style>
+.play-icon--loading {
+  color: #00FF3C;
+  animation: play-pulse 0.8s ease-in-out infinite;
+}
+.play-icon--playing {
+  color: #00FF3C;
+  filter: drop-shadow(0 0 4px #00FF3C) drop-shadow(0 0 10px #00FF3C);
+}
+@keyframes play-pulse {
+  0%, 70%, 100% { filter: drop-shadow(0 0 4px #00FF3C) drop-shadow(0 0 8px #00FF3C); opacity: 1; }
+  40%           { filter: none; opacity: 0.3; }
+}
+</style>
