@@ -86,6 +86,21 @@ class AivoxApiService extends ApiClient {
     return { alive: byBrand[brandSlug] ?? false, status }
   }
 
+  heartbeatStream(brandSlug: string, timeoutMs = 60_000): Promise<boolean> {
+    return new Promise((resolve) => {
+      const url = `${this.baseUrl}/info/heartbeat/${encodeURIComponent(brandSlug)}/stream`
+      const es = new EventSource(url)
+      const timer = setTimeout(() => { es.close(); resolve(false) }, timeoutMs)
+      es.onmessage = (e) => {
+        try {
+          const data = JSON.parse(e.data as string) as { heartbeat: boolean }
+          if (data.heartbeat) { clearTimeout(timer); es.close(); resolve(true) }
+        } catch { /* ignore */ }
+      }
+      es.onerror = () => { clearTimeout(timer); es.close(); resolve(false) }
+    })
+  }
+
   async start(brandSlug: string): Promise<{ status: string }> {
     return this.request<{ status: string }>(`/command/start?brand=${encodeURIComponent(brandSlug)}`, { method: 'POST', headers: { 'X-Client-ID': 'mixpla-web' } })
   }

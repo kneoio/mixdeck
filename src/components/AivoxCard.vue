@@ -15,6 +15,7 @@ const brandsStore = useBrandsStore()
 
 const alive = computed(() => brandsStore.streamingStates[props.brandSlug] ?? false)
 const loading = ref(false)
+const waiting = ref(false)
 const localTime = ref('')
 const queueEntries = ref<AivoxQueueEntry[]>([])
 
@@ -68,22 +69,19 @@ async function handleClick() {
   const slug = props.brandSlug
   if (!slug) return
   loading.value = true
-  const targetAlive = !alive.value
   try {
-    if (alive.value) await aivoxApiService.stop(slug)
-    else await aivoxApiService.start(slug)
-
-    const deadline = Date.now() + 20_000
-    while (
-      Date.now() < deadline
-      && props.brandSlug === slug
-      && alive.value !== targetAlive
-    ) {
-      await fetchHeartbeatAlive()
-      if (alive.value === targetAlive) break
-      await new Promise(r => setTimeout(r, 400))
+    if (alive.value) {
+      await aivoxApiService.stop(slug)
+      if (props.brandSlug === slug) await fetchHeartbeatAlive()
+    } else {
+      await aivoxApiService.start(slug)
+      waiting.value = true
+      const isAlive = await aivoxApiService.heartbeatStream(slug)
+      waiting.value = false
+      if (props.brandSlug === slug) brandsStore.setStreamingState(slug, isAlive)
     }
   } catch {
+    waiting.value = false
     if (props.brandSlug === slug) await fetchHeartbeatAlive()
   } finally {
     loading.value = false
@@ -221,7 +219,7 @@ onUnmounted(() => {
         <span>{{ alive ? 'Stop' : 'Start' }}</span>
       </GsapButton>
       <div class="aivox-status">
-        <LedIndicator :active="alive" :pulse="alive" color="#FFD600" :size="18" />
+        <LedIndicator :active="alive || waiting" :pulse="waiting || alive" color="#FFD600" :size="18" />
         <span class="aivox-label">{{ t('dashboard.onAir') }}</span>
       </div>
       <div v-if="timezone" class="time-info">
