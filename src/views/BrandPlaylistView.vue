@@ -41,6 +41,7 @@ const playingId = ref<string | null>(null)
 const loadingPlayId = ref<string | null>(null)
 let currentAudio: HTMLAudioElement | null = null
 let currentBlobUrl: string | null = null
+let playRequestId = 0
 
 function stopCurrentAudio() {
   if (currentAudio) { currentAudio.pause(); currentAudio.src = ''; currentAudio = null }
@@ -54,13 +55,16 @@ async function toggleRowPlay(row: any, e: MouseEvent) {
   if (playingId.value === id) { stopCurrentAudio(); return }
   stopCurrentAudio()
   loadingPlayId.value = id
+  const reqId = ++playRequestId
   try {
     const frag: any = await datanestApiService.getDocument<any>('/soundfragments', id)
+    if (reqId !== playRequestId) return
     const doc = frag?.payload?.docData ?? frag?.docData ?? frag
     const rawUrl = doc?.uploadedFiles?.[0]?.url || doc?.url || ''
     if (!rawUrl) return
     const url = rawUrl.startsWith('http') ? rawUrl : `${appConfig.datanestServer}${rawUrl}`
     const blobUrl = await datanestApiService.fetchBlobUrl(url)
+    if (reqId !== playRequestId) { URL.revokeObjectURL(blobUrl); return }
     currentBlobUrl = blobUrl
     const audio = new Audio(blobUrl)
     currentAudio = audio
@@ -68,7 +72,7 @@ async function toggleRowPlay(row: any, e: MouseEvent) {
     await audio.play()
     playingId.value = id
   } catch { /* silent */ } finally {
-    loadingPlayId.value = null
+    if (reqId === playRequestId) loadingPlayId.value = null
   }
 }
 
