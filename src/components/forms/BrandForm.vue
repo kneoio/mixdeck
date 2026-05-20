@@ -406,6 +406,18 @@ async function handleCloseBrand() {
 }
 
 /** Server uses bps (e.g. 192000). Values below 1000 are treated as legacy kbps. */
+const hlsCopied = ref(false)
+
+function openMixplaPlayer() {
+  window.open(formData.value.mixplaUrl, '_blank', 'noopener,noreferrer')
+}
+
+function copyHlsUrl() {
+  navigator.clipboard.writeText(formData.value.hlsUrl)
+  hlsCopied.value = true
+  setTimeout(() => { hlsCopied.value = false }, 2000)
+}
+
 function normalizeBitRateFromServer(raw: number | null | undefined): number {
   if (raw == null || Number.isNaN(raw)) return 128_000
   if (raw > 0 && raw < 1000) return Math.round(raw * 1000)
@@ -872,24 +884,25 @@ watch(activeTab, () => {
             </div>
           </NFormItem>
 
-          <NFormItem :label="t('brandForm.hls_url')">
-            <div class="field-stack">
-              <div class="field-error-shell">
-                <NInput v-model:value="formData.hlsUrl" style="width: 100%; max-width: 480px" />
-              </div>
-              <div class="field-error-label"></div>
-            </div>
-          </NFormItem>
-
-          <NFormItem :label="t('brandForm.mixpla_url')">
-            <div class="field-stack">
-              <div class="field-error-shell">
-                <NInput v-model:value="formData.mixplaUrl" style="width: 100%; max-width: 480px" />
-              </div>
-              <div class="field-error-label"></div>
-            </div>
-          </NFormItem>
         </NForm>
+
+        <div v-if="formData.mixplaUrl || formData.hlsUrl" style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;">
+          <div v-if="formData.mixplaUrl" style="flex:1;min-width:260px;background:#0f0f0f;border:1px solid #1f1f1f;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px;">
+            <div style="font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:#555;">{{ t('brandForm.card_native_player') }}</div>
+            <div :style="{ fontFamily: formData.titleFont || undefined, fontSize: '1.5rem', color: formData.color, lineHeight: '1.2' }">
+              {{ localizedNames[0]?.name }}
+            </div>
+            <div style="font-size:0.78rem;color:#444;word-break:break-all;">{{ formData.mixplaUrl }}</div>
+            <div><GsapButton type="primary" size="small" @click="openMixplaPlayer"><span>{{ t('brandForm.card_open') }}</span></GsapButton></div>
+          </div>
+
+          <div v-if="formData.hlsUrl" style="flex:1;min-width:260px;background:#0f0f0f;border:1px solid #1f1f1f;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px;">
+            <div style="font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:#555;">{{ t('brandForm.card_hls_stream') }}</div>
+            <div style="font-size:0.82rem;color:#888;word-break:break-all;">{{ formData.hlsUrl }}</div>
+            <div style="font-size:0.72rem;color:#444;">VLC · foobar2000 · any HLS player</div>
+            <div><GsapButton size="small" @click="copyHlsUrl"><span>{{ hlsCopied ? t('brandForm.card_copied') : t('brandForm.card_copy') }}</span></GsapButton></div>
+          </div>
+        </div>
       </NTabPane>
 
       <NTabPane name="owner" :tab="t('brandForm.tab_owner')">
