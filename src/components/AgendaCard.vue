@@ -201,10 +201,6 @@ onUnmounted(() => stopRefresh())
                     <span class="song-artist">{{ song.artist }}</span>
                     <span class="song-sep">·</span>
                     <span class="song-dur">{{ fmtDurSec(song.durationSeconds) }}</span>
-                    <template v-if="block.mixingStrategy">
-                      <span class="song-sep">·</span>
-                      <span class="song-mix">{{ block.mixingStrategy }}</span>
-                    </template>
                     <span v-if="song.shared && song.sharerName" class="song-sharer">{{ song.sharerName }}</span>
                   </div>
                 </div>
@@ -365,11 +361,10 @@ onUnmounted(() => stopRefresh())
   background: rgba(128, 128, 128, 0.07);
   min-width: 0;
 }
-.song-title  { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
+.song-title  { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .song-sep    { opacity: 0.3; flex-shrink: 0; }
 .song-artist { font-size: 0.72rem; opacity: 0.55; white-space: nowrap; flex-shrink: 0; }
 .song-dur    { font-family: monospace; font-size: 0.65rem; opacity: 0.5; white-space: nowrap; flex-shrink: 0; }
-.song-mix    { font-size: 0.65rem; opacity: 0.45; font-style: italic; white-space: nowrap; flex-shrink: 0; }
 .song-sharer {
   flex-shrink: 0;
   padding: 1px 7px;
