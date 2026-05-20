@@ -5,7 +5,7 @@ import { gsap } from 'gsap'
 import {
   NSpace, NForm, NFormItem, NInput, NSelect, NSwitch,
   NTabs, NTabPane, NDynamicInput, NInputNumber, NSlider,
-  NColorPicker, NTag, NPopconfirm, NAnchor, NAnchorLink, NRadioGroup, NRadio, useMessage
+  NColorPicker, NTag, NPopconfirm, NAnchor, NAnchorLink, useMessage
 } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
 import type { SelectOption } from 'naive-ui'
@@ -915,10 +915,7 @@ watch(activeTab, () => {
           <NFormItem :label="t('brandForm.expose_while_sharing')">
             <div class="field-stack">
               <div class="field-error-shell">
-                <NRadioGroup v-model:value="formData.owner.exposeWhileSharing">
-                  <NRadio :value="true">{{ t('brandForm.expose_yes') }}</NRadio>
-                  <NRadio :value="false" style="margin-left: 16px">{{ t('brandForm.expose_no') }}</NRadio>
-                </NRadioGroup>
+                <NSwitch v-model:value="formData.owner.exposeWhileSharing" />
               </div>
               <div class="field-error-label"></div>
             </div>

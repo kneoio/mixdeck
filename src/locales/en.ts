@@ -176,8 +176,6 @@ export default {
     hls_url: 'HLS Stream URL',
     mixpla_url: 'Player URL',
     expose_while_sharing: 'Expose While Sharing',
-    expose_yes: 'Yes',
-    expose_no: 'No',
     owner_name: 'Owner Name',
     owner_email: 'Owner Email',
     saved: 'Brand saved successfully',
