@@ -72,11 +72,14 @@ async function handleClick() {
   try {
     if (alive.value) {
       await aivoxApiService.stop(slug)
-      if (props.brandSlug === slug) await fetchHeartbeatAlive()
+      waiting.value = true
+      const isAlive = await aivoxApiService.heartbeatStream(slug, false)
+      waiting.value = false
+      if (props.brandSlug === slug) brandsStore.setStreamingState(slug, isAlive)
     } else {
       await aivoxApiService.start(slug)
       waiting.value = true
-      const isAlive = await aivoxApiService.heartbeatStream(slug)
+      const isAlive = await aivoxApiService.heartbeatStream(slug, true)
       waiting.value = false
       if (props.brandSlug === slug) brandsStore.setStreamingState(slug, isAlive)
     }

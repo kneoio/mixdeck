@@ -86,18 +86,18 @@ class AivoxApiService extends ApiClient {
     return { alive: byBrand[brandSlug] ?? false, status }
   }
 
-  heartbeatStream(brandSlug: string, timeoutMs = 60_000): Promise<boolean> {
+  heartbeatStream(brandSlug: string, waitFor = true, timeoutMs = 60_000): Promise<boolean> {
     return new Promise((resolve) => {
-      const url = `${this.baseUrl}/info/heartbeat/${encodeURIComponent(brandSlug)}/stream`
+      const url = `${this.baseUrl}/info/heartbeat/${encodeURIComponent(brandSlug)}/stream?waitFor=${waitFor}`
       const es = new EventSource(url)
-      const timer = setTimeout(() => { es.close(); resolve(false) }, timeoutMs)
+      const timer = setTimeout(() => { es.close(); resolve(!waitFor) }, timeoutMs)
       es.onmessage = (e) => {
         try {
           const data = JSON.parse(e.data as string) as { heartbeat: boolean }
-          if (data.heartbeat) { clearTimeout(timer); es.close(); resolve(true) }
+          if (data.heartbeat === waitFor) { clearTimeout(timer); es.close(); resolve(waitFor) }
         } catch { /* ignore */ }
       }
-      es.onerror = () => { clearTimeout(timer); es.close(); resolve(false) }
+      es.onerror = () => { clearTimeout(timer); es.close(); resolve(!waitFor) }
     })
   }
 
