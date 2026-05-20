@@ -10,7 +10,6 @@ import { ShareSocialOutline, PlayOutline, PauseOutline } from '@vicons/ionicons5
 import datanestApiService from '@/services/datanestApi'
 import { appConfig } from '@/config/appConfig'
 import { useBrandsStore } from '@/stores/brands'
-import datanestApiService from '@/services/datanestApi'
 import dictionaryApiService from '@/services/dictionaryApi'
 import PageHeader from '@/components/PageHeader.vue'
 import ActionBar from '@/components/ActionBar.vue'
