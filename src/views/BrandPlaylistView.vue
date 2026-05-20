@@ -54,7 +54,6 @@ async function toggleRowPlay(row: any, e: MouseEvent) {
   if (playingId.value === id) { stopCurrentAudio(); return }
   stopCurrentAudio()
   const rawUrl = row.url || row.uploadedFiles?.[0]?.url || row.files?.[0]?.url || ''
-  if (!rawUrl) return
   const url = rawUrl.startsWith('http') ? rawUrl : `${appConfig.datanestServer}${rawUrl}`
   loadingPlayId.value = id
   try {
@@ -163,8 +162,6 @@ const columns = computed<DataTableColumns<any>>(() => {
     width: 40,
     title: '',
     render: (row) => {
-      const hasAudio = !!(row.url || row.uploadedFiles?.[0]?.url || row.files?.[0]?.url)
-      if (!hasAudio) return null
       const isRowPlaying = playingId.value === row.id
       const isRowLoading = loadingPlayId.value === row.id
       return h('button', {
