@@ -5,7 +5,7 @@ import { gsap } from 'gsap'
 import {
   NSpace, NForm, NFormItem, NInput, NSelect, NSwitch,
   NTabs, NTabPane, NDynamicInput, NInputNumber, NSlider,
-  NColorPicker, NTag, NPopconfirm, NAnchor, NAnchorLink, useMessage
+  NColorPicker, NTag, NPopconfirm, NAnchor, NAnchorLink, NRadioGroup, NRadio, useMessage
 } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
 import type { SelectOption } from 'naive-ui'
@@ -83,7 +83,9 @@ const formData = ref({
   profileOverriding: { name: '', description: '' },
   color: '#000000',
   titleFont: null as string | null,
-  owner: { name: '', email: '' },
+  hlsUrl: '',
+  mixplaUrl: '',
+  owner: { name: '', email: '', exposeWhileSharing: false },
   genres: [] as string[],
   labels: [] as string[],
 })
@@ -434,7 +436,9 @@ function applyBrandToForm(brand: any) {
     },
     color: brand.color || '#000000',
     titleFont: brand.titleFont || null,
-    owner: { name: brand.owner?.name || '', email: brand.owner?.email || '' },
+    hlsUrl: brand.hlsUrl || '',
+    mixplaUrl: brand.mixplaUrl || '',
+    owner: { name: brand.owner?.name || '', email: brand.owner?.email || '', exposeWhileSharing: brand.owner?.exposeWhileSharing ?? false },
     genres: (brand as any).genres || [],
     labels: (brand as any).labels || [],
   }
@@ -867,6 +871,24 @@ watch(activeTab, () => {
               <div class="field-error-label"></div>
             </div>
           </NFormItem>
+
+          <NFormItem :label="t('brandForm.hls_url')">
+            <div class="field-stack">
+              <div class="field-error-shell">
+                <NInput v-model:value="formData.hlsUrl" style="width: 100%; max-width: 480px" />
+              </div>
+              <div class="field-error-label"></div>
+            </div>
+          </NFormItem>
+
+          <NFormItem :label="t('brandForm.mixpla_url')">
+            <div class="field-stack">
+              <div class="field-error-shell">
+                <NInput v-model:value="formData.mixplaUrl" style="width: 100%; max-width: 480px" />
+              </div>
+              <div class="field-error-label"></div>
+            </div>
+          </NFormItem>
         </NForm>
       </NTabPane>
 
@@ -886,6 +908,17 @@ watch(activeTab, () => {
               <div class="field-error-shell">
                 <NInput v-model:value="formData.owner.email"
                   placeholder="owner@example.com" style="width: 100%; max-width: 400px" />
+              </div>
+              <div class="field-error-label"></div>
+            </div>
+          </NFormItem>
+          <NFormItem :label="t('brandForm.expose_while_sharing')">
+            <div class="field-stack">
+              <div class="field-error-shell">
+                <NRadioGroup v-model:value="formData.owner.exposeWhileSharing">
+                  <NRadio :value="true">{{ t('brandForm.expose_yes') }}</NRadio>
+                  <NRadio :value="false" style="margin-left: 16px">{{ t('brandForm.expose_no') }}</NRadio>
+                </NRadioGroup>
               </div>
               <div class="field-error-label"></div>
             </div>
