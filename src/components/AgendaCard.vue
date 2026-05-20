@@ -201,7 +201,7 @@ onUnmounted(() => stopRefresh())
                     <span class="song-artist">{{ song.artist }}</span>
                     <span class="song-sep">·</span>
                     <span class="song-dur">{{ fmtDurSec(song.durationSeconds) }}</span>
-                    <span v-if="song.shared && song.sharerName" class="song-sharer">{{ song.sharerName }}</span>
+                    <span v-if="song.shared && song.sharerName" class="song-sharer">{{ t('agenda.shared_by') }} {{ song.sharerName }}</span>
                   </div>
                 </div>
               </div>

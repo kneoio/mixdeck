@@ -315,6 +315,7 @@ export default {
     no_data: 'Agenda is not available',
     no_songs: 'No songs in this scene',
     songs_count: '{n} songs',
+    shared_by: 'Shared by',
     status: {
       emitting: 'emitting',
       failed: 'failed',

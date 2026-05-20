@@ -291,6 +291,7 @@ export default {
     no_data: 'Нет данных программы',
     no_songs: 'Нет треков в этой сцене',
     songs_count: '{n} треков',
+    shared_by: 'Поделился',
   },
   broadcasterWelcome: {
     heading: 'Добро пожаловать в Mixdeck',

@@ -291,6 +291,7 @@ export default {
     no_data: 'Aucune donnée de programme disponible',
     no_songs: 'Aucune chanson dans cette scène',
     songs_count: '{n} chansons',
+    shared_by: 'Partagé par',
   },
   broadcasterWelcome: {
     heading: 'Bienvenue sur Mixdeck',

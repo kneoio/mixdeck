@@ -291,6 +291,7 @@ export default {
     no_data: 'Agenda não está disponível',
     no_songs: 'Nenhuma música nesta cena',
     songs_count: '{n} músicas',
+    shared_by: 'Compartilhado por',
   },
   broadcasterWelcome: {
     heading: 'Bem-vindo ao Mixdeck',

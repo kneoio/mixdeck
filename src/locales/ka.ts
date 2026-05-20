@@ -292,6 +292,7 @@ export default {
     no_data: 'დღის წესრიგი მიუწვდომელია',
     no_songs: 'ამ სცენაში სიმღერები არ არის',
     songs_count: '{n} სიმღერა',
+    shared_by: 'გაზიარა',
   },
   broadcasterWelcome: {
     heading: 'მოგესალმებით Mixdeck-ში',
