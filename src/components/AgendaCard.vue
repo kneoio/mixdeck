@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onUnmounted } from 'vue'
+import { ref, watch, onUnmounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NCard, NSpin, NAlert, NCollapse, NCollapseItem, NTag, NEmpty } from 'naive-ui'
 import jesoosApiService, { type Agenda, type AgendaScene } from '@/services/jesoosApi'
@@ -12,6 +12,16 @@ const loading = ref(false)
 const refreshing = ref(false)
 const error = ref<string | null>(null)
 const agenda = ref<Agenda | null>(null)
+
+const ALL_STATUSES = ['PENDING', 'SCHEDULED', 'SKIPPED', 'COMPLETED', 'FAILED'] as const
+const activeFilters = ref<Set<string>>(new Set(['SCHEDULED', 'FAILED']))
+
+function toggleFilter(status: string) {
+  const next = new Set(activeFilters.value)
+  if (next.has(status)) next.delete(status)
+  else next.add(status)
+  activeFilters.value = next
+}
 
 function fmtTimeArr(arr: number[] | undefined | null): string {
   if (!arr || arr.length < 5) return '—'
@@ -86,6 +96,16 @@ function stopRefresh() {
   if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null }
 }
 
+const filteredScenes = computed(() => {
+  if (!agenda.value) return []
+  return agenda.value.scenes
+    .map(scene => ({
+      ...scene,
+      timeline: scene.timeline.filter(b => activeFilters.value.has(b.status ?? '')),
+    }))
+    .filter(scene => scene.timeline.length > 0)
+})
+
 watch(() => props.alive, (val) => {
   stopRefresh()
   if (val) {
@@ -135,9 +155,19 @@ onUnmounted(() => stopRefresh())
           </span>
         </div>
 
-        <NCollapse v-if="agenda.scenes.length" arrow-placement="right">
+        <div class="filter-bar">
+          <button
+            v-for="status in ALL_STATUSES"
+            :key="status"
+            class="filter-btn"
+            :class="{ 'filter-btn--active': activeFilters.has(status) }"
+            @click="toggleFilter(status)"
+          >{{ status.toLowerCase() }}</button>
+        </div>
+
+        <NCollapse v-if="filteredScenes.length" arrow-placement="right">
           <NCollapseItem
-            v-for="(scene, idx) in agenda.scenes"
+            v-for="(scene, idx) in filteredScenes"
             :key="scene.id"
             :name="String(idx)"
           >
@@ -166,15 +196,16 @@ onUnmounted(() => stopRefresh())
                     <span v-if="block.hasJingle" class="flag flag-jingle">J</span>
                   </div>
                   <div v-for="song in block.songs" :key="song.songId" class="song-row">
-                    <div class="song-main">
-                      <span class="song-title">{{ song.songTitle }}</span>
-                      <span v-if="song.shared && song.sharerName" class="song-sharer">
-                        {{ t('profile.sharer') }}:
-                        <span class="song-sharer-name">{{ song.sharerName }}</span>
-                      </span>
-                    </div>
+                    <span class="song-title">{{ song.songTitle }}</span>
+                    <span class="song-sep">·</span>
                     <span class="song-artist">{{ song.artist }}</span>
+                    <span class="song-sep">·</span>
                     <span class="song-dur">{{ fmtDurSec(song.durationSeconds) }}</span>
+                    <template v-if="block.mixingStrategy">
+                      <span class="song-sep">·</span>
+                      <span class="song-mix">{{ block.mixingStrategy }}</span>
+                    </template>
+                    <span v-if="song.shared && song.sharerName" class="song-sharer">{{ song.sharerName }}</span>
                   </div>
                 </div>
               </div>
@@ -303,39 +334,53 @@ onUnmounted(() => stopRefresh())
 .flag-intro  { background: rgba(33, 150, 243, 0.15); color: #2196f3; }
 .flag-jingle { background: rgba(245, 166, 35, 0.15);  color: #f5a623; }
 
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.filter-btn {
+  padding: 2px 10px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  border-radius: 4px;
+  border: 1px solid rgba(128, 128, 128, 0.3);
+  background: none;
+  color: inherit;
+  opacity: 0.45;
+  cursor: pointer;
+  transition: opacity 0.15s, border-color 0.15s, background 0.15s;
+}
+.filter-btn:hover { opacity: 0.75; }
+.filter-btn--active { opacity: 1; border-color: #7C3AED; background: rgba(124, 58, 237, 0.12); color: #7C3AED; }
+
 .song-row {
-  display: grid;
-  grid-template-columns: 1fr max-content max-content;
-  gap: 12px;
+  display: flex;
   align-items: center;
+  gap: 6px;
   padding: 3px 8px;
   border-radius: 4px;
   font-size: 0.8rem;
   background: rgba(128, 128, 128, 0.07);
+  min-width: 0;
 }
-.song-main   { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.song-title  { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.song-title  { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
+.song-sep    { opacity: 0.3; flex-shrink: 0; }
+.song-artist { font-size: 0.72rem; opacity: 0.55; white-space: nowrap; flex-shrink: 0; }
+.song-dur    { font-family: monospace; font-size: 0.65rem; opacity: 0.5; white-space: nowrap; flex-shrink: 0; }
+.song-mix    { font-size: 0.65rem; opacity: 0.45; font-style: italic; white-space: nowrap; flex-shrink: 0; }
 .song-sharer {
-  display: inline-flex;
-  align-items: center;
-  align-self: flex-start;
-  gap: 4px;
-  max-width: 100%;
-  margin-top: 2px;
-  padding: 2px 8px;
-  font-size: 0.68rem;
+  flex-shrink: 0;
+  padding: 1px 7px;
+  font-size: 0.65rem;
   font-weight: 600;
   color: #7C3AED;
   background: rgba(124, 58, 237, 0.18);
   border: 1px solid rgba(124, 58, 237, 0.4);
   border-radius: 4px;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
-.song-sharer-name { font-weight: 700; }
-.song-artist { font-size: 0.7rem; opacity: 0.55; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.song-dur    { font-family: monospace; font-size: 0.65rem; opacity: 0.5; white-space: nowrap; }
 
 .timeline-empty {
   padding: 12px 0;
