@@ -3,7 +3,7 @@ import { ref, computed, watch, h, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
-  NDataTable, NSpace, NPopconfirm, NInput, NTag, NIcon, NButton,
+  NDataTable, NSpace, NPopconfirm, NInput, NTag, NIcon, NButton, NProgress,
   type DataTableColumns, useMessage
 } from 'naive-ui'
 import { ShareSocialOutline, PlayOutline, PauseOutline } from '@vicons/ionicons5'
@@ -39,6 +39,7 @@ const brandDoc = ref<any | null>(null)
 
 const playingId = ref<string | null>(null)
 const loadingPlayId = ref<string | null>(null)
+const playbackPercent = ref(0)
 let currentAudio: HTMLAudioElement | null = null
 let currentBlobUrl: string | null = null
 let playRequestId = 0
@@ -47,6 +48,7 @@ function stopCurrentAudio() {
   if (currentAudio) { currentAudio.pause(); currentAudio.src = ''; currentAudio = null }
   if (currentBlobUrl) { URL.revokeObjectURL(currentBlobUrl); currentBlobUrl = null }
   playingId.value = null
+  playbackPercent.value = 0
 }
 
 async function toggleRowPlay(row: any, e: MouseEvent) {
@@ -68,7 +70,10 @@ async function toggleRowPlay(row: any, e: MouseEvent) {
     currentBlobUrl = blobUrl
     const audio = new Audio(blobUrl)
     currentAudio = audio
-    audio.onended = () => { playingId.value = null }
+    audio.ontimeupdate = () => {
+      if (audio.duration > 0) playbackPercent.value = (audio.currentTime / audio.duration) * 100
+    }
+    audio.onended = () => { playingId.value = null; playbackPercent.value = 0 }
     await audio.play()
     playingId.value = id
   } catch { /* silent */ } finally {
@@ -368,6 +373,17 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
     />
     <div class="playlist-dl-bar-wrap">
       <div v-if="loadingPlayId" class="playlist-dl-bar" />
+      <NProgress
+        v-else-if="playingId"
+        type="line"
+        :percentage="playbackPercent"
+        :show-indicator="false"
+        :height="2"
+        :border-radius="1"
+        :fill-border-radius="1"
+        color="#eff605"
+        rail-color="transparent"
+      />
     </div>
     <NDataTable
       :columns="columns"
@@ -399,14 +415,13 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
 }
 
 .playlist-dl-bar-wrap {
-  height: 3px;
-  background: transparent;
+  height: 2px;
   overflow: hidden;
 }
 .playlist-dl-bar {
   height: 100%;
-  background: #7C3AED;
-  box-shadow: 0 0 6px #7C3AED, 0 0 12px rgba(124, 58, 237, 0.5);
+  background: #eff605;
+  box-shadow: 0 0 4px #eff605;
   animation: playlist-dl-slide 1.4s ease-in-out infinite;
 }
 @keyframes playlist-dl-slide {
