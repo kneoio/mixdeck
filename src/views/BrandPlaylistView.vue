@@ -3,7 +3,7 @@ import { ref, computed, watch, h, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
-  NDataTable, NSpace, NPopconfirm, NInput, NTag, NIcon,
+  NDataTable, NSpace, NPopconfirm, NInput, NTag, NIcon, NButton,
   type DataTableColumns, useMessage
 } from 'naive-ui'
 import { ShareSocialOutline, PlayOutline, PauseOutline } from '@vicons/ionicons5'
@@ -53,10 +53,13 @@ async function toggleRowPlay(row: any, e: MouseEvent) {
   const id = row.id
   if (playingId.value === id) { stopCurrentAudio(); return }
   stopCurrentAudio()
-  const rawUrl = row.url || row.uploadedFiles?.[0]?.url || row.files?.[0]?.url || ''
-  const url = rawUrl.startsWith('http') ? rawUrl : `${appConfig.datanestServer}${rawUrl}`
   loadingPlayId.value = id
   try {
+    const frag: any = await datanestApiService.getDocument<any>('/soundfragments', id)
+    const doc = frag?.payload?.docData ?? frag?.docData ?? frag
+    const rawUrl = doc?.uploadedFiles?.[0]?.url || doc?.url || ''
+    if (!rawUrl) return
+    const url = rawUrl.startsWith('http') ? rawUrl : `${appConfig.datanestServer}${rawUrl}`
     const blobUrl = await datanestApiService.fetchBlobUrl(url)
     currentBlobUrl = blobUrl
     const audio = new Audio(blobUrl)
@@ -164,15 +167,16 @@ const columns = computed<DataTableColumns<any>>(() => {
     render: (row) => {
       const isRowPlaying = playingId.value === row.id
       const isRowLoading = loadingPlayId.value === row.id
-      return h('button', {
-        class: 'playlist-play-btn',
-        title: isRowPlaying ? 'Pause' : 'Play',
+      return h(NButton, {
+        text: true,
+        quaternary: true,
+        disabled: isRowLoading,
         onClick: (e: MouseEvent) => toggleRowPlay(row, e),
-      }, [
-        isRowLoading
-          ? h('span', { class: 'playlist-play-spinner' })
-          : h(NIcon, { size: 15 }, { default: () => isRowPlaying ? h(PauseOutline) : h(PlayOutline) })
-      ])
+      }, {
+        icon: () => h(NIcon, { size: 18 }, {
+          default: () => isRowPlaying ? h(PauseOutline) : h(PlayOutline)
+        })
+      })
     },
   },
   {
@@ -371,34 +375,3 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
     />
   </div>
 </template>
-
-<style scoped>
-.playlist-play-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  border: 1px solid rgba(124, 58, 237, 0.45);
-  background: rgba(124, 58, 237, 0.12);
-  color: #7C3AED;
-  cursor: pointer;
-  padding: 0;
-  transition: background 0.15s, border-color 0.15s;
-}
-.playlist-play-btn:hover {
-  background: rgba(124, 58, 237, 0.25);
-  border-color: #7C3AED;
-}
-.playlist-play-spinner {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border: 1.5px solid #7C3AED;
-  border-top-color: transparent;
-  border-radius: 50%;
-  animation: playlist-spin 0.6s linear infinite;
-}
-@keyframes playlist-spin { to { transform: rotate(360deg); } }
-</style>
