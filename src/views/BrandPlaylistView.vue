@@ -366,6 +366,9 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
       :brand-slug="slugName"
       @shared="onShareDialogDone"
     />
+    <div class="playlist-dl-bar-wrap">
+      <div v-if="loadingPlayId" class="playlist-dl-bar" />
+    </div>
     <NDataTable
       :columns="columns"
       :data="entries"
@@ -391,7 +394,24 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
   filter: drop-shadow(0 0 4px #00FF3C) drop-shadow(0 0 10px #00FF3C);
 }
 @keyframes play-pulse {
-  0%, 70%, 100% { filter: drop-shadow(0 0 4px #00FF3C) drop-shadow(0 0 8px #00FF3C); opacity: 1; }
-  40%           { filter: none; opacity: 0.3; }
+  0%, 60%, 100% { filter: drop-shadow(0 0 4px #00FF3C) drop-shadow(0 0 10px #00FF3C); opacity: 1; }
+  35%           { filter: drop-shadow(0 0 1px #00FF3C); opacity: 0.2; }
+}
+
+.playlist-dl-bar-wrap {
+  height: 3px;
+  background: transparent;
+  overflow: hidden;
+}
+.playlist-dl-bar {
+  height: 100%;
+  background: #7C3AED;
+  box-shadow: 0 0 6px #7C3AED, 0 0 12px rgba(124, 58, 237, 0.5);
+  animation: playlist-dl-slide 1.4s ease-in-out infinite;
+}
+@keyframes playlist-dl-slide {
+  0%   { margin-left: -40%; width: 40%; }
+  50%  { margin-left: 60%; width: 40%; }
+  100% { margin-left: 110%; width: 40%; }
 }
 </style>
