@@ -845,58 +845,28 @@ watch(activeTab, () => {
       </NTabPane>
 
       <NTabPane name="playerUi" :tab="t('brandForm.tab_player_ui')">
-        <NForm :label-placement="formLabelPlacement" label-width="120" :disabled="loading">
-          <NFormItem v-if="localizedNames[0]?.name" :label="t('brandForm.preview')">
-            <div class="field-stack">
-              <div class="field-error-shell">
-                <div :style="{
-                  fontFamily: formData.titleFont || undefined,
-                  fontSize: '34px',
-                  lineHeight: '1.1',
-                  color: formData.color,
-                  padding: '8px 0',
-                }">
-                  {{ localizedNames[0].name }}
-                </div>
-              </div>
-              <div class="field-error-label"></div>
+        <div style="display:flex;flex-direction:column;gap:16px;max-width:560px;">
+          <div style="background:#0f0f0f;border:1px solid #1f1f1f;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:16px;">
+            <div style="font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:#555;">{{ t('brandForm.card_native_player') }}</div>
+            <div v-if="localizedNames[0]?.name" :style="{ fontFamily: formData.titleFont || undefined, fontSize: '1.5rem', color: formData.color, lineHeight: '1.2' }">
+              {{ localizedNames[0].name }}
             </div>
-          </NFormItem>
-
-          <NFormItem :label="t('brandForm.title_font')">
-            <div class="field-stack">
-              <div class="field-error-shell">
+            <NForm :label-placement="formLabelPlacement" label-width="120" :disabled="loading" style="margin:0">
+              <NFormItem :label="t('brandForm.title_font')" style="margin-bottom:8px">
                 <NSelect v-model:value="formData.titleFont" :options="constantsStore.stationFontOptions"
-                  filterable clearable style="width: 280px" />
-              </div>
-              <div class="field-error-label"></div>
-            </div>
-          </NFormItem>
-
-          <NFormItem :label="t('brandForm.color')">
-            <div class="field-stack">
-              <div class="field-error-shell">
+                  filterable clearable style="width: 240px" />
+              </NFormItem>
+              <NFormItem :label="t('brandForm.color')" style="margin-bottom:0">
                 <div style="width: 200px;">
                   <NColorPicker v-model:value="formData.color" />
                 </div>
-              </div>
-              <div class="field-error-label"></div>
-            </div>
-          </NFormItem>
-
-        </NForm>
-
-        <div v-if="formData.mixplaUrl || formData.hlsUrl" style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;">
-          <div v-if="formData.mixplaUrl" style="flex:1;min-width:260px;background:#0f0f0f;border:1px solid #1f1f1f;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px;">
-            <div style="font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:#555;">{{ t('brandForm.card_native_player') }}</div>
-            <div :style="{ fontFamily: formData.titleFont || undefined, fontSize: '1.5rem', color: formData.color, lineHeight: '1.2' }">
-              {{ localizedNames[0]?.name }}
-            </div>
-            <div style="font-size:0.78rem;color:#444;word-break:break-all;">{{ formData.mixplaUrl }}</div>
-            <div><GsapButton type="primary" size="small" @click="openMixplaPlayer"><span>{{ t('brandForm.card_open') }}</span></GsapButton></div>
+              </NFormItem>
+            </NForm>
+            <div v-if="formData.mixplaUrl" style="font-size:0.78rem;color:#444;word-break:break-all;">{{ formData.mixplaUrl }}</div>
+            <div v-if="formData.mixplaUrl"><GsapButton type="primary" size="small" @click="openMixplaPlayer"><span>{{ t('brandForm.card_open') }}</span></GsapButton></div>
           </div>
 
-          <div v-if="formData.hlsUrl" style="flex:1;min-width:260px;background:#0f0f0f;border:1px solid #1f1f1f;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px;">
+          <div v-if="formData.hlsUrl" style="background:#0f0f0f;border:1px solid #1f1f1f;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px;">
             <div style="font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:#555;">{{ t('brandForm.card_hls_stream') }}</div>
             <div style="font-size:0.82rem;color:#888;word-break:break-all;">{{ formData.hlsUrl }}</div>
             <div style="font-size:0.72rem;color:#444;">VLC · foobar2000 · any HLS player</div>
