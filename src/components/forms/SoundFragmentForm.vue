@@ -19,6 +19,7 @@ import datanestApiService from '@/services/datanestApi'
 import { appConfig } from '@/config/appConfig'
 import { useRoute, useRouter } from 'vue-router'
 import { handleApiError } from '@/utils/notificationService'
+import { normalizeIdList, toGenreTreeOptions } from '@/utils/genreTree'
 
 const { t } = useI18n()
 
@@ -107,21 +108,6 @@ const formData = ref({
   expiresAt: '' as string | null,
   length: null as number | null,
 })
-
-function getGenreLabel(genre: GenreEntry): string {
-  const directName = (genre as any).name
-  return directName || genre.localizedName?.en || Object.values(genre.localizedName || {})[0] || genre.identifier || genre.id
-}
-
-function toGenreTreeOptions(genres: GenreEntry[]): any[] {
-  return genres.map(genre => ({
-    label: getGenreLabel(genre),
-    key: genre.id,
-    children: Array.isArray(genre.children) && genre.children.length
-      ? toGenreTreeOptions(genre.children)
-      : undefined,
-  }))
-}
 
 const genreTreeOptions = computed(() => toGenreTreeOptions(genreList.value))
 
@@ -235,17 +221,6 @@ async function validateBeforeSave() {
   isTabChangeFromValidation.value = false
   await Promise.all(invalidFields.map(field => showFieldError(field)))
   return false
-}
-
-function normalizeIdList(input: unknown): string[] {
-  if (!Array.isArray(input)) return []
-  return input
-    .map((item: any) => {
-      if (typeof item === 'string') return item
-      if (item && typeof item === 'object') return item.id || item.identifier || null
-      return null
-    })
-    .filter((v): v is string => Boolean(v))
 }
 
 function formatTime(seconds: number): string {

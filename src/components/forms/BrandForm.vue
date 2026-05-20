@@ -3,7 +3,7 @@ import { ref, computed, onMounted, onBeforeUnmount, h, watch, nextTick } from 'v
 import { useI18n } from 'vue-i18n'
 import { gsap } from 'gsap'
 import {
-  NSpace, NForm, NFormItem, NInput, NSelect, NSwitch,
+  NSpace, NForm, NFormItem, NInput, NSelect, NTreeSelect, NSwitch,
   NTabs, NTabPane, NDynamicInput, NInputNumber, NSlider,
   NColorPicker, NTag, NPopconfirm, NAnchor, NAnchorLink, useMessage
 } from 'naive-ui'
@@ -15,8 +15,9 @@ import { useScriptsStore } from '@/stores/scripts'
 import { useConstantsStore } from '@/stores/constants'
 import { useRoute, useRouter } from 'vue-router'
 import datanestApiService from '@/services/datanestApi'
-import dictionaryApiService from '@/services/dictionaryApi'
+import dictionaryApiService, { type GenreEntry } from '@/services/dictionaryApi'
 import { handleApiError } from '@/utils/notificationService'
+import { normalizeIdList, toGenreTreeOptions } from '@/utils/genreTree'
 import { isValidationError } from '@/utils/errorHandler'
 
 const { t } = useI18n()
@@ -114,7 +115,8 @@ const agentOptions = ref<AgentOption[]>([])
 const agentsList = ref<Array<{ id: string; description?: string; labels?: AgentLabel[]; name?: string }>>([])
 const profileOptions = ref<{ label: string; value: string }[]>([])
 const scriptOptions = ref<ScriptOption[]>([])
-const genreOptions = ref<{ label: string; value: string }[]>([])
+const genreList = ref<GenreEntry[]>([])
+const genreTreeOptions = computed(() => toGenreTreeOptions(genreList.value))
 
 const bitRateMarks = computed<Record<number, string>>(() => ({
   64_000: t('brandForm.stream_quality_good'),
@@ -451,7 +453,7 @@ function applyBrandToForm(brand: any) {
     hlsUrl: brand.hlsUrl || '',
     mixplaUrl: brand.mixplaUrl || '',
     owner: { name: brand.owner?.name || '', email: brand.owner?.email || '', exposeWhileSharing: brand.owner?.exposeWhileSharing ?? false },
-    genres: (brand as any).genres || [],
+    genres: normalizeIdList((brand as any).genres),
     labels: (brand as any).labels || [],
   }
   userVariables.value = firstScript?.userVariables ? { ...firstScript.userVariables } : {}
@@ -492,11 +494,7 @@ onMounted(async () => {
         label: p.name || p.id, value: p.id
       }))
     }
-    if (genres.status === 'fulfilled') {
-      genreOptions.value = genres.value.map((g: any) => ({
-        label: g.localizedName?.en || g.name || g.identifier || g.id, value: g.id
-      }))
-    }
+    if (genres.status === 'fulfilled') genreList.value = genres.value
     scriptOptions.value = scriptsStore.scripts.map((s: any) => ({
       label: s.name || s.id,
       value: s.id,
@@ -664,12 +662,13 @@ watch(activeTab, () => {
                 class="field-error-shell"
                 :class="{ 'field-error-shell--active': !!fieldErrors.genres }"
               >
-                <NSelect
+                <NTreeSelect
                   v-model:value="formData.genres"
-                  :options="genreOptions"
-                  filterable
+                  :options="genreTreeOptions"
                   multiple
-                  clearable
+                  checkable
+                  clear-filter-after-select
+                  filterable
                   style="width: 100%; max-width: 500px"
                 />
               </div>

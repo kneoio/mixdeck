@@ -10,6 +10,7 @@ import dictionaryApiService from '@/services/dictionaryApi'
 import type { GenreEntry, LabelEntry } from '@/services/dictionaryApi'
 import datanestApiService from '@/services/datanestApi'
 import { handleApiError } from '@/utils/notificationService'
+import { normalizeIdList, toGenreTreeOptions } from '@/utils/genreTree'
 
 const { t } = useI18n()
 
@@ -47,32 +48,6 @@ function handleClose() {
 
 function updateIsMobile() {
   isMobile.value = window.innerWidth <= 768
-}
-
-function normalizeIdList(input: unknown): string[] {
-  if (!Array.isArray(input)) return []
-  return input
-    .map((item: any) => {
-      if (typeof item === 'string') return item
-      if (item && typeof item === 'object') return item.id || item.identifier || null
-      return null
-    })
-    .filter((value): value is string => Boolean(value))
-}
-
-function getGenreLabel(genre: GenreEntry): string {
-  const directName = (genre as any).name
-  return directName || genre.localizedName?.en || Object.values(genre.localizedName || {})[0] || genre.identifier || genre.id
-}
-
-function toGenreTreeOptions(genres: GenreEntry[]): any[] {
-  return genres.map(genre => ({
-    label: getGenreLabel(genre),
-    key: genre.id,
-    children: Array.isArray(genre.children) && genre.children.length
-      ? toGenreTreeOptions(genre.children)
-      : undefined,
-  }))
 }
 
 const genreTreeOptions = computed(() => toGenreTreeOptions(genreList.value))
