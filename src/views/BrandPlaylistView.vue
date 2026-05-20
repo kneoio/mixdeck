@@ -44,6 +44,38 @@ let currentAudio: HTMLAudioElement | null = null
 let currentBlobUrl: string | null = null
 let playRequestId = 0
 
+const seekBarRef = ref<HTMLElement | null>(null)
+let seekDocMove: ((e: MouseEvent) => void) | null = null
+let seekDocUp: (() => void) | null = null
+
+function detachSeekListeners() {
+  if (seekDocMove) { document.removeEventListener('mousemove', seekDocMove); seekDocMove = null }
+  if (seekDocUp)   { document.removeEventListener('mouseup',  seekDocUp);   seekDocUp = null }
+}
+
+function applySeekClientX(clientX: number) {
+  const bar = seekBarRef.value
+  const a = currentAudio
+  if (!bar || !a || !Number.isFinite(a.duration) || a.duration <= 0) return
+  const rect = bar.getBoundingClientRect()
+  if (rect.width <= 0) return
+  const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
+  a.currentTime = ratio * a.duration
+  playbackPercent.value = ratio * 100
+}
+
+function onSeekMouseDown(e: MouseEvent) {
+  if (e.button !== 0) return
+  e.preventDefault()
+  let done = false
+  function onUp() { if (done) return; done = true; detachSeekListeners() }
+  seekDocMove = (ev) => { if (!done) applySeekClientX(ev.clientX) }
+  seekDocUp   = onUp
+  document.addEventListener('mousemove', seekDocMove)
+  document.addEventListener('mouseup', onUp, { once: true })
+  applySeekClientX(e.clientX)
+}
+
 function stopCurrentAudio() {
   if (currentAudio) { currentAudio.pause(); currentAudio.src = ''; currentAudio = null }
   if (currentBlobUrl) { URL.revokeObjectURL(currentBlobUrl); currentBlobUrl = null }
@@ -311,6 +343,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   stopCurrentAudio()
+  detachSeekListeners()
   playlistTableMql?.removeEventListener('change', syncPlaylistTableNarrow)
   playlistTableMql = null
 })
@@ -373,17 +406,19 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
     />
     <div class="playlist-dl-bar-wrap">
       <div v-if="loadingPlayId" class="playlist-dl-bar" />
-      <NProgress
-        v-else-if="playingId"
-        type="line"
-        :percentage="playbackPercent"
-        :show-indicator="false"
-        :height="2"
-        :border-radius="1"
-        :fill-border-radius="1"
-        color="#eff605"
-        rail-color="transparent"
-      />
+      <div v-else-if="playingId" style="position:relative;">
+        <NProgress
+          type="line"
+          :percentage="playbackPercent"
+          :show-indicator="false"
+          :height="2"
+          :border-radius="1"
+          :fill-border-radius="1"
+          color="#eff605"
+          rail-color="rgba(255,255,255,0.12)"
+        />
+        <div ref="seekBarRef" class="playlist-seek-hit" @mousedown="onSeekMouseDown" />
+      </div>
     </div>
     <NDataTable
       :columns="columns"
@@ -428,5 +463,10 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
   0%   { margin-left: -40%; width: 40%; }
   50%  { margin-left: 60%; width: 40%; }
   100% { margin-left: 110%; width: 40%; }
+}
+.playlist-seek-hit {
+  position: absolute;
+  inset: -6px 0;
+  cursor: pointer;
 }
 </style>
