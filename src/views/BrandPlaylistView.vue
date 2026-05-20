@@ -417,20 +417,16 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
 }
 
 tr.playlist-row--playing {
-  background-image: linear-gradient(to right, #eff605 var(--progress, 0%), transparent var(--progress, 0%)) !important;
-  background-size: 100% 2px !important;
-  background-repeat: no-repeat !important;
-  background-position: left bottom !important;
+  border-bottom-width: 2px !important;
+  border-bottom-style: solid !important;
+  border-image: linear-gradient(to right, #eff605 var(--progress, 0%), transparent var(--progress, 0%)) 0 0 1 0 !important;
 }
 tr.playlist-row--loading {
-  background-image: linear-gradient(to right, transparent 0%, #eff605 50%, transparent 100%) !important;
-  background-size: 40% 2px !important;
-  background-repeat: no-repeat !important;
-  background-position: left bottom !important;
-  animation: row-dl-slide 1.4s ease-in-out infinite;
+  border-bottom: 2px solid #eff605 !important;
+  animation: row-loading-pulse 0.8s ease-in-out infinite;
 }
-@keyframes row-dl-slide {
-  0%   { background-position: -40% bottom; }
-  100% { background-position: 110% bottom; }
+@keyframes row-loading-pulse {
+  0%, 100% { border-bottom-color: #eff605; }
+  50%       { border-bottom-color: rgba(239, 246, 5, 0.1); }
 }
 </style>
