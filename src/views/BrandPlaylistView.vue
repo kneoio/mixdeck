@@ -3,7 +3,7 @@ import { ref, computed, watch, h, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
-  NDataTable, NSpace, NPopconfirm, NInput, NTag, NIcon, NButton, NProgress,
+  NDataTable, NSpace, NPopconfirm, NInput, NTag, NIcon, NButton,
   type DataTableColumns, useMessage
 } from 'naive-ui'
 import { ShareSocialOutline, PlayOutline, PauseOutline } from '@vicons/ionicons5'
@@ -44,37 +44,6 @@ let currentAudio: HTMLAudioElement | null = null
 let currentBlobUrl: string | null = null
 let playRequestId = 0
 
-const seekBarRef = ref<HTMLElement | null>(null)
-let seekDocMove: ((e: MouseEvent) => void) | null = null
-let seekDocUp: (() => void) | null = null
-
-function detachSeekListeners() {
-  if (seekDocMove) { document.removeEventListener('mousemove', seekDocMove); seekDocMove = null }
-  if (seekDocUp)   { document.removeEventListener('mouseup',  seekDocUp);   seekDocUp = null }
-}
-
-function applySeekClientX(clientX: number) {
-  const bar = seekBarRef.value
-  const a = currentAudio
-  if (!bar || !a || !Number.isFinite(a.duration) || a.duration <= 0) return
-  const rect = bar.getBoundingClientRect()
-  if (rect.width <= 0) return
-  const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
-  a.currentTime = ratio * a.duration
-  playbackPercent.value = ratio * 100
-}
-
-function onSeekMouseDown(e: MouseEvent) {
-  if (e.button !== 0) return
-  e.preventDefault()
-  let done = false
-  function onUp() { if (done) return; done = true; detachSeekListeners() }
-  seekDocMove = (ev) => { if (!done) applySeekClientX(ev.clientX) }
-  seekDocUp   = onUp
-  document.addEventListener('mousemove', seekDocMove)
-  document.addEventListener('mouseup', onUp, { once: true })
-  applySeekClientX(e.clientX)
-}
 
 function stopCurrentAudio() {
   if (currentAudio) { currentAudio.pause(); currentAudio.src = ''; currentAudio = null }
@@ -272,6 +241,21 @@ const columns = computed<DataTableColumns<any>>(() => {
 ]
 })
 
+const rowProps = computed(() => (row: any) => {
+  const isPlaying = playingId.value === row.id
+  const isLoading = loadingPlayId.value === row.id
+  const style: Record<string, string> = { cursor: 'pointer' }
+  if (isPlaying) style['--progress'] = `${playbackPercent.value}%`
+  return {
+    style,
+    class: isPlaying ? 'playlist-row--playing' : isLoading ? 'playlist-row--loading' : '',
+    onClick: (e: MouseEvent) => {
+      if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return
+      router.push({ path: `/brands/${route.params.id}/playlist/${row.id}`, query: { returnTo: route.fullPath } })
+    },
+  }
+})
+
 async function fetchData(page = pageNum.value, size = pageSize.value) {
   if (!slugName.value) return
   loading.value = true
@@ -343,7 +327,6 @@ onMounted(() => {
 
 onUnmounted(() => {
   stopCurrentAudio()
-  detachSeekListeners()
   playlistTableMql?.removeEventListener('change', syncPlaylistTableNarrow)
   playlistTableMql = null
 })
@@ -404,22 +387,6 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
       :brand-slug="slugName"
       @shared="onShareDialogDone"
     />
-    <div class="playlist-dl-bar-wrap">
-      <div v-if="loadingPlayId" class="playlist-dl-bar" />
-      <div v-else-if="playingId" style="position:relative;">
-        <NProgress
-          type="line"
-          :percentage="playbackPercent"
-          :show-indicator="false"
-          :height="2"
-          :border-radius="1"
-          :fill-border-radius="1"
-          color="#eff605"
-          rail-color="rgba(255,255,255,0.12)"
-        />
-        <div ref="seekBarRef" class="playlist-seek-hit" @mousedown="onSeekMouseDown" />
-      </div>
-    </div>
     <NDataTable
       :columns="columns"
       :data="entries"
@@ -428,7 +395,7 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
       v-model:checked-row-keys="selectedIds"
       :pagination="pagination"
       remote
-      :row-props="(row: any) => ({ style: 'cursor:pointer', onClick: (e: MouseEvent) => { if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return; router.push({ path: `/brands/${route.params.id}/playlist/${row.id}`, query: { returnTo: route.fullPath } }) } })"
+      :row-props="rowProps"
       @update:page="(p) => { pageNum = p; fetchData(p) }"
       @update:page-size="(s) => { pageSize = s; fetchData(1, s) }"
     />
@@ -449,24 +416,21 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
   35%           { filter: drop-shadow(0 0 1px #00FF3C); opacity: 0.2; }
 }
 
-.playlist-dl-bar-wrap {
-  height: 2px;
-  overflow: hidden;
+tr.playlist-row--playing {
+  background-image: linear-gradient(to right, #eff605 var(--progress, 0%), transparent var(--progress, 0%)) !important;
+  background-size: 100% 2px !important;
+  background-repeat: no-repeat !important;
+  background-position: left bottom !important;
 }
-.playlist-dl-bar {
-  height: 100%;
-  background: #eff605;
-  box-shadow: 0 0 4px #eff605;
-  animation: playlist-dl-slide 1.4s ease-in-out infinite;
+tr.playlist-row--loading {
+  background-image: linear-gradient(to right, transparent 0%, #eff605 50%, transparent 100%) !important;
+  background-size: 40% 2px !important;
+  background-repeat: no-repeat !important;
+  background-position: left bottom !important;
+  animation: row-dl-slide 1.4s ease-in-out infinite;
 }
-@keyframes playlist-dl-slide {
-  0%   { margin-left: -40%; width: 40%; }
-  50%  { margin-left: 60%; width: 40%; }
-  100% { margin-left: 110%; width: 40%; }
-}
-.playlist-seek-hit {
-  position: absolute;
-  inset: -6px 0;
-  cursor: pointer;
+@keyframes row-dl-slide {
+  0%   { background-position: -40% bottom; }
+  100% { background-position: 110% bottom; }
 }
 </style>
