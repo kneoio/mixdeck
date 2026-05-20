@@ -6,7 +6,9 @@ import {
   NDataTable, NSpace, NPopconfirm, NInput, NTag, NIcon,
   type DataTableColumns, useMessage
 } from 'naive-ui'
-import { ShareSocialOutline } from '@vicons/ionicons5'
+import { ShareSocialOutline, PlayOutline, PauseOutline } from '@vicons/ionicons5'
+import datanestApiService from '@/services/datanestApi'
+import { appConfig } from '@/config/appConfig'
 import { useBrandsStore } from '@/stores/brands'
 import datanestApiService from '@/services/datanestApi'
 import dictionaryApiService from '@/services/dictionaryApi'
@@ -35,6 +37,39 @@ const showBulkUpload = ref(false)
 const showShareDialog = ref(false)
 const shareFragmentIds = ref<string[]>([])
 const brandDoc = ref<any | null>(null)
+
+const playingId = ref<string | null>(null)
+const loadingPlayId = ref<string | null>(null)
+let currentAudio: HTMLAudioElement | null = null
+let currentBlobUrl: string | null = null
+
+function stopCurrentAudio() {
+  if (currentAudio) { currentAudio.pause(); currentAudio.src = ''; currentAudio = null }
+  if (currentBlobUrl) { URL.revokeObjectURL(currentBlobUrl); currentBlobUrl = null }
+  playingId.value = null
+}
+
+async function toggleRowPlay(row: any, e: MouseEvent) {
+  e.stopPropagation()
+  const id = row.id
+  if (playingId.value === id) { stopCurrentAudio(); return }
+  stopCurrentAudio()
+  const rawUrl = row.url || row.files?.[0]?.url || ''
+  if (!rawUrl) return
+  const url = rawUrl.startsWith('http') ? rawUrl : `${appConfig.datanestServer}${rawUrl}`
+  loadingPlayId.value = id
+  try {
+    const blobUrl = await datanestApiService.fetchBlobUrl(url)
+    currentBlobUrl = blobUrl
+    const audio = new Audio(blobUrl)
+    currentAudio = audio
+    audio.onended = () => { playingId.value = null }
+    await audio.play()
+    playingId.value = id
+  } catch { /* silent */ } finally {
+    loadingPlayId.value = null
+  }
+}
 
 /** When true, narrow genres / labels / played / description so title & artist keep space. */
 const narrowPlaylistTable = ref(false)
@@ -123,6 +158,26 @@ const columns = computed<DataTableColumns<any>>(() => {
     minWidth: artistMin,
     ellipsis: { tooltip: true },
     render: (row) => row.artist || '-',
+  },
+  {
+    key: 'play',
+    width: 40,
+    title: '',
+    render: (row) => {
+      const hasAudio = !!(row.url || row.files?.[0]?.url)
+      if (!hasAudio) return null
+      const isRowPlaying = playingId.value === row.id
+      const isRowLoading = loadingPlayId.value === row.id
+      return h('button', {
+        class: 'playlist-play-btn',
+        title: isRowPlaying ? 'Pause' : 'Play',
+        onClick: (e: MouseEvent) => toggleRowPlay(row, e),
+      }, [
+        isRowLoading
+          ? h('span', { class: 'playlist-play-spinner' })
+          : h(NIcon, { size: 15 }, { default: () => isRowPlaying ? h(PauseOutline) : h(PlayOutline) })
+      ])
+    },
   },
   {
     title: t('playlistView.col_genres'), key: 'genres', width: genreW,
@@ -245,6 +300,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  stopCurrentAudio()
   playlistTableMql?.removeEventListener('change', syncPlaylistTableNarrow)
   playlistTableMql = null
 })
@@ -319,3 +375,34 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
     />
   </div>
 </template>
+
+<style scoped>
+.playlist-play-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid rgba(124, 58, 237, 0.45);
+  background: rgba(124, 58, 237, 0.12);
+  color: #7C3AED;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s, border-color 0.15s;
+}
+.playlist-play-btn:hover {
+  background: rgba(124, 58, 237, 0.25);
+  border-color: #7C3AED;
+}
+.playlist-play-spinner {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid #7C3AED;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: playlist-spin 0.6s linear infinite;
+}
+@keyframes playlist-spin { to { transform: rotate(360deg); } }
+</style>
