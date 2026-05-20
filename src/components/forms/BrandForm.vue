@@ -846,8 +846,8 @@ watch(activeTab, () => {
 
       <NTabPane name="playerUi" :tab="t('brandForm.tab_player_ui')">
         <div style="display:flex;flex-direction:column;gap:16px;max-width:560px;">
-          <div style="background:#0f0f0f;border:1px solid #1f1f1f;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:16px;">
-            <div style="font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:#555;">{{ t('brandForm.card_native_player') }}</div>
+          <div class="player-card">
+            <div class="player-card__label">{{ t('brandForm.card_native_player') }}</div>
             <div v-if="localizedNames[0]?.name" :style="{ fontFamily: formData.titleFont || undefined, fontSize: '1.5rem', color: formData.color, lineHeight: '1.2' }">
               {{ localizedNames[0].name }}
             </div>
@@ -862,14 +862,14 @@ watch(activeTab, () => {
                 </div>
               </NFormItem>
             </NForm>
-            <div v-if="formData.mixplaUrl" style="font-size:0.78rem;color:#444;word-break:break-all;">{{ formData.mixplaUrl }}</div>
+            <div v-if="formData.mixplaUrl" class="player-card__url">{{ formData.mixplaUrl }}</div>
             <div v-if="formData.mixplaUrl"><GsapButton type="primary" size="small" @click="openMixplaPlayer"><span>{{ t('brandForm.card_open') }}</span></GsapButton></div>
           </div>
 
-          <div v-if="formData.hlsUrl" style="background:#0f0f0f;border:1px solid #1f1f1f;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px;">
-            <div style="font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:#555;">{{ t('brandForm.card_hls_stream') }}</div>
-            <div style="font-size:0.82rem;color:#888;word-break:break-all;">{{ formData.hlsUrl }}</div>
-            <div style="font-size:0.72rem;color:#444;">VLC · foobar2000 · any HLS player</div>
+          <div v-if="formData.hlsUrl" class="player-card">
+            <div class="player-card__label">{{ t('brandForm.card_hls_stream') }}</div>
+            <div class="player-card__url">{{ formData.hlsUrl }}</div>
+            <div class="player-card__sub">VLC · foobar2000 · any HLS player</div>
             <div><GsapButton size="small" @click="copyHlsUrl"><span>{{ hlsCopied ? t('brandForm.card_copied') : t('brandForm.card_copy') }}</span></GsapButton></div>
           </div>
         </div>
@@ -959,6 +959,51 @@ watch(activeTab, () => {
 
 .field-error-label--visible {
   visibility: visible;
+}
+
+.player-card {
+  background: #0f0f0f;
+  border: 1px solid #1f1f1f;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.player-card__label {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #666;
+}
+
+.player-card__url {
+  font-size: 0.82rem;
+  color: #666;
+  word-break: break-all;
+}
+
+.player-card__sub {
+  font-size: 0.72rem;
+  color: #555;
+}
+
+:global(.n-config-provider:not([class*="dark"])) .player-card {
+  background: #f5f5f5;
+  border-color: #e0e0e0;
+}
+
+:global(.n-config-provider:not([class*="dark"])) .player-card__label {
+  color: #999;
+}
+
+:global(.n-config-provider:not([class*="dark"])) .player-card__url {
+  color: #555;
+}
+
+:global(.n-config-provider:not([class*="dark"])) .player-card__sub {
+  color: #888;
 }
 
 .localized-row {
