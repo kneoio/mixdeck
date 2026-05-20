@@ -222,8 +222,10 @@ onUnmounted(() => {
         <span>{{ alive ? 'Stop' : 'Start' }}</span>
       </GsapButton>
       <div class="aivox-status">
-        <LedIndicator :active="alive || waiting" :pulse="waiting || alive" color="#FFD600" :size="18" />
-        <span class="aivox-label">{{ t('dashboard.onAir') }}</span>
+        <div class="aivox-led-wrap">
+          <LedIndicator :active="alive || waiting" :pulse="waiting" color="#FFD600" :size="18" />
+          <span class="aivox-label">{{ t('dashboard.onAir') }}</span>
+        </div>
       </div>
       <div v-if="timezone" class="time-info">
         <div class="time-display">
@@ -277,9 +279,16 @@ onUnmounted(() => {
   align-items: center;
   gap: 10px;
 }
+.aivox-led-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
 .aivox-label {
-  font-size: 0.85rem;
+  font-size: 0.7rem;
   font-weight: 500;
+  opacity: 0.7;
 }
 .time-info {
   display: flex;
