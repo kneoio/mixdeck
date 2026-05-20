@@ -196,12 +196,17 @@ onUnmounted(() => stopRefresh())
                     <span v-if="block.hasJingle" class="flag flag-jingle">J</span>
                   </div>
                   <div v-for="song in block.songs" :key="song.songId" class="song-row">
-                    <span class="song-title">{{ song.songTitle }}</span>
-                    <span class="song-sep">·</span>
-                    <span class="song-artist">{{ song.artist }}</span>
-                    <span class="song-sep">·</span>
-                    <span class="song-dur">{{ fmtDurSec(song.durationSeconds) }}</span>
-                    <span v-if="song.shared && song.sharerName" class="song-sharer">{{ t('agenda.shared_by') }} {{ song.sharerName }}</span>
+                    <div class="song-left">
+                      <span class="song-title">{{ song.songTitle }}</span>
+                      <span class="song-sep">·</span>
+                      <span class="song-artist">{{ song.artist }}</span>
+                      <span class="song-sep">·</span>
+                      <span class="song-dur">{{ fmtDurSec(song.durationSeconds) }}</span>
+                    </div>
+                    <div v-if="song.shared && song.sharerName" class="song-sharer-wrap">
+                      <span class="song-sharer-label">{{ t('agenda.shared_by') }}</span>
+                      <span class="song-sharer">{{ song.sharerName }}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -354,19 +359,22 @@ onUnmounted(() => stopRefresh())
 .song-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: space-between;
+  gap: 12px;
   padding: 3px 8px;
   border-radius: 4px;
   font-size: 0.8rem;
   background: rgba(128, 128, 128, 0.07);
   min-width: 0;
 }
+.song-left   { display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; }
 .song-title  { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .song-sep    { opacity: 0.3; flex-shrink: 0; }
 .song-artist { font-size: 0.72rem; opacity: 0.55; white-space: nowrap; flex-shrink: 0; }
 .song-dur    { font-family: monospace; font-size: 0.65rem; opacity: 0.5; white-space: nowrap; flex-shrink: 0; }
+.song-sharer-wrap { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+.song-sharer-label { font-size: 0.65rem; opacity: 0.5; white-space: nowrap; }
 .song-sharer {
-  flex-shrink: 0;
   padding: 1px 7px;
   font-size: 0.65rem;
   font-weight: 600;
