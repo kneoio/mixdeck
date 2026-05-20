@@ -271,7 +271,7 @@ onUnmounted(() => {
 .aivox-row {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 28px;
   flex-wrap: wrap;
 }
 .aivox-status {
@@ -283,7 +283,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: 1px;
 }
 .aivox-label {
   font-size: 0.7rem;
