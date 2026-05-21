@@ -4,7 +4,8 @@ import { useI18n } from 'vue-i18n'
 import { gsap } from 'gsap'
 import {
   NSpace, NForm, NFormItem, NInput, NSelect, NTreeSelect, NSwitch,
-  NTabs, NTabPane, NDynamicInput, NInputNumber, NSlider,
+  NTabs, NTabPane, NDynamicInput, NInputNumber, NSlider, NTimePicker,
+  NCheckbox, NRadioGroup, NRadio,
   NColorPicker, NTag, NPopconfirm, NAnchor, NAnchorLink, useMessage
 } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
@@ -14,6 +15,7 @@ import { useBrandsStore, SUBMISSION_POLICY_OPTIONS, type SubmissionPolicy } from
 import { useScriptsStore } from '@/stores/scripts'
 import { useConstantsStore } from '@/stores/constants'
 import { useRoute, useRouter } from 'vue-router'
+import { useThemeStore } from '@/stores/theme'
 import datanestApiService from '@/services/datanestApi'
 import dictionaryApiService, { type GenreEntry } from '@/services/dictionaryApi'
 import { handleApiError } from '@/utils/notificationService'
@@ -28,6 +30,7 @@ const store = useBrandsStore()
 const scriptsStore = useScriptsStore()
 const constantsStore = useConstantsStore()
 const message = useMessage()
+const themeStore = useThemeStore()
 
 // true when at /brands/:id/settings
 const isSettings = computed(() => route.name === 'brand-settings')
@@ -92,6 +95,148 @@ const formData = ref({
 })
 
 const userVariables = ref<Record<string, any>>({})
+
+const PREDEFINED_ACTIONS = [
+  'Talk', 'Music', 'News', 'Weather', 'Ad Break',
+  'Jingle', 'Interview', 'Story', 'Shoutout', 'Quiz',
+]
+
+const CONTEXT_VARIABLES = [
+  { label: 'Song Name',    value: 'songName',    example: 'Bohemian Rhapsody' },
+  { label: 'Artist Name',  value: 'artistName',  example: 'Queen' },
+  { label: 'Brand Title',  value: 'brandTitle',  example: 'Lumisonic' },
+  { label: 'Description',  value: 'description', example: 'A classic rock anthem' },
+  { label: 'DJ Name',      value: 'djName',      example: 'DJ Nova' },
+  { label: 'Time of Day',  value: 'timeOfDay',   example: 'Lunch Hours' },
+  { label: 'Genre',        value: 'genre',       example: 'Rock' },
+  { label: 'Country Hint', value: 'countryHint', example: 'Portugal' },
+]
+
+type CustomActionDef = {
+  title: string
+  instruction: string
+  contextVars: string[]
+  songsMode: 'RANDOM' | 'STATIC_LIST'
+  songsLabels: string[]
+}
+
+type Scene = {
+  id: number
+  startTime: number | null
+  actions: string[]
+  customActionDefs: Record<string, CustomActionDef>
+  allowJingles: boolean
+  allowAds: boolean
+  talkActivity: number
+}
+
+function emptyDraft(): CustomActionDef {
+  return { title: '', instruction: '', contextVars: ['songName', 'artistName'], songsMode: 'RANDOM', songsLabels: [] }
+}
+
+const scriptMode = ref<'predefined' | 'custom'>('predefined')
+
+let _sceneId = 0
+const scenes = ref<Scene[]>([])
+const customActionFormVisible = ref<Record<number, boolean>>({})
+const customActionDraft = ref<Record<number, CustomActionDef>>({})
+const customActionEditingTitle = ref<Record<number, string | null>>({})
+
+function addScene() {
+  const id = ++_sceneId
+  scenes.value.push({ id, startTime: null, actions: [], customActionDefs: {}, allowJingles: true, allowAds: false, talkActivity: 50 })
+  customActionFormVisible.value[id] = false
+  customActionDraft.value[id] = emptyDraft()
+  customActionEditingTitle.value[id] = null
+}
+
+function removeScene(id: number) {
+  scenes.value = scenes.value.filter(s => s.id !== id)
+  delete customActionFormVisible.value[id]
+  delete customActionDraft.value[id]
+  delete customActionEditingTitle.value[id]
+}
+
+function editCustomAction(scene: Scene, title: string) {
+  const def = scene.customActionDefs[title]
+  if (!def) return
+  customActionDraft.value[scene.id] = { ...def }
+  customActionEditingTitle.value[scene.id] = title
+  customActionFormVisible.value[scene.id] = true
+}
+
+function submitCustomAction(scene: Scene) {
+  const draft = customActionDraft.value[scene.id]
+  const newTitle = draft.title.trim()
+  if (!newTitle) return
+  const oldTitle = customActionEditingTitle.value[scene.id]
+  if (oldTitle && oldTitle !== newTitle) {
+    delete scene.customActionDefs[oldTitle]
+    scene.actions = scene.actions.map(a => a === oldTitle ? newTitle : a)
+  }
+  scene.customActionDefs[newTitle] = { ...draft, title: newTitle, instruction: draft.instruction }
+  if (!scene.actions.includes(newTitle)) scene.actions.push(newTitle)
+  customActionDraft.value[scene.id] = emptyDraft()
+  customActionEditingTitle.value[scene.id] = null
+  customActionFormVisible.value[scene.id] = false
+}
+
+function cancelCustomAction(scene: Scene) {
+  customActionDraft.value[scene.id] = emptyDraft()
+  customActionEditingTitle.value[scene.id] = null
+  customActionFormVisible.value[scene.id] = false
+}
+
+function renderSceneActionTag(scene: Scene) {
+  return ({ option, handleClose }: { option: { label: string; value: string }; handleClose: () => void }) => {
+    const isCustom = Boolean(scene.customActionDefs[option.value])
+    return h(NTag, {
+      size: 'medium',
+      closable: true,
+      onClose: handleClose,
+    }, {
+      default: () => isCustom
+        ? [
+            h('span', { style: 'font-size:0.82rem;' }, option.label),
+            h('span', {
+              style: 'margin-left:7px;font-size:0.9rem;opacity:0.55;cursor:pointer;line-height:1;transition:opacity 0.15s;',
+              onMouseenter: (e: MouseEvent) => { (e.target as HTMLElement).style.opacity = '1' },
+              onMouseleave: (e: MouseEvent) => { (e.target as HTMLElement).style.opacity = '0.55' },
+              onClick: (e: MouseEvent) => { e.stopPropagation(); editCustomAction(scene, option.value) },
+            }, '✎'),
+          ]
+        : h('span', { style: 'font-size:0.82rem;' }, option.label),
+    })
+  }
+}
+
+function sceneActionOptions(scene: Scene) {
+  const customTitles = Object.keys(scene.customActionDefs).filter(t => !PREDEFINED_ACTIONS.includes(t))
+  const groups: any[] = [
+    {
+      type: 'group',
+      label: t('brandForm.action_group_predefined'),
+      key: 'predefined',
+      children: PREDEFINED_ACTIONS.map(a => ({ label: a, value: a })),
+    },
+  ]
+  if (customTitles.length) {
+    groups.push({
+      type: 'group',
+      label: t('brandForm.action_group_custom'),
+      key: 'custom',
+      children: customTitles.map(t => ({ label: t, value: t })),
+    })
+  }
+  return groups
+}
+
+function contextPreviewLines(contextVars: string[]) {
+  return contextVars.map(v => {
+    const def = CONTEXT_VARIABLES.find(c => c.value === v)
+    return def ? `${def.value}: ${def.example}` : v
+  })
+}
 
 type AgentLabel = {
   id: string
@@ -737,54 +882,185 @@ watch(activeTab, () => {
       </NTabPane>
 
       <NTabPane name="script" :tab="t('brandForm.tab_script')">
-        <NForm :label-placement="formLabelPlacement" label-width="140" :disabled="loading">
-          <NFormItem :label="t('brandForm.script')">
-            <div class="field-stack">
-              <div
-                ref="scriptFieldRef"
-                class="field-error-shell"
-                :class="{ 'field-error-shell--active': !!fieldErrors.scriptId }"
-              >
-                <NSelect v-model:value="formData.scriptId" :options="scriptOptions"
-                  :render-label="renderScriptOptionLabel" filterable style="width: 100%; max-width: 500px" />
-              </div>
-              <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.scriptId }">
-                {{ fieldErrors.scriptId || '\u00A0' }}
-              </div>
-            </div>
-          </NFormItem>
+        <NRadioGroup v-model:value="scriptMode" class="script-mode-radio">
+          <NRadio value="predefined">{{ t('brandForm.card_predefined_script') }}</NRadio>
+          <NRadio value="custom">{{ t('brandForm.card_your_script') }}</NRadio>
+        </NRadioGroup>
 
-          <NFormItem v-if="selectedScript?.description" :label="t('fragmentForm.description')">
-            <div class="field-stack">
-              <div class="field-error-shell">
-                <span style="color: #888; font-size: 13px;">{{ selectedScript.description }}</span>
-              </div>
-              <div class="field-error-label"></div>
-            </div>
-          </NFormItem>
-
-          <template v-if="selectedScript?.requiredVariables?.length">
-            <NFormItem :label="t('brandForm.variables')">
-              <div class="field-stack">
-                <div class="field-error-shell" style="max-width: 500px">
-                  <div v-for="variable in selectedScript.requiredVariables" :key="variable.name"
-                    style="margin-bottom: 12px">
-                    <div style="margin-bottom: 4px; font-size: 13px">
-                      <strong>{{ formatVariableName(variable.name) }}</strong>
-                      <span v-if="variable.required" style="color: #e74c3c">*</span>
-                      <span style="color: #888; font-size: 12px; margin-left: 8px">{{ variable.description }}</span>
-                    </div>
-                    <NSwitch v-if="variable.type === 'boolean'" v-model:value="userVariables[variable.name]" />
-                    <NInputNumber v-else-if="variable.type === 'number'"
-                      v-model:value="userVariables[variable.name]" style="width: 100%" />
-                    <NInput v-else v-model:value="userVariables[variable.name]" style="width: 100%" />
+        <div class="script-cards">
+          <div v-if="scriptMode === 'predefined'" :class="['player-card', { 'player-card--dark': themeStore.isDark }]">
+            <div class="player-card__label">{{ t('brandForm.card_predefined_script') }}</div>
+            <div class="player-card__sub">{{ t('brandForm.card_predefined_script_sub') }}</div>
+            <NForm :label-placement="formLabelPlacement" label-width="140" :disabled="loading" style="margin:0">
+              <NFormItem :label="t('brandForm.script')" style="margin-bottom:8px">
+                <div class="field-stack">
+                  <div
+                    ref="scriptFieldRef"
+                    class="field-error-shell"
+                    :class="{ 'field-error-shell--active': !!fieldErrors.scriptId }"
+                  >
+                    <NSelect v-model:value="formData.scriptId" :options="scriptOptions"
+                      :render-label="renderScriptOptionLabel" filterable style="width: 100%; max-width: 440px" />
+                  </div>
+                  <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.scriptId }">
+                    {{ fieldErrors.scriptId || '\u00A0' }}
                   </div>
                 </div>
+              </NFormItem>
+
+              <NFormItem v-if="selectedScript?.description" :label="t('fragmentForm.description')" style="margin-bottom:8px">
+                <div class="field-stack">
+                  <div class="field-error-shell">
+                    <span style="color: #888; font-size: 13px;">{{ selectedScript.description }}</span>
+                  </div>
+                  <div class="field-error-label"></div>
+                </div>
+              </NFormItem>
+
+              <template v-if="selectedScript?.requiredVariables?.length">
+                <NFormItem :label="t('brandForm.variables')" style="margin-bottom:0">
+                  <div class="field-stack">
+                    <div class="field-error-shell" style="max-width: 440px">
+                      <div v-for="variable in selectedScript.requiredVariables" :key="variable.name"
+                        style="margin-bottom: 12px">
+                        <div style="margin-bottom: 4px; font-size: 13px">
+                          <strong>{{ formatVariableName(variable.name) }}</strong>
+                          <span v-if="variable.required" style="color: #e74c3c">*</span>
+                          <span style="color: #888; font-size: 12px; margin-left: 8px">{{ variable.description }}</span>
+                        </div>
+                        <NSwitch v-if="variable.type === 'boolean'" v-model:value="userVariables[variable.name]" />
+                        <NInputNumber v-else-if="variable.type === 'number'"
+                          v-model:value="userVariables[variable.name]" style="width: 100%" />
+                        <NInput v-else v-model:value="userVariables[variable.name]" style="width: 100%" />
+                      </div>
+                    </div>
+                  </div>
+                  <div class="field-error-label"></div>
+                </NFormItem>
+              </template>
+            </NForm>
+          </div>
+
+          <div v-if="scriptMode === 'custom'" :class="['player-card', { 'player-card--dark': themeStore.isDark }]">
+            <div class="player-card__label">{{ t('brandForm.card_your_script') }}</div>
+            <div class="player-card__sub">{{ t('brandForm.card_your_script_sub') }}</div>
+
+            <div v-for="scene in scenes" :key="scene.id" :class="['scene-card', { 'scene-card--dark': themeStore.isDark }]">
+              <div class="scene-card__header">
+                <span class="scene-card__index">Scene {{ scenes.indexOf(scene) + 1 }}</span>
+                <button class="scene-card__remove" @click="removeScene(scene.id)" title="Remove">×</button>
               </div>
-              <div class="field-error-label"></div>
-            </NFormItem>
-          </template>
-        </NForm>
+
+              <div class="scene-card__row">
+                <label class="scene-card__label">{{ t('brandForm.scene_start_time') }}</label>
+                <NTimePicker v-model:value="scene.startTime" use-12-hours clearable style="width: 160px" />
+                <NCheckbox v-model:checked="scene.allowJingles">{{ t('brandForm.scene_allow_jingles') }}</NCheckbox>
+                <NCheckbox v-model:checked="scene.allowAds">{{ t('brandForm.scene_allow_ads') }}</NCheckbox>
+              </div>
+
+              <div class="scene-card__row">
+                <label class="scene-card__label">{{ t('brandForm.scene_talk_activity') }}</label>
+                <NSlider v-model:value="scene.talkActivity" :min="0" :max="100" style="flex: 1" />
+                <span class="scene-card__slider-val">{{ scene.talkActivity }}%</span>
+              </div>
+
+              <div class="scene-card__row">
+                <label class="scene-card__label">{{ t('brandForm.scene_actions') }}</label>
+                <NSelect
+                  v-model:value="scene.actions"
+                  :options="sceneActionOptions(scene)"
+                  multiple
+                  :render-tag="renderSceneActionTag(scene)"
+                  :placeholder="t('brandForm.scene_tags')"
+                  style="flex: 1"
+                />
+                <button
+                  class="scene-custom-action-btn"
+                  :class="{ 'scene-custom-action-btn--active': customActionFormVisible[scene.id] }"
+                  :title="t('brandForm.action_add_custom')"
+                  @click="() => { if (!customActionFormVisible[scene.id]) { customActionDraft[scene.id] = emptyDraft(); customActionEditingTitle[scene.id] = null; } customActionFormVisible[scene.id] = !customActionFormVisible[scene.id] }"
+                >+</button>
+              </div>
+
+              <div v-if="customActionFormVisible[scene.id]" :class="['custom-action-form', { 'custom-action-form--dark': themeStore.isDark }]">
+                <div class="custom-action-form__row">
+                  <label class="scene-card__label">{{ t('brandForm.action_title') }}</label>
+                  <NInput
+                    v-model:value="customActionDraft[scene.id].title"
+                    :placeholder="t('brandForm.action_title_placeholder')"
+                    size="small"
+                    style="flex: 1"
+                  />
+                </div>
+
+                <div class="custom-action-form__row custom-action-form__row--top">
+                  <label class="scene-card__label">{{ t('brandForm.action_songs') }}</label>
+                  <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                    <NRadioGroup v-model:value="customActionDraft[scene.id].songsMode" style="display:flex;gap:16px">
+                      <NRadio value="RANDOM">{{ t('brandForm.action_songs_random') }}</NRadio>
+                      <NRadio value="STATIC_LIST">{{ t('brandForm.action_songs_by_labels') }}</NRadio>
+                    </NRadioGroup>
+                    <NSelect
+                      v-if="customActionDraft[scene.id].songsMode === 'STATIC_LIST'"
+                      v-model:value="customActionDraft[scene.id].songsLabels"
+                      :options="formData.labels.map(l => ({ label: l, value: l }))"
+                      multiple
+                      filterable
+                      tag
+                      :placeholder="t('brandForm.action_songs_labels')"
+                    />
+                  </div>
+                </div>
+
+                <div class="custom-action-form__row custom-action-form__row--top">
+                  <label class="scene-card__label">{{ t('brandForm.action_context_vars') }}</label>
+                  <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                    <div class="context-checkboxes">
+                      <NCheckbox
+                        v-for="cv in CONTEXT_VARIABLES"
+                        :key="cv.value"
+                        :checked="customActionDraft[scene.id].contextVars.includes(cv.value)"
+                        @update:checked="(v) => {
+                          const vars = customActionDraft[scene.id].contextVars
+                          if (v) vars.push(cv.value)
+                          else customActionDraft[scene.id].contextVars = vars.filter(x => x !== cv.value)
+                        }"
+                      >{{ cv.label }}</NCheckbox>
+                    </div>
+                    <div v-if="customActionDraft[scene.id].contextVars.length" :class="['context-preview', { 'context-preview--dark': themeStore.isDark }]">
+                      <div v-for="line in contextPreviewLines(customActionDraft[scene.id].contextVars)" :key="line" class="context-preview__line">
+                        {{ line }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="custom-action-form__row custom-action-form__row--top">
+                  <label class="scene-card__label">{{ t('brandForm.action_instruction') }}</label>
+                  <NInput
+                    v-model:value="customActionDraft[scene.id].instruction"
+                    type="textarea"
+                    :autosize="{ minRows: 3, maxRows: 8 }"
+                    :placeholder="t('brandForm.action_instruction_placeholder')"
+                    style="flex: 1"
+                  />
+                </div>
+
+                <div class="custom-action-form__footer">
+                  <button class="scene-custom-submit" @click="submitCustomAction(scene)">{{ t('common.add') }}</button>
+                  <button class="scene-custom-cancel" @click="cancelCustomAction(scene)">{{ t('common.close') }}</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="script-scenes-empty">
+              <button class="script-add-scene" :disabled="loading" @click="addScene">
+                <span class="script-add-scene__icon">+</span>
+                <span>{{ t('brandForm.card_add_scene') }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </NTabPane>
 
       <NTabPane name="audience" :tab="t('brandForm.tab_audience')">
@@ -845,7 +1121,7 @@ watch(activeTab, () => {
 
       <NTabPane name="playerUi" :tab="t('brandForm.tab_player_ui')">
         <div style="display:flex;flex-direction:column;gap:16px;max-width:560px;">
-          <div class="player-card">
+          <div :class="['player-card', { 'player-card--dark': themeStore.isDark }]">
             <div class="player-card__label">{{ t('brandForm.card_native_player') }}</div>
             <div v-if="localizedNames[0]?.name" :style="{ fontFamily: formData.titleFont || undefined, fontSize: '1.5rem', color: formData.color, lineHeight: '1.2' }">
               {{ localizedNames[0].name }}
@@ -865,7 +1141,7 @@ watch(activeTab, () => {
             <div v-if="formData.mixplaUrl"><GsapButton type="primary" size="small" @click="openMixplaPlayer"><span>{{ t('brandForm.card_open') }}</span></GsapButton></div>
           </div>
 
-          <div v-if="formData.hlsUrl" class="player-card">
+          <div v-if="formData.hlsUrl" :class="['player-card', { 'player-card--dark': themeStore.isDark }]">
             <div class="player-card__label">{{ t('brandForm.card_hls_stream') }}</div>
             <div class="player-card__url">{{ formData.hlsUrl }}</div>
             <div class="player-card__sub">VLC · foobar2000 · any HLS player</div>
@@ -961,8 +1237,8 @@ watch(activeTab, () => {
 }
 
 .player-card {
-  background: #0f0f0f;
-  border: 1px solid #1f1f1f;
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
   border-radius: 12px;
   padding: 20px;
   display: flex;
@@ -974,35 +1250,272 @@ watch(activeTab, () => {
   font-size: 0.72rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #666;
+  color: #999;
 }
 
 .player-card__url {
   font-size: 0.82rem;
-  color: #666;
+  color: #555;
   word-break: break-all;
 }
 
 .player-card__sub {
   font-size: 0.72rem;
-  color: #555;
-}
-
-:global(.n-config-provider:not([class*="dark"])) .player-card {
-  background: #f5f5f5;
-  border-color: #e0e0e0;
-}
-
-:global(.n-config-provider:not([class*="dark"])) .player-card__label {
-  color: #999;
-}
-
-:global(.n-config-provider:not([class*="dark"])) .player-card__url {
-  color: #555;
-}
-
-:global(.n-config-provider:not([class*="dark"])) .player-card__sub {
   color: #888;
+}
+
+.player-card--dark {
+  background: #0f0f0f;
+  border-color: #1f1f1f;
+}
+
+.player-card--dark .player-card__label {
+  color: #666;
+}
+
+.player-card--dark .player-card__url {
+  color: #666;
+}
+
+.player-card--dark .player-card__sub {
+  color: #555;
+}
+
+.script-mode-radio {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 16px;
+}
+
+.script-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 600px;
+}
+
+.scene-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.scene-card--dark {
+  border-color: #2a2a2a;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.custom-action-form {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(124, 58, 237, 0.03);
+}
+
+.custom-action-form--dark {
+  border-color: #2e2440;
+  background: rgba(124, 58, 237, 0.06);
+}
+
+.custom-action-form__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.custom-action-form__row--top {
+  align-items: flex-start;
+}
+
+.custom-action-form__footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.context-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.context-preview {
+  font-family: monospace;
+  font-size: 0.78rem;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: #f0f0f0;
+  color: #555;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.context-preview--dark {
+  background: #1a1a1a;
+  color: #888;
+}
+
+.context-preview__line {
+  white-space: pre;
+}
+
+.scene-custom-cancel {
+  flex-shrink: 0;
+  padding: 0 12px;
+  height: 28px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background: transparent;
+  color: #888;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.scene-custom-cancel:hover {
+  opacity: 0.7;
+}
+
+.scene-custom-action-btn {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1.5px dashed rgba(124, 58, 237, 0.4);
+  background: transparent;
+  color: #7C3AED;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scene-custom-action-btn:hover,
+.scene-custom-action-btn--active {
+  border-color: #7C3AED;
+  background: rgba(124, 58, 237, 0.08);
+}
+
+.scene-custom-submit {
+  flex-shrink: 0;
+  padding: 0 12px;
+  height: 28px;
+  border-radius: 4px;
+  border: none;
+  background: #7C3AED;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.scene-custom-submit:hover {
+  opacity: 0.85;
+}
+
+.scene-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.scene-card__index {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #7C3AED;
+}
+
+.scene-card__remove {
+  background: transparent;
+  border: none;
+  color: #aaa;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  transition: color 0.15s;
+}
+
+.scene-card__remove:hover {
+  color: #ff4d4f;
+}
+
+.scene-card__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+
+.scene-card__label {
+  font-size: 0.8rem;
+  color: #888;
+  white-space: nowrap;
+  min-width: 92px;
+}
+
+.scene-card--dark .scene-card__label {
+  color: #666;
+}
+
+.scene-card__slider-val {
+  font-size: 0.8rem;
+  color: #888;
+  min-width: 32px;
+  text-align: right;
+}
+
+.script-scenes-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 0 4px;
+}
+
+.script-add-scene {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: 2px dashed rgba(124, 58, 237, 0.45);
+  border-radius: 8px;
+  background: transparent;
+  color: #7C3AED;
+  font-size: 0.84rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: border-color 0.18s, background 0.18s, color 0.18s;
+}
+
+.script-add-scene:hover:not(:disabled) {
+  border-color: #7C3AED;
+  background: rgba(124, 58, 237, 0.08);
+}
+
+.script-add-scene:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.script-add-scene__icon {
+  font-size: 1.2rem;
+  line-height: 1;
+  font-weight: 300;
 }
 
 .localized-row {
