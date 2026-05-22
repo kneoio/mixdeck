@@ -378,6 +378,10 @@ class DatanestApiService extends ApiClient {
     return URL.createObjectURL(blob)
   }
 
+  async getPublicArray<T>(endpoint: string): Promise<T[]> {
+    return this.request<T[]>(endpoint)
+  }
+
   /** Single-entity audio upload (chunked); final response is the complete DTO ({ status, url, metadata, … }). */
   uploadFragmentFile(fragmentId: string, file: File, onProgress: (percent: number) => void): Promise<any> {
     const batchId = crypto.randomUUID()

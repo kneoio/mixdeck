@@ -77,8 +77,8 @@ export const useBrandsStore = defineStore('brands', () => {
 
   async function saveBrand(id: string | null, data: Partial<Brand>) {
     const { id: _id, author: _a, regDate: _r, lastModifier: _lm, lastModifiedDate: _lmd, status: _s, ...payload } = data as Brand
-    if (id) return datanestApiService.updateDictionaryItem<Brand>('/brands', id, payload)
-    return datanestApiService.createDictionaryItem<Brand>('/brands', payload)
+    if (id) return datanestApiService.updateDictionaryItem<Brand>('/pub/brands', id, payload)
+    return datanestApiService.createDictionaryItem<Brand>('/pub/brands', payload)
   }
 
   async function deleteBrand(id: string) {

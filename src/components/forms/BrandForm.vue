@@ -13,11 +13,12 @@ import type { SelectOption } from 'naive-ui'
 import FormWrapper from '@/components/FormWrapper.vue'
 import { useBrandsStore, SUBMISSION_POLICY_OPTIONS, type SubmissionPolicy } from '@/stores/brands'
 import { useScriptsStore } from '@/stores/scripts'
+import { useActionsStore } from '@/stores/actions'
 import { useConstantsStore } from '@/stores/constants'
 import { useRoute, useRouter } from 'vue-router'
 import { useThemeStore } from '@/stores/theme'
 import datanestApiService from '@/services/datanestApi'
-import dictionaryApiService, { type GenreEntry } from '@/services/dictionaryApi'
+import dictionaryApiService, { type GenreEntry, type LabelEntry } from '@/services/dictionaryApi'
 import { handleApiError } from '@/utils/notificationService'
 import { normalizeIdList, toGenreTreeOptions } from '@/utils/genreTree'
 import { isValidationError } from '@/utils/errorHandler'
@@ -31,6 +32,7 @@ const scriptsStore = useScriptsStore()
 const constantsStore = useConstantsStore()
 const message = useMessage()
 const themeStore = useThemeStore()
+const actionsStore = useActionsStore()
 
 // true when at /brands/:id/settings
 const isSettings = computed(() => route.name === 'brand-settings')
@@ -48,6 +50,7 @@ const formTitle = computed(() => {
 })
 
 const loading = ref(false)
+const brandId = ref<string | null>(null)
 const activeTab = ref('properties')
 const isTabChangeFromValidation = ref(false)
 const saveAttempted = ref(false)
@@ -96,10 +99,6 @@ const formData = ref({
 
 const userVariables = ref<Record<string, any>>({})
 
-const PREDEFINED_ACTIONS = [
-  'Talk', 'Music', 'News', 'Weather', 'Ad Break',
-  'Jingle', 'Interview', 'Story', 'Shoutout', 'Quiz',
-]
 
 const CONTEXT_VARIABLES = [
   { label: 'Song Name',    value: 'songName',    example: 'Bohemian Rhapsody' },
@@ -122,6 +121,7 @@ type CustomActionDef = {
 
 type Scene = {
   id: number
+  title: string
   startTime: number | null
   actions: string[]
   customActionDefs: Record<string, CustomActionDef>
@@ -141,13 +141,17 @@ const scenes = ref<Scene[]>([])
 const customActionFormVisible = ref<Record<number, boolean>>({})
 const customActionDraft = ref<Record<number, CustomActionDef>>({})
 const customActionEditingTitle = ref<Record<number, string | null>>({})
+const sceneTitleEditing = ref<Record<number, boolean>>({})
+const actionTitleEditing = ref<Record<number, boolean>>({})
 
 function addScene() {
   const id = ++_sceneId
-  scenes.value.push({ id, startTime: null, actions: [], customActionDefs: {}, allowJingles: true, allowAds: false, talkActivity: 50 })
+  scenes.value.push({ id, title: '', startTime: null, actions: [], customActionDefs: {}, allowJingles: true, allowAds: false, talkActivity: 50 })
   customActionFormVisible.value[id] = false
   customActionDraft.value[id] = emptyDraft()
   customActionEditingTitle.value[id] = null
+  sceneTitleEditing.value[id] = false
+  actionTitleEditing.value[id] = false
 }
 
 function removeScene(id: number) {
@@ -155,6 +159,8 @@ function removeScene(id: number) {
   delete customActionFormVisible.value[id]
   delete customActionDraft.value[id]
   delete customActionEditingTitle.value[id]
+  delete sceneTitleEditing.value[id]
+  delete actionTitleEditing.value[id]
 }
 
 function editCustomAction(scene: Scene, title: string) {
@@ -185,6 +191,7 @@ function cancelCustomAction(scene: Scene) {
   customActionDraft.value[scene.id] = emptyDraft()
   customActionEditingTitle.value[scene.id] = null
   customActionFormVisible.value[scene.id] = false
+  actionTitleEditing.value[scene.id] = false
 }
 
 function renderSceneActionTag(scene: Scene) {
@@ -211,13 +218,13 @@ function renderSceneActionTag(scene: Scene) {
 }
 
 function sceneActionOptions(scene: Scene) {
-  const customTitles = Object.keys(scene.customActionDefs).filter(t => !PREDEFINED_ACTIONS.includes(t))
+  const customTitles = Object.keys(scene.customActionDefs)
   const groups: any[] = [
     {
       type: 'group',
       label: t('brandForm.action_group_predefined'),
       key: 'predefined',
-      children: PREDEFINED_ACTIONS.map(a => ({ label: a, value: a })),
+      children: actionsStore.selectOptions,
     },
   ]
   if (customTitles.length) {
@@ -225,7 +232,7 @@ function sceneActionOptions(scene: Scene) {
       type: 'group',
       label: t('brandForm.action_group_custom'),
       key: 'custom',
-      children: customTitles.map(t => ({ label: t, value: t })),
+      children: customTitles.map(title => ({ label: title, value: title })),
     })
   }
   return groups
@@ -262,6 +269,13 @@ const profileOptions = ref<{ label: string; value: string }[]>([])
 const scriptOptions = ref<ScriptOption[]>([])
 const genreList = ref<GenreEntry[]>([])
 const genreTreeOptions = computed(() => toGenreTreeOptions(genreList.value))
+const fragmentLabelList = ref<LabelEntry[]>([])
+const fragmentLabelOptions = computed(() =>
+  fragmentLabelList.value.map(l => ({
+    label: l.localizedName?.en || l.identifier || l.id,
+    value: l.identifier || l.id,
+  }))
+)
 
 const bitRateMarks = computed<Record<number, string>>(() => ({
   64_000: t('brandForm.stream_quality_good'),
@@ -494,8 +508,7 @@ async function handleSave() {
   if (!valid) return
   try {
     loading.value = true
-    const id = isEditing.value ? (route.params.id as string) : null
-    const savedBrand = await store.saveBrand(id, {
+    const savedBrand = await store.saveBrand(isEditing.value ? brandId.value : null, {
       ...formData.value,
       localizedName: buildLocalizedName(),
       country: formData.value.country || undefined,
@@ -572,6 +585,7 @@ function normalizeBitRateFromServer(raw: number | null | undefined): number {
 }
 
 function applyBrandToForm(brand: any) {
+  brandId.value = brand.id ?? null
   const ln = brand.localizedName || {}
   localizedNames.value = Object.entries(ln).map(([lang, name]) => ({ lang, name: String(name ?? '') }))
   if (!localizedNames.value.length) localizedNames.value = [{ lang: 'en', name: '' }]
@@ -609,11 +623,13 @@ onMounted(async () => {
   window.addEventListener('resize', updateIsMobile)
   try {
     loading.value = true
-    const [agents, profiles, scripts, genres] = await Promise.allSettled([
+    actionsStore.loadOptions()
+    const [agents, profiles, scripts, genres, fragmentLabels] = await Promise.allSettled([
       datanestApiService.getPagedDictionary<any>('/dictionary/agents', 1, 100),
       datanestApiService.getPagedDictionary<any>('/profiles', 1, 100),
       scriptsStore.loadScripts(1, 200),
       dictionaryApiService.getGenres(),
+      dictionaryApiService.getLabelsByCategory('sound_fragment'),
     ])
     if (agents.status === 'fulfilled') {
       const entries = agents.value.entries as any[]
@@ -640,6 +656,7 @@ onMounted(async () => {
       }))
     }
     if (genres.status === 'fulfilled') genreList.value = genres.value
+    if (fragmentLabels.status === 'fulfilled') fragmentLabelList.value = fragmentLabels.value
     scriptOptions.value = scriptsStore.scripts.map((s: any) => ({
       label: s.name || s.id,
       value: s.id,
@@ -947,7 +964,24 @@ watch(activeTab, () => {
 
             <div v-for="scene in scenes" :key="scene.id" :class="['scene-card', { 'scene-card--dark': themeStore.isDark }]">
               <div class="scene-card__header">
-                <span class="scene-card__index">Scene {{ scenes.indexOf(scene) + 1 }}</span>
+                <NInput
+                  v-if="sceneTitleEditing[scene.id]"
+                  :value="scene.title"
+                  @update:value="(v) => scene.title = v"
+                  size="small"
+                  class="scene-card__title-input"
+                  :placeholder="`Scene ${scenes.indexOf(scene) + 1}`"
+                  @blur="sceneTitleEditing[scene.id] = false"
+                  @keydown.enter="sceneTitleEditing[scene.id] = false"
+                  @keydown.escape="sceneTitleEditing[scene.id] = false"
+                  autofocus
+                />
+                <span
+                  v-else
+                  class="scene-card__index"
+                  title="Click to rename"
+                  @click="sceneTitleEditing[scene.id] = true"
+                >{{ scene.title || `Scene ${scenes.indexOf(scene) + 1}` }}</span>
                 <button class="scene-card__remove" @click="removeScene(scene.id)" title="Remove">×</button>
               </div>
 
@@ -971,7 +1005,7 @@ watch(activeTab, () => {
                   :options="sceneActionOptions(scene)"
                   multiple
                   :render-tag="renderSceneActionTag(scene)"
-                  :placeholder="t('brandForm.scene_tags')"
+                  :placeholder="t('brandForm.scene_actions')"
                   style="flex: 1"
                 />
                 <button
@@ -983,14 +1017,25 @@ watch(activeTab, () => {
               </div>
 
               <div v-if="customActionFormVisible[scene.id]" :class="['custom-action-form', { 'custom-action-form--dark': themeStore.isDark }]">
-                <div class="custom-action-form__row">
-                  <label class="scene-card__label">{{ t('brandForm.action_title') }}</label>
+                <div class="custom-action-form__heading">
                   <NInput
-                    v-model:value="customActionDraft[scene.id].title"
-                    :placeholder="t('brandForm.action_title_placeholder')"
+                    v-if="actionTitleEditing[scene.id]"
+                    :value="customActionDraft[scene.id].title"
+                    @update:value="(v) => customActionDraft[scene.id].title = v"
                     size="small"
-                    style="flex: 1"
+                    class="action-title-input"
+                    :placeholder="t('brandForm.action_title_placeholder')"
+                    @blur="actionTitleEditing[scene.id] = false"
+                    @keydown.enter="actionTitleEditing[scene.id] = false"
+                    @keydown.escape="actionTitleEditing[scene.id] = false"
+                    autofocus
                   />
+                  <span
+                    v-else
+                    class="action-title-text"
+                    title="Click to set title"
+                    @click="actionTitleEditing[scene.id] = true"
+                  >{{ customActionDraft[scene.id].title || t('brandForm.action_new_heading') }}</span>
                 </div>
 
                 <div class="custom-action-form__row custom-action-form__row--top">
@@ -1003,7 +1048,7 @@ watch(activeTab, () => {
                     <NSelect
                       v-if="customActionDraft[scene.id].songsMode === 'STATIC_LIST'"
                       v-model:value="customActionDraft[scene.id].songsLabels"
-                      :options="formData.labels.map(l => ({ label: l, value: l }))"
+                      :options="fragmentLabelOptions"
                       multiple
                       filterable
                       tag
@@ -1290,17 +1335,17 @@ watch(activeTab, () => {
 .script-cards {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
   max-width: 600px;
 }
 
 .scene-card {
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  padding: 14px 16px;
+  padding: 16px 18px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
   background: rgba(0, 0, 0, 0.02);
 }
 
@@ -1312,16 +1357,25 @@ watch(activeTab, () => {
 .custom-action-form {
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  padding: 14px 16px;
+  padding: 16px 18px;
+  margin-top: 6px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 24px;
   background: rgba(124, 58, 237, 0.03);
 }
 
 .custom-action-form--dark {
   border-color: #2e2440;
   background: rgba(124, 58, 237, 0.06);
+}
+
+.custom-action-form__heading {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7C3AED;
 }
 
 .custom-action-form__row {
@@ -1437,6 +1491,39 @@ watch(activeTab, () => {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #7C3AED;
+  cursor: pointer;
+  border-bottom: 1px dashed transparent;
+  transition: border-color 0.15s;
+}
+
+.scene-card__index:hover {
+  border-bottom-color: rgba(124, 58, 237, 0.45);
+}
+
+.scene-card__title-input {
+  max-width: 150px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.action-title-input {
+  max-width: 150px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.action-title-text {
+  cursor: pointer;
+  border-bottom: 1px dashed transparent;
+  transition: border-color 0.15s;
+}
+
+.action-title-text:hover {
+  border-bottom-color: rgba(124, 58, 237, 0.5);
 }
 
 .scene-card__remove {
