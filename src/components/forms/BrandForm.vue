@@ -130,6 +130,21 @@ type Scene = {
   talkActivity: number
 }
 
+function timeStringToMs(t: string | null | undefined): number | null {
+  if (!t) return null
+  const [h, m, s] = t.split(':').map(Number)
+  return ((h * 3600) + (m * 60) + (s || 0)) * 1000
+}
+
+function msToTimeString(ms: number | null | undefined): string | null {
+  if (ms == null) return null
+  const totalSec = Math.floor(ms / 1000)
+  const h = String(Math.floor(totalSec / 3600)).padStart(2, '0')
+  const m = String(Math.floor((totalSec % 3600) / 60)).padStart(2, '0')
+  const s = String(totalSec % 60).padStart(2, '0')
+  return `${h}:${m}:${s}`
+}
+
 function emptyDraft(): CustomActionDef {
   return { title: '', instruction: '', contextVars: ['songName', 'artistName'], songsMode: 'RANDOM', songsLabels: [] }
 }
@@ -173,8 +188,7 @@ function editCustomAction(scene: Scene, title: string) {
 
 function submitCustomAction(scene: Scene) {
   const draft = customActionDraft.value[scene.id]
-  const newTitle = draft.title.trim()
-  if (!newTitle) return
+  const newTitle = draft.title.trim() || `Action ${Object.keys(scene.customActionDefs).length + 1}`
   const oldTitle = customActionEditingTitle.value[scene.id]
   if (oldTitle && oldTitle !== newTitle) {
     delete scene.customActionDefs[oldTitle]
@@ -520,6 +534,18 @@ async function handleSave() {
         ? [{ scriptId: formData.value.scriptId, userVariables: userVariables.value }]
         : undefined,
       scriptId: formData.value.scriptId || undefined,
+      scriptMode: scriptMode.value.toUpperCase(),
+      customScript: scriptMode.value === 'custom' ? {
+        scenes: scenes.value.map(s => ({
+          title: s.title,
+          startTime: msToTimeString(s.startTime),
+          actions: s.actions,
+          customActionDefs: s.customActionDefs,
+          allowJingles: s.allowJingles,
+          allowAds: s.allowAds,
+          talkativity: s.talkActivity,
+        }))
+      } : undefined,
       titleFont: formData.value.titleFont || undefined,
       profileOverriding: (formData.value.profileOverriding.name || formData.value.profileOverriding.description)
         ? formData.value.profileOverriding
@@ -616,6 +642,16 @@ function applyBrandToForm(brand: any) {
     labels: (brand as any).labels || [],
   }
   userVariables.value = firstScript?.userVariables ? { ...firstScript.userVariables } : {}
+  scriptMode.value = brand.scriptMode?.toLowerCase() === 'custom' ? 'custom' : 'predefined'
+  scenes.value = []
+  _sceneId = 0
+  for (const s of brand.customScript?.scenes ?? []) {
+    const id = ++_sceneId
+    scenes.value.push({ id, title: s.title ?? '', startTime: timeStringToMs(s.startTime), actions: s.actions ?? [], customActionDefs: s.customActionDefs ?? {}, allowJingles: s.allowJingles ?? true, allowAds: s.allowAds ?? false, talkActivity: s.talkativity ?? 50 })
+    customActionFormVisible.value[id] = false
+    customActionDraft.value[id] = emptyDraft()
+    customActionEditingTitle.value[id] = null
+  }
 }
 
 onMounted(async () => {

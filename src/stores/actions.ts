@@ -4,7 +4,8 @@ import datanestApiService from '@/services/datanestApi'
 
 export interface ActionOption {
   id: string
-  optionLocName: string
+  name: string | null
+  localizedOptionName: Record<string, string>
 }
 
 export const useActionsStore = defineStore('actions', () => {
@@ -13,7 +14,10 @@ export const useActionsStore = defineStore('actions', () => {
   const loaded = ref(false)
 
   const selectOptions = computed(() =>
-    options.value.map(o => ({ label: o.optionLocName || o.id, value: o.id }))
+    options.value.map(o => ({
+      label: o.localizedOptionName.en,
+      value: o.id,
+    }))
   )
 
   async function loadOptions() {
