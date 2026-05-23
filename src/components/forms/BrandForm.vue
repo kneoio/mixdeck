@@ -161,7 +161,7 @@ const actionTitleEditing = ref<Record<number, boolean>>({})
 
 function addScene() {
   const id = ++_sceneId
-  scenes.value.push({ id, title: '', startTime: null, actions: [], customActionDefs: {}, allowJingles: true, allowAds: false, talkActivity: 50 })
+  scenes.value.push({ id, title: '', startTime: null, actions: [], customActionDefs: {}, allowJingles: true, allowAds: false, talkActivity: 0.5 })
   customActionFormVisible.value[id] = false
   customActionDraft.value[id] = emptyDraft()
   customActionEditingTitle.value[id] = null
@@ -604,6 +604,13 @@ function copyHlsUrl() {
   setTimeout(() => { hlsCopied.value = false }, 2000)
 }
 
+function talkativityColor(v: number): string {
+  const r = Math.round(56 + (255 - 56) * v)
+  const g = Math.round(189 - 144 * v)
+  const b = Math.round(237 - 237 * v)
+  return `rgb(${r},${g},${b})`
+}
+
 function normalizeBitRateFromServer(raw: number | null | undefined): number {
   if (raw == null || Number.isNaN(raw)) return 128_000
   if (raw > 0 && raw < 1000) return Math.round(raw * 1000)
@@ -647,7 +654,7 @@ function applyBrandToForm(brand: any) {
   _sceneId = 0
   for (const s of brand.customScript?.scenes ?? []) {
     const id = ++_sceneId
-    scenes.value.push({ id, title: s.title ?? '', startTime: timeStringToMs(s.startTime), actions: s.actions ?? [], customActionDefs: s.customActionDefs ?? {}, allowJingles: s.allowJingles ?? true, allowAds: s.allowAds ?? false, talkActivity: s.talkativity ?? 50 })
+    scenes.value.push({ id, title: s.title ?? '', startTime: timeStringToMs(s.startTime), actions: s.actions ?? [], customActionDefs: s.customActionDefs ?? {}, allowJingles: s.allowJingles ?? true, allowAds: s.allowAds ?? false, talkActivity: s.talkativity ?? 0.5 })
     customActionFormVisible.value[id] = false
     customActionDraft.value[id] = emptyDraft()
     customActionEditingTitle.value[id] = null
@@ -1030,8 +1037,8 @@ watch(activeTab, () => {
 
               <div class="scene-card__row">
                 <label class="scene-card__label">{{ t('brandForm.scene_talk_activity') }}</label>
-                <NSlider v-model:value="scene.talkActivity" :min="0" :max="100" style="flex: 1" />
-                <span class="scene-card__slider-val">{{ scene.talkActivity }}%</span>
+                <NSlider v-model:value="scene.talkActivity" :min="0" :max="1" :step="0.01" style="flex: 1" :theme-overrides="{ fillColor: talkativityColor(scene.talkActivity), fillColorHover: talkativityColor(scene.talkActivity) }" />
+                <span class="scene-card__slider-val">{{ scene.talkActivity }}</span>
               </div>
 
               <div class="scene-card__row">
@@ -1121,7 +1128,7 @@ watch(activeTab, () => {
                   <NInput
                     v-model:value="customActionDraft[scene.id].instruction"
                     type="textarea"
-                    :autosize="{ minRows: 3, maxRows: 8 }"
+                    :autosize="{ minRows: 3 }"
                     :placeholder="t('brandForm.action_instruction_placeholder')"
                     style="flex: 1"
                   />
@@ -1479,9 +1486,9 @@ watch(activeTab, () => {
   width: 28px;
   height: 28px;
   border-radius: 6px;
-  border: 1.5px dashed rgba(124, 58, 237, 0.4);
+  border: 1.5px dashed rgba(255, 45, 149, 0.4);
   background: transparent;
-  color: #7C3AED;
+  color: #FF2D95;
   font-size: 1.1rem;
   line-height: 1;
   cursor: pointer;
@@ -1493,8 +1500,8 @@ watch(activeTab, () => {
 
 .scene-custom-action-btn:hover,
 .scene-custom-action-btn--active {
-  border-color: #7C3AED;
-  background: rgba(124, 58, 237, 0.08);
+  border-color: #FF2D95;
+  background: rgba(255, 45, 149, 0.08);
 }
 
 .scene-custom-submit {
@@ -1614,10 +1621,10 @@ watch(activeTab, () => {
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  border: 2px dashed rgba(124, 58, 237, 0.45);
+  border: 2px dashed rgba(255, 45, 149, 0.45);
   border-radius: 8px;
   background: transparent;
-  color: #7C3AED;
+  color: #FF2D95;
   font-size: 0.84rem;
   font-weight: 500;
   letter-spacing: 0.03em;
@@ -1626,8 +1633,8 @@ watch(activeTab, () => {
 }
 
 .script-add-scene:hover:not(:disabled) {
-  border-color: #7C3AED;
-  background: rgba(124, 58, 237, 0.08);
+  border-color: #FF2D95;
+  background: rgba(255, 45, 149, 0.08);
 }
 
 .script-add-scene:disabled {
