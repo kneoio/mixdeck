@@ -1,0 +1,30 @@
+<template>
+  <CodeMirror
+    :model-value="modelValue"
+    @update:model-value="(val) => emit('update:modelValue', typeof val === 'string' ? val : '')"
+    basic
+    :disabled="false"
+    :style="{ width: '100%', minHeight: '80px', border: '1px solid ' + (dark ? '#333' : '#e0e0e0'), borderRadius: '3px', fontSize: '0.8rem' }"
+    :extensions="extensions"
+  />
+</template>
+
+<script setup lang="ts">
+import { computed } from 'vue'
+import { EditorView } from '@codemirror/view'
+import { handlebarsLanguage } from '@xiechao/codemirror-lang-handlebars'
+import CodeMirror from 'vue-codemirror6'
+
+const props = defineProps<{
+  modelValue: string
+  dark?: boolean
+  placeholder?: string
+}>()
+const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
+
+const extensions = computed(() => [
+  handlebarsLanguage,
+  EditorView.lineWrapping,
+  EditorView.theme({ '.cm-gutters': { display: 'none' } }),
+])
+</script>

@@ -9,6 +9,7 @@ import {
   NColorPicker, NTag, NPopconfirm, NAnchor, NAnchorLink, useMessage
 } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
+import InstructionEditor from '@/components/InstructionEditor.vue'
 import type { SelectOption } from 'naive-ui'
 import FormWrapper from '@/components/FormWrapper.vue'
 import { useBrandsStore, SUBMISSION_POLICY_OPTIONS, type SubmissionPolicy } from '@/stores/brands'
@@ -100,56 +101,47 @@ const formData = ref({
 const userVariables = ref<Record<string, any>>({})
 
 
-const CONTEXT_VARIABLES = [
-  { label: 'Song Name',    value: 'songName',    example: 'Bohemian Rhapsody' },
-  { label: 'Artist Name',  value: 'artistName',  example: 'Queen' },
-  { label: 'Brand Title',  value: 'brandTitle',  example: 'Lumisonic' },
-  { label: 'Description',  value: 'description', example: 'A classic rock anthem' },
-  { label: 'DJ Name',      value: 'djName',      example: 'DJ Nova' },
-  { label: 'Time of Day',  value: 'timeOfDay',   example: 'Lunch Hours' },
-  { label: 'Genre',        value: 'genre',       example: 'Rock' },
-  { label: 'Country Hint', value: 'countryHint', example: 'Portugal' },
-]
 
 type CustomActionDef = {
   title: string
   instruction: string
   contextVars: string[]
-  songsMode: 'RANDOM' | 'STATIC_LIST'
-  songsLabels: string[]
 }
 
 type Scene = {
   id: number
-  title: string
+  name: string
   startTime: number | null
   actions: string[]
   customActionDefs: Record<string, CustomActionDef>
   allowJingles: boolean
   allowAds: boolean
   talkActivity: number
+  stagePlaylist?: any
 }
 
 function timeStringToMs(t: string | null | undefined): number | null {
   if (!t) return null
   const [h, m, s] = t.split(':').map(Number)
-  return ((h * 3600) + (m * 60) + (s || 0)) * 1000
+  const d = new Date()
+  d.setHours(h, m, s || 0, 0)
+  return d.getTime()
 }
 
 function msToTimeString(ms: number | null | undefined): string | null {
   if (ms == null) return null
-  const totalSec = Math.floor(ms / 1000)
-  const h = String(Math.floor(totalSec / 3600)).padStart(2, '0')
-  const m = String(Math.floor((totalSec % 3600) / 60)).padStart(2, '0')
-  const s = String(totalSec % 60).padStart(2, '0')
-  return `${h}:${m}:${s}`
+  const d = new Date(ms)
+  return [d.getHours(), d.getMinutes(), d.getSeconds()]
+    .map(n => String(n).padStart(2, '0'))
+    .join(':')
 }
 
 function emptyDraft(): CustomActionDef {
-  return { title: '', instruction: '', contextVars: ['songName', 'artistName'], songsMode: 'RANDOM', songsLabels: [] }
+  return { title: '', instruction: '', contextVars: [] }
 }
 
 const scriptMode = ref<'predefined' | 'custom'>('predefined')
+const customScriptTitle = ref('')
 
 let _sceneId = 0
 const scenes = ref<Scene[]>([])
@@ -161,7 +153,7 @@ const actionTitleEditing = ref<Record<number, boolean>>({})
 
 function addScene() {
   const id = ++_sceneId
-  scenes.value.push({ id, title: '', startTime: null, actions: [], customActionDefs: {}, allowJingles: true, allowAds: false, talkActivity: 0.5 })
+  scenes.value.push({ id, name: '', startTime: null, actions: [], customActionDefs: {}, allowJingles: true, allowAds: false, talkActivity: 0.5, stagePlaylist: { sourcing: 'RANDOM', labels: [] } })
   customActionFormVisible.value[id] = false
   customActionDraft.value[id] = emptyDraft()
   customActionEditingTitle.value[id] = null
@@ -211,20 +203,25 @@ function cancelCustomAction(scene: Scene) {
 function renderSceneActionTag(scene: Scene) {
   return ({ option, handleClose }: { option: { label: string; value: string }; handleClose: () => void }) => {
     const isCustom = Boolean(scene.customActionDefs[option.value])
+    const dark = themeStore.isDark
+    const tagColor = isCustom
+      ? { color: dark ? 'rgba(255,45,149,0.12)' : 'rgba(255,45,149,0.08)', textColor: '#FF2D95', borderColor: 'rgba(255,45,149,0.45)' }
+      : { color: dark ? 'rgba(56,189,237,0.10)' : 'rgba(56,189,237,0.08)', textColor: dark ? '#38BDE5' : '#0e7fa8', borderColor: 'rgba(56,189,237,0.40)' }
     return h(NTag, {
       size: 'medium',
       closable: true,
       onClose: handleClose,
+      color: tagColor,
     }, {
       default: () => isCustom
         ? [
             h('span', { style: 'font-size:0.82rem;' }, option.label),
-            h('span', {
-              style: 'margin-left:7px;font-size:0.9rem;opacity:0.55;cursor:pointer;line-height:1;transition:opacity 0.15s;',
+            h('button', {
+              style: 'margin-left:7px;font-size:0.72rem;padding:1px 6px;border-radius:4px;border:1px solid rgba(255,255,255,0.35);background:transparent;color:rgba(255,255,255,0.65);cursor:pointer;line-height:1.4;transition:opacity 0.15s;',
               onMouseenter: (e: MouseEvent) => { (e.target as HTMLElement).style.opacity = '1' },
-              onMouseleave: (e: MouseEvent) => { (e.target as HTMLElement).style.opacity = '0.55' },
+              onMouseleave: (e: MouseEvent) => { (e.target as HTMLElement).style.opacity = '0.7' },
               onClick: (e: MouseEvent) => { e.stopPropagation(); editCustomAction(scene, option.value) },
-            }, '✎'),
+            }, t('brandForm.action_tag_edit')),
           ]
         : h('span', { style: 'font-size:0.82rem;' }, option.label),
     })
@@ -252,12 +249,6 @@ function sceneActionOptions(scene: Scene) {
   return groups
 }
 
-function contextPreviewLines(contextVars: string[]) {
-  return contextVars.map(v => {
-    const def = CONTEXT_VARIABLES.find(c => c.value === v)
-    return def ? `${def.value}: ${def.example}` : v
-  })
-}
 
 type AgentLabel = {
   id: string
@@ -287,7 +278,7 @@ const fragmentLabelList = ref<LabelEntry[]>([])
 const fragmentLabelOptions = computed(() =>
   fragmentLabelList.value.map(l => ({
     label: l.localizedName?.en || l.identifier || l.id,
-    value: l.identifier || l.id,
+    value: l.id,
   }))
 )
 
@@ -536,11 +527,17 @@ async function handleSave() {
       scriptId: formData.value.scriptId || undefined,
       scriptMode: scriptMode.value.toUpperCase(),
       customScript: scriptMode.value === 'custom' ? {
+        title: customScriptTitle.value || undefined,
         scenes: scenes.value.map(s => ({
-          title: s.title,
+          name: s.name,
           startTime: msToTimeString(s.startTime),
-          actions: s.actions,
-          customActionDefs: s.customActionDefs,
+          stagePlaylist: s.stagePlaylist,
+          actions: s.actions.map(a => {
+            const def = s.customActionDefs[a]
+            return def
+              ? { type: 'custom', name: a, instruction: def.instruction }
+              : { type: 'predefined', actionId: a }
+          }),
           allowJingles: s.allowJingles,
           allowAds: s.allowAds,
           talkativity: s.talkActivity,
@@ -554,7 +551,7 @@ async function handleSave() {
     } as any)
     saveAttempted.value = false
     message.success(t('brandForm.saved'))
-    if (!id) {
+    if (!isEditing.value) {
       const newId = (savedBrand as any)?.id
         ?? (savedBrand as any)?.docData?.id
         ?? (savedBrand as any)?.payload?.docData?.id
@@ -604,6 +601,75 @@ function copyHlsUrl() {
   setTimeout(() => { hlsCopied.value = false }, 2000)
 }
 
+const scriptImportRef = ref<HTMLInputElement>()
+
+function exportScript() {
+  const payload = {
+    title: customScriptTitle.value || undefined,
+    scenes: scenes.value.map(s => ({
+      name: s.name,
+      startTime: msToTimeString(s.startTime),
+      allowJingles: s.allowJingles,
+      allowAds: s.allowAds,
+      talkativity: s.talkActivity,
+      stagePlaylist: s.stagePlaylist,
+      actions: s.actions.map(a => {
+        const def = s.customActionDefs[a]
+        return def
+          ? { type: 'custom', name: a, instruction: def.instruction }
+          : { type: 'predefined', actionId: a }
+      }),
+    })),
+  }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${customScriptTitle.value || 'script'}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+function importScript() {
+  scriptImportRef.value?.click()
+}
+
+function onScriptFileChange(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = (ev) => {
+    try {
+      const json = JSON.parse(ev.target?.result as string)
+      const data = json.scenes ? json : json
+      customScriptTitle.value = data.title ?? customScriptTitle.value
+      scenes.value = []
+      _sceneId = 0
+      for (const s of data.scenes ?? []) {
+        const id = ++_sceneId
+        const customActionDefs: Record<string, CustomActionDef> = {}
+        const actions: string[] = []
+        for (const a of s.actions ?? []) {
+          if (typeof a === 'string') { actions.push(a) }
+          else if (a.type === 'predefined' && a.actionId) { actions.push(a.actionId) }
+          else if (a.name) {
+            actions.push(a.name)
+            customActionDefs[a.name] = { title: a.name, instruction: a.instruction ?? '', contextVars: a.contextVars ?? [] }
+          }
+        }
+        scenes.value.push({ id, name: s.name ?? '', startTime: timeStringToMs(s.startTime), actions, customActionDefs, allowJingles: s.allowJingles ?? true, allowAds: s.allowAds ?? false, talkActivity: s.talkativity ?? 0.5, stagePlaylist: s.stagePlaylist })
+        customActionFormVisible.value[id] = false
+        customActionDraft.value[id] = emptyDraft()
+        customActionEditingTitle.value[id] = null
+      }
+    } catch {
+      message.error('Invalid script JSON')
+    }
+    if (scriptImportRef.value) scriptImportRef.value.value = ''
+  }
+  reader.readAsText(file)
+}
+
 function talkativityColor(v: number): string {
   const r = Math.round(56 + (255 - 56) * v)
   const g = Math.round(189 - 144 * v)
@@ -650,11 +716,32 @@ function applyBrandToForm(brand: any) {
   }
   userVariables.value = firstScript?.userVariables ? { ...firstScript.userVariables } : {}
   scriptMode.value = brand.scriptMode?.toLowerCase() === 'custom' ? 'custom' : 'predefined'
+  customScriptTitle.value = brand.customScript?.title ?? ''
   scenes.value = []
   _sceneId = 0
   for (const s of brand.customScript?.scenes ?? []) {
     const id = ++_sceneId
-    scenes.value.push({ id, title: s.title ?? '', startTime: timeStringToMs(s.startTime), actions: s.actions ?? [], customActionDefs: s.customActionDefs ?? {}, allowJingles: s.allowJingles ?? true, allowAds: s.allowAds ?? false, talkActivity: s.talkativity ?? 0.5 })
+    const customActionDefs: Record<string, CustomActionDef> = s.customActionDefs ?? {}
+    const actions: string[] = []
+    for (const a of s.actions ?? []) {
+      if (typeof a === 'string') {
+        actions.push(a)
+      } else if (a && typeof a === 'object') {
+        if (a.type === 'predefined' && a.actionId) {
+          actions.push(a.actionId)
+        } else if (a.name) {
+          actions.push(a.name)
+          if (!customActionDefs[a.name]) {
+            customActionDefs[a.name] = { title: a.name, instruction: a.instruction ?? '', contextVars: a.contextVars ?? [] }
+          }
+        }
+      }
+    }
+    for (const p of s.introPrompts ?? []) {
+      const id = typeof p === 'string' ? p : p.promptId
+      if (id) actions.push(id)
+    }
+    scenes.value.push({ id, name: s.name ?? s.title ?? '', startTime: timeStringToMs(s.startTime), actions, customActionDefs, allowJingles: s.allowJingles ?? true, allowAds: s.allowAds ?? false, talkActivity: s.talkativity ?? 0.5, stagePlaylist: s.stagePlaylist ?? { sourcing: 'RANDOM', labels: [] } })
     customActionFormVisible.value[id] = false
     customActionDraft.value[id] = emptyDraft()
     customActionEditingTitle.value[id] = null
@@ -1003,14 +1090,20 @@ watch(activeTab, () => {
 
           <div v-if="scriptMode === 'custom'" :class="['player-card', { 'player-card--dark': themeStore.isDark }]">
             <div class="player-card__label">{{ t('brandForm.card_your_script') }}</div>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <NInput v-model:value="customScriptTitle" :placeholder="t('brandForm.script_title_placeholder')" style="max-width: 180px" />
+              <button class="script-io-btn" @click="exportScript">{{ t('brandForm.script_export') }}</button>
+              <button class="script-io-btn" @click="importScript">{{ t('brandForm.script_import') }}</button>
+              <input ref="scriptImportRef" type="file" accept=".json" style="display:none" @change="onScriptFileChange" />
+            </div>
             <div class="player-card__sub">{{ t('brandForm.card_your_script_sub') }}</div>
 
             <div v-for="scene in scenes" :key="scene.id" :class="['scene-card', { 'scene-card--dark': themeStore.isDark }]">
               <div class="scene-card__header">
                 <NInput
                   v-if="sceneTitleEditing[scene.id]"
-                  :value="scene.title"
-                  @update:value="(v) => scene.title = v"
+                  :value="scene.name"
+                  @update:value="(v) => scene.name = v"
                   size="small"
                   class="scene-card__title-input"
                   :placeholder="`Scene ${scenes.indexOf(scene) + 1}`"
@@ -1024,7 +1117,7 @@ watch(activeTab, () => {
                   class="scene-card__index"
                   title="Click to rename"
                   @click="sceneTitleEditing[scene.id] = true"
-                >{{ scene.title || `Scene ${scenes.indexOf(scene) + 1}` }}</span>
+                >{{ scene.name || `Scene ${scenes.indexOf(scene) + 1}` }}</span>
                 <button class="scene-card__remove" @click="removeScene(scene.id)" title="Remove">×</button>
               </div>
 
@@ -1039,6 +1132,24 @@ watch(activeTab, () => {
                 <label class="scene-card__label">{{ t('brandForm.scene_talk_activity') }}</label>
                 <NSlider v-model:value="scene.talkActivity" :min="0" :max="1" :step="0.01" style="flex: 1" :theme-overrides="{ fillColor: talkativityColor(scene.talkActivity), fillColorHover: talkativityColor(scene.talkActivity) }" />
                 <span class="scene-card__slider-val">{{ scene.talkActivity }}</span>
+              </div>
+
+              <div class="scene-card__row scene-card__row--top">
+                <label class="scene-card__label">{{ t('brandForm.action_songs') }}</label>
+                <div style="display:flex;flex-direction:column;gap:8px;flex:1">
+                  <NRadioGroup v-model:value="scene.stagePlaylist.sourcing" style="display:flex;gap:16px">
+                    <NRadio value="RANDOM">{{ t('brandForm.action_songs_random') }}</NRadio>
+                    <NRadio value="STATIC_LIST">{{ t('brandForm.action_songs_by_labels') }}</NRadio>
+                  </NRadioGroup>
+                  <NSelect
+                    v-if="scene.stagePlaylist.sourcing === 'STATIC_LIST'"
+                    v-model:value="scene.stagePlaylist.labels"
+                    :options="fragmentLabelOptions"
+                    multiple
+                    filterable
+                    :placeholder="t('brandForm.action_songs_labels')"
+                  />
+                </div>
               </div>
 
               <div class="scene-card__row">
@@ -1082,60 +1193,22 @@ watch(activeTab, () => {
                 </div>
 
                 <div class="custom-action-form__row custom-action-form__row--top">
-                  <label class="scene-card__label">{{ t('brandForm.action_songs') }}</label>
-                  <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
-                    <NRadioGroup v-model:value="customActionDraft[scene.id].songsMode" style="display:flex;gap:16px">
-                      <NRadio value="RANDOM">{{ t('brandForm.action_songs_random') }}</NRadio>
-                      <NRadio value="STATIC_LIST">{{ t('brandForm.action_songs_by_labels') }}</NRadio>
-                    </NRadioGroup>
-                    <NSelect
-                      v-if="customActionDraft[scene.id].songsMode === 'STATIC_LIST'"
-                      v-model:value="customActionDraft[scene.id].songsLabels"
-                      :options="fragmentLabelOptions"
-                      multiple
-                      filterable
-                      tag
-                      :placeholder="t('brandForm.action_songs_labels')"
-                    />
-                  </div>
-                </div>
-
-                <div class="custom-action-form__row custom-action-form__row--top">
-                  <label class="scene-card__label">{{ t('brandForm.action_context_vars') }}</label>
-                  <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
-                    <div class="context-checkboxes">
-                      <NCheckbox
-                        v-for="cv in CONTEXT_VARIABLES"
-                        :key="cv.value"
-                        :checked="customActionDraft[scene.id].contextVars.includes(cv.value)"
-                        @update:checked="(v) => {
-                          const vars = customActionDraft[scene.id].contextVars
-                          if (v) vars.push(cv.value)
-                          else customActionDraft[scene.id].contextVars = vars.filter(x => x !== cv.value)
-                        }"
-                      >{{ cv.label }}</NCheckbox>
-                    </div>
-                    <div v-if="customActionDraft[scene.id].contextVars.length" :class="['context-preview', { 'context-preview--dark': themeStore.isDark }]">
-                      <div v-for="line in contextPreviewLines(customActionDraft[scene.id].contextVars)" :key="line" class="context-preview__line">
-                        {{ line }}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="custom-action-form__row custom-action-form__row--top">
                   <label class="scene-card__label">{{ t('brandForm.action_instruction') }}</label>
-                  <NInput
-                    v-model:value="customActionDraft[scene.id].instruction"
-                    type="textarea"
-                    :autosize="{ minRows: 3 }"
-                    :placeholder="t('brandForm.action_instruction_placeholder')"
-                    style="flex: 1"
-                  />
+                  <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                    <InstructionEditor
+                      v-model="customActionDraft[scene.id].instruction"
+                      :placeholder="t('brandForm.action_instruction_placeholder')"
+                      :dark="themeStore.isDark"
+                    />
+                    <div v-if="customActionDraft[scene.id].contextVars.length" class="context-vars-hint">
+                      <span class="context-vars-hint__label">{{ t('brandForm.available_variables') }}</span>
+                      {{ customActionDraft[scene.id].contextVars.join(', ') }}
+                    </div>
+                  </div>
                 </div>
 
                 <div class="custom-action-form__footer">
-                  <button class="scene-custom-submit" @click="submitCustomAction(scene)">{{ t('common.add') }}</button>
+                  <button class="scene-custom-submit" @click="submitCustomAction(scene)">{{ customActionEditingTitle[scene.id] ? t('common.update') : t('common.add') }}</button>
                   <button class="scene-custom-cancel" @click="cancelCustomAction(scene)">{{ t('common.close') }}</button>
                 </div>
               </div>
@@ -1437,31 +1510,14 @@ watch(activeTab, () => {
   justify-content: flex-end;
 }
 
-.context-checkboxes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 16px;
+.context-vars-hint {
+  font-size: 0.74rem;
+  color: #999;
 }
 
-.context-preview {
-  font-family: monospace;
-  font-size: 0.78rem;
-  padding: 8px 12px;
-  border-radius: 6px;
-  background: #f0f0f0;
-  color: #555;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.context-preview--dark {
-  background: #1a1a1a;
-  color: #888;
-}
-
-.context-preview__line {
-  white-space: pre;
+.context-vars-hint__label {
+  font-weight: 600;
+  margin-right: 4px;
 }
 
 .scene-custom-cancel {
@@ -1590,6 +1646,10 @@ watch(activeTab, () => {
   gap: 12px;
 }
 
+.scene-card__row--top {
+  align-items: flex-start;
+}
+
 
 .scene-card__label {
   font-size: 0.8rem;
@@ -1614,6 +1674,25 @@ watch(activeTab, () => {
   align-items: center;
   justify-content: center;
   padding: 16px 0 4px;
+}
+
+.script-io-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.script-io-btn:hover {
+  border-color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .script-add-scene {
