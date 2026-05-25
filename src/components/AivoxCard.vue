@@ -64,25 +64,36 @@ function scheduleHeartbeatPoll() {
   pollTimer = setTimeout(() => void pollHeartbeatScheduled(), pollIntervalMs)
 }
 
-async function handleClick() {
-  if (loading.value) return
+async function handleStart() {
+  if (loading.value || alive.value) return
   const slug = props.brandSlug
   if (!slug) return
   loading.value = true
   try {
-    if (alive.value) {
-      await aivoxApiService.stop(slug)
-      waiting.value = true
-      const isAlive = await aivoxApiService.heartbeatStream(slug, false)
-      waiting.value = false
-      if (props.brandSlug === slug) brandsStore.setStreamingState(slug, isAlive)
-    } else {
-      await aivoxApiService.start(slug)
-      waiting.value = true
-      const isAlive = await aivoxApiService.heartbeatStream(slug, true)
-      waiting.value = false
-      if (props.brandSlug === slug) brandsStore.setStreamingState(slug, isAlive)
-    }
+    await aivoxApiService.start(slug)
+    waiting.value = true
+    const isAlive = await aivoxApiService.heartbeatStream(slug, true)
+    waiting.value = false
+    if (props.brandSlug === slug) brandsStore.setStreamingState(slug, isAlive)
+  } catch {
+    waiting.value = false
+    if (props.brandSlug === slug) await fetchHeartbeatAlive()
+  } finally {
+    loading.value = false
+  }
+}
+
+async function handleStop() {
+  if (loading.value || !alive.value) return
+  const slug = props.brandSlug
+  if (!slug) return
+  loading.value = true
+  try {
+    await aivoxApiService.stop(slug)
+    waiting.value = true
+    const isAlive = await aivoxApiService.heartbeatStream(slug, false)
+    waiting.value = false
+    if (props.brandSlug === slug) brandsStore.setStreamingState(slug, isAlive)
   } catch {
     waiting.value = false
     if (props.brandSlug === slug) await fetchHeartbeatAlive()
@@ -215,13 +226,20 @@ onUnmounted(() => {
   <NCard class="aivox-card">
     <div class="aivox-row">
       <GsapButton
-        :type="alive ? 'error' : 'primary'"
-        :disabled="loading"
-        @click="handleClick"
+        type="primary"
+        :disabled="loading || alive"
+        @click="handleStart"
       >
-        <span>{{ alive ? 'Stop' : 'Start' }}</span>
+        <span>Start</span>
       </GsapButton>
-      <div class="aivox-status">
+      <GsapButton
+        type="error"
+        :disabled="loading || !alive"
+        @click="handleStop"
+      >
+        <span>Stop</span>
+      </GsapButton>
+      <div class="aivox-status" style="margin-left: 20px;">
         <div class="aivox-led-wrap">
           <LedIndicator :active="alive || waiting" :pulse="waiting" color="#FFD600" :size="18" />
           <span class="aivox-label">{{ t('dashboard.onAir') }}</span>
@@ -271,7 +289,7 @@ onUnmounted(() => {
 .aivox-row {
   display: flex;
   align-items: center;
-  gap: 28px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 .aivox-status {

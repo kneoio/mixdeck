@@ -151,9 +151,28 @@ const customActionEditingTitle = ref<Record<number, string | null>>({})
 const sceneTitleEditing = ref<Record<number, boolean>>({})
 const actionTitleEditing = ref<Record<number, boolean>>({})
 
+function normalizePlaylist(sp: any) {
+  const sourcing = Array.isArray(sp?.sourcing) ? sp.sourcing : [sp?.sourcing ?? 'RANDOM']
+  return { sourcing, labels: sp?.labels ?? [], genres: sp?.genres ?? [] }
+}
+
+function toggleSourcing(scene: Scene, mode: string) {
+  const arr: string[] = scene.stagePlaylist.sourcing
+  if (mode === 'RANDOM') {
+    scene.stagePlaylist.sourcing = arr.includes('RANDOM') ? ['BY_LABELS'] : ['RANDOM']
+  } else {
+    const without = arr.filter(s => s !== 'RANDOM' && s !== mode)
+    if (arr.includes(mode)) {
+      scene.stagePlaylist.sourcing = without.length ? without : ['RANDOM']
+    } else {
+      scene.stagePlaylist.sourcing = [...without, mode]
+    }
+  }
+}
+
 function addScene() {
   const id = ++_sceneId
-  scenes.value.push({ id, name: '', startTime: null, actions: [], customActionDefs: {}, allowJingles: true, allowAds: false, talkActivity: 0.5, stagePlaylist: { sourcing: 'RANDOM', labels: [] } })
+  scenes.value.push({ id, name: '', startTime: null, actions: [], customActionDefs: {}, allowJingles: true, allowAds: false, talkActivity: 0.5, stagePlaylist: { sourcing: ['RANDOM'], labels: [], genres: [] } })
   customActionFormVisible.value[id] = false
   customActionDraft.value[id] = emptyDraft()
   customActionEditingTitle.value[id] = null
@@ -212,8 +231,8 @@ function renderSceneActionTag(scene: Scene) {
     const isCustom = Boolean(scene.customActionDefs[option.value])
     const dark = themeStore.isDark
     const tagColor = isCustom
-      ? { color: dark ? 'rgba(255,45,149,0.12)' : 'rgba(255,45,149,0.08)', textColor: '#FF2D95', borderColor: 'rgba(255,45,149,0.45)' }
-      : { color: dark ? 'rgba(56,189,237,0.10)' : 'rgba(56,189,237,0.08)', textColor: dark ? '#38BDE5' : '#0e7fa8', borderColor: 'rgba(56,189,237,0.40)' }
+      ? { color: dark ? 'rgba(56,189,237,0.10)' : 'rgba(56,189,237,0.08)', textColor: dark ? '#38BDE5' : '#0e7fa8', borderColor: 'rgba(56,189,237,0.40)' }
+      : { color: dark ? 'rgba(255,45,149,0.12)' : 'rgba(255,45,149,0.08)', textColor: '#FF2D95', borderColor: 'rgba(255,45,149,0.45)' }
     return h(NTag, {
       size: 'medium',
       closable: true,
@@ -664,7 +683,7 @@ function onScriptFileChange(e: Event) {
             customActionDefs[a.name] = { title: a.name, instruction: a.instruction ?? '', contextVars: a.contextVars ?? [] }
           }
         }
-        scenes.value.push({ id, name: s.name ?? '', startTime: timeStringToMs(s.startTime), actions, customActionDefs, allowJingles: s.allowJingles ?? true, allowAds: s.allowAds ?? false, talkActivity: s.talkativity ?? 0.5, stagePlaylist: s.stagePlaylist })
+        scenes.value.push({ id, name: s.name ?? '', startTime: timeStringToMs(s.startTime), actions, customActionDefs, allowJingles: s.allowJingles ?? true, allowAds: s.allowAds ?? false, talkActivity: s.talkativity ?? 0.5, stagePlaylist: normalizePlaylist(s.stagePlaylist) })
         customActionFormVisible.value[id] = false
         customActionDraft.value[id] = emptyDraft()
         customActionEditingTitle.value[id] = null
@@ -748,7 +767,7 @@ function applyBrandToForm(brand: any) {
       const id = typeof p === 'string' ? p : p.promptId
       if (id) actions.push(id)
     }
-    scenes.value.push({ id, name: s.name ?? s.title ?? '', startTime: timeStringToMs(s.startTime), actions, customActionDefs, allowJingles: s.allowJingles ?? true, allowAds: s.allowAds ?? false, talkActivity: s.talkativity ?? 0.5, stagePlaylist: s.stagePlaylist ?? { sourcing: 'RANDOM', labels: [] } })
+    scenes.value.push({ id, name: s.name ?? s.title ?? '', startTime: timeStringToMs(s.startTime), actions, customActionDefs, allowJingles: s.allowJingles ?? true, allowAds: s.allowAds ?? false, talkActivity: s.talkativity ?? 0.5, stagePlaylist: normalizePlaylist(s.stagePlaylist) })
     customActionFormVisible.value[id] = false
     customActionDraft.value[id] = emptyDraft()
     customActionEditingTitle.value[id] = null
@@ -1131,8 +1150,6 @@ watch(activeTab, () => {
               <div class="scene-card__row">
                 <label class="scene-card__label">{{ t('brandForm.scene_start_time') }}</label>
                 <NTimePicker v-model:value="scene.startTime" use-12-hours clearable style="width: 160px" />
-                <NCheckbox v-model:checked="scene.allowJingles">{{ t('brandForm.scene_allow_jingles') }}</NCheckbox>
-                <NCheckbox v-model:checked="scene.allowAds">{{ t('brandForm.scene_allow_ads') }}</NCheckbox>
               </div>
 
               <div class="scene-card__row">
@@ -1144,18 +1161,38 @@ watch(activeTab, () => {
               <div class="scene-card__row scene-card__row--top">
                 <label class="scene-card__label">{{ t('brandForm.action_songs') }}</label>
                 <div style="display:flex;flex-direction:column;gap:8px;flex:1">
-                  <NRadioGroup v-model:value="scene.stagePlaylist.sourcing" style="display:flex;gap:16px">
-                    <NRadio value="RANDOM">{{ t('brandForm.action_songs_random') }}</NRadio>
-                    <NRadio value="STATIC_LIST">{{ t('brandForm.action_songs_by_labels') }}</NRadio>
-                  </NRadioGroup>
-                  <NSelect
-                    v-if="scene.stagePlaylist.sourcing === 'STATIC_LIST'"
-                    v-model:value="scene.stagePlaylist.labels"
-                    :options="fragmentLabelOptions"
-                    multiple
-                    filterable
-                    :placeholder="t('brandForm.action_songs_labels')"
-                  />
+                  <NCheckbox
+                    :checked="scene.stagePlaylist.sourcing.includes('RANDOM')"
+                    @update:checked="toggleSourcing(scene, 'RANDOM')"
+                  >{{ t('brandForm.action_songs_random') }}</NCheckbox>
+                  <div style="display:flex;flex-direction:column;gap:6px;">
+                    <NCheckbox
+                      :checked="scene.stagePlaylist.sourcing.includes('BY_LABELS')"
+                      @update:checked="toggleSourcing(scene, 'BY_LABELS')"
+                    >{{ t('brandForm.action_songs_by_labels') }}</NCheckbox>
+                    <NSelect
+                      v-if="scene.stagePlaylist.sourcing.includes('BY_LABELS')"
+                      v-model:value="scene.stagePlaylist.labels"
+                      :options="fragmentLabelOptions"
+                      multiple
+                      filterable
+                      :placeholder="t('brandForm.action_songs_labels')"
+                    />
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:6px;">
+                    <NCheckbox
+                      :checked="scene.stagePlaylist.sourcing.includes('BY_GENRE')"
+                      @update:checked="toggleSourcing(scene, 'BY_GENRE')"
+                    >{{ t('brandForm.action_songs_by_genre') }}</NCheckbox>
+                    <NTreeSelect
+                      v-if="scene.stagePlaylist.sourcing.includes('BY_GENRE')"
+                      v-model:value="scene.stagePlaylist.genres"
+                      :options="genreTreeOptions"
+                      multiple
+                      checkable
+                      :placeholder="t('brandForm.action_songs_genre_placeholder')"
+                    />
+                  </div>
                 </div>
               </div>
 

@@ -13,8 +13,14 @@ const refreshing = ref(false)
 const error = ref<string | null>(null)
 const agenda = ref<Agenda | null>(null)
 
-const ALL_STATUSES = ['PENDING', 'SCHEDULED', 'SKIPPED', 'COMPLETED', 'FAILED'] as const
-const activeFilters = ref<Set<string>>(new Set(['SCHEDULED', 'FAILED']))
+const ALL_STATUSES = ['PENDING', 'SCHEDULED', 'SKIPPED', 'COMPLETED'] as const
+const activeFilters = ref<Set<string>>(new Set(['SCHEDULED', 'COMPLETED']))
+const aroundNow = ref(true)
+
+function timeArrToMs(arr: number[]): number {
+  if (arr.length < 5) return 0
+  return new Date(arr[0], arr[1] - 1, arr[2], arr[3], arr[4], arr[5] ?? 0).getTime()
+}
 
 function toggleFilter(status: string) {
   const next = new Set(activeFilters.value)
@@ -64,6 +70,15 @@ function statusType(s: string): 'success' | 'warning' | 'error' | 'info' | 'defa
   return 'default'
 }
 
+const STATUS_COLORS: Record<string, string> = {
+  EMITTING:  '#18a058',
+  COMPLETED: '#18a058',
+  SCHEDULED: '#2080f0',
+  FAILED:    '#d03050',
+  SKIPPED:   '#f0a020',
+  PENDING:   '#888',
+}
+
 async function fetchAgenda() {
   if (!props.brandSlug) return
   const isInitial = agenda.value === null
@@ -98,10 +113,20 @@ function stopRefresh() {
 
 const filteredScenes = computed(() => {
   if (!agenda.value) return []
+  const now = Date.now()
+  const window = 30 * 60 * 1000
   return agenda.value.scenes
     .map(scene => ({
       ...scene,
-      timeline: scene.timeline.filter(b => activeFilters.value.has(b.status ?? '')),
+      timeline: scene.timeline.filter(b => {
+        if (b.status === 'FAILED') return true
+        if (!activeFilters.value.has(b.status ?? '')) return false
+        if (aroundNow.value) {
+          const t = timeArrToMs(b.scheduledEmissionTime)
+          if (t === 0 || Math.abs(t - now) > window) return false
+        }
+        return true
+      }),
     }))
     .filter(scene => scene.timeline.length > 0)
 })
@@ -156,13 +181,20 @@ onUnmounted(() => stopRefresh())
         </div>
 
         <div class="filter-bar">
+          <span class="filter-bar__label">Show only</span>
           <button
             v-for="status in ALL_STATUSES"
             :key="status"
             class="filter-btn"
             :class="{ 'filter-btn--active': activeFilters.has(status) }"
+            :style="activeFilters.has(status) ? { color: STATUS_COLORS[status], borderColor: STATUS_COLORS[status], background: STATUS_COLORS[status] + '22' } : {}"
             @click="toggleFilter(status)"
           >{{ status.toLowerCase() }}</button>
+          <button
+            class="filter-btn filter-btn--around-now"
+            :class="{ 'filter-btn--active filter-btn--around-now--active': aroundNow }"
+            @click="aroundNow = !aroundNow"
+          >± 30 min</button>
         </div>
 
         <NCollapse v-if="filteredScenes.length" arrow-placement="right">
@@ -338,8 +370,21 @@ onUnmounted(() => stopRefresh())
 .filter-bar {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 6px;
   margin-bottom: 16px;
+  padding: 8px 12px;
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  border-radius: 8px;
+  background: rgba(124, 58, 237, 0.06);
+}
+.filter-bar__label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(128, 128, 128, 0.6);
+  margin-right: 4px;
 }
 .filter-btn {
   padding: 2px 10px;
@@ -354,7 +399,17 @@ onUnmounted(() => stopRefresh())
   transition: opacity 0.15s, border-color 0.15s, background 0.15s;
 }
 .filter-btn:hover { opacity: 0.75; }
-.filter-btn--active { opacity: 1; border-color: #7C3AED; background: rgba(124, 58, 237, 0.12); color: #7C3AED; }
+.filter-btn--active { opacity: 1; }
+.filter-btn--around-now {
+  margin-left: 6px;
+  border-style: dashed;
+  font-weight: 600;
+}
+.filter-btn--around-now--active {
+  color: #f5a623;
+  border-color: #f5a623;
+  background: rgba(245, 166, 35, 0.13);
+}
 
 .song-row {
   display: flex;

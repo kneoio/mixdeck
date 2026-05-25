@@ -285,9 +285,9 @@ const menuOptions = computed<MenuOption[]>(() => [
         ],
       })),
       {
-        label: t('menu.add_new'),
+        label: () => h('span', { style: 'color: #7C3AED; font-weight: 600;' }, t('menu.add_new')),
         key: 'brands-new',
-        icon: () => h(NIcon, null, { default: () => h(AddIcon) }),
+        icon: () => h(NIcon, { color: '#7C3AED' }, { default: () => h(AddIcon) }),
       },
     ],
   },

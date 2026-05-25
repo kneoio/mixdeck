@@ -51,7 +51,7 @@ export default {
     listeners: 'Listeners',
     playlist: 'Playlist',
     settings: 'Settings',
-    add_new: 'Add New',
+    add_new: 'Add New Brand',
   },
   dashboard: {
     stationTime: 'Station Time',
@@ -188,6 +188,8 @@ export default {
     action_songs_random: 'Random',
     action_songs_by_labels: 'By Labels',
     action_songs_labels: 'Labels',
+    action_songs_by_genre: 'By Genre',
+    action_songs_genre_placeholder: 'Select genres…',
     action_instruction: 'Instruction',
     action_instruction_placeholder: 'Write the instruction for this action…',
     action_context_vars: 'Context Data',
