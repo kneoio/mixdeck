@@ -193,6 +193,13 @@ function submitCustomAction(scene: Scene) {
   customActionFormVisible.value[scene.id] = false
 }
 
+function copyVar(name: string) {
+  navigator.clipboard.writeText('{{' + name + '}}')
+}
+function wrapVar(name: string) {
+  return '{{' + name + '}}'
+}
+
 function cancelCustomAction(scene: Scene) {
   customActionDraft.value[scene.id] = emptyDraft()
   customActionEditingTitle.value[scene.id] = null
@@ -1131,7 +1138,7 @@ watch(activeTab, () => {
               <div class="scene-card__row">
                 <label class="scene-card__label">{{ t('brandForm.scene_talk_activity') }}</label>
                 <NSlider v-model:value="scene.talkActivity" :min="0" :max="1" :step="0.01" style="flex: 1" :theme-overrides="{ fillColor: talkativityColor(scene.talkActivity), fillColorHover: talkativityColor(scene.talkActivity) }" />
-                <span class="scene-card__slider-val">{{ scene.talkActivity }}</span>
+                <span class="scene-card__slider-val">{{ Math.round(scene.talkActivity * 100) }}%</span>
               </div>
 
               <div class="scene-card__row scene-card__row--top">
@@ -1192,17 +1199,26 @@ watch(activeTab, () => {
                   >{{ customActionDraft[scene.id].title || t('brandForm.action_new_heading') }}</span>
                 </div>
 
-                <div class="custom-action-form__row custom-action-form__row--top">
-                  <label class="scene-card__label">{{ t('brandForm.action_instruction') }}</label>
-                  <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
-                    <InstructionEditor
-                      v-model="customActionDraft[scene.id].instruction"
-                      :placeholder="t('brandForm.action_instruction_placeholder')"
-                      :dark="themeStore.isDark"
-                    />
-                    <div v-if="customActionDraft[scene.id].contextVars.length" class="context-vars-hint">
-                      <span class="context-vars-hint__label">{{ t('brandForm.available_variables') }}</span>
-                      {{ customActionDraft[scene.id].contextVars.join(', ') }}
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                  <div v-if="customActionDraft[scene.id].contextVars.length" class="custom-action-form__row">
+                    <label class="scene-card__label">{{ t('brandForm.available_variables') }}</label>
+                    <div class="context-vars-chips">
+                      <span
+                        v-for="(v, i) in customActionDraft[scene.id].contextVars"
+                        :key="v"
+                        class="context-var-chip"
+                        @click="copyVar(v)"
+                      >{{ v }}{{ i < customActionDraft[scene.id].contextVars.length - 1 ? ',' : '' }}</span>
+                    </div>
+                  </div>
+                  <div class="custom-action-form__row custom-action-form__row--top">
+                    <label class="scene-card__label">{{ t('brandForm.action_instruction') }}</label>
+                    <div style="flex: 1;">
+                      <InstructionEditor
+                        v-model="customActionDraft[scene.id].instruction"
+                        :placeholder="t('brandForm.action_instruction_placeholder')"
+                        :dark="themeStore.isDark"
+                      />
                     </div>
                   </div>
                 </div>
@@ -1510,14 +1526,23 @@ watch(activeTab, () => {
   justify-content: flex-end;
 }
 
-.context-vars-hint {
-  font-size: 0.74rem;
-  color: #999;
+.context-vars-chips {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 5px;
+  row-gap: 1px;
 }
 
-.context-vars-hint__label {
-  font-weight: 600;
-  margin-right: 4px;
+.context-var-chip {
+  font-size: 0.72rem;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.6);
+  user-select: none;
+  transition: opacity 0.15s;
+}
+
+.context-var-chip:hover {
+  opacity: 0.65;
 }
 
 .scene-custom-cancel {

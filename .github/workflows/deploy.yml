@@ -2,8 +2,8 @@ name: Build and Deploy
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - master
 
 env:
   REGISTRY: ghcr.io
@@ -39,8 +39,8 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=tag
-            type=semver,pattern={{version}}
+            type=ref,event=branch
+            type=sha
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

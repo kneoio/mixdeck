@@ -192,7 +192,7 @@ export default {
     action_instruction_placeholder: 'Write the instruction for this action…',
     action_context_vars: 'Context Data',
     action_context_vars_placeholder: 'Add variables to context…',
-    available_variables: 'Available variables:',
+    available_variables: 'Variables',
     audience_type: 'Audience Type',
     local_name: 'Local Name',
     additional_info: 'Additional Info',

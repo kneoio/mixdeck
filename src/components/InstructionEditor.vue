@@ -12,6 +12,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { EditorView } from '@codemirror/view'
+import { syntaxHighlighting, HighlightStyle } from '@codemirror/language'
+import { tags } from '@lezer/highlight'
 import { handlebarsLanguage } from '@xiechao/codemirror-lang-handlebars'
 import CodeMirror from 'vue-codemirror6'
 
@@ -22,9 +24,21 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
 
+const handlebarsBraces = syntaxHighlighting(HighlightStyle.define([
+  { tag: tags.tagName, color: '#f5a623' },
+]))
+
 const extensions = computed(() => [
   handlebarsLanguage,
+  handlebarsBraces,
   EditorView.lineWrapping,
-  EditorView.theme({ '.cm-gutters': { display: 'none' } }),
+  EditorView.theme({
+    '.cm-gutters': { display: 'none' },
+    '&': { background: 'transparent' },
+    '.cm-scroller': { background: 'transparent' },
+    '.cm-content': { background: 'transparent' },
+    '.cm-activeLine': { background: 'transparent' },
+    '.cm-cursor': { borderLeftColor: 'rgba(255,255,255,0.8)' },
+  }),
 ])
 </script>
