@@ -16,9 +16,9 @@ const props = defineProps<{ active?: boolean; pulse?: boolean; size?: number; co
 .led {
   font-family: 'Share Tech Mono', monospace;
   font-size: v-bind("`${size ?? 25}px`");
-  opacity: 0.6;
+  opacity: 0.25;
   text-shadow: none;
-  transition: opacity .3s, text-shadow .3s;
+  transition: opacity 2.5s ease-out, text-shadow 2.5s ease-out;
 }
 
 .active {
