@@ -33,7 +33,7 @@ let queueTimer: ReturnType<typeof setInterval> | null = null
 function triggerFlash() {
   if (flashTimer) clearTimeout(flashTimer)
   flash.value = true
-  flashTimer = setTimeout(() => { flash.value = false }, 80)
+  flashTimer = setTimeout(() => { flash.value = false }, 350)
 }
 
 const sortedQueueEntries = computed(() =>

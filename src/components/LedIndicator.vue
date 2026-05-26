@@ -18,15 +18,17 @@ const props = defineProps<{ active?: boolean; pulse?: boolean; size?: number; co
   font-size: v-bind("`${size ?? 25}px`");
   opacity: 0.25;
   text-shadow: none;
-  transition: opacity 2.5s ease-out, text-shadow 2.5s ease-out;
+  transition: opacity 3s ease-out, text-shadow 3s ease-out;
 }
 
 .active {
   opacity: 1;
+  transition: opacity 0.05s, text-shadow 0.05s;
   text-shadow:
-    0 0 5px currentColor,
-    0 0 15px currentColor,
-    0 0 30px currentColor;
+    0 0 4px currentColor,
+    0 0 12px currentColor,
+    0 0 28px currentColor,
+    0 0 55px currentColor;
 }
 
 .pulse {
