@@ -262,10 +262,6 @@ onUnmounted(() => {
         <span class="label">{{ t('dashboard.stationTime') }}:</span>
         <span class="time">{{ localTime }}</span>
       </div>
-      <div class="timezone-display">
-        <span class="label">{{ t('dashboard.timezone') }}:</span>
-        <span class="timezone">{{ timezone }}</span>
-      </div>
     </div>
     <div class="queue-wrap">
       <div
@@ -301,7 +297,6 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 3px;
-  flex-wrap: wrap;
 }
 .aivox-status {
   display: flex;
