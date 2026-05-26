@@ -2,7 +2,7 @@
   <span
     class="led"
     :class="{ active, pulse }"
-    :style="{ color: (active || pulse) ? (color ?? '#00FF3C') : '#9ca3af' }"
+    :style="{ color: color ?? '#00FF3C' }"
   >
     ▬
   </span>

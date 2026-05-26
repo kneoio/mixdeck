@@ -114,7 +114,7 @@ function stopRefresh() {
 const filteredScenes = computed(() => {
   if (!agenda.value) return []
   const now = Date.now()
-  const window = 30 * 60 * 1000
+  const window = 15 * 60 * 1000
   return agenda.value.scenes
     .map(scene => ({
       ...scene,
@@ -194,7 +194,7 @@ onUnmounted(() => stopRefresh())
             class="filter-btn filter-btn--around-now"
             :class="{ 'filter-btn--active filter-btn--around-now--active': aroundNow }"
             @click="aroundNow = !aroundNow"
-          >± 30 min</button>
+          >± 15 min</button>
         </div>
 
         <NCollapse v-if="filteredScenes.length" arrow-placement="right">

@@ -153,6 +153,14 @@ const customActionEditingTitle = ref<Record<number, string | null>>({})
 const sceneTitleEditing = ref<Record<number, boolean>>({})
 const actionTitleEditing = ref<Record<number, boolean>>({})
 
+function serializePlaylist(sp: any) {
+  const sourcing = (sp?.sourcing ?? []).map((s: string) =>
+    s === 'QUERY_LABELS' || s === 'QUERY_GENRES' ? 'QUERY' : s
+  )
+  const unique = [...new Set(sourcing)]
+  return { ...sp, sourcing: unique.length === 1 ? unique[0] : unique }
+}
+
 function normalizePlaylist(sp: any) {
   const sourcing = Array.isArray(sp?.sourcing) ? sp.sourcing : [sp?.sourcing ?? 'RANDOM']
   return { sourcing, labels: sp?.labels ?? [], genres: sp?.genres ?? [] }
@@ -161,7 +169,7 @@ function normalizePlaylist(sp: any) {
 function toggleSourcing(scene: Scene, mode: string) {
   const arr: string[] = scene.stagePlaylist.sourcing
   if (mode === 'RANDOM') {
-    scene.stagePlaylist.sourcing = arr.includes('RANDOM') ? ['BY_LABELS'] : ['RANDOM']
+    scene.stagePlaylist.sourcing = arr.includes('RANDOM') ? ['QUERY_LABELS', 'QUERY_GENRES'] : ['RANDOM']
   } else {
     const without = arr.filter(s => s !== 'RANDOM' && s !== mode)
     if (arr.includes(mode)) {
@@ -570,7 +578,7 @@ async function handleSave() {
         scenes: scenes.value.map(s => ({
           name: s.name,
           startTime: msToTimeString(s.startTime),
-          stagePlaylist: s.stagePlaylist,
+          stagePlaylist: serializePlaylist(s.stagePlaylist),
           actions: s.actions.map(a => {
             const def = s.customActionDefs[a]
             return def
@@ -1182,11 +1190,11 @@ watch(activeTab, () => {
                   >{{ t('brandForm.action_songs_random') }}</NCheckbox>
                   <div style="display:flex;flex-direction:column;gap:6px;">
                     <NCheckbox
-                      :checked="scene.stagePlaylist.sourcing.includes('BY_LABELS')"
-                      @update:checked="toggleSourcing(scene, 'BY_LABELS')"
+                      :checked="scene.stagePlaylist.sourcing.includes('QUERY_LABELS')"
+                      @update:checked="toggleSourcing(scene, 'QUERY_LABELS')"
                     >{{ t('brandForm.action_songs_by_labels') }}</NCheckbox>
                     <NSelect
-                      v-if="scene.stagePlaylist.sourcing.includes('BY_LABELS')"
+                      v-if="scene.stagePlaylist.sourcing.includes('QUERY_LABELS')"
                       v-model:value="scene.stagePlaylist.labels"
                       :options="fragmentLabelOptions"
                       multiple
@@ -1196,11 +1204,11 @@ watch(activeTab, () => {
                   </div>
                   <div style="display:flex;flex-direction:column;gap:6px;">
                     <NCheckbox
-                      :checked="scene.stagePlaylist.sourcing.includes('BY_GENRE')"
-                      @update:checked="toggleSourcing(scene, 'BY_GENRE')"
+                      :checked="scene.stagePlaylist.sourcing.includes('QUERY_GENRES')"
+                      @update:checked="toggleSourcing(scene, 'QUERY_GENRES')"
                     >{{ t('brandForm.action_songs_by_genre') }}</NCheckbox>
                     <NTreeSelect
-                      v-if="scene.stagePlaylist.sourcing.includes('BY_GENRE')"
+                      v-if="scene.stagePlaylist.sourcing.includes('QUERY_GENRES')"
                       v-model:value="scene.stagePlaylist.genres"
                       :options="genreTreeOptions"
                       multiple
