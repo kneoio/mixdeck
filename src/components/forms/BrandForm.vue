@@ -1172,7 +1172,7 @@ watch(activeTab, () => {
 
               <div class="scene-card__row">
                 <label class="scene-card__label">{{ t('brandForm.scene_start_time') }}</label>
-                <NTimePicker v-model:value="scene.startTime" use-12-hours clearable style="width: 160px" />
+                <NTimePicker v-model:value="scene.startTime" clearable style="width: 140px" />
               </div>
 
               <div class="scene-card__row">

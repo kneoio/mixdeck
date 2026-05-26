@@ -51,6 +51,10 @@ onMounted(() => {
   const el = btnRef.value
   if (!el || el.disabled) return
 
+  const inner = el.querySelector('.gsap-btn__inner') as HTMLElement | null
+  gsap.from(el, { skewX: 0, duration: 0.5, ease: 'power3.out', delay: 0.05 })
+  if (inner) gsap.from(inner, { skewX: 0, duration: 0.5, ease: 'power3.out', delay: 0.05 })
+
   el.addEventListener('mouseenter', () => {
     gsap.to(el, { scale: 1.03, duration: 0.18, ease: 'power2.out' })
   })

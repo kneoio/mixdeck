@@ -300,7 +300,7 @@ onUnmounted(() => {
 .aivox-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 3px;
   flex-wrap: wrap;
 }
 .aivox-status {
