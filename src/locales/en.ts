@@ -139,7 +139,7 @@ export default {
     upgrade_premium: 'Upgrade to Premium',
   },
   brandForm: {
-    create_title: 'Create Brand',
+    create_title: 'New Brand',
     create_subtitle: 'Create a new brand',
     edit_title: 'Edit Brand',
     edit_subtitle: 'Update brand / radio station',

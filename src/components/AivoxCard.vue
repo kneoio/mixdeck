@@ -16,6 +16,7 @@ const brandsStore = useBrandsStore()
 const alive = computed(() => brandsStore.streamingStates[props.brandSlug] ?? false)
 const loading = ref(false)
 const waiting = ref(false)
+const flash = ref(false)
 const localTime = ref('')
 const queueEntries = ref<AivoxQueueEntry[]>([])
 
@@ -23,10 +24,17 @@ const HEARTBEAT_POLL_BASE_MS = 5000
 const HEARTBEAT_POLL_MAX_MS = 180_000
 
 let pollTimer: ReturnType<typeof setTimeout> | null = null
+let flashTimer: ReturnType<typeof setTimeout> | null = null
 let pollIntervalMs = HEARTBEAT_POLL_BASE_MS
 let heartbeatPollCancelled = false
 let timeTimer: ReturnType<typeof setInterval> | null = null
 let queueTimer: ReturnType<typeof setInterval> | null = null
+
+function triggerFlash() {
+  if (flashTimer) clearTimeout(flashTimer)
+  flash.value = true
+  flashTimer = setTimeout(() => { flash.value = false }, 400)
+}
 
 const sortedQueueEntries = computed(() =>
   [...queueEntries.value].sort((a, b) => a.tech.pos - b.tech.pos)
@@ -38,6 +46,7 @@ async function fetchHeartbeatAlive(): Promise<boolean> {
   const { alive } = await aivoxApiService.heartbeat(slug)
   if (props.brandSlug !== slug) return alive
   brandsStore.setStreamingState(slug, alive)
+  if (alive) triggerFlash()
   return alive
 }
 
@@ -47,6 +56,7 @@ async function pollHeartbeatScheduled(): Promise<void> {
   const { alive, status } = await aivoxApiService.heartbeat(slug)
   if (heartbeatPollCancelled || props.brandSlug !== slug) return
   brandsStore.setStreamingState(slug, alive)
+  if (alive) triggerFlash()
   if (status === 401) {
     pollIntervalMs = Math.min(pollIntervalMs * 2, HEARTBEAT_POLL_MAX_MS)
   } else {
@@ -219,6 +229,7 @@ onUnmounted(() => {
   stopPolling()
   stopQueuePolling()
   stopTimeUpdate()
+  if (flashTimer) clearTimeout(flashTimer)
 })
 </script>
 
@@ -241,7 +252,7 @@ onUnmounted(() => {
       </GsapButton>
       <div class="aivox-status" style="margin-left: 20px;">
         <div class="aivox-led-wrap">
-          <LedIndicator :active="alive || waiting" :pulse="waiting" color="#FFD600" :size="18" />
+          <LedIndicator :active="flash || waiting" :pulse="waiting" color="#FFD600" :size="18" />
           <span class="aivox-label">{{ t('dashboard.onAir') }}</span>
         </div>
       </div>

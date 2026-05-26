@@ -901,6 +901,7 @@ watch(activeTab, () => {
   >
     <template #actions>
       <div class="gsap-row">
+        <GsapButton @click="router.push(backRoute)"><span>{{ t('common.close') }}</span></GsapButton>
         <GsapButton type="primary" :disabled="loading" @click="handleSave"><span>{{ t('common.save') }}</span></GsapButton>
       </div>
     </template>

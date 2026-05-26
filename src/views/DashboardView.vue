@@ -548,7 +548,7 @@ const handleUserMenuSelect = async (key: string) => {
       </NLayoutHeader>
 
       <NLayoutContent :style="isMobile ? 'padding: 8px 4px' : 'padding: 24px'">
-        <router-view />
+        <router-view :key="$route.fullPath" />
       </NLayoutContent>
     </NLayout>
   </NLayout>
