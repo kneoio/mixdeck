@@ -136,8 +136,10 @@ function msToTimeString(ms: number | null | undefined): string | null {
     .join(':')
 }
 
+const DEFAULT_CONTEXT_VARS = ['songTitle', 'songArtist', 'genre', 'country', 'stationBrand', 'djName', 'timeContext']
+
 function emptyDraft(): CustomActionDef {
-  return { title: '', instruction: '', contextVars: [] }
+  return { title: '', instruction: '', contextVars: [...DEFAULT_CONTEXT_VARS] }
 }
 
 const scriptMode = ref<'predefined' | 'custom'>('predefined')
@@ -254,6 +256,15 @@ function renderSceneActionTag(scene: Scene) {
   }
 }
 
+function renderActionGroupLabel(option: SelectOption) {
+  if ((option as any).type === 'group') {
+    return h('span', {
+      style: 'font-size:0.62rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#7C3AED;opacity:0.9;',
+    }, String(option.label ?? ''))
+  }
+  return h('span', String(option.label ?? ''))
+}
+
 function sceneActionOptions(scene: Scene) {
   const customTitles = Object.keys(scene.customActionDefs)
   const groups: any[] = [
@@ -287,6 +298,7 @@ type AgentLabel = {
 
 type AgentOption = SelectOption & {
   labels?: AgentLabel[]
+  preferredLang?: { languageTag: string; weight: number }[]
 }
 
 type ScriptOption = SelectOption & {
@@ -476,26 +488,27 @@ function formatVariableName(name: string) {
 function renderAgentOptionLabel(option: SelectOption) {
   const typedOption = option as AgentOption
   const tags = typedOption.labels || []
+  const langs = typedOption.preferredLang || []
   return h(
     NSpace,
-    { align: 'center', size: 8, wrapItem: false },
+    { align: 'center', size: 6, wrapItem: false },
     {
       default: () => [
+        ...langs.map(l =>
+          h(NTag, {
+            size: 'small',
+            bordered: true,
+            color: { color: 'transparent', textColor: 'rgba(255,255,255,0.5)', borderColor: 'rgba(255,255,255,0.2)' },
+          }, { default: () => l.languageTag })
+        ),
         ...tags
           .filter(tag => Boolean(tag?.name || tag?.identifier))
           .map(tag =>
-          h(
-            NTag,
-            {
-              size: 'small',
-              bordered: false,
-              color: {
-                color: tag.color || '#ececec',
-                textColor: tag.fontColor || '#333333',
-              },
-            },
-            { default: () => tag.name || tag.identifier }
-          )
+          h(NTag, {
+            size: 'small',
+            bordered: false,
+            color: { color: tag.color || '#ececec', textColor: tag.fontColor || '#333333' },
+          }, { default: () => tag.name || tag.identifier })
           ),
         h('span', String(option.label ?? option.value ?? '')),
       ],
@@ -804,6 +817,7 @@ onMounted(async () => {
         label: a.name || a.id,
         value: a.id,
         labels: Array.isArray(a.labels) ? a.labels : [],
+        preferredLang: Array.isArray(a.preferredLang) ? a.preferredLang : [],
       }))
     }
     if (profiles.status === 'fulfilled') {
@@ -1204,6 +1218,7 @@ watch(activeTab, () => {
                   :options="sceneActionOptions(scene)"
                   multiple
                   :render-tag="renderSceneActionTag(scene)"
+                  :render-label="renderActionGroupLabel"
                   :placeholder="t('brandForm.scene_actions')"
                   style="flex: 1"
                 />
