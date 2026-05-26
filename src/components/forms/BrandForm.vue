@@ -166,6 +166,26 @@ function normalizePlaylist(sp: any) {
   return { sourcing, labels: sp?.labels ?? [], genres: sp?.genres ?? [] }
 }
 
+function resolveToUuid(values: string[], list: { id: string; identifier?: string; name?: string; localizedName?: Record<string, string> }[]): string[] {
+  return values.map(v => {
+    if (list.find(e => e.id === v)) return v
+    const match = list.find(e =>
+      e.name === v ||
+      e.identifier === v ||
+      (e.localizedName && Object.values(e.localizedName).includes(v))
+    )
+    return match?.id ?? v
+  })
+}
+
+function normalizeScenePlaylistIds() {
+  for (const scene of scenes.value) {
+    const sp = scene.stagePlaylist
+    if (sp.genres?.length) sp.genres = resolveToUuid(sp.genres, genreList.value as any[])
+    if (sp.labels?.length) sp.labels = resolveToUuid(sp.labels, fragmentLabelList.value as any[])
+  }
+}
+
 function toggleSourcing(scene: Scene, mode: string) {
   const arr: string[] = scene.stagePlaylist.sourcing
   if (mode === 'RANDOM') {
@@ -178,6 +198,15 @@ function toggleSourcing(scene: Scene, mode: string) {
       scene.stagePlaylist.sourcing = [...without, mode]
     }
   }
+}
+
+function sortScenes() {
+  scenes.value.sort((a, b) => {
+    if (a.startTime === null && b.startTime === null) return 0
+    if (a.startTime === null) return 1
+    if (b.startTime === null) return -1
+    return a.startTime - b.startTime
+  })
 }
 
 function addScene() {
@@ -687,12 +716,21 @@ function onScriptFileChange(e: Event) {
   const reader = new FileReader()
   reader.onload = (ev) => {
     try {
-      const json = JSON.parse(ev.target?.result as string)
-      const data = json.scenes ? json : json
-      customScriptTitle.value = data.title ?? customScriptTitle.value
+      let json: any
+      try {
+        json = JSON.parse(ev.target?.result as string)
+      } catch {
+        message.error('Invalid JSON file — could not parse.')
+        return
+      }
+      if (!json || typeof json !== 'object' || !Array.isArray(json.scenes)) {
+        message.error('Invalid script format — expected an object with a "scenes" array.')
+        return
+      }
+      customScriptTitle.value = json.title ?? customScriptTitle.value
       scenes.value = []
       _sceneId = 0
-      for (const s of data.scenes ?? []) {
+      for (const s of json.scenes) {
         const id = ++_sceneId
         const customActionDefs: Record<string, CustomActionDef> = {}
         const actions: string[] = []
@@ -709,8 +747,9 @@ function onScriptFileChange(e: Event) {
         customActionDraft.value[id] = emptyDraft()
         customActionEditingTitle.value[id] = null
       }
+      normalizeScenePlaylistIds()
     } catch {
-      message.error('Invalid script JSON')
+      message.error('Failed to import script — unexpected error.')
     }
     if (scriptImportRef.value) scriptImportRef.value.value = ''
   }
@@ -844,6 +883,7 @@ onMounted(async () => {
     if (isEditing.value) {
       const brand = await store.fetchBrand(route.params.id as string)
       applyBrandToForm(brand)
+      normalizeScenePlaylistIds()
     }
   } catch (error: any) {
     message.error(error?.message || t('brandForm.load_failed'))
@@ -866,6 +906,7 @@ watch(
       loading.value = true
       const brand = await store.fetchBrand(newId as string)
       applyBrandToForm(brand)
+      normalizeScenePlaylistIds()
     } catch (error: any) {
       message.error(error?.message || t('brandForm.load_failed'))
       router.push(backRoute.value)
@@ -1296,6 +1337,7 @@ watch(activeTab, () => {
                 <span class="script-add-scene__icon">+</span>
                 <span>{{ t('brandForm.card_add_scene') }}</span>
               </button>
+              <button class="scene-sort-btn" :disabled="loading" @click="sortScenes" title="Sort by start time">↕ Sort</button>
             </div>
           </div>
         </div>
@@ -1759,7 +1801,27 @@ watch(activeTab, () => {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 12px;
   padding: 16px 0 4px;
+}
+
+.scene-sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.scene-sort-btn:hover {
+  border-color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .script-io-btn {

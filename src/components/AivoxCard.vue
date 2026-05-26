@@ -256,15 +256,15 @@ onUnmounted(() => {
           <span class="aivox-label">{{ t('dashboard.onAir') }}</span>
         </div>
       </div>
-      <div v-if="timezone" class="time-info">
-        <div class="time-display">
-          <span class="label">{{ t('dashboard.stationTime') }}:</span>
-          <span class="time">{{ localTime }}</span>
-        </div>
-        <div class="timezone-display">
-          <span class="label">{{ t('dashboard.timezone') }}:</span>
-          <span class="timezone">{{ timezone }}</span>
-        </div>
+    </div>
+    <div v-if="timezone" class="time-info">
+      <div class="time-display">
+        <span class="label">{{ t('dashboard.stationTime') }}:</span>
+        <span class="time">{{ localTime }}</span>
+      </div>
+      <div class="timezone-display">
+        <span class="label">{{ t('dashboard.timezone') }}:</span>
+        <span class="timezone">{{ timezone }}</span>
       </div>
     </div>
     <div class="queue-wrap">
@@ -321,8 +321,10 @@ onUnmounted(() => {
 }
 .time-info {
   display: flex;
+  justify-content: center;
+  align-items: baseline;
   gap: 1.5rem;
-  margin-left: auto;
+  margin-top: 12px;
   flex-wrap: wrap;
 }
 .time-display,
@@ -337,9 +339,10 @@ onUnmounted(() => {
   opacity: 0.7;
 }
 .time {
-  font-size: 1.1rem;
+  font-size: 2rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
 }
 .timezone {
   font-weight: 500;
