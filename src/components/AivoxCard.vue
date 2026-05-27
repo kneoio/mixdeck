@@ -250,19 +250,16 @@ onUnmounted(() => {
       >
         <span>Stop</span>
       </GsapButton>
-      <div class="aivox-status" style="margin-left: 20px;">
+      <div class="aivox-status">
         <div class="aivox-led-wrap">
           <LedIndicator :active="flash || waiting" :pulse="waiting" color="#FFD600" :size="18" />
           <span class="aivox-label">{{ t('dashboard.onAir') }}</span>
         </div>
       </div>
-    </div>
-    <div v-if="timezone" class="time-info">
-      <div class="time-display">
+      <div v-if="timezone" class="time-right">
         <span class="label">{{ t('dashboard.stationTime') }}:</span>
         <span class="time">{{ localTime }}</span>
-      </div>
-      <div class="timezone-display">
+        <span class="tz-sep">·</span>
         <span class="label">{{ t('dashboard.timezone') }}:</span>
         <span class="timezone">{{ timezone }}</span>
       </div>
@@ -306,6 +303,14 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 10px;
+  margin-left: 20px;
+}
+.time-right {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-left: auto;
+  white-space: nowrap;
 }
 .aivox-led-wrap {
   display: flex;
@@ -318,20 +323,6 @@ onUnmounted(() => {
   font-weight: 500;
   opacity: 0.7;
 }
-.time-info {
-  display: flex;
-  justify-content: center;
-  align-items: baseline;
-  gap: 1.5rem;
-  margin-top: 12px;
-  flex-wrap: wrap;
-}
-.time-display,
-.timezone-display {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
 .label {
   font-size: 0.85rem;
   font-weight: 500;
@@ -342,6 +333,9 @@ onUnmounted(() => {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
+}
+.tz-sep {
+  opacity: 0.3;
 }
 .timezone {
   font-weight: 500;
