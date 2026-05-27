@@ -3,9 +3,10 @@ import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
-  NDataTable, NSpace, useMessage, type DataTableColumns
+  NDataTable, NPopconfirm, useMessage, type DataTableColumns
 } from 'naive-ui'
 import { useBrandsStore } from '@/stores/brands'
+import { useListenersStore } from '@/stores/listeners'
 import datanestApiService from '@/services/datanestApi'
 import PageHeader from '@/components/PageHeader.vue'
 import ActionBar from '@/components/ActionBar.vue'
@@ -17,7 +18,9 @@ const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const brandsStore = useBrandsStore()
+const listenersStore = useListenersStore()
 const message = useMessage()
+const deleting = ref(false)
 
 const entries = ref<any[]>([])
 const loading = ref(false)
@@ -79,6 +82,21 @@ async function fetchData(page = pageNum.value, size = pageSize.value) {
   }
 }
 
+async function handleDelete() {
+  if (!selectedIds.value.length) return
+  deleting.value = true
+  try {
+    await Promise.all(selectedIds.value.map(id => listenersStore.deleteListener(id)))
+    message.success(t('listenersView.deleted', { count: selectedIds.value.length }))
+    selectedIds.value = []
+    await fetchData(1)
+  } catch (e: any) {
+    handleApiError(e, message)
+  } finally {
+    deleting.value = false
+  }
+}
+
 // Fetch when slugName becomes available (brand loaded from store)
 watch(slugName, (val) => { if (val) fetchData(1) }, { immediate: true })
 </script>
@@ -87,11 +105,19 @@ watch(slugName, (val) => { if (val) fetchData(1) }, { immediate: true })
   <div>
     <PageHeader :title="brandName" :subtitle="t('listenersView.subtitle')" :count="totalCount" />
     <ActionBar>
-      <NSpace>
-        <GsapButton type="error" @click="message.info('Bulk actions coming soon — currently view-only')">
-          <span>{{ t('listenersView.ban_btn', { count: selectedIds.length }) }}</span>
+      <div class="gsap-row">
+        <GsapButton type="primary" @click="router.push(`/brands/${route.params.id}/listeners/new`)">
+          <span>{{ t('listenersView.new_listener') }}</span>
         </GsapButton>
-      </NSpace>
+        <NPopconfirm @positive-click="handleDelete">
+          <template #trigger>
+            <GsapButton type="error" :disabled="!selectedIds.length || deleting">
+              <span>{{ t('listenersView.delete_btn', { count: selectedIds.length }) }}</span>
+            </GsapButton>
+          </template>
+          {{ t('listenersView.delete_confirm', { count: selectedIds.length }) }}
+        </NPopconfirm>
+      </div>
     </ActionBar>
     <NDataTable
       :columns="columns"
