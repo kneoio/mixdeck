@@ -5,7 +5,7 @@ import GsapButton from '@/components/GsapButton.vue'
 import { useI18n } from 'vue-i18n'
 import aivoxApiService from '@/services/aivoxApi'
 import type { AivoxQueueEntry } from '@/services/aivoxApi'
-import LedIndicator from '@/components/LedIndicator.vue'
+import LedYellow from '@/components/LedYellow.vue'
 import LoaderProgress from '@/components/LoaderProgress.vue'
 import { useBrandsStore } from '@/stores/brands'
 
@@ -252,7 +252,7 @@ onUnmounted(() => {
       </GsapButton>
       <div class="aivox-status">
         <div class="aivox-led-wrap">
-          <LedIndicator :active="flash || waiting" :pulse="waiting" color="#FFD600" :size="18" />
+          <LedYellow :active="flash || waiting" />
           <span class="aivox-label">{{ t('dashboard.onAir') }}</span>
         </div>
       </div>

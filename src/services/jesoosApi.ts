@@ -41,9 +41,26 @@ export interface Agenda {
   scenes: AgendaScene[]
 }
 
+export interface DebugInstructionRequest {
+  instruction: string
+  contextVars: Record<string, string>
+  language: string
+}
+
+export interface DebugInstructionResponse {
+  rendered: string
+  llmResponse: string
+  inputTokens: number
+  outputTokens: number
+}
+
 class JesoosApiService extends ApiClient {
   constructor() {
     super(appConfig.jesoosServer)
+  }
+
+  async debugInstruction(brandSlug: string, body: DebugInstructionRequest): Promise<DebugInstructionResponse> {
+    return this.post<DebugInstructionResponse>(`/debug/${encodeURIComponent(brandSlug)}/instruction`, body)
   }
 
   async getAgendas(brandSlug: string): Promise<Agenda | null> {

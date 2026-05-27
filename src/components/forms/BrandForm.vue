@@ -10,6 +10,7 @@ import {
 } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
 import InstructionEditor from '@/components/InstructionEditor.vue'
+import TestStatusLeds from '@/components/TestStatusLeds.vue'
 import type { SelectOption } from 'naive-ui'
 import FormWrapper from '@/components/FormWrapper.vue'
 import { useBrandsStore, SUBMISSION_POLICY_OPTIONS, type SubmissionPolicy } from '@/stores/brands'
@@ -20,6 +21,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useThemeStore } from '@/stores/theme'
 import datanestApiService from '@/services/datanestApi'
 import dictionaryApiService, { type GenreEntry, type LabelEntry } from '@/services/dictionaryApi'
+import jesoosApiService, { type DebugInstructionResponse } from '@/services/jesoosApi'
 import { handleApiError } from '@/utils/notificationService'
 import { normalizeIdList, toGenreTreeOptions } from '@/utils/genreTree'
 import { isValidationError } from '@/utils/errorHandler'
@@ -52,6 +54,7 @@ const formTitle = computed(() => {
 
 const loading = ref(false)
 const brandId = ref<string | null>(null)
+const brandSlug = ref<string | null>(null)
 const activeTab = ref('properties')
 const isTabChangeFromValidation = ref(false)
 const saveAttempted = ref(false)
@@ -138,8 +141,61 @@ function msToTimeString(ms: number | null | undefined): string | null {
 
 const DEFAULT_CONTEXT_VARS = ['songTitle', 'songArtist', 'genre', 'country', 'stationBrand', 'djName', 'timeContext']
 
+const DEFAULT_CONTEXT_VAR_SAMPLES: Record<string, string> = {
+  songTitle: 'Bohemian Rhapsody',
+  songArtist: 'Queen',
+  genre: 'Rock',
+  country: 'UK',
+  stationBrand: 'Rock FM',
+  djName: 'DJ Alex',
+  timeContext: 'Tuesday morning',
+}
+
 function emptyDraft(): CustomActionDef {
   return { title: '', instruction: '', contextVars: [...DEFAULT_CONTEXT_VARS] }
+}
+
+const testLoading = ref<Record<number, boolean>>({})
+const testResult = ref<Record<number, DebugInstructionResponse | null>>({})
+const testError = ref<Record<number, string | null>>({})
+const testFlash = ref<Record<number, boolean>>({})
+
+function highlightSampleVars(text: string): string {
+  let escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  for (const val of Object.values(DEFAULT_CONTEXT_VAR_SAMPLES)) {
+    escaped = escaped.split(val).join(`<mark class="var-hl">${val}</mark>`)
+  }
+  return escaped
+}
+
+async function testInstruction(scene: Scene) {
+  const slug = brandSlug.value
+  if (!slug) { message.warning('Brand must be saved before testing.'); return }
+  const draft = customActionDraft.value[scene.id]
+  if (!draft?.instruction?.trim()) { message.warning('Write an instruction first.'); return }
+
+  const contextVars: Record<string, string> = {}
+  for (const v of (draft.contextVars ?? DEFAULT_CONTEXT_VARS)) {
+    contextVars[v] = DEFAULT_CONTEXT_VAR_SAMPLES[v] ?? v
+  }
+
+  testLoading.value[scene.id] = true
+  testError.value[scene.id] = null
+  testResult.value[scene.id] = null
+  testFlash.value[scene.id] = false
+
+  try {
+    testResult.value[scene.id] = await jesoosApiService.debugInstruction(slug, {
+      instruction: draft.instruction,
+      contextVars,
+      language: 'en-US',
+    })
+    testFlash.value[scene.id] = true
+  } catch (e: any) {
+    testError.value[scene.id] = e?.message || 'Test failed'
+  } finally {
+    testLoading.value[scene.id] = false
+  }
 }
 
 const scriptMode = ref<'predefined' | 'custom'>('predefined')
@@ -771,6 +827,7 @@ function normalizeBitRateFromServer(raw: number | null | undefined): number {
 
 function applyBrandToForm(brand: any) {
   brandId.value = brand.id ?? null
+  brandSlug.value = brand.slugName ?? null
   const ln = brand.localizedName || {}
   localizedNames.value = Object.entries(ln).map(([lang, name]) => ({ lang, name: String(name ?? '') }))
   if (!localizedNames.value.length) localizedNames.value = [{ lang: 'en', name: '' }]
@@ -1321,6 +1378,30 @@ watch(activeTab, () => {
                         :placeholder="t('brandForm.action_instruction_placeholder')"
                         :dark="themeStore.isDark"
                       />
+                      <div class="instruction-test-row">
+                        <button
+                          class="instruction-test-btn"
+                          :disabled="testLoading[scene.id]"
+                          @click="testInstruction(scene)"
+                        >Test</button>
+                        <TestStatusLeds
+                          :loading="testLoading[scene.id]"
+                          :success="testFlash[scene.id]"
+                          :error="!!testError[scene.id]"
+                        />
+                      </div>
+                      <div v-if="testLoading[scene.id]" class="instruction-test-skeleton">
+                        <div class="skel-line skel-line--80" />
+                        <div class="skel-line skel-line--60" />
+                        <div class="skel-line skel-line--90" />
+                      </div>
+                      <div v-if="testError[scene.id]" class="instruction-test-error">{{ testError[scene.id] }}</div>
+                      <div v-if="testResult[scene.id]" class="instruction-test-result">
+                        <div class="instruction-test-result__label">Rendered</div>
+                        <div class="instruction-test-result__rendered" v-html="highlightSampleVars(testResult[scene.id]!.rendered)" />
+                        <div class="instruction-test-result__label">Response</div>
+                        <div class="instruction-test-result__llm">{{ testResult[scene.id]!.llmResponse }}</div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1706,6 +1787,93 @@ watch(activeTab, () => {
   opacity: 0.85;
 }
 
+.instruction-test-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.instruction-test-btn {
+  height: 26px;
+  padding: 0 14px;
+  border: 1px solid rgba(124, 58, 237, 0.5);
+  border-radius: 3px;
+  background: rgba(124, 58, 237, 0.12);
+  color: #a78bfa;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: background 0.15s, opacity 0.15s;
+}
+.instruction-test-btn:hover { background: rgba(124, 58, 237, 0.22); }
+.instruction-test-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.instruction-test-skeleton {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skel-line {
+  height: 10px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.13) 50%, rgba(255,255,255,0.06) 75%);
+  background-size: 200% 100%;
+  animation: skel-shimmer 1.4s infinite;
+}
+.skel-line--80 { width: 80%; }
+.skel-line--60 { width: 60%; }
+.skel-line--90 { width: 90%; }
+
+@keyframes skel-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.instruction-test-error {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: #FF2D95;
+}
+
+.instruction-test-result {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 4px;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.025);
+}
+
+.instruction-test-result__label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.45;
+  margin-top: 6px;
+}
+.instruction-test-result__label:first-child { margin-top: 0; }
+
+.instruction-test-result__rendered {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.95);
+  line-height: 1.5;
+}
+
+.instruction-test-result__llm {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.88);
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
 .scene-card__header {
   display: flex;
   align-items: center;
@@ -1909,5 +2077,15 @@ watch(activeTab, () => {
   .field-stack {
     padding-right: 10px;
   }
+}
+</style>
+
+<style>
+.var-hl {
+  background: rgba(245, 166, 35, 0.2);
+  color: #f5a623;
+  border-radius: 3px;
+  padding: 0 3px;
+  font-weight: 600;
 }
 </style>

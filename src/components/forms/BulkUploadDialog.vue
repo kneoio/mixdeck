@@ -68,7 +68,8 @@ import { useI18n } from 'vue-i18n'
 import { NModal, NUpload, NSpace, NProgress, NDataTable, NText, NAlert } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
 import type { UploadCustomRequestOptions } from 'naive-ui'
-import LedIndicator from '@/components/LedIndicator.vue'
+import LedGreen from '@/components/LedGreen.vue'
+import LedYellow from '@/components/LedYellow.vue'
 import LoaderProgress from '@/components/LoaderProgress.vue'
 import datanestApiService, { BULK_UPLOAD_CHUNKED_THRESHOLD } from '@/services/datanestApi'
 
@@ -183,8 +184,8 @@ const columns = computed(() => {
               railColor: 'rgba(255,255,255,0.12)'
             }),
             h('div', { style: 'display:flex;gap:4px;' }, [
-              h(LedIndicator, { active: row.status === 'finished', color: '#00FF3C' }),
-              h(LedIndicator, { active: hasProcessing, pulse: isProcessing, color: '#FFC400' }),
+              h(LedGreen, { active: row.status === 'finished' }),
+              h(LedYellow, { active: hasProcessing }),
             ])
           ])
         }
