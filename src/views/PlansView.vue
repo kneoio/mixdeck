@@ -6,11 +6,7 @@
       </template>
     </PageHeader>
 
-    <NAlert type="warning" style="margin-bottom: 20px;">
-      {{ t('plans.coming_soon_notice') }}
-    </NAlert>
-
-    <NSpin :show="subscriptionProductsStore.loading">
+<NSpin :show="subscriptionProductsStore.loading">
       <div v-if="cards.length" style="display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start;">
         <NCard
           v-for="card in cards"
@@ -42,7 +38,7 @@
 import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { NCard, NDivider, NSpin, NEmpty, NAlert } from 'naive-ui'
+import { NCard, NDivider, NSpin, NEmpty } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { useSubscriptionProductsStore } from '@/stores/subscriptionProducts'
