@@ -588,13 +588,6 @@ function renderAgentOptionLabel(option: SelectOption) {
     { align: 'center', size: 6, wrapItem: false },
     {
       default: () => [
-        isLocked
-          ? h(NTag, {
-              size: 'small',
-              bordered: false,
-              color: { color: '#b8860b', textColor: '#fff' },
-            }, { default: () => '★ Premium' })
-          : null,
         ...langs.map(l =>
           h(NTag, {
             size: 'small',
@@ -612,7 +605,7 @@ function renderAgentOptionLabel(option: SelectOption) {
           }, { default: () => tag.name || tag.identifier })
           ),
         h('span', { style: isLocked ? 'opacity: 0.5' : '' }, String(option.label ?? option.value ?? '')),
-      ].filter(Boolean),
+      ],
     }
   )
 }
