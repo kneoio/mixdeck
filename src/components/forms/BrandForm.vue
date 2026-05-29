@@ -582,11 +582,19 @@ function renderAgentOptionLabel(option: SelectOption) {
   const typedOption = option as AgentOption
   const tags = typedOption.labels || []
   const langs = typedOption.preferredLang || []
+  const isLocked = (option as any).disabled === true
   return h(
     NSpace,
     { align: 'center', size: 6, wrapItem: false },
     {
       default: () => [
+        isLocked
+          ? h(NTag, {
+              size: 'small',
+              bordered: false,
+              color: { color: '#b8860b', textColor: '#fff' },
+            }, { default: () => '★ Premium' })
+          : null,
         ...langs.map(l =>
           h(NTag, {
             size: 'small',
@@ -603,8 +611,8 @@ function renderAgentOptionLabel(option: SelectOption) {
             color: { color: tag.color || '#ececec', textColor: tag.fontColor || '#333333' },
           }, { default: () => tag.name || tag.identifier })
           ),
-        h('span', String(option.label ?? option.value ?? '')),
-      ],
+        h('span', { style: isLocked ? 'opacity: 0.5' : '' }, String(option.label ?? option.value ?? '')),
+      ].filter(Boolean),
     }
   )
 }
@@ -917,12 +925,19 @@ onMounted(async () => {
           ...(description ? { description } : {}),
         }
       })
-      agentOptions.value = entries.map((a: any) => ({
-        label: a.name || a.id,
-        value: a.id,
-        labels: Array.isArray(a.labels) ? a.labels : [],
-        preferredLang: Array.isArray(a.preferredLang) ? a.preferredLang : [],
-      }))
+      agentOptions.value = entries.map((a: any) => {
+        const labels: AgentLabel[] = Array.isArray(a.labels) ? a.labels : []
+        const isFree = labels.some(l =>
+          (l.identifier ?? '').toLowerCase() === 'free' || (l.name ?? '').toLowerCase() === 'free'
+        )
+        return {
+          label: a.name || a.id,
+          value: a.id,
+          labels,
+          preferredLang: Array.isArray(a.preferredLang) ? a.preferredLang : [],
+          disabled: !isFree,
+        }
+      })
     }
     if (profiles.status === 'fulfilled') {
       profileOptions.value = profiles.value.entries.map((p: any) => ({
