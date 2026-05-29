@@ -582,7 +582,6 @@ function renderAgentOptionLabel(option: SelectOption) {
   const typedOption = option as AgentOption
   const tags = typedOption.labels || []
   const langs = typedOption.preferredLang || []
-  const isLocked = (option as any).disabled === true
   return h(
     NSpace,
     { align: 'center', size: 6, wrapItem: false },
@@ -604,7 +603,7 @@ function renderAgentOptionLabel(option: SelectOption) {
             color: { color: tag.color || '#ececec', textColor: tag.fontColor || '#333333' },
           }, { default: () => tag.name || tag.identifier })
           ),
-        h('span', { style: isLocked ? 'opacity: 0.5' : '' }, String(option.label ?? option.value ?? '')),
+        h('span', String(option.label ?? option.value ?? '')),
       ],
     }
   )
