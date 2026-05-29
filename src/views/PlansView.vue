@@ -6,7 +6,9 @@
       </template>
     </PageHeader>
 
-<NSpin :show="subscriptionProductsStore.loading">
+    <p style="opacity: 0.6; margin-bottom: 16px;">{{ t('plans.coming_soon_notice') }}</p>
+
+    <NSpin :show="subscriptionProductsStore.loading">
       <div v-if="cards.length" style="display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start;">
         <NCard
           v-for="card in cards"
