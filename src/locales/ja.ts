@@ -77,6 +77,7 @@ export default {
         SONG_CROSSFADE_SONG: '曲クロスフェード',
         JINGLE_GENERATED_JINGLE_WITH_BACKGROUND: '生成ジングル（ベッド付き）',
         INTRO_JINGLE_GENERATED_JINGLE_WITH_BACKGROUND: 'イントロ → 生成ジングル（ベッド付き）',
+        JINGLE_INTRO_SONG: 'ジングル → イントロ → 曲',
       },
     },
   },

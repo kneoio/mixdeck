@@ -77,6 +77,7 @@ export default {
         SONG_CROSSFADE_SONG: 'Кроссфейд',
         JINGLE_GENERATED_JINGLE_WITH_BACKGROUND: 'Генерацияланған джингл (фонмен)',
         INTRO_JINGLE_GENERATED_JINGLE_WITH_BACKGROUND: 'Интро → генерацияланған джингл (фонмен)',
+        JINGLE_INTRO_SONG: 'Джингл → интро → ән',
       },
     },
   },

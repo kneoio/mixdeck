@@ -77,6 +77,7 @@ export default {
         SONG_CROSSFADE_SONG: 'კროსფეიდი',
         JINGLE_GENERATED_JINGLE_WITH_BACKGROUND: 'გენერირებული ჯინგლი (ფონით)',
         INTRO_JINGLE_GENERATED_JINGLE_WITH_BACKGROUND: 'ინტრო → გენერირებული ჯინგლი (ფონით)',
+        JINGLE_INTRO_SONG: 'ჯინგლი → ინტრო → სიმღერა',
       },
     },
   },

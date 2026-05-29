@@ -77,6 +77,7 @@ export default {
         SONG_CROSSFADE_SONG: 'Song crossfade',
         JINGLE_GENERATED_JINGLE_WITH_BACKGROUND: 'Generated jingle (with bed)',
         INTRO_JINGLE_GENERATED_JINGLE_WITH_BACKGROUND: 'Intro → generated jingle (with bed)',
+        JINGLE_INTRO_SONG: 'Jingle → intro → song',
       },
     },
   },

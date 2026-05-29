@@ -77,6 +77,7 @@ export default {
         SONG_CROSSFADE_SONG: 'क्रॉसफ़ेड',
         JINGLE_GENERATED_JINGLE_WITH_BACKGROUND: 'जेनरेटेड जिंगल (बेड के साथ)',
         INTRO_JINGLE_GENERATED_JINGLE_WITH_BACKGROUND: 'इंट्रो → जेनरेटेड जिंगल (बेड के साथ)',
+        JINGLE_INTRO_SONG: 'जिंगल → इंट्रो → गाना',
       },
     },
   },

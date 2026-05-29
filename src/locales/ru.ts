@@ -77,6 +77,7 @@ export default {
         SONG_CROSSFADE_SONG: 'Кроссфейд треков',
         JINGLE_GENERATED_JINGLE_WITH_BACKGROUND: 'Сгенерированный джингл (с подкладом)',
         INTRO_JINGLE_GENERATED_JINGLE_WITH_BACKGROUND: 'Интро → сгенерированный джингл (с подкладом)',
+        JINGLE_INTRO_SONG: 'Джингл → интро → песня',
       },
     },
   },

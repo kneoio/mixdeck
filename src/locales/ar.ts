@@ -77,6 +77,7 @@ export default {
         SONG_CROSSFADE_SONG: 'دمج متقاطع',
         JINGLE_GENERATED_JINGLE_WITH_BACKGROUND: 'جنجل مُولَّد (مع خلفية)',
         INTRO_JINGLE_GENERATED_JINGLE_WITH_BACKGROUND: 'مقدمة → جنجل مُولَّد (مع خلفية)',
+        JINGLE_INTRO_SONG: 'جنجل → مقدمة → أغنية',
       },
     },
   },

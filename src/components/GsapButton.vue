@@ -1,7 +1,6 @@
 <template>
   <div v-if="block" class="gsap-btn-wrap">
     <button
-      ref="btnRef"
       :class="classes"
       :disabled="disabled || loading"
       v-bind="$attrs"
@@ -11,7 +10,6 @@
   </div>
   <button
     v-else
-    ref="btnRef"
     :class="classes"
     :disabled="disabled || loading"
     v-bind="$attrs"
@@ -21,8 +19,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import gsap from 'gsap'
+import { computed } from 'vue'
 
 const props = withDefaults(defineProps<{
   type?: 'default' | 'primary' | 'error' | 'warning' | 'success' | 'text'
@@ -38,36 +35,12 @@ const props = withDefaults(defineProps<{
   block: false,
 })
 
-const btnRef = ref<HTMLButtonElement | null>(null)
-
 const classes = computed(() => [
   'gsap-btn',
   `gsap-btn--${props.type}`,
   props.size !== 'default' && `gsap-btn--${props.size}`,
   props.block && 'gsap-btn--block',
 ])
-
-onMounted(() => {
-  const el = btnRef.value
-  if (!el || el.disabled) return
-
-  const inner = el.querySelector('.gsap-btn__inner') as HTMLElement | null
-  gsap.from(el, { skewX: 0, duration: 0.85, ease: 'power3.out', delay: 0.05 })
-  if (inner) gsap.from(inner, { skewX: 0, duration: 0.85, ease: 'power3.out', delay: 0.05 })
-
-  el.addEventListener('mouseenter', () => {
-    gsap.to(el, { scale: 1.03, duration: 0.18, ease: 'power2.out' })
-  })
-  el.addEventListener('mouseleave', () => {
-    gsap.to(el, { scale: 1, duration: 0.22, ease: 'power2.out' })
-  })
-  el.addEventListener('mousedown', () => {
-    gsap.to(el, { scale: 0.96, duration: 0.08, ease: 'power2.in' })
-  })
-  el.addEventListener('mouseup', () => {
-    gsap.to(el, { scale: 1.03, duration: 0.15, ease: 'power2.out' })
-  })
-})
 </script>
 
 <style scoped>
@@ -90,7 +63,15 @@ onMounted(() => {
   white-space: nowrap;
   transform: skewX(-10deg);
   will-change: transform;
-  transition: opacity 0.15s;
+  transition: opacity 0.15s, transform 0.18s ease;
+}
+
+.gsap-btn:not(:disabled):hover {
+  transform: skewX(-10deg) scale(1.03);
+}
+
+.gsap-btn:not(:disabled):active {
+  transform: skewX(-10deg) scale(0.96);
 }
 
 .gsap-btn__inner {
@@ -118,6 +99,8 @@ onMounted(() => {
 .gsap-btn--success { background: #041509; color: #18A058; }
 .gsap-btn--text    { background: transparent; color: rgba(255,255,255,0.6); transform: none; }
 .gsap-btn--text .gsap-btn__inner { transform: none; }
+.gsap-btn--text:not(:disabled):hover { transform: scale(1.03); }
+.gsap-btn--text:not(:disabled):active { transform: scale(0.96); }
 
 .gsap-btn:disabled {
   opacity: 0.35;

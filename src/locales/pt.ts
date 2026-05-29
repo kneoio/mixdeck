@@ -77,6 +77,7 @@ export default {
         SONG_CROSSFADE_SONG: 'Crossfade entre faixas',
         JINGLE_GENERATED_JINGLE_WITH_BACKGROUND: 'Jingle gerado (com base)',
         INTRO_JINGLE_GENERATED_JINGLE_WITH_BACKGROUND: 'Intro → jingle gerado (com base)',
+        JINGLE_INTRO_SONG: 'Jingle → intro → música',
       },
     },
   },
