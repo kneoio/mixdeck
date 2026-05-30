@@ -54,7 +54,7 @@ const extensions = computed(() => [
     '.cm-scroller': { background: 'transparent' },
     '.cm-content': { background: 'transparent' },
     '.cm-activeLine': { background: 'transparent' },
-    '.cm-cursor': { borderLeftColor: 'rgba(255,255,255,0.8)' },
+    '.cm-cursor': { borderLeftWidth: '2px', borderLeftColor: '#eff605', boxShadow: '0 0 6px #eff605' },
   }),
 ])
 </script>
