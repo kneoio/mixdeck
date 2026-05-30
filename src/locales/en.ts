@@ -291,6 +291,7 @@ export default {
     col_played: 'Played',
     col_rating: 'Rating',
     col_shared: 'Shared',
+    col_type: 'Type',
     col_description: 'Description',
     new_track: 'New Track',
     bulk_upload: 'Bulk Upload',
