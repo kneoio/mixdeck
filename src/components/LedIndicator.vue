@@ -25,10 +25,11 @@ const props = defineProps<{ active?: boolean; pulse?: boolean; size?: number; co
   opacity: 1;
   transition: opacity 0.05s, text-shadow 0.05s;
   text-shadow:
-    0 0 4px currentColor,
-    0 0 12px currentColor,
-    0 0 28px currentColor,
-    0 0 55px currentColor;
+    0 0 3px #fff,
+    0 0 6px currentColor,
+    0 0 16px currentColor,
+    0 0 36px currentColor,
+    0 0 60px currentColor;
 }
 
 .pulse {
