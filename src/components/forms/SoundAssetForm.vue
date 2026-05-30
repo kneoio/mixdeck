@@ -462,7 +462,7 @@ watch(activeTab, () => { if (isTabChangeFromValidation.value) return; clearAllFi
                       <div class="audio-mini-player__main">
                         <div class="audio-mini-player__top-row">
                           <div class="audio-mini-player__play-col">
-                            <NButton quaternary :disabled="isFetchingAudio" class="audio-mini-player__play-icon-btn" @click="togglePlay">
+                            <NButton text quaternary :disabled="isFetchingAudio" class="audio-mini-player__play-icon-btn" @click="togglePlay">
                               <template #icon>
                                 <LoaderProgress v-if="isFetchingAudio" :size="22" />
                                 <NIcon v-else :size="22">
