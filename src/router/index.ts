@@ -37,6 +37,12 @@ const router = createRouter({
           meta: { requiresAuth: true }
         },
         {
+          path: '/sound-library/sound-assets',
+          name: 'sound-library-sound-assets',
+          component: () => import('../views/SoundAssetsView.vue'),
+          meta: { requiresAuth: true }
+        },
+        {
           path: '/sound-library/received/:fragmentId',
           name: 'sound-library-received-edit',
           component: () => import('../components/forms/SharedSoundPreviewForm.vue'),

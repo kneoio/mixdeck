@@ -164,6 +164,22 @@ class DatanestApiService extends ApiClient {
     return this.getDocument<any>('/shared-sound-fragments/received', id)
   }
 
+  async getSoundAssets(page = 1, pageSize = 10): Promise<PagedResult<any>> {
+    const types = ['ADVERTISEMENT', 'PRERECORDED_ADVERTISEMENT', 'PRERECORDED_PODCAST', 'JINGLE', 'JINGLE_INTRO', 'JINGLE_OUTRO', 'BACKGROUND_LOOP', 'NEWS', 'WEATHER']
+    const params = new URLSearchParams({ page: String(page), size: String(pageSize) })
+    params.set('filter', JSON.stringify({ type: types }))
+    const response = await this.request<any>(`/soundfragments?${params}`)
+    const viewData = response?.payload?.viewData ?? response?.viewData
+    if (!viewData) throw new Error('Unexpected response format')
+    return {
+      entries: viewData.entries ?? [],
+      count: viewData.count ?? 0,
+      pageNum: viewData.pageNum ?? page,
+      maxPage: viewData.maxPage ?? 1,
+      pageSize: viewData.pageSize ?? pageSize,
+    }
+  }
+
   async getUnassignedBrands(page = 1, pageSize = 10): Promise<PagedResult<any>> {
     const params = new URLSearchParams({ page: String(page), size: String(pageSize) })
     const response = await this.request<any>(`/soundfragments/unassigned-brands?${params}`)

@@ -208,6 +208,7 @@ const activeKey = computed(() => {
   if (path === '/shared') return 'my-sounds-contributed'
   if (path === '/sound-library/received') return 'my-sounds-received'
   if (path === '/sound-library/unassigned-to-brands') return 'my-sounds-unassigned-to-brands'
+  if (path === '/sound-library/sound-assets') return 'my-sounds-assets'
   const m = path.match(/^\/brands\/([^/]+)\/(\w+)$/)
   if (m) return `brand-${m[1]}-${m[2]}`
   if (path === '/brands/new') return 'brands-manage'
@@ -331,7 +332,7 @@ const handleMenuSelect = async (key: string) => {
   } else if (key === 'my-sounds-unassigned-to-brands') {
     router.push('/sound-library/unassigned-to-brands')
   } else if (key === 'my-sounds-assets') {
-    window.location.href = '/datanest/soundfragments?filter=%7B%22type%22%3A%5B%22ADVERTISEMENT%22%2C%22PRERECORDED_ADVERTISEMENT%22%2C%22PRERECORDED_PODCAST%22%2C%22JINGLE%22%2C%22JINGLE_INTRO%22%2C%22JINGLE_OUTRO%22%2C%22BACKGROUND_LOOP%22%2C%22NEWS%22%2C%22WEATHER%22%5D%7D'
+    router.push('/sound-library/sound-assets')
   } else if (key === 'brands-new') {
     router.push('/brands/new')
   } else if (key.startsWith('brand-') && key.endsWith('-dashboard')) {
