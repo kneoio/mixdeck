@@ -211,7 +211,6 @@ const columns = computed<DataTableColumns<any>>(() => {
       const iconClass = isRowLoading ? 'play-icon--loading' : isRowPlaying ? 'play-icon--playing' : ''
       return h(NButton, {
         text: true,
-        quaternary: true,
         disabled: isRowLoading,
         onClick: (e: MouseEvent) => toggleRowPlay(row, e),
       }, {
