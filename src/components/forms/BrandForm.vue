@@ -952,6 +952,10 @@ onMounted(async () => {
       const brand = await store.fetchBrand(route.params.id as string)
       applyBrandToForm(brand)
       normalizeScenePlaylistIds()
+    } else {
+      const template = await store.fetchBrand('new')
+      applyBrandToForm(template)
+      normalizeScenePlaylistIds()
     }
   } catch (error: any) {
     message.error(error?.message || t('brandForm.load_failed'))
