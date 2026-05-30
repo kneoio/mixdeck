@@ -219,7 +219,7 @@ async function handleFileCapture({ file, onFinish, onError }: UploadCustomReques
   if (!chosen) { onFinish?.(); return }
 
   isUploading.value = true
-  uploadProgress.value = 0
+  uploadProgress.value = 1
 
   try {
     // Use existing ID or "temp" — server links temp uploads on save via newlyUploaded

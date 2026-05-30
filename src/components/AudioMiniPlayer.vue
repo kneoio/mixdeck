@@ -5,8 +5,10 @@ import { PlayOutline, PauseOutline, DownloadOutline } from '@vicons/ionicons5'
 import LoaderProgress from '@/components/LoaderProgress.vue'
 import datanestApiService from '@/services/datanestApi'
 import { handleApiError } from '@/utils/notificationService'
+import { useThemeStore } from '@/stores/theme'
 
 const props = defineProps<{ url: string; filename: string }>()
+const themeStore = useThemeStore()
 
 const message = useMessage()
 const loadingBar = useLoadingBar()
@@ -192,7 +194,7 @@ defineExpose({ stop })
                   :border-radius="1"
                   :fill-border-radius="1"
                   color="#eff605"
-                  rail-color="rgba(255,255,255,0.12)"
+                  :rail-color="themeStore.isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'"
                 />
               </div>
               <div

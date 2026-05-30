@@ -340,7 +340,7 @@ function renderSceneActionTag(scene: Scene) {
         ? [
             h('span', { style: 'font-size:0.82rem;' }, option.label),
             h('button', {
-              style: 'margin-left:7px;font-size:0.72rem;padding:1px 6px;border-radius:4px;border:1px solid rgba(255,255,255,0.35);background:transparent;color:rgba(255,255,255,0.65);cursor:pointer;line-height:1.4;transition:opacity 0.15s;',
+              style: `margin-left:7px;font-size:0.72rem;padding:1px 6px;border-radius:4px;border:1px solid ${themeStore.isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.25)'};background:transparent;color:${themeStore.isDark ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.55)'};cursor:pointer;line-height:1.4;transition:opacity 0.15s;`,
               onMouseenter: (e: MouseEvent) => { (e.target as HTMLElement).style.opacity = '1' },
               onMouseleave: (e: MouseEvent) => { (e.target as HTMLElement).style.opacity = '0.7' },
               onClick: (e: MouseEvent) => { e.stopPropagation(); editCustomAction(scene, option.value) },
@@ -1736,9 +1736,13 @@ watch(activeTab, () => {
 .context-var-chip {
   font-size: 0.72rem;
   cursor: pointer;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(0, 0, 0, 0.45);
   user-select: none;
   transition: opacity 0.15s;
+}
+
+.scene-card--dark .context-var-chip {
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .context-var-chip:hover {
@@ -1836,9 +1840,14 @@ watch(activeTab, () => {
 .skel-line {
   height: 10px;
   border-radius: 4px;
-  background: linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.13) 50%, rgba(255,255,255,0.06) 75%);
+  background: linear-gradient(90deg, rgba(0,0,0,0.06) 25%, rgba(0,0,0,0.11) 50%, rgba(0,0,0,0.06) 75%);
   background-size: 200% 100%;
   animation: skel-shimmer 1.4s infinite;
+}
+
+.scene-card--dark .skel-line {
+  background: linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.13) 50%, rgba(255,255,255,0.06) 75%);
+  background-size: 200% 100%;
 }
 .skel-line--80 { width: 80%; }
 .skel-line--60 { width: 60%; }
@@ -1860,9 +1869,14 @@ watch(activeTab, () => {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid rgba(0,0,0,0.08);
   border-radius: 4px;
   padding: 10px 12px;
+  background: rgba(0,0,0,0.025);
+}
+
+.scene-card--dark .instruction-test-result {
+  border-color: rgba(255,255,255,0.08);
   background: rgba(255,255,255,0.025);
 }
 
@@ -1879,15 +1893,23 @@ watch(activeTab, () => {
 .instruction-test-result__rendered {
   font-size: 0.85rem;
   font-weight: 500;
-  color: rgba(255,255,255,0.95);
+  color: rgba(0,0,0,0.85);
   line-height: 1.5;
+}
+
+.scene-card--dark .instruction-test-result__rendered {
+  color: rgba(255,255,255,0.95);
 }
 
 .instruction-test-result__llm {
   font-size: 0.82rem;
-  color: rgba(255,255,255,0.88);
+  color: rgba(0,0,0,0.75);
   white-space: pre-wrap;
   line-height: 1.6;
+}
+
+.scene-card--dark .instruction-test-result__llm {
+  color: rgba(255,255,255,0.88);
 }
 
 .scene-card__header {

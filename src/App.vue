@@ -46,6 +46,9 @@ const themeOverrides = computed<GlobalThemeOverrides>(() => ({
     errorColorSuppl: '#FF2D95',
     ...(themeStore.isDark ? {textColorDisabled: 'rgba(255,255,255,0.38)'} : {}),
   },
+  Input: {
+    caretColor: themeStore.isDark ? '#eff605' : '#7C3AED',
+  },
   Button: {
     textColorPrimary: '#ffffff',
     textColorHoverPrimary: '#ffffff',
