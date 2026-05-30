@@ -1,5 +1,6 @@
 <template>
   <CodeMirror
+    ref="cmRef"
     :model-value="modelValue"
     @update:model-value="(val) => emit('update:modelValue', typeof val === 'string' ? val : '')"
     basic
@@ -10,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { EditorView } from '@codemirror/view'
 import { syntaxHighlighting, HighlightStyle } from '@codemirror/language'
 import { tags } from '@lezer/highlight'
@@ -23,6 +24,21 @@ const props = defineProps<{
   placeholder?: string
 }>()
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
+
+const cmRef = ref<any>(null)
+
+function insertText(text: string) {
+  const view: EditorView | undefined = cmRef.value?.view
+  if (!view) return
+  const { from, to } = view.state.selection.main
+  view.dispatch({
+    changes: { from, to, insert: text },
+    selection: { anchor: from + text.length },
+  })
+  view.focus()
+}
+
+defineExpose({ insertText })
 
 const handlebarsBraces = syntaxHighlighting(HighlightStyle.define([
   { tag: tags.tagName, color: '#f5a623' },

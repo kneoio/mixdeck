@@ -307,8 +307,10 @@ function submitCustomAction(scene: Scene) {
   customActionFormVisible.value[scene.id] = false
 }
 
-function copyVar(name: string) {
-  navigator.clipboard.writeText('{{' + name + '}}')
+const instructionEditorRefs = ref<Record<string, any>>({})
+
+function insertVar(sceneId: string, name: string) {
+  instructionEditorRefs.value[sceneId]?.insertText('{{' + name + '}}')
 }
 function wrapVar(name: string) {
   return '{{' + name + '}}'
@@ -1375,7 +1377,7 @@ watch(activeTab, () => {
                         v-for="(v, i) in customActionDraft[scene.id].contextVars"
                         :key="v"
                         class="context-var-chip"
-                        @click="copyVar(v)"
+                        @click="insertVar(scene.id, v)"
                       >{{ v }}{{ i < customActionDraft[scene.id].contextVars.length - 1 ? ',' : '' }}</span>
                     </div>
                   </div>
@@ -1383,6 +1385,7 @@ watch(activeTab, () => {
                     <label class="scene-card__label">{{ t('brandForm.action_instruction') }}</label>
                     <div style="flex: 1;">
                       <InstructionEditor
+                        :ref="(el: any) => { if (el) instructionEditorRefs.value[scene.id] = el; else delete instructionEditorRefs.value[scene.id] }"
                         v-model="customActionDraft[scene.id].instruction"
                         :placeholder="t('brandForm.action_instruction_placeholder')"
                         :dark="themeStore.isDark"
