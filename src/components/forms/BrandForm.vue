@@ -593,7 +593,9 @@ function renderAgentOptionLabel(option: SelectOption) {
           h(NTag, {
             size: 'small',
             bordered: true,
-            color: { color: 'transparent', textColor: 'rgba(255,255,255,0.5)', borderColor: 'rgba(255,255,255,0.2)' },
+            color: themeStore.isDark
+              ? { color: 'transparent', textColor: 'rgba(255,255,255,0.5)', borderColor: 'rgba(255,255,255,0.2)' }
+              : { color: 'transparent', textColor: 'rgba(0,0,0,0.55)', borderColor: 'rgba(0,0,0,0.2)' },
           }, { default: () => l.languageTag })
         ),
         ...tags
@@ -2034,10 +2036,10 @@ watch(activeTab, () => {
   display: inline-flex;
   align-items: center;
   padding: 4px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(0, 0, 0, 0.25);
   border-radius: 6px;
   background: transparent;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(0, 0, 0, 0.55);
   font-size: 0.78rem;
   font-weight: 500;
   cursor: pointer;
@@ -2045,6 +2047,16 @@ watch(activeTab, () => {
 }
 
 .script-io-btn:hover {
+  border-color: rgba(0, 0, 0, 0.45);
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.player-card--dark .script-io-btn {
+  border-color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.player-card--dark .script-io-btn:hover {
   border-color: rgba(255, 255, 255, 0.6);
   color: rgba(255, 255, 255, 0.9);
 }
