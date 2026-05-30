@@ -45,6 +45,7 @@ export default {
     ads: 'Жарнама',
     received: 'Алынған',
     unassigned_brands: 'Archived',
+    sound_assets: 'Sound Assets',
     sound_design: 'Дыбыс дизайны',
     my_brands: 'Менің брендтерім',
     dashboard: 'Басқару панелі',

@@ -45,6 +45,7 @@ export default {
     ads: '広告',
     received: '受信済み',
     unassigned_brands: 'Archived',
+    sound_assets: 'Sound Assets',
     sound_design: 'サウンドデザイン',
     my_brands: 'マイブランド',
     dashboard: 'ダッシュボード',

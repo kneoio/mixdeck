@@ -45,6 +45,7 @@ export default {
     ads: 'Publicites',
     received: 'Reçu',
     unassigned_brands: 'Archived',
+    sound_assets: 'Sound Assets',
     sound_design: 'Design sonore',
     my_brands: 'Mes marques',
     dashboard: 'Tableau de bord',

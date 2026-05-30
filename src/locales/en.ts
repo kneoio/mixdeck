@@ -45,6 +45,7 @@ export default {
     ads: 'Pending Review',
     received: 'Received',
     unassigned_brands: 'Archived',
+    sound_assets: 'Sound Assets',
     sound_design: 'Sound design',
     my_brands: 'Brands',
     dashboard: 'Dashboard',

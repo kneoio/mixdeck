@@ -45,6 +45,7 @@ export default {
     ads: 'რეკლამა',
     received: 'მიღებული',
     unassigned_brands: 'Archived',
+    sound_assets: 'Sound Assets',
     sound_design: 'ხმის დიზაინი',
     my_brands: 'ჩემი ბრენდები',
     dashboard: 'დაშბორდი',

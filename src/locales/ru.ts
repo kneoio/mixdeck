@@ -45,6 +45,7 @@ export default {
     ads: 'Реклама',
     received: 'Полученные',
     unassigned_brands: 'Archived',
+    sound_assets: 'Sound Assets',
     sound_design: 'Саунд-дизайн',
     my_brands: 'Мои бренды',
     dashboard: 'Обзор',

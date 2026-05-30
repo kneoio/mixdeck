@@ -307,6 +307,10 @@ const menuOptions = computed<MenuOption[]>(() => [
         label: t('menu.unassigned_brands'),
         key: 'my-sounds-unassigned-to-brands',
       },
+      {
+        label: t('menu.sound_assets'),
+        key: 'my-sounds-assets',
+      },
     ],
   },
 ])
@@ -326,6 +330,8 @@ const handleMenuSelect = async (key: string) => {
     router.push('/sound-library/received')
   } else if (key === 'my-sounds-unassigned-to-brands') {
     router.push('/sound-library/unassigned-to-brands')
+  } else if (key === 'my-sounds-assets') {
+    window.location.href = '/datanest/soundfragments?filter=%7B%22type%22%3A%5B%22ADVERTISEMENT%22%2C%22PRERECORDED_ADVERTISEMENT%22%2C%22PRERECORDED_PODCAST%22%2C%22JINGLE%22%2C%22JINGLE_INTRO%22%2C%22JINGLE_OUTRO%22%2C%22BACKGROUND_LOOP%22%2C%22NEWS%22%2C%22WEATHER%22%5D%7D'
   } else if (key === 'brands-new') {
     router.push('/brands/new')
   } else if (key.startsWith('brand-') && key.endsWith('-dashboard')) {

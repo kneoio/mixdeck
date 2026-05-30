@@ -45,6 +45,7 @@ export default {
     ads: 'الإعلانات',
     received: 'المستلمة',
     unassigned_brands: 'Archived',
+    sound_assets: 'Sound Assets',
     sound_design: 'التصميم الصوتي',
     my_brands: 'علاماتي التجارية',
     dashboard: 'لوحة التحكم',
