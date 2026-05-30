@@ -46,6 +46,7 @@ export default {
     received: 'მიღებული',
     unassigned_brands: 'Archived',
     sound_assets: 'Sound Assets',
+    sound_assets_new: 'New Asset',
     sound_design: 'ხმის დიზაინი',
     my_brands: 'ჩემი ბრენდები',
     dashboard: 'დაშბორდი',

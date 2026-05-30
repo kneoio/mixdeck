@@ -46,6 +46,7 @@ export default {
     received: 'Recebido',
     unassigned_brands: 'Archived',
     sound_assets: 'Sound Assets',
+    sound_assets_new: 'New Asset',
     sound_design: 'Design de som',
     my_brands: 'As minhas marcas',
     dashboard: 'Painel',

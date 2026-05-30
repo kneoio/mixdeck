@@ -12,12 +12,10 @@ import PageHeader from '@/components/PageHeader.vue'
 import ActionBar from '@/components/ActionBar.vue'
 import GsapButton from '@/components/GsapButton.vue'
 import { handleApiError } from '@/utils/notificationService'
-import { useBrandsStore } from '@/stores/brands'
 
 const { t } = useI18n()
 const message = useMessage()
 const router = useRouter()
-const brandsStore = useBrandsStore()
 
 const entries = ref<any[]>([])
 const loading = ref(false)
@@ -71,22 +69,7 @@ const pagination = computed(() => ({
 const columns = computed<DataTableColumns<any>>(() => [
   { type: 'selection', multiple: true },
   { title: t('playlistView.col_title'), key: 'title', minWidth: 200, render: (row) => row.title || '-' },
-  { title: t('playlistView.col_artist'), key: 'artist', minWidth: 160, render: (row) => row.artist || '-' },
-  {
-    title: t('playlistView.col_genres'), key: 'genres', width: 180,
-    render: (row) => {
-      if (!row.genres?.length) return '-'
-      return h(NSpace, { size: 4, wrap: true }, {
-        default: () => row.genres.map((g: any) => {
-          const r = resolveGenre(g)
-          return h(NTag, {
-            size: 'small',
-            style: r.color ? `background:${r.color};color:${r.fontColor || '#fff'}` : ''
-          }, { default: () => r.name })
-        })
-      })
-    }
-  },
+  { title: t('playlistView.col_type'), key: 'type', width: 160, render: (row) => row.type ? h(NTag, { size: 'small' }, { default: () => row.type }) : '-' },
   {
     title: t('playlistView.col_labels'), key: 'labels', width: 180,
     render: (row) => {
@@ -94,10 +77,7 @@ const columns = computed<DataTableColumns<any>>(() => [
       return h(NSpace, { size: 4, wrap: true }, {
         default: () => row.labels.map((l: any) => {
           const r = resolveLabel(l)
-          return h(NTag, {
-            size: 'small',
-            style: r.color ? `background:${r.color};color:${r.fontColor || '#fff'}` : ''
-          }, { default: () => r.name })
+          return h(NTag, { size: 'small', style: r.color ? `background:${r.color};color:${r.fontColor || '#fff'}` : '' }, { default: () => r.name })
         })
       })
     }
@@ -120,76 +100,17 @@ async function fetchData(page = pageNum.value, size = pageSize.value) {
   }
 }
 
-async function handleBulkUnshare() {
-  if (selectedIds.value.length === 0) return
+async function handleBulkDelete() {
   try {
     loading.value = true
-    await Promise.all(selectedIds.value.map(async id => {
-      const raw = await datanestApiService.getDocument<any>('/soundfragments', String(id))
-      const frag = raw?.payload?.docData ?? raw?.docData ?? raw
-      const brandIds: string[] = Array.isArray(frag?.sharedWith)
-        ? frag.sharedWith.map((s: any) => s.targetBrandId).filter(Boolean)
-        : []
-      if (!brandIds.length) return
-      const slug = resolveBrandSlugFromFragment(frag)
-      if (!slug) return
-      return datanestApiService.unshare(slug, String(id), brandIds)
-    }))
-    message.success(t('playlistView.unshared_bulk', { count: selectedIds.value.length }))
+    await Promise.all(selectedIds.value.map(id => datanestApiService.deleteSoundFragment(id)))
+    message.success(t('playlistView.deleted', { count: selectedIds.value.length }))
     selectedIds.value = []
     await fetchData()
   } catch (e: any) {
     handleApiError(e, message)
   } finally {
     loading.value = false
-  }
-}
-
-function representedBrandIds(row: any): string[] {
-  const rb = row?.representedInBrands
-  if (!Array.isArray(rb)) return []
-  return rb.map((x: any) => (typeof x === 'string' ? x : x?.id)).filter(Boolean)
-}
-
-function resolveBrandIdForRow(row: any): string | null {
-  const src = row?.sourceBrandId ?? row?.sourceBrand?.id
-  if (src) return String(src)
-  const owned = new Set(brandsStore.brands.map(b => b.id))
-  const fromRow = representedBrandIds(row).find(id => owned.has(id))
-  if (fromRow) return fromRow
-  const anyBrand = representedBrandIds(row)[0]
-  if (anyBrand) return anyBrand
-  return brandsStore.brands[0]?.id ?? null
-}
-
-function resolveBrandSlug(brandId: string | null, row?: any): string | null {
-  if (row?.sourceBrandSlug) return String(row.sourceBrandSlug)
-  if (brandId) {
-    const slug = brandsStore.brands.find(b => b.id === brandId)?.slugName
-    if (slug) return slug
-  }
-  return null
-}
-
-function resolveBrandSlugFromFragment(frag: any): string | null {
-  const owned = new Set(brandsStore.brands.map(b => b.id))
-  const brandId = (Array.isArray(frag?.representedInBrands) ? frag.representedInBrands : [])
-    .map((x: any) => (typeof x === 'string' ? x : x?.id))
-    .find((id: string) => owned.has(id))
-  return resolveBrandSlug(brandId ?? null, frag)
-}
-
-function rowProps(row: any) {
-  return {
-    style: 'cursor:pointer',
-    onClick: (e: MouseEvent) => {
-      if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return
-      const fragmentId = row.id
-      if (!fragmentId) return
-      const brandId = resolveBrandIdForRow(row)
-      if (!brandId) return
-      router.push({ path: `/brands/${brandId}/playlist/${fragmentId}`, query: { returnTo: '/sound-library/sound-assets' } })
-    },
   }
 }
 
@@ -203,14 +124,19 @@ onMounted(async () => {
   <div>
     <PageHeader :title="t('menu.sound_assets')" :subtitle="t('playlistView.subtitle')" :count="totalCount" />
     <ActionBar>
-      <NPopconfirm @positive-click="handleBulkUnshare" :disabled="selectedIds.length === 0">
-        <template #trigger>
-          <GsapButton type="warning" :disabled="selectedIds.length === 0">
-            <span>{{ t('playlistView.unshare_btn', { count: selectedIds.length }) }}</span>
-          </GsapButton>
-        </template>
-        {{ t('playlistView.unshare_bulk_confirm', { count: selectedIds.length }) }}
-      </NPopconfirm>
+      <div class="gsap-row" style="padding-left:0">
+        <GsapButton type="primary" @click="router.push('/sound-library/sound-assets/new')">
+          <span>{{ t('menu.sound_assets_new') }}</span>
+        </GsapButton>
+        <NPopconfirm @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
+          <template #trigger>
+            <GsapButton type="error" :disabled="selectedIds.length === 0">
+              <span>{{ t('playlistView.delete_btn', { count: selectedIds.length }) }}</span>
+            </GsapButton>
+          </template>
+          {{ t('playlistView.delete_confirm', { count: selectedIds.length }) }}
+        </NPopconfirm>
+      </div>
     </ActionBar>
     <NDataTable
       :columns="columns"
@@ -220,7 +146,13 @@ onMounted(async () => {
       v-model:checked-row-keys="selectedIds"
       :pagination="pagination"
       remote
-      :row-props="rowProps"
+      :row-props="(row: any) => ({
+        style: 'cursor:pointer',
+        onClick: (e: MouseEvent) => {
+          if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return
+          router.push(`/sound-library/sound-assets/${row.id}`)
+        }
+      })"
       @update:page="(p) => { pageNum = p; fetchData(p) }"
       @update:page-size="(s) => { pageSize = s; fetchData(1, s) }"
     />

@@ -46,6 +46,7 @@ export default {
     received: 'Полученные',
     unassigned_brands: 'Archived',
     sound_assets: 'Sound Assets',
+    sound_assets_new: 'New Asset',
     sound_design: 'Саунд-дизайн',
     my_brands: 'Мои бренды',
     dashboard: 'Обзор',
