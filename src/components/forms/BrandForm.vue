@@ -1385,7 +1385,7 @@ watch(activeTab, () => {
                     <label class="scene-card__label">{{ t('brandForm.action_instruction') }}</label>
                     <div style="flex: 1;">
                       <InstructionEditor
-                        :ref="(el: any) => { if (el) instructionEditorRefs.value[scene.id] = el; else delete instructionEditorRefs.value[scene.id] }"
+                        :ref="(el: any) => { if (el) instructionEditorRefs[scene.id] = el; else delete instructionEditorRefs[scene.id] }"
                         v-model="customActionDraft[scene.id].instruction"
                         :placeholder="t('brandForm.action_instruction_placeholder')"
                         :dark="themeStore.isDark"
