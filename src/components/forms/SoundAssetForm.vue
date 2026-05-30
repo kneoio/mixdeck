@@ -53,27 +53,6 @@ const fieldErrors = ref<Record<ValidationField, string>>({
 const regDate = ref('')
 const lastModifiedDate = ref('')
 
-interface SharedWithEntry {
-  targetBrand: string
-  status?: number
-  shared?: boolean
-}
-const sharedWith = ref<SharedWithEntry[]>([])
-
-const activeSharedWith = computed(() =>
-  sharedWith.value.filter(e => e.targetBrand && e.shared !== false)
-)
-
-function normalizeSharedWith(raw: unknown): SharedWithEntry[] {
-  if (!Array.isArray(raw)) return []
-  return raw
-    .map((e: any) => ({
-      targetBrand: String(e?.targetBrand ?? '').trim(),
-      status: typeof e?.status === 'number' ? e.status : undefined,
-      shared: typeof e?.shared === 'boolean' ? e.shared : undefined,
-    }))
-    .filter(e => e.targetBrand)
-}
 
 const existingUrl = ref('')
 const existingFileName = ref('')
@@ -374,8 +353,7 @@ onMounted(async () => {
       }
       regDate.value = frag.regDate || ''
       lastModifiedDate.value = frag.lastModifiedDate || ''
-      sharedWith.value = normalizeSharedWith(frag.sharedWith)
-      const f0 = frag.uploadedFiles?.[0]
+const f0 = frag.uploadedFiles?.[0]
       const fileUrl = f0?.url || frag.url || ''
       existingUrl.value = fileUrl.startsWith('http') ? fileUrl : fileUrl ? `${appConfig.datanestServer}${fileUrl}` : ''
       existingFileName.value = f0?.name || fileUrl.split('/').pop()?.split('?')[0] || ''
@@ -553,15 +531,6 @@ watch(activeTab, () => { if (isTabChangeFromValidation.value) return; clearAllFi
         </NForm>
       </NTabPane>
 
-      <NTabPane name="sharing" :tab="t('fragmentForm.tab_sharing')">
-        <div v-if="activeSharedWith.length" class="sharing-list">
-          <div v-for="(entry, idx) in activeSharedWith" :key="`${entry.targetBrand}-${idx}`" class="sharing-row">
-            <span class="sharing-row__label">{{ t('fragmentForm.sharing_shared_with') }}</span>
-            <span class="sharing-row__value">{{ entry.targetBrand }}</span>
-          </div>
-        </div>
-        <div v-else class="sharing-empty">{{ t('fragmentForm.sharing_empty') }}</div>
-      </NTabPane>
     </NTabs>
   </FormWrapper>
 </template>
@@ -592,9 +561,4 @@ watch(activeTab, () => { if (isTabChangeFromValidation.value) return; clearAllFi
 .audio-mini-player__seek-hit { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); height: 22px; z-index: 1; cursor: pointer; user-select: none; }
 .audio-mini-player__times { display: flex; align-items: center; gap: 4px; font-size: 11px; line-height: 1.2; opacity: 0.55; font-variant-numeric: tabular-nums; }
 .audio-mini-player__sep { opacity: 0.7; }
-.sharing-list { display: flex; flex-direction: column; gap: 10px; padding: 4px 0; }
-.sharing-row { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; background: rgba(255,255,255,0.03); }
-.sharing-row__label { font-size: 13px; opacity: 0.55; }
-.sharing-row__value { font-size: 14px; font-weight: 600; }
-.sharing-empty { padding: 24px 0; text-align: center; opacity: 0.45; font-size: 14px; }
 </style>
