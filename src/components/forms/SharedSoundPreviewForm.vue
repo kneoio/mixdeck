@@ -5,7 +5,7 @@ import { NSpace, NForm, NFormItem, NInput, NSelect, NTreeSelect, useMessage } fr
 import GsapButton from '@/components/GsapButton.vue'
 import { useRoute, useRouter } from 'vue-router'
 import FormWrapper from '@/components/FormWrapper.vue'
-import { FRAGMENT_TYPES } from '@/stores/soundFragments'
+import { FRAGMENT_TYPE_VALUES } from '@/stores/soundFragments'
 import dictionaryApiService from '@/services/dictionaryApi'
 import type { GenreEntry, LabelEntry } from '@/services/dictionaryApi'
 import datanestApiService from '@/services/datanestApi'
@@ -13,6 +13,13 @@ import { handleApiError } from '@/utils/notificationService'
 import { normalizeIdList, toGenreTreeOptions } from '@/utils/genreTree'
 
 const { t } = useI18n()
+
+const fragmentTypeOptions = computed(() =>
+  FRAGMENT_TYPE_VALUES.map(v => ({
+    label: t(`fragmentForm.type_${v.toLowerCase()}`),
+    value: v,
+  }))
+)
 
 const route = useRoute()
 const router = useRouter()
@@ -120,7 +127,7 @@ onBeforeUnmount(() => {
           <div class="field-shell">
             <NSelect
               :value="formData.type"
-              :options="FRAGMENT_TYPES"
+              :options="fragmentTypeOptions"
               disabled
               style="width: 200px"
             />

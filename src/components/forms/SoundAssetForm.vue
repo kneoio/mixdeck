@@ -10,7 +10,7 @@ import GsapButton from '@/components/GsapButton.vue'
 import type { UploadCustomRequestOptions } from 'naive-ui'
 import FormWrapper from '@/components/FormWrapper.vue'
 import AudioMiniPlayer from '@/components/AudioMiniPlayer.vue'
-import { useSoundFragmentsStore, FRAGMENT_TYPES } from '@/stores/soundFragments'
+import { useSoundFragmentsStore, FRAGMENT_TYPE_VALUES } from '@/stores/soundFragments'
 import { useBrandsStore } from '@/stores/brands'
 import dictionaryApiService from '@/services/dictionaryApi'
 import type { LabelEntry } from '@/services/dictionaryApi'
@@ -19,9 +19,14 @@ import { appConfig } from '@/config/appConfig'
 import { useRoute, useRouter } from 'vue-router'
 import { handleApiError } from '@/utils/notificationService'
 
-const ASSET_TYPES = FRAGMENT_TYPES.filter(t => t.value !== 'SONG')
-
 const { t } = useI18n()
+
+const assetTypeOptions = computed(() =>
+  FRAGMENT_TYPE_VALUES.filter(v => v !== 'SONG').map(v => ({
+    label: t(`fragmentForm.type_${v.toLowerCase()}`),
+    value: v,
+  }))
+)
 const route = useRoute()
 const router = useRouter()
 const store = useSoundFragmentsStore()
@@ -272,7 +277,7 @@ watch(activeTab, () => { if (isTabChangeFromValidation.value) return; clearAllFi
           <NFormItem :label="t('fragmentForm.type')">
             <div class="field-stack">
               <div class="field-error-shell">
-                <NSelect v-model:value="formData.type" :options="ASSET_TYPES" style="width: 200px" />
+                <NSelect v-model:value="formData.type" :options="assetTypeOptions" style="width: 200px" />
               </div>
               <div class="field-error-label"></div>
             </div>
