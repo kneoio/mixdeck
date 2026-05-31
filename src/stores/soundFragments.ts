@@ -5,14 +5,17 @@ import datanestApiService from '@/services/datanestApi'
 export type FragmentType =
   | 'SONG' | 'ADVERTISEMENT' | 'JINGLE'
   | 'JINGLE_INTRO' | 'JINGLE_OUTRO' | 'BACKGROUND_LOOP'
+  | 'PRERECORDED_ADVERTISEMENT' | 'PRERECORDED_PODCAST'
 
 export const FRAGMENT_TYPES: { label: string; value: FragmentType }[] = [
   { label: 'Song', value: 'SONG' },
   { label: 'Advertisement', value: 'ADVERTISEMENT' },
+  { label: 'Prerecorded Advertisement', value: 'PRERECORDED_ADVERTISEMENT' },
   { label: 'Jingle', value: 'JINGLE' },
   { label: 'Jingle Intro', value: 'JINGLE_INTRO' },
   { label: 'Jingle Outro', value: 'JINGLE_OUTRO' },
   { label: 'Background Loop', value: 'BACKGROUND_LOOP' },
+  { label: 'Prerecorded Podcast', value: 'PRERECORDED_PODCAST' },
 ]
 
 export interface UploadedFile {
