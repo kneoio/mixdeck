@@ -293,14 +293,6 @@ watch(activeTab, () => { if (isTabChangeFromValidation.value) return; clearAllFi
             </div>
           </NFormItem>
 
-          <NFormItem :label="t('fragmentForm.labels')">
-            <div class="field-stack">
-              <div class="field-error-shell">
-                <NSelect v-model:value="formData.labels" :options="labelOptions" multiple filterable style="width: 100%" />
-              </div>
-              <div class="field-error-label"></div>
-            </div>
-          </NFormItem>
 
           <NFormItem :label="t('fragmentForm.assign_to')">
             <div class="field-stack">
