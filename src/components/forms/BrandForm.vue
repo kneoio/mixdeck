@@ -96,7 +96,7 @@ const formData = ref({
   titleFont: null as string | null,
   hlsUrl: '',
   mixplaUrl: '',
-  owner: { name: '', email: '', exposeWhileSharing: false },
+  owner: { name: '', email: '', exposeWhileSharing: false, actionDebugEnabled: false },
   genres: [] as string[],
   labels: [] as string[],
 })
@@ -857,7 +857,7 @@ function applyBrandToForm(brand: any) {
     titleFont: brand.titleFont || null,
     hlsUrl: brand.hlsUrl || '',
     mixplaUrl: brand.mixplaUrl || '',
-    owner: { name: brand.owner?.name || '', email: brand.owner?.email || '', exposeWhileSharing: brand.owner?.exposeWhileSharing ?? false },
+    owner: { name: brand.owner?.name || '', email: brand.owner?.email || '', exposeWhileSharing: brand.owner?.exposeWhileSharing ?? false, actionDebugEnabled: brand.owner?.actionDebugEnabled ?? false },
     genres: normalizeIdList((brand as any).genres),
     labels: (brand as any).labels || [],
   }
@@ -1553,6 +1553,14 @@ watch(activeTab, () => {
             <div class="field-stack">
               <div class="field-error-shell">
                 <NSwitch v-model:value="formData.owner.exposeWhileSharing" />
+              </div>
+              <div class="field-error-label"></div>
+            </div>
+          </NFormItem>
+          <NFormItem :label="t('brandForm.action_debug_enabled')">
+            <div class="field-stack">
+              <div class="field-error-shell">
+                <NSwitch v-model:value="formData.owner.actionDebugEnabled" />
               </div>
               <div class="field-error-label"></div>
             </div>
