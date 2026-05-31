@@ -89,7 +89,7 @@ const formData = ref({
   profileId: null as string | null,
   oneTimeStreamPolicy: 'NOT_ALLOWED' as SubmissionPolicy,
   submissionPolicy: 'NOT_ALLOWED' as SubmissionPolicy,
-  aiOverriding: { prompt: '' },
+  aiOverriding: { enabled: false, name: '', prompt: '' },
   scriptId: null as string | null,
   profileOverriding: { name: '', description: '' },
   color: '#000000',
@@ -656,7 +656,7 @@ async function handleSave() {
       timeZone: formData.value.timeZone || undefined,
       aiAgentId: formData.value.aiAgentId || undefined,
       profileId: formData.value.profileId || undefined,
-      aiOverriding: formData.value.aiOverriding.prompt ? formData.value.aiOverriding : undefined,
+      aiOverriding: formData.value.aiOverriding.enabled ? { name: formData.value.aiOverriding.name, prompt: formData.value.aiOverriding.prompt } : undefined,
       scripts: formData.value.scriptId
         ? [{ scriptId: formData.value.scriptId, userVariables: userVariables.value }]
         : undefined,
@@ -847,7 +847,7 @@ function applyBrandToForm(brand: any) {
     profileId: brand.profileId || null,
     oneTimeStreamPolicy: brand.oneTimeStreamPolicy || 'NOT_ALLOWED',
     submissionPolicy: brand.submissionPolicy || 'NOT_ALLOWED',
-    aiOverriding: { prompt: brand.aiOverriding?.prompt || '' },
+    aiOverriding: { enabled: !!(brand.aiOverriding?.name || brand.aiOverriding?.prompt), name: brand.aiOverriding?.name || '', prompt: brand.aiOverriding?.prompt || '' },
     scriptId: firstScript?.scriptId || null,
     profileOverriding: {
       name: brand.profileOverriding?.name || '',
@@ -1184,6 +1184,25 @@ watch(activeTab, () => {
             <div class="field-stack">
               <div class="field-error-shell">
                 <span style="color: #888; font-size: 13px;">{{ selectedAgent.description }}</span>
+              </div>
+              <div class="field-error-label"></div>
+            </div>
+          </NFormItem>
+
+          <NFormItem :label="t('brandForm.ai_override')">
+            <div class="field-stack">
+              <div class="field-error-shell">
+                <NSwitch v-model:value="formData.aiOverriding.enabled" />
+              </div>
+              <div class="field-error-label"></div>
+            </div>
+          </NFormItem>
+
+          <NFormItem v-if="formData.aiOverriding.enabled" :label="t('brandForm.ai_override_name')">
+            <div class="field-stack">
+              <div class="field-error-shell">
+                <NInput v-model:value="formData.aiOverriding.name"
+                  :placeholder="t('brandForm.ai_override_name_placeholder')" style="width: 100%; max-width: 400px" />
               </div>
               <div class="field-error-label"></div>
             </div>
