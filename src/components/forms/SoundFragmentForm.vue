@@ -387,7 +387,7 @@ watch(activeTab, () => {
           <NFormItem :label="t('fragmentForm.type')">
             <div class="field-stack">
               <div class="field-error-shell">
-                <NSelect v-model:value="formData.type" :options="fragmentTypeOptions" style="width: 200px" />
+                <NSelect v-model:value="formData.type" :options="fragmentTypeOptions" style="width: 200px" disabled />
               </div>
               <div class="field-error-label"></div>
             </div>
