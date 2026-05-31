@@ -921,6 +921,11 @@ onMounted(async () => {
           ...(description ? { description } : {}),
         }
       })
+      const isFree = (labels: AgentLabel[]) => labels.some(l => {
+        const id = (l.identifier ?? '').toLowerCase()
+        const name = (l.name ?? '').toLowerCase()
+        return id === 'free' || name === 'free'
+      })
       agentOptions.value = entries.map((a: any) => {
         const labels: AgentLabel[] = Array.isArray(a.labels) ? a.labels : []
         const isLocked = labels.some(l => {
@@ -935,6 +940,12 @@ onMounted(async () => {
           preferredLang: Array.isArray(a.preferredLang) ? a.preferredLang : [],
           disabled: isLocked,
         }
+      }).sort((a, b) => {
+        const aFree = isFree(a.labels)
+        const bFree = isFree(b.labels)
+        if (aFree && !bFree) return -1
+        if (!aFree && bFree) return 1
+        return 0
       })
     }
     if (profiles.status === 'fulfilled') {
