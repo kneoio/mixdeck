@@ -89,6 +89,8 @@ function normalizeSharedWith(raw: unknown): SharedWithEntry[] {
 // File upload state
 const existingUrl = ref('')
 const existingFileName = ref('')
+const isOpusPreview = ref(false)
+const isPlayerPlaying = ref(false)
 const uploadProgress = ref(0)
 const isUploading = ref(false)
 const uploadedFileNames = ref<string[]>([])  // newly uploaded during this session
@@ -315,12 +317,14 @@ onMounted(async () => {
       regDate.value = frag.regDate || ''
       lastModifiedDate.value = frag.lastModifiedDate || ''
       sharedWith.value = normalizeSharedWith(frag.sharedWith)
-      const f0 = frag.uploadedFiles?.[0]
+      const opusFile = frag.uploadedFiles?.find((f: any) => f.type === 'opus')
+      isOpusPreview.value = !!opusFile
+      const f0 = opusFile || frag.uploadedFiles?.[0]
       const fileUrl = f0?.url || frag.url || ''
       existingUrl.value = fileUrl.startsWith('http')
         ? fileUrl
         : fileUrl ? `${appConfig.datanestServer}${fileUrl}` : ''
-      existingFileName.value = f0?.name || fileUrl.split('/').pop()?.split('?')[0] || ''
+      existingFileName.value = frag.uploadedFiles?.find((f: any) => f.type === 'original')?.name || f0?.name || fileUrl.split('/').pop()?.split('?')[0] || ''
     }
   } catch (error: any) {
     message.error(error?.message || t('fragmentForm.load_failed'))
@@ -481,7 +485,13 @@ watch(activeTab, () => {
             </div>
           </NFormItem>
 
-          <NFormItem :label="t('fragmentForm.audio_file')">
+          <NFormItem>
+            <template #label>
+              <span class="form-label-with-badge">
+                {{ t('fragmentForm.audio_file') }}
+                <span v-if="isOpusPreview" class="opus-badge" :class="{ 'opus-badge--playing': isPlayerPlaying }">opus</span>
+              </span>
+            </template>
             <div class="field-stack">
               <div
                 ref="audioFileFieldRef"
@@ -489,7 +499,7 @@ watch(activeTab, () => {
                 :class="{ 'field-error-shell--active': !!fieldErrors.audioFile }"
               >
                 <NSpace vertical style="width: 100%">
-                  <AudioMiniPlayer v-if="existingUrl" :url="existingUrl" :filename="existingFileName" />
+                  <AudioMiniPlayer v-if="existingUrl" :url="existingUrl" :filename="existingFileName" @playing-change="isPlayerPlaying = $event" />
                   <NUpload
                     :max="1"
                     :custom-request="handleFileCapture"
@@ -563,6 +573,32 @@ watch(activeTab, () => {
 .field-stack {
   width: 100%;
   display: block;
+}
+
+.form-label-with-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.opus-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  padding: 0px 4px;
+  transition: color 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+
+.opus-badge--playing {
+  color: #eff605;
+  border-color: rgba(239, 246, 5, 0.5);
+  box-shadow: 0 0 7px 2px rgba(239, 246, 5, 0.4);
 }
 
 .field-error-shell {

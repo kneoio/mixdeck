@@ -41,8 +41,9 @@ const playingId = ref<string | null>(null)
 const loadingPlayId = ref<string | null>(null)
 const playbackPercent = ref(0)
 let currentAudio: HTMLAudioElement | null = null
-let currentBlobUrl: string | null = null
+const currentTrackId = ref<string | null>(null)
 let playRequestId = 0
+const blobUrlCache = new Map<string, string>()
 
 const seekBarRef = ref<HTMLElement | null>(null)
 let seekDocMove: ((e: MouseEvent) => void) | null = null
@@ -78,7 +79,7 @@ function onSeekMouseDown(e: MouseEvent) {
 
 function stopCurrentAudio() {
   if (currentAudio) { currentAudio.pause(); currentAudio.src = ''; currentAudio = null }
-  if (currentBlobUrl) { URL.revokeObjectURL(currentBlobUrl); currentBlobUrl = null }
+  currentTrackId.value = null
   playingId.value = null
   playbackPercent.value = 0
 }
@@ -86,7 +87,16 @@ function stopCurrentAudio() {
 async function toggleRowPlay(row: any, e: MouseEvent) {
   e.stopPropagation()
   const id = row.id
-  if (playingId.value === id) { stopCurrentAudio(); return }
+  if (playingId.value === id) {
+    currentAudio?.pause()
+    playingId.value = null
+    return
+  }
+  if (currentTrackId.value === id && currentAudio) {
+    await currentAudio.play()
+    playingId.value = id
+    return
+  }
   stopCurrentAudio()
   loadingPlayId.value = id
   const reqId = ++playRequestId
@@ -94,14 +104,22 @@ async function toggleRowPlay(row: any, e: MouseEvent) {
     const frag: any = await datanestApiService.getDocument<any>('/soundfragments', id)
     if (reqId !== playRequestId) return
     const doc = frag?.payload?.docData ?? frag?.docData ?? frag
-    const rawUrl = doc?.uploadedFiles?.[0]?.url || doc?.url || ''
+    const opusFile = doc?.uploadedFiles?.find((f: any) => f.type === 'opus')
+    const fileEntry = opusFile || doc?.uploadedFiles?.[0]
+    console.log('[AudioPlayer] playing file type:', fileEntry?.type ?? 'unknown')
+    const rawUrl = fileEntry?.url || doc?.url || ''
     if (!rawUrl) return
-    const url = rawUrl.startsWith('http') ? rawUrl : `${appConfig.datanestServer}${rawUrl}`
-    const blobUrl = await datanestApiService.fetchBlobUrl(url)
-    if (reqId !== playRequestId) { URL.revokeObjectURL(blobUrl); return }
-    currentBlobUrl = blobUrl
+    let blobUrl = blobUrlCache.get(id)
+    if (!blobUrl) {
+      const url = rawUrl.startsWith('http') ? rawUrl : `${appConfig.datanestServer}${rawUrl}`
+      blobUrl = await datanestApiService.fetchBlobUrl(url)
+      if (reqId !== playRequestId) { URL.revokeObjectURL(blobUrl); return }
+      blobUrlCache.set(id, blobUrl)
+    }
+    if (reqId !== playRequestId) return
     const audio = new Audio(blobUrl)
     currentAudio = audio
+    currentTrackId.value = id
     audio.ontimeupdate = () => {
       if (audio.duration > 0) playbackPercent.value = (audio.currentTime / audio.duration) * 100
     }
@@ -343,6 +361,8 @@ onMounted(() => {
 onUnmounted(() => {
   stopCurrentAudio()
   detachSeekListeners()
+  blobUrlCache.forEach(url => URL.revokeObjectURL(url))
+  blobUrlCache.clear()
   playlistTableMql?.removeEventListener('change', syncPlaylistTableNarrow)
   playlistTableMql = null
 })
@@ -405,7 +425,7 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
     />
     <div class="playlist-dl-bar-wrap">
       <div v-if="loadingPlayId" class="playlist-dl-bar" />
-      <div v-else-if="playingId" style="position:relative;">
+      <div v-else-if="playingId || currentTrackId" style="position:relative;">
         <NProgress
           type="line"
           :percentage="playbackPercent"

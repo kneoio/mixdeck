@@ -8,6 +8,7 @@ import { handleApiError } from '@/utils/notificationService'
 import { useThemeStore } from '@/stores/theme'
 
 const props = defineProps<{ url: string; filename: string }>()
+const emit = defineEmits<{ (e: 'playing-change', value: boolean): void }>()
 const themeStore = useThemeStore()
 
 const message = useMessage()
@@ -121,10 +122,11 @@ async function togglePlay() {
   try { await audioEl.value?.play() } catch (e: any) { handleApiError(e, message) }
 }
 
-function onAudioPlay() { isPlaying.value = true }
-function onAudioPause() { isPlaying.value = false }
+function onAudioPlay() { isPlaying.value = true; emit('playing-change', true) }
+function onAudioPause() { isPlaying.value = false; emit('playing-change', false) }
 function onAudioEnded() {
   isPlaying.value = false
+  emit('playing-change', false)
   playbackPercent.value = 0
   audioCurrent.value = 0
   if (audioEl.value?.duration) audioDuration.value = audioEl.value.duration
@@ -157,7 +159,7 @@ onBeforeUnmount(() => {
   resetAudio()
 })
 
-defineExpose({ stop })
+defineExpose({ stop, isPlaying })
 </script>
 
 <template>

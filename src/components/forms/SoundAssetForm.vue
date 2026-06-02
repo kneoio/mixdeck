@@ -59,6 +59,7 @@ const lastModifiedDate = ref('')
 
 const existingUrl = ref('')
 const existingFileName = ref('')
+const activeFileType = ref('unknown')
 const uploadProgress = ref(0)
 const isUploading = ref(false)
 const uploadedFileNames = ref<string[]>([])
@@ -232,10 +233,12 @@ onMounted(async () => {
       }
       regDate.value = frag.regDate || ''
       lastModifiedDate.value = frag.lastModifiedDate || ''
-const f0 = frag.uploadedFiles?.[0]
+const opusFile = frag.uploadedFiles?.find((f: any) => f.type === 'opus')
+      const f0 = opusFile || frag.uploadedFiles?.[0]
+      activeFileType.value = f0?.type ?? 'unknown'
       const fileUrl = f0?.url || frag.url || ''
       existingUrl.value = fileUrl.startsWith('http') ? fileUrl : fileUrl ? `${appConfig.datanestServer}${fileUrl}` : ''
-      existingFileName.value = f0?.name || fileUrl.split('/').pop()?.split('?')[0] || ''
+      existingFileName.value = frag.uploadedFiles?.find((f: any) => f.type === 'original')?.name || f0?.name || fileUrl.split('/').pop()?.split('?')[0] || ''
     }
   } catch (error: any) {
     message.error(error?.message || t('fragmentForm.load_failed'))
@@ -322,7 +325,7 @@ watch(activeTab, () => { if (isTabChangeFromValidation.value) return; clearAllFi
                 :class="{ 'field-error-shell--active': !!fieldErrors.audioFile }"
               >
                 <NSpace vertical style="width: 100%">
-                  <AudioMiniPlayer v-if="existingUrl" :url="existingUrl" :filename="existingFileName" />
+                  <AudioMiniPlayer v-if="existingUrl" :url="existingUrl" :filename="existingFileName" @playing-change="(v) => { if (v) console.log('[AudioPlayer] playing file type:', activeFileType) }" />
                   <NUpload :max="1" :custom-request="handleFileCapture" accept=".mp3,.wav,.flac,.ogg,.m4a,.aac" :disabled="isUploading">
                     <GsapButton :disabled="isUploading">
                       <span>{{ existingUrl ? t('fragmentForm.replace_file') : t('fragmentForm.choose_file') }}</span>
