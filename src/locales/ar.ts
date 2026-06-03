@@ -57,6 +57,8 @@ export default {
   },
   dashboard: {
     player_ui: 'Player UI',
+    your_player: 'مشغلك',
+    copy_url: 'نسخ الرابط',
     stationTime: 'وقت المحطة',
     timezone: 'المنطقة الزمنية',
     onAir: 'على الهواء',

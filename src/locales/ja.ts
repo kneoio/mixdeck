@@ -57,6 +57,8 @@ export default {
   },
   dashboard: {
     player_ui: 'Player UI',
+    your_player: 'あなたのプレーヤー',
+    copy_url: 'リンクをコピー',
     stationTime: 'ステーション時刻',
     timezone: 'タイムゾーン',
     onAir: 'オンエア',

@@ -7,6 +7,7 @@ import aivoxApiService from '@/services/aivoxApi'
 import type { AivoxQueueEntry } from '@/services/aivoxApi'
 import { ApiNotEnoughSongsError } from '@/utils/errorHandler'
 import LedYellow from '@/components/LedYellow.vue'
+import LedGreen from '@/components/LedGreen.vue'
 import LoaderProgress from '@/components/LoaderProgress.vue'
 import { useBrandsStore } from '@/stores/brands'
 
@@ -19,6 +20,8 @@ const alive = computed(() => brandsStore.streamingStates[props.brandSlug] ?? fal
 const loading = ref(false)
 const waiting = ref(false)
 const flash = ref(false)
+const flashGreen = ref(false)
+let flashTurn = false
 const localTime = ref('')
 const queueEntries = ref<AivoxQueueEntry[]>([])
 
@@ -34,8 +37,16 @@ let queueTimer: ReturnType<typeof setInterval> | null = null
 
 function triggerFlash() {
   if (flashTimer) clearTimeout(flashTimer)
-  flash.value = true
-  flashTimer = setTimeout(() => { flash.value = false }, 350)
+  flashTurn = !flashTurn
+  if (flashTurn) {
+    flash.value = true
+    flashGreen.value = false
+    flashTimer = setTimeout(() => { flash.value = false }, 600)
+  } else {
+    flashGreen.value = true
+    flash.value = false
+    flashTimer = setTimeout(() => { flashGreen.value = false }, 600)
+  }
 }
 
 const sortedQueueEntries = computed(() =>
@@ -258,7 +269,10 @@ onUnmounted(() => {
       </GsapButton>
       <div class="aivox-status">
         <div class="aivox-led-wrap">
-          <LedYellow :active="flash || waiting" />
+          <div class="aivox-leds">
+            <LedYellow :active="flash || waiting" />
+            <LedGreen :active="flashGreen" />
+          </div>
           <span class="aivox-label">{{ t('dashboard.onAir') }}</span>
         </div>
       </div>
@@ -340,6 +354,11 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   gap: 1px;
+}
+.aivox-leds {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
 }
 .aivox-label {
   font-size: 0.7rem;

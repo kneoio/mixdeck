@@ -57,6 +57,8 @@ export default {
   },
   dashboard: {
     player_ui: 'Player UI',
+    your_player: 'Ваш плеєр',
+    copy_url: 'Копіювати посилання',
     stationTime: 'Час станції',
     timezone: 'Часовий пояс',
     onAir: 'В ефірі',

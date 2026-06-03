@@ -57,6 +57,8 @@ export default {
   },
   dashboard: {
     player_ui: 'Player UI',
+    your_player: 'თქვენი პლეიერი',
+    copy_url: 'ბმულის კოპირება',
     stationTime: 'სადგურის დრო',
     timezone: 'დროის სარტყელი',
     onAir: 'ეთერში',

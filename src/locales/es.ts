@@ -57,6 +57,8 @@ export default {
   },
   dashboard: {
     player_ui: 'Player UI',
+    your_player: 'Tu reproductor',
+    copy_url: 'Copiar enlace',
     stationTime: 'Hora de la emisora',
     timezone: 'Zona horaria',
     onAir: 'En antena',

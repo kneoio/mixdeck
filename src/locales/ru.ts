@@ -57,6 +57,8 @@ export default {
   },
   dashboard: {
     player_ui: 'Player UI',
+    your_player: 'Ваш плеер',
+    copy_url: 'Копировать ссылку',
     stationTime: 'Время станции',
     timezone: 'Часовой пояс',
     onAir: 'В эфире',

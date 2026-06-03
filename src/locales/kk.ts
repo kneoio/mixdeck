@@ -57,6 +57,8 @@ export default {
   },
   dashboard: {
     player_ui: 'Player UI',
+    your_player: 'Сіздің плеер',
+    copy_url: 'Сілтемені көшіру',
     stationTime: 'Станция уақыты',
     timezone: 'Уақыт белдеуі',
     onAir: 'Эфирде',

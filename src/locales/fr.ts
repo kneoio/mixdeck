@@ -57,6 +57,8 @@ export default {
   },
   dashboard: {
     player_ui: 'Player UI',
+    your_player: 'Votre lecteur',
+    copy_url: 'Copier le lien',
     stationTime: 'Heure de la station',
     timezone: 'Fuseau horaire',
     onAir: "À l'antenne",
