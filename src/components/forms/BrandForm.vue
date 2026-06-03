@@ -280,6 +280,7 @@ function cloneScene(scene: Scene) {
   const cloned: Scene = JSON.parse(JSON.stringify(scene))
   cloned.id = id
   cloned.name = (cloned.name || '') + ' (copy)'
+  if (cloned.startTime != null) cloned.startTime = cloned.startTime + 3_600_000
   const idx = scenes.value.findIndex(s => s.id === scene.id)
   scenes.value.splice(idx + 1, 0, cloned)
   sceneTitleEditing.value[id] = false
