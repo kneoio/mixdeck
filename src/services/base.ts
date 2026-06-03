@@ -1,5 +1,5 @@
 import authService from './auth'
-import { ApiValidationError, type ValidationError } from '@/utils/errorHandler'
+import { ApiValidationError, ApiNotEnoughSongsError, type ValidationError } from '@/utils/errorHandler'
 import { LOCALE_KEY } from '@/i18n'
 
 function getAcceptLanguage(): string {
@@ -43,14 +43,18 @@ export class ApiClient {
         if (data && data.type && data.errors && typeof data.errors === 'object') {
           throw new ApiValidationError(data as ValidationError, response.status)
         }
-        
+
+        if (response.status === 422 && (data as any).error === 'not_enough_songs') {
+          throw new ApiNotEnoughSongsError((data as any).current, (data as any).required)
+        }
+
         if (response.status === 401 && typeof (data as any).error === 'string') {
           errorMessage = (data as any).error
         } else if (data && typeof (data as any).message === 'string') {
           errorMessage = (data as any).message
         }
       } catch (error) {
-        if (error instanceof ApiValidationError) {
+        if (error instanceof ApiValidationError || error instanceof ApiNotEnoughSongsError) {
           throw error
         }
       }

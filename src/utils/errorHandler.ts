@@ -7,6 +7,16 @@ export interface ValidationError {
   errors: Record<string, string[]>
 }
 
+export class ApiNotEnoughSongsError extends Error {
+  constructor(
+    public readonly current: number,
+    public readonly required: number
+  ) {
+    super('not_enough_songs')
+    this.name = 'ApiNotEnoughSongsError'
+  }
+}
+
 export class ApiValidationError extends Error {
   constructor(
     public readonly validationError: ValidationError,

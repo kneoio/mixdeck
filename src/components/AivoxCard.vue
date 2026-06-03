@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
-import { NCard } from 'naive-ui'
+import { NCard, useMessage } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
 import { useI18n } from 'vue-i18n'
 import aivoxApiService from '@/services/aivoxApi'
 import type { AivoxQueueEntry } from '@/services/aivoxApi'
+import { ApiNotEnoughSongsError } from '@/utils/errorHandler'
 import LedYellow from '@/components/LedYellow.vue'
 import LoaderProgress from '@/components/LoaderProgress.vue'
 import { useBrandsStore } from '@/stores/brands'
@@ -12,6 +13,7 @@ import { useBrandsStore } from '@/stores/brands'
 const props = defineProps<{ brandSlug: string; timezone?: string }>()
 const { t, te } = useI18n()
 const brandsStore = useBrandsStore()
+const message = useMessage()
 
 const alive = computed(() => brandsStore.streamingStates[props.brandSlug] ?? false)
 const loading = ref(false)
@@ -85,9 +87,13 @@ async function handleStart() {
     const isAlive = await aivoxApiService.heartbeatStream(slug, true)
     waiting.value = false
     if (props.brandSlug === slug) brandsStore.setStreamingState(slug, isAlive)
-  } catch {
+  } catch (e) {
     waiting.value = false
-    if (props.brandSlug === slug) await fetchHeartbeatAlive()
+    if (e instanceof ApiNotEnoughSongsError) {
+      message.error(t('dashboard.not_enough_songs', { current: e.current, required: e.required }))
+    } else if (props.brandSlug === slug) {
+      await fetchHeartbeatAlive()
+    }
   } finally {
     loading.value = false
   }
@@ -257,10 +263,10 @@ onUnmounted(() => {
         </div>
       </div>
       <div v-if="timezone" class="time-right">
-        <span class="label">{{ t('dashboard.stationTime') }}:</span>
+        <span class="label tz-caption">{{ t('dashboard.stationTime') }}:</span>
         <span class="time">{{ localTime }}</span>
-        <span class="tz-sep">·</span>
-        <span class="label">{{ t('dashboard.timezone') }}:</span>
+        <span class="tz-sep tz-caption">·</span>
+        <span class="label tz-caption">{{ t('dashboard.timezone') }}:</span>
         <span class="timezone">{{ timezone }}</span>
       </div>
     </div>
@@ -298,6 +304,23 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 3px;
+  flex-wrap: wrap;
+}
+@media (max-width: 768px) {
+  .aivox-row .time-right {
+    flex-basis: 100%;
+    margin-left: 0;
+    margin-top: 8px;
+  }
+  .time {
+    font-size: 1rem !important;
+  }
+  .timezone {
+    font-size: 0.85rem;
+  }
+  .tz-caption {
+    display: none;
+  }
 }
 .aivox-status {
   display: flex;

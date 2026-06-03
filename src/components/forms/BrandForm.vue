@@ -84,7 +84,7 @@ const formData = ref({
   description: '',
   timeZone: null as string | null,
   publicBrand: 0,
-  bitRate: 128_000,
+  bitRate: 64_000,
   aiAgentId: null as string | null,
   profileId: null as string | null,
   oneTimeStreamPolicy: 'NOT_ALLOWED' as SubmissionPolicy,
@@ -421,11 +421,26 @@ const bitRateMarks = computed<Record<number, string>>(() => ({
   128_000: t('brandForm.stream_quality_best'),
 }))
 
-function snapBrandBitRate(bps: number): number {
-  const allowed = [64_000, 96_000, 128_000]
-  return allowed.reduce((best, cur) =>
-    Math.abs(bps - cur) < Math.abs(bps - best) ? cur : best
-  )
+function snapBrandBitRate(_bps: number): number {
+  return 64_000
+}
+
+const qualityMsgShown = ref(false)
+
+function handleQualityChange() {
+  formData.value.bitRate = 64_000
+  if (qualityMsgShown.value) return
+  qualityMsgShown.value = true
+  message.warning(t('brandForm.stream_quality_only_good'), { onAfterLeave: () => { qualityMsgShown.value = false } })
+}
+
+const publicPremiumGlow = ref(false)
+
+function handlePublicToggle(v: boolean) {
+  if (!v) { formData.value.publicBrand = 0; return }
+  publicPremiumGlow.value = true
+  message.warning(t('brandForm.public_premium_only'))
+  setTimeout(() => { publicPremiumGlow.value = false }, 1500)
 }
 
 function formatBitRateTooltip(value: number) {
@@ -1149,23 +1164,30 @@ watch(activeTab, () => {
             <div class="field-stack">
               <div class="field-error-shell">
                 <NSlider
-                  v-model:value="formData.bitRate"
+                  :value="formData.bitRate"
                   :min="64_000"
                   :max="128_000"
                   :step="32_000"
                   :marks="bitRateMarks"
                   :format-tooltip="formatBitRateTooltip"
                   style="max-width: 360px"
+                  @update:value="handleQualityChange"
                 />
               </div>
               <div class="field-error-label"></div>
             </div>
           </NFormItem>
 
-          <NFormItem :label="t('brandForm.public')">
+          <NFormItem>
+            <template #label>
+              <span class="form-label-with-badge">
+                {{ t('brandForm.public') }}
+                <span class="premium-badge" :class="{ 'premium-badge--glow': publicPremiumGlow }">premium</span>
+              </span>
+            </template>
             <div class="field-stack">
               <div class="field-error-shell">
-                <NSwitch :value="formData.publicBrand === 1" @update:value="(v) => formData.publicBrand = v ? 1 : 0" />
+                <NSwitch :value="formData.publicBrand === 1" @update:value="handlePublicToggle" />
               </div>
               <div class="field-error-label"></div>
             </div>
@@ -1626,6 +1648,32 @@ watch(activeTab, () => {
 .field-stack {
   width: 100%;
   display: block;
+}
+
+.form-label-with-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.premium-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  padding: 0px 4px;
+  transition: color 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+
+.premium-badge--glow {
+  color: #f0a500;
+  border-color: rgba(240, 165, 0, 0.5);
+  box-shadow: 0 0 7px 2px rgba(240, 165, 0, 0.4);
 }
 
 .field-error-shell {
