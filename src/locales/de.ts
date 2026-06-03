@@ -56,6 +56,7 @@ export default {
     add_new: 'Neue Marke hinzufügen',
   },
   dashboard: {
+    player_ui: 'Player UI',
     stationTime: 'Senderzeit',
     timezone: 'Zeitzone',
     onAir: 'On Air',

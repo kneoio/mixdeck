@@ -37,6 +37,7 @@ export interface AgendaScene {
 export interface Agenda {
   timezone: string
   country?: string
+  createdAt?: number[]
   totalScenes: number
   scenes: AgendaScene[]
 }

@@ -56,6 +56,7 @@ export default {
     add_new: 'Adicionar novo',
   },
   dashboard: {
+    player_ui: 'Player UI',
     stationTime: 'Hora da estação',
     timezone: 'Fuso horário',
     onAir: 'No ar',

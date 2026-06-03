@@ -56,6 +56,7 @@ export default {
     add_new: 'Жаңа қосу',
   },
   dashboard: {
+    player_ui: 'Player UI',
     stationTime: 'Станция уақыты',
     timezone: 'Уақыт белдеуі',
     onAir: 'Эфирде',

@@ -1,6 +1,10 @@
 <template>
   <div class="brand-dashboard">
     <PageHeader :title="brandName" :subtitle="t('menu.dashboard')" />
+    <div v-if="brand?.mixplaUrl" class="player-url-row">
+      <span class="player-url-caption">{{ t('dashboard.player_ui') }}:</span>
+      <a :href="brand.mixplaUrl" target="_blank" rel="noopener noreferrer" class="player-url-link">{{ brand.mixplaUrl }}</a>
+    </div>
     <AivoxCard v-if="brandSlug" :brand-slug="brandSlug" :timezone="brand?.timeZone" />
     <AgendaCard :brand-slug="brandSlug" :alive="streamAlive" />
   </div>
@@ -35,5 +39,29 @@ const streamAlive = computed(() => brandsStore.streamingStates[brandSlug.value] 
 <style scoped>
 .brand-dashboard {
   width: 100%;
+}
+.player-url-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  margin-bottom: 2px;
+  padding: 0 2px;
+}
+.player-url-caption {
+  font-size: 0.8rem;
+  opacity: 0.5;
+  white-space: nowrap;
+}
+.player-url-link {
+  font-size: 0.8rem;
+  opacity: 0.7;
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px dashed currentColor;
+  transition: opacity 0.2s;
+}
+.player-url-link:hover {
+  opacity: 1;
 }
 </style>

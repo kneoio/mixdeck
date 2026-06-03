@@ -56,6 +56,7 @@ export default {
     add_new: 'Añadir nuevo',
   },
   dashboard: {
+    player_ui: 'Player UI',
     stationTime: 'Hora de la emisora',
     timezone: 'Zona horaria',
     onAir: 'En antena',

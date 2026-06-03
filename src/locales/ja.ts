@@ -56,6 +56,7 @@ export default {
     add_new: '新規追加',
   },
   dashboard: {
+    player_ui: 'Player UI',
     stationTime: 'ステーション時刻',
     timezone: 'タイムゾーン',
     onAir: 'オンエア',

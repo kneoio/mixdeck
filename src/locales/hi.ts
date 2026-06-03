@@ -56,6 +56,7 @@ export default {
     add_new: 'नया जोड़ें',
   },
   dashboard: {
+    player_ui: 'Player UI',
     stationTime: 'स्टेशन समय',
     timezone: 'समय क्षेत्र',
     onAir: 'ऑन एयर',

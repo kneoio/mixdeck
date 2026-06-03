@@ -56,6 +56,7 @@ export default {
     add_new: 'Додати новий',
   },
   dashboard: {
+    player_ui: 'Player UI',
     stationTime: 'Час станції',
     timezone: 'Часовий пояс',
     onAir: 'В ефірі',

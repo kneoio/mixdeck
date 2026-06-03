@@ -56,6 +56,7 @@ export default {
     add_new: 'ახლის დამატება',
   },
   dashboard: {
+    player_ui: 'Player UI',
     stationTime: 'სადგურის დრო',
     timezone: 'დროის სარტყელი',
     onAir: 'ეთერში',

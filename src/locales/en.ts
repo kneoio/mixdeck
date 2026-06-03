@@ -56,6 +56,7 @@ export default {
     add_new: 'Add New Brand',
   },
   dashboard: {
+    player_ui: 'Player UI',
     stationTime: 'Station Time',
     timezone: 'Timezone',
     onAir: 'On Air',
