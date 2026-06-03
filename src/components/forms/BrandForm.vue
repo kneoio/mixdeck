@@ -275,6 +275,16 @@ function addScene() {
   actionTitleEditing.value[id] = false
 }
 
+function cloneScene(scene: Scene) {
+  const id = ++_sceneId
+  const cloned: Scene = JSON.parse(JSON.stringify(scene))
+  cloned.id = id
+  cloned.name = (cloned.name || '') + ' (copy)'
+  const idx = scenes.value.findIndex(s => s.id === scene.id)
+  scenes.value.splice(idx + 1, 0, cloned)
+  sceneTitleEditing.value[id] = false
+}
+
 function removeScene(id: number) {
   scenes.value = scenes.value.filter(s => s.id !== id)
   delete customActionFormVisible.value[id]
@@ -1329,6 +1339,7 @@ watch(activeTab, () => {
                   title="Click to rename"
                   @click="sceneTitleEditing[scene.id] = true"
                 >{{ scene.name || `Scene ${scenes.indexOf(scene) + 1}` }}</span>
+                <button class="scene-card__clone" @click="cloneScene(scene)" title="Clone">⧉</button>
                 <button class="scene-card__remove" @click="removeScene(scene.id)" title="Remove">×</button>
               </div>
 
@@ -2040,6 +2051,21 @@ watch(activeTab, () => {
 
 .action-title-text:hover {
   border-bottom-color: rgba(124, 58, 237, 0.5);
+}
+
+.scene-card__clone {
+  background: transparent;
+  border: none;
+  color: #aaa;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  transition: color 0.15s;
+}
+
+.scene-card__clone:hover {
+  color: #fff;
 }
 
 .scene-card__remove {
