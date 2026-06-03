@@ -8,6 +8,7 @@ import type { AivoxQueueEntry } from '@/services/aivoxApi'
 import { ApiNotEnoughSongsError } from '@/utils/errorHandler'
 import LedYellow from '@/components/LedYellow.vue'
 import LedGreen from '@/components/LedGreen.vue'
+import LedIndicator from '@/components/LedIndicator.vue'
 import LoaderProgress from '@/components/LoaderProgress.vue'
 import { useBrandsStore } from '@/stores/brands'
 
@@ -21,7 +22,7 @@ const loading = ref(false)
 const waiting = ref(false)
 const flash = ref(false)
 const flashGreen = ref(false)
-let flashTurn = false
+let flashTurn = true
 const localTime = ref('')
 const queueEntries = ref<AivoxQueueEntry[]>([])
 
@@ -96,9 +97,11 @@ async function handleStart() {
     await aivoxApiService.start(slug)
     waiting.value = true
     const isAlive = await aivoxApiService.heartbeatStream(slug, true)
+    flashTurn = true
     waiting.value = false
     if (props.brandSlug === slug) brandsStore.setStreamingState(slug, isAlive)
   } catch (e) {
+    flashTurn = true
     waiting.value = false
     if (e instanceof ApiNotEnoughSongsError) {
       message.error(t('dashboard.not_enough_songs', { current: e.current, required: e.required }))
@@ -271,6 +274,7 @@ onUnmounted(() => {
         <div class="aivox-led-wrap">
           <div class="aivox-leds">
             <LedYellow :active="flash || waiting" />
+            <LedIndicator :active="waiting" :pulse="waiting" color="#CC0000" :size="18" />
             <LedGreen :active="flashGreen" />
           </div>
           <span class="aivox-label">{{ t('dashboard.onAir') }}</span>
