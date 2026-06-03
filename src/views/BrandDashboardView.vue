@@ -43,15 +43,18 @@ const streamAlive = computed(() => brandsStore.streamingStates[brandSlug.value] 
 .player-url-row {
   display: flex;
   align-items: center;
+  flex-wrap: nowrap;
   gap: 8px;
   margin-top: 6px;
   margin-bottom: 2px;
   padding: 0 2px;
+  white-space: nowrap;
+  overflow: hidden;
 }
 .player-url-caption {
   font-size: 0.8rem;
   opacity: 0.5;
-  white-space: nowrap;
+  flex-shrink: 0;
 }
 .player-url-link {
   font-size: 0.8rem;
@@ -60,6 +63,8 @@ const streamAlive = computed(() => brandsStore.streamingStates[brandSlug.value] 
   text-decoration: none;
   border-bottom: 1px dashed currentColor;
   transition: opacity 0.2s;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .player-url-link:hover {
   opacity: 1;
