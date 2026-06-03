@@ -943,17 +943,12 @@ onMounted(async () => {
       })
       agentOptions.value = entries.map((a: any) => {
         const labels: AgentLabel[] = Array.isArray(a.labels) ? a.labels : []
-        const isLocked = labels.some(l => {
-          const id = (l.identifier ?? '').toLowerCase()
-          const name = (l.name ?? '').toLowerCase()
-          return id === 'premium' || name === 'premium' || id === 'advanced' || name === 'advanced'
-        })
         return {
           label: a.name || a.id,
           value: a.id,
           labels,
           preferredLang: Array.isArray(a.preferredLang) ? a.preferredLang : [],
-          disabled: isLocked,
+          disabled: !isFree(labels),
         }
       }).sort((a, b) => {
         const aFree = isFree(a.labels)
