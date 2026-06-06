@@ -78,6 +78,7 @@ const fieldErrors = ref<Record<ValidationField, string>>({
 })
 
 const localizedNames = ref<{ lang: string; name: string }[]>([{ lang: 'en', name: '' }])
+const coOwners = ref<{ name: string; email: string }[]>([])
 
 const formData = ref({
   country: null as string | null,
@@ -485,6 +486,10 @@ function createLocalizedName() {
   return { lang: 'en', name: '' }
 }
 
+function createCoOwner() {
+  return { name: '', email: '' }
+}
+
 function getFieldRef(field: ValidationField) {
   if (field === 'localizedNames') return localizedNamesFieldRef.value
   if (field === 'country') return countryFieldRef.value
@@ -709,7 +714,9 @@ async function handleSave() {
       profileOverriding: (formData.value.profileOverriding.name || formData.value.profileOverriding.description)
         ? formData.value.profileOverriding
         : undefined,
-      owner: (formData.value.owner.name || formData.value.owner.email) ? formData.value.owner : undefined,
+      owner: (formData.value.owner.name || formData.value.owner.email || coOwners.value.length)
+        ? { ...formData.value.owner, coOwners: coOwners.value.filter(o => o.email).map(o => ({ email: o.email })) }
+        : undefined,
     } as any)
     saveAttempted.value = false
     message.success(t('brandForm.saved'))
@@ -883,10 +890,13 @@ function applyBrandToForm(brand: any) {
     titleFont: brand.titleFont || null,
     hlsUrl: brand.hlsUrl || '',
     mixplaUrl: brand.mixplaUrl || '',
-    owner: { name: brand.owner?.name || '', email: brand.owner?.email || '', exposeWhileSharing: brand.owner?.exposeWhileSharing ?? false, actionDebugEnabled: brand.owner?.actionDebugEnabled ?? false },
+    owner: { name: brand.owner?.name || '', email: brand.owner?.email || '', exposeWhileSharing: (brand.owner as any)?.exposeWhileSharing ?? false, actionDebugEnabled: (brand.owner as any)?.actionDebugEnabled ?? false },
     genres: normalizeIdList((brand as any).genres),
     labels: (brand as any).labels || [],
   }
+  coOwners.value = Array.isArray((brand.owner as any)?.coOwners)
+    ? (brand.owner as any).coOwners.map((o: any) => ({ name: o.name || '', email: o.email || '' }))
+    : []
   userVariables.value = firstScript?.userVariables ? { ...firstScript.userVariables } : {}
   scriptMode.value = brand.scriptMode?.toLowerCase() === 'custom' ? 'custom' : 'predefined'
   customScriptTitle.value = brand.customScript?.title ?? ''
@@ -1589,7 +1599,7 @@ watch(activeTab, () => {
       </NTabPane>
 
       <NTabPane name="owner" :tab="t('brandForm.tab_owner')">
-        <NForm :label-placement="formLabelPlacement" label-width="120" :disabled="loading">
+        <NForm :label-placement="formLabelPlacement" label-width="160" :disabled="loading">
           <NFormItem :label="t('brandForm.owner_name')">
             <div class="field-stack">
               <div class="field-error-shell">
@@ -1604,6 +1614,23 @@ watch(activeTab, () => {
               <div class="field-error-shell">
                 <NInput v-model:value="formData.owner.email"
                   placeholder="owner@example.com" style="width: 100%; max-width: 400px" />
+              </div>
+              <div class="field-error-label"></div>
+            </div>
+          </NFormItem>
+          <NFormItem :label="t('brandForm.co_owners')">
+            <div class="field-stack">
+              <div class="field-error-shell">
+                <NDynamicInput v-model:value="coOwners" :on-create="createCoOwner" style="width:100%">
+                  <template #default="{ index }">
+                    <div class="co-owner-row">
+                      <NInput v-model:value="coOwners[index].name"
+                        :placeholder="t('brandForm.owner_name')" class="co-owner-row__name" disabled />
+                      <NInput v-model:value="coOwners[index].email"
+                        placeholder="email@example.com" class="co-owner-row__email" />
+                    </div>
+                  </template>
+                </NDynamicInput>
               </div>
               <div class="field-error-label"></div>
             </div>
@@ -2211,6 +2238,22 @@ watch(activeTab, () => {
 
 .localized-row__input {
   flex: 1;
+  min-width: 0;
+}
+
+.co-owner-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.co-owner-row__name {
+  flex: 1;
+  min-width: 0;
+}
+
+.co-owner-row__email {
+  flex: 1.4;
   min-width: 0;
 }
 

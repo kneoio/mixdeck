@@ -226,6 +226,7 @@ export default {
     card_copied: 'Copied!',
     expose_while_sharing: 'Expose While Sharing',
     action_debug_enabled: 'Action Debug',
+    co_owners: 'Co-Owners',
     owner_name: 'Owner Name',
     owner_email: 'Owner Email',
     saved: 'Brand saved successfully',

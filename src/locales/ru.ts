@@ -172,6 +172,7 @@ export default {
     color: 'Цвет',
     expose_while_sharing: 'Показывать при публикации',
     action_debug_enabled: 'Отладка действий',
+    co_owners: 'Совладельцы',
     owner_name: 'Имя владельца',
     owner_email: 'Email владельца',
     saved: 'Бренд успешно сохранён',

@@ -35,7 +35,7 @@ export interface Brand {
   scripts?: Array<{ scriptId: string; userVariables?: Record<string, any> }>
   profileOverriding?: { name?: string; description?: string }
   titleFont?: string
-  owner?: { name?: string; email?: string }
+  owner?: { name?: string; email?: string; coOwners?: Array<{ name: string; email: string }> }
   publicBrand?: number
   bitRate?: number
   genres?: string[]

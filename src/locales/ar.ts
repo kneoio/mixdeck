@@ -172,6 +172,7 @@ export default {
     color: 'اللون',
     expose_while_sharing: 'مشاركة الملف الشخصي',
     action_debug_enabled: 'تصحيح الإجراء',
+    co_owners: 'المشاركون في الملكية',
     owner_name: 'اسم المالك',
     owner_email: 'بريد المالك الإلكتروني',
     saved: 'تم حفظ العلامة التجارية بنجاح',

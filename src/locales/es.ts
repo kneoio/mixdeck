@@ -172,6 +172,7 @@ export default {
     color: 'Color',
     expose_while_sharing: 'Mostrar al compartir',
     action_debug_enabled: 'Depuración de acción',
+    co_owners: 'Co-propietarios',
     owner_name: 'Nombre del propietario',
     owner_email: 'Correo del propietario',
     saved: 'Marca guardada correctamente',

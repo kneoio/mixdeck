@@ -172,6 +172,7 @@ export default {
     color: 'रंग',
     expose_while_sharing: 'साझा करते समय दिखाएं',
     action_debug_enabled: 'क्रिया डीबग',
+    co_owners: 'सह-स्वामी',
     owner_name: 'मालिक का नाम',
     owner_email: 'मालिक का ईमेल',
     saved: 'ब्रांड सफलतापूर्वक सहेजा गया',

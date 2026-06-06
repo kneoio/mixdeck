@@ -172,6 +172,7 @@ export default {
     color: 'ფერი',
     expose_while_sharing: 'გამოჩენა გაზიარებისას',
     action_debug_enabled: 'მოქმედების გამართვა',
+    co_owners: 'თანამფლობელები',
     owner_name: 'მფლობელის სახელი',
     owner_email: 'მფლობელის email',
     saved: 'ბრენდი წარმატებით შეინახა',

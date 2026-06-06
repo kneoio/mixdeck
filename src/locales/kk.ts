@@ -172,6 +172,7 @@ export default {
     color: 'Түс',
     expose_while_sharing: 'Бөлісу кезінде көрсету',
     action_debug_enabled: 'Іс-әрекет жөндеу',
+    co_owners: 'Бірлескен иелер',
     owner_name: 'Иесінің аты',
     owner_email: 'Иесінің email-ы',
     saved: 'Бренд сәтті сақталды',

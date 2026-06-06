@@ -172,6 +172,7 @@ export default {
     color: '色',
     expose_while_sharing: '共有時に表示',
     action_debug_enabled: 'アクションデバッグ',
+    co_owners: '共同オーナー',
     owner_name: 'オーナー名',
     owner_email: 'オーナーのメール',
     saved: 'ブランドを保存しました',
