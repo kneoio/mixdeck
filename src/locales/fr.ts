@@ -66,6 +66,7 @@ export default {
     broadcast_start: 'Démarrer',
     broadcast_stop: 'Arrêter',
     invalid_timezone: 'Fuseau horaire invalide',
+    free_streaming_limit: 'Gratuit · 2h max',
     queue: {
       nowPlaying: 'EN COURS',
       played: 'Lu',

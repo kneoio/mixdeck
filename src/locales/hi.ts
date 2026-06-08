@@ -66,6 +66,7 @@ export default {
     broadcast_start: 'शुरू',
     broadcast_stop: 'रोकें',
     invalid_timezone: 'अमान्य समय क्षेत्र',
+    free_streaming_limit: 'निःशुल्क · अधिकतम 2घं',
     queue: {
       nowPlaying: 'अभी चल रहा है',
       played: 'चल चुका',

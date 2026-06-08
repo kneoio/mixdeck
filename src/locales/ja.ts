@@ -66,6 +66,7 @@ export default {
     broadcast_start: '開始',
     broadcast_stop: '停止',
     invalid_timezone: '無効なタイムゾーン',
+    free_streaming_limit: '無料 · 最大2時間',
     queue: {
       nowPlaying: '再生中',
       played: '再生済み',

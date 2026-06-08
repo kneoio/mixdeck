@@ -66,6 +66,7 @@ export default {
     broadcast_start: 'Старт',
     broadcast_stop: 'Стоп',
     invalid_timezone: 'Некоректний часовий пояс',
+    free_streaming_limit: 'Безкоштовно · макс. 2год',
     queue: {
       nowPlaying: 'ЗАРАЗ ГРАЄ',
       played: 'Відтворено',

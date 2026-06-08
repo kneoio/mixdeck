@@ -66,6 +66,7 @@ export default {
     broadcast_start: 'Start',
     broadcast_stop: 'Stop',
     invalid_timezone: 'Invalid timezone',
+    free_streaming_limit: 'Free · 2h max',
     queue: {
       nowPlaying: 'NOW PLAYING',
       played: 'Played',

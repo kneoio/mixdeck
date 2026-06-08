@@ -2,6 +2,7 @@
   <div class="brand-dashboard">
     <PageHeader :title="brandName" :subtitle="t('menu.dashboard')">
       <template #actions>
+        <span class="free-badge">{{ t('dashboard.free_streaming_limit') }}</span>
         <template v-if="brand?.mixplaUrl">
           <span class="player-url-caption">{{ t('dashboard.your_player') }}:</span>
           <a :href="brand.mixplaUrl" target="_blank" rel="noopener noreferrer" class="player-url-link">{{ brand.mixplaUrl }}</a>
@@ -54,6 +55,17 @@ function copyUrl() {
 <style scoped>
 .brand-dashboard {
   width: 100%;
+}
+.free-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(124, 58, 237, 0.15);
+  border: 1px solid rgba(124, 58, 237, 0.35);
+  color: #7C3AED;
+  white-space: nowrap;
 }
 .player-url-caption {
   font-size: 0.8rem;

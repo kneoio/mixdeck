@@ -66,6 +66,7 @@ export default {
     broadcast_start: 'Iniciar',
     broadcast_stop: 'Parar',
     invalid_timezone: 'Fuso horário inválido',
+    free_streaming_limit: 'Grátis · máx. 2h',
     queue: {
       nowPlaying: 'TOCANDO AGORA',
       played: 'Tocada',

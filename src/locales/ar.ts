@@ -66,6 +66,7 @@ export default {
     broadcast_start: 'تشغيل',
     broadcast_stop: 'إيقاف',
     invalid_timezone: 'منطقة زمنية غير صالحة',
+    free_streaming_limit: 'مجاني · حد أقصى ساعتان',
     queue: {
       nowPlaying: 'قيد التشغيل الآن',
       played: 'تم التشغيل',

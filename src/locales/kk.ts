@@ -66,6 +66,7 @@ export default {
     broadcast_start: 'Бастау',
     broadcast_stop: 'Тоқтату',
     invalid_timezone: 'Жарамсыз уақыт белдеуі',
+    free_streaming_limit: 'Тегін · макс. 2 сағат',
     queue: {
       nowPlaying: 'ҚАЗІР ОЙНАЛУДА',
       played: 'Ойнатылды',

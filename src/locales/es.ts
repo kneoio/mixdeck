@@ -66,6 +66,7 @@ export default {
     broadcast_start: 'Iniciar',
     broadcast_stop: 'Detener',
     invalid_timezone: 'Zona horaria no válida',
+    free_streaming_limit: 'Gratis · máx. 2h',
     queue: {
       nowPlaying: 'SONANDO AHORA',
       played: 'Reproducido',

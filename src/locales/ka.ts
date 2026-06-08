@@ -66,6 +66,7 @@ export default {
     broadcast_start: 'დაწყება',
     broadcast_stop: 'გაჩერება',
     invalid_timezone: 'არასწორი დროის სარტყელი',
+    free_streaming_limit: 'უფასო · მაქს. 2სთ',
     queue: {
       nowPlaying: 'ახლა უკრავს',
       played: 'დაკრულია',
