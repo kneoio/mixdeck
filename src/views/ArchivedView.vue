@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, h, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import {
   NDataTable, NSpace, NPopconfirm, NTag,
   type DataTableColumns, useMessage
@@ -16,6 +16,7 @@ import { handleApiError } from '@/utils/notificationService'
 const { t } = useI18n()
 const message = useMessage()
 const router = useRouter()
+const route = useRoute()
 
 const entries = ref<any[]>([])
 const loading = ref(false)
@@ -145,6 +146,9 @@ onMounted(async () => {
     <PageHeader :title="pageTitle" :subtitle="t('playlistView.subtitle')" :count="totalCount" />
     <ActionBar>
       <NSpace>
+        <GsapButton type="primary" @click="router.push({ path: '/sound-library/unassigned-to-brands/new', query: { returnTo: route.fullPath } })">
+          <span>{{ t('playlistView.new_track') }}</span>
+        </GsapButton>
         <NPopconfirm @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
           <template #trigger>
             <GsapButton type="error" :disabled="selectedIds.length === 0">

@@ -103,7 +103,7 @@ const formData = ref({
   description: '',
   genres: [] as string[],
   labels: [] as string[],
-  representedInBrands: [brandId.value] as string[],
+  representedInBrands: brandId.value ? [brandId.value] : [] as string[],
   expiresAt: '' as string | null,
   length: null as number | null,
 })
@@ -128,7 +128,7 @@ const returnToRoute = computed(() => {
   const value = route.query.returnTo
   return typeof value === 'string' && value ? value : null
 })
-const backRoute = computed(() => returnToRoute.value ?? `/brands/${brandId.value}/playlist`)
+const backRoute = computed(() => returnToRoute.value ?? (brandId.value ? `/brands/${brandId.value}/playlist` : '/sound-library/unassigned-to-brands'))
 const formLabelPlacement = computed(() => (isMobile.value ? 'top' : 'left'))
 
 function updateIsMobile() {

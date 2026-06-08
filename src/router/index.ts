@@ -37,6 +37,12 @@ const router = createRouter({
           meta: { requiresAuth: true }
         },
         {
+          path: '/sound-library/unassigned-to-brands/new',
+          name: 'sound-library-unassigned-new',
+          component: () => import('../components/forms/SoundFragmentForm.vue'),
+          meta: { requiresAuth: true }
+        },
+        {
           path: '/sound-library/sound-assets',
           name: 'sound-library-sound-assets',
           component: () => import('../views/SoundAssetsView.vue'),
