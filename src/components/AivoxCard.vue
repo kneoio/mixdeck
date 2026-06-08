@@ -279,7 +279,7 @@ onUnmounted(() => {
           </div>
           <span class="aivox-label">{{ t('dashboard.onAir') }}</span>
         </div>
-        <span class="free-badge">{{ t('dashboard.free_streaming_limit') }}</span>
+        <span class="free-badge" :class="{ 'free-badge--hidden': alive }">{{ t('dashboard.free_streaming_limit') }}</span>
       </div>
       <div v-if="timezone" class="time-right">
         <span class="label tz-caption">{{ t('dashboard.stationTime') }}:</span>
@@ -358,6 +358,11 @@ onUnmounted(() => {
   color: #FFD600;
   white-space: nowrap;
   margin-left: 8px;
+  opacity: 1;
+  transition: opacity 2s ease;
+}
+.free-badge--hidden {
+  opacity: 0;
 }
 .time-right {
   display: flex;
