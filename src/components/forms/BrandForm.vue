@@ -944,6 +944,11 @@ onMounted(async () => {
       dictionaryApiService.getGenres(),
       dictionaryApiService.getLabelsByCategory('sound_fragment'),
     ])
+    const isFree = (labels: AgentLabel[]) => labels.some(l => {
+      const id = (l.identifier ?? '').toLowerCase()
+      const name = (l.name ?? '').toLowerCase()
+      return id === 'free' || name === 'free'
+    })
     if (agents.status === 'fulfilled') {
       const entries = agents.value.entries as any[]
       agentsList.value = entries.map((a: any) => {
@@ -956,11 +961,6 @@ onMounted(async () => {
           labels: Array.isArray(a.labels) ? a.labels : [],
           ...(description ? { description } : {}),
         }
-      })
-      const isFree = (labels: AgentLabel[]) => labels.some(l => {
-        const id = (l.identifier ?? '').toLowerCase()
-        const name = (l.name ?? '').toLowerCase()
-        return id === 'free' || name === 'free'
       })
       agentOptions.value = entries.map((a: any) => {
         const labels: AgentLabel[] = Array.isArray(a.labels) ? a.labels : []
@@ -986,11 +986,21 @@ onMounted(async () => {
     }
     if (genres.status === 'fulfilled') genreList.value = genres.value
     if (fragmentLabels.status === 'fulfilled') fragmentLabelList.value = fragmentLabels.value
-    scriptOptions.value = scriptsStore.scripts.map((s: any) => ({
-      label: s.name || s.id,
-      value: s.id,
-      tags: Array.isArray(s.tags) ? s.tags : [],
-    }))
+    scriptOptions.value = scriptsStore.scripts.map((s: any) => {
+      const tags: AgentLabel[] = Array.isArray(s.tags) ? s.tags : []
+      return {
+        label: s.name || s.id,
+        value: s.id,
+        tags,
+        disabled: !isFree(tags),
+      }
+    }).sort((a, b) => {
+      const aFree = isFree(a.tags ?? [])
+      const bFree = isFree(b.tags ?? [])
+      if (aFree && !bFree) return -1
+      if (!aFree && bFree) return 1
+      return 0
+    })
 
     if (isEditing.value) {
       const brand = await store.fetchBrand(route.params.id as string)
