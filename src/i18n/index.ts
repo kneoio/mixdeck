@@ -11,9 +11,11 @@ import hi from '@/locales/hi'
 import uk from '@/locales/uk'
 import kk from '@/locales/kk'
 import ka from '@/locales/ka'
+import no from '@/locales/no'
+import ko from '@/locales/ko'
 
 export const LOCALE_KEY = 'mixdeck_locale'
-export const SUPPORTED_LOCALES = ['en', 'ru', 'de', 'fr', 'es', 'pt', 'ja', 'ar', 'hi', 'uk', 'kk', 'ka'] as const
+export const SUPPORTED_LOCALES = ['en', 'ru', 'de', 'fr', 'es', 'pt', 'ja', 'ar', 'hi', 'uk', 'kk', 'ka', 'no', 'ko'] as const
 export type SupportedLocale = typeof SUPPORTED_LOCALES[number]
 
 export const LOCALE_LABELS: Record<SupportedLocale, string> = {
@@ -29,6 +31,8 @@ export const LOCALE_LABELS: Record<SupportedLocale, string> = {
   uk: 'Українська',
   kk: 'Қазақша',
   ka: 'ქართული',
+  no: 'Norsk',
+  ko: '한국어',
 }
 
 const RTL_LOCALES = new Set<SupportedLocale>(['ar'])
@@ -61,7 +65,7 @@ export function saveLocale(locale: SupportedLocale) {
 const i18n = createI18n({
   legacy: false,
   locale: getSavedLocale(),
-  messages: { en, ru, de, fr, es, pt, ja, ar, hi, uk, kk, ka },
+  messages: { en, ru, de, fr, es, pt, ja, ar, hi, uk, kk, ka, no, ko },
 })
 
 export default i18n
