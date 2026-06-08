@@ -357,6 +357,7 @@ onUnmounted(() => {
   border: 1px solid rgba(255, 214, 0, 0.5);
   color: #FFD600;
   white-space: nowrap;
+  margin-left: 8px;
 }
 .time-right {
   display: flex;
