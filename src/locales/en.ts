@@ -172,6 +172,7 @@ export default {
     stream_quality_only_good: 'The stream currently supports only Good quality.',
     public: 'Public',
     public_premium_only: 'Making a station public is available for Premium subscribers only.',
+    custom_script_premium_only: 'Custom scripts are available for Premium subscribers only.',
     ai_agent: 'AI Agent',
     ai_override: 'AI Override',
     ai_override_name: 'DJ Name',

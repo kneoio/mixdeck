@@ -447,6 +447,17 @@ function handleQualityChange() {
 }
 
 const publicPremiumGlow = ref(false)
+const customScriptGlow = ref(false)
+
+function handleScriptModeChange(val: string) {
+  if (val === 'custom') {
+    customScriptGlow.value = true
+    message.warning(t('brandForm.custom_script_premium_only'))
+    setTimeout(() => { customScriptGlow.value = false }, 1500)
+    return
+  }
+  scriptMode.value = val as 'predefined' | 'custom'
+}
 
 function handlePublicToggle(v: boolean) {
   if (!v) { formData.value.publicBrand = 0; return }
@@ -1271,9 +1282,12 @@ watch(activeTab, () => {
       </NTabPane>
 
       <NTabPane name="script" :tab="t('brandForm.tab_script')">
-        <NRadioGroup v-model:value="scriptMode" class="script-mode-radio">
+        <NRadioGroup :value="scriptMode" class="script-mode-radio" @update:value="handleScriptModeChange">
           <NRadio value="predefined">{{ t('brandForm.card_predefined_script') }}</NRadio>
-          <NRadio value="custom">{{ t('brandForm.card_your_script') }}</NRadio>
+          <NRadio value="custom">
+            {{ t('brandForm.card_your_script') }}
+            <span class="premium-badge" :class="{ 'premium-badge--glow': customScriptGlow }">premium</span>
+          </NRadio>
         </NRadioGroup>
 
         <div class="script-cards">
