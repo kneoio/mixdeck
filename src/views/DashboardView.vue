@@ -523,7 +523,7 @@ const handleUserMenuSelect = async (key: string) => {
               >
                 <template #icon><NIcon size="26"><HamburgerIcon /></NIcon></template>
               </NButton>
-              <h1 style="color: white; margin: 0; font-size: 14px; font-weight: 100; font-family: 'Goldman', 'Inter', sans-serif; letter-spacing: 0.24em;">M I X D E C K</h1>
+              <h1 style="color: white; margin: 0; font-size: 14px; font-weight: 100; font-family: 'Goldman', 'Inter', sans-serif; letter-spacing: 0.24em; cursor: pointer;" @click="router.push('/')">M I X D E C K</h1>
             </NFlex>
             <NSpace class="dashboard-header-actions">
               <NButton
