@@ -87,6 +87,8 @@ const naiveLocaleMap: Record<SupportedLocale, NLocale> = {
   hi: enUS,
   kk: enUS,
   ka: enUS,
+  no: enUS,
+  ko: enUS,
 }
 
 const naiveDateLocaleMap: Record<SupportedLocale, NDateLocale> = {
@@ -102,6 +104,8 @@ const naiveDateLocaleMap: Record<SupportedLocale, NDateLocale> = {
   hi: dateEnUS,
   kk: dateEnUS,
   ka: dateEnUS,
+  no: dateEnUS,
+  ko: dateEnUS,
 }
 
 const naiveLocale = computed(() => naiveLocaleMap[locale.value as SupportedLocale] ?? enUS)

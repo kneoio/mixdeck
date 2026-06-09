@@ -1,5 +1,5 @@
 <template>
-  <n-config-provider :theme="darkTheme">
+  <n-config-provider :theme="darkTheme" :theme-overrides="themeOverrides">
     <div class="submission-page">
       <header class="nav">
         <div class="logo" @click="router.push('/')" style="cursor:pointer">MIXPLA</div>
@@ -25,9 +25,9 @@
             />
           </div>
           <p v-if="fieldError" class="field-error">{{ fieldError }}</p>
-          <n-button type="primary" size="large" class="cta-button" :loading="loading" @click="sendCode">
-            {{ t('submission.send_code') }}
-          </n-button>
+          <GsapButton type="primary" :disabled="loading" @click="sendCode">
+            <span>{{ t('submission.send_code') }}</span>
+          </GsapButton>
         </div>
 
         <!-- Step 2: OTP Code -->
@@ -43,37 +43,83 @@
             />
           </div>
           <p v-if="fieldError" class="field-error">{{ fieldError }}</p>
-          <n-button type="primary" size="large" class="cta-button" :loading="loading" @click="verify">
-            {{ t('submission.verify') }}
-          </n-button>
+          <GsapButton type="primary" :disabled="loading" @click="verify">
+            <span>{{ t('submission.verify') }}</span>
+          </GsapButton>
         </div>
 
-        <!-- Step 3: Upload -->
+        <!-- Step 3: Upload + metadata -->
         <div v-else-if="step === 3" class="step">
           <h2>{{ t('submission.step3_heading') }}</h2>
-          <div class="file-area" @click="fileInputRef?.click()">
-            <span v-if="!selectedFile" class="file-hint">{{ t('submission.choose_file') }}</span>
-            <span v-else class="file-name">{{ selectedFile.name }}</span>
-            <input ref="fileInputRef" type="file" accept="audio/*" style="display:none" @change="onFileChange" />
+
+          <div class="field-row">
+            <label class="field-label">{{ t('submission.station_label') }}</label>
+            <n-select
+              v-model:value="stationSlug"
+              :options="stationOptions"
+              :placeholder="t('submission.station_placeholder')"
+              clearable
+            />
           </div>
+
+          <div class="field-row">
+            <label class="field-label">{{ t('submission.artist_label') }} <span class="required">*</span></label>
+            <n-input v-model:value="artistName" :placeholder="t('submission.artist_placeholder')" />
+          </div>
+
+          <div class="field-row">
+            <label class="field-label">{{ t('submission.genre_label') }} <span class="required">*</span></label>
+            <n-select
+              v-model:value="genre"
+              :options="GENRES.map(g => ({ label: g, value: g }))"
+              :placeholder="t('submission.genre_placeholder')"
+            />
+          </div>
+
+          <div class="field-row">
+            <label class="field-label">{{ t('submission.country_label') }}</label>
+            <n-input v-model:value="country" :placeholder="t('submission.country_placeholder')" />
+          </div>
+
+          <div class="field-row">
+            <label class="field-label">{{ t('submission.file_label') }} <span class="required">*</span></label>
+            <div class="file-area" @click="fileInputRef?.click()">
+              <span v-if="!selectedFile" class="file-hint">{{ t('submission.choose_file') }}</span>
+              <span v-else class="file-name">{{ selectedFile.name }}</span>
+              <input ref="fileInputRef" type="file" accept="audio/*" style="display:none" @change="onFileChange" />
+            </div>
+          </div>
+
           <n-progress
-            v-if="uploadProgress > 0 && uploadProgress < 100"
+            v-if="loading"
             type="line"
             :percentage="uploadProgress"
-            :indicator-placement="'inside'"
-            style="margin-top: 16px;"
+            :show-indicator="false"
+            :height="2"
+            :border-radius="1"
+            :fill-border-radius="1"
+            color="#eff605"
+            rail-color="rgba(255,255,255,0.12)"
           />
-          <p v-if="fieldError" class="field-error">{{ fieldError }}</p>
-          <n-button
-            type="primary"
-            size="large"
-            class="cta-button"
-            :loading="loading"
-            :disabled="!selectedFile"
-            @click="upload"
-          >
-            {{ loading ? t('submission.uploading', { percent: uploadProgress }) : t('submission.submit') }}
-          </n-button>
+
+          <n-checkbox v-model:checked="agendaNotify" class="agenda-check">
+            {{ t('submission.agenda_notify') }}
+          </n-checkbox>
+
+          <div class="agreement-box">
+            <n-checkbox v-model:checked="agreed">
+              {{ t('submission.agreement') }}
+            </n-checkbox>
+          </div>
+
+          <div v-if="fieldError" class="error-row">
+            <p class="field-error">{{ fieldError }}</p>
+            <button class="restart-link" @click="restart">{{ t('submission.start_over') }}</button>
+          </div>
+
+          <GsapButton type="primary" :disabled="loading" @click="upload">
+            <span>{{ t('submission.submit') }}</span>
+          </GsapButton>
         </div>
 
         <!-- Success -->
@@ -81,12 +127,11 @@
           <div class="success-icon">✓</div>
           <h2>{{ t('submission.success_heading') }}</h2>
           <p class="step-body">{{ t('submission.success_body') }}</p>
-          <n-button size="large" @click="router.push('/')">{{ t('submission.back') }}</n-button>
+          <GsapButton @click="router.push('/')">
+            <span>{{ t('submission.back') }}</span>
+          </GsapButton>
         </div>
 
-        <div class="step-indicator">
-          <span v-for="n in 3" :key="n" :class="['dot', { 'dot--active': step >= n, 'dot--done': step > n }]" />
-        </div>
 
       </section>
 
@@ -100,23 +145,52 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { NButton, NConfigProvider, NInput, NProgress, darkTheme } from 'naive-ui'
+import { NConfigProvider, NInput, NProgress, NSelect, NCheckbox, darkTheme, type GlobalThemeOverrides } from 'naive-ui'
+import GsapButton from '@/components/GsapButton.vue'
 import datanestApiService from '@/services/datanestApi'
 
 const { t } = useI18n()
 const router = useRouter()
 
+const themeOverrides: GlobalThemeOverrides = {
+  common: {
+    primaryColor: '#7C3AED',
+    primaryColorHover: '#9d5bf4',
+    primaryColorPressed: '#6d31d4',
+    primaryColorSuppl: '#7C3AED',
+  },
+  Button: {
+    textColorPrimary: '#ffffff',
+    textColorHoverPrimary: '#ffffff',
+    textColorPressedPrimary: '#ffffff',
+    textColorFocusPrimary: '#ffffff',
+  },
+}
+
+const GENRES = ['Electronic','House','Techno','Drum & Bass','Hip-Hop','R&B','Pop','Rock','Jazz','Classical','Latin','Ambient','Country','Other']
+
 const step = ref(1)
 const email = ref('')
 const code = ref('')
+const stationSlug = ref<string | null>(null)
+const artistName = ref('')
+const genre = ref<string | null>(null)
+const country = ref('')
+const agendaNotify = ref(false)
+const agreed = ref(false)
 const selectedFile = ref<File | null>(null)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const loading = ref(false)
 const fieldError = ref('')
 const uploadProgress = ref(0)
+const stationOptions = ref<{ label: string; value: string }[]>([])
+
+onMounted(async () => {
+  stationOptions.value = await datanestApiService.getPublicBrands()
+})
 
 async function sendCode() {
   fieldError.value = ''
@@ -151,10 +225,10 @@ function onFileChange(e: Event) {
 
 async function upload() {
   fieldError.value = ''
-  if (!selectedFile.value) {
-    fieldError.value = t('submission.error_file')
-    return
-  }
+  if (!artistName.value.trim()) { fieldError.value = t('submission.error_artist'); return }
+  if (!genre.value) { fieldError.value = t('submission.error_genre'); return }
+  if (!selectedFile.value) { fieldError.value = t('submission.error_file'); return }
+  if (!agreed.value) { fieldError.value = t('submission.error_agreement'); return }
   loading.value = true
   uploadProgress.value = 0
   try {
@@ -163,13 +237,25 @@ async function upload() {
       email.value.trim(),
       code.value.trim(),
       (p) => { uploadProgress.value = p },
+      { stationSlug: stationSlug.value ?? undefined, artistName: artistName.value.trim(), genre: genre.value, country: country.value.trim() || undefined, agendaNotify: agendaNotify.value },
     )
     step.value = 4
   } catch (e: any) {
-    fieldError.value = e?.message || 'Upload failed.'
+    const msg: string = e?.message || 'Upload failed.'
+    if (msg.includes('401')) { restart(); return }
+    fieldError.value = msg
   } finally {
     loading.value = false
   }
+}
+
+function restart() {
+  step.value = 1
+  email.value = ''
+  code.value = ''
+  selectedFile.value = null
+  uploadProgress.value = 0
+  fieldError.value = t('submission.error_code_expired')
 }
 </script>
 
@@ -267,10 +353,55 @@ h2 {
   gap: 8px;
 }
 
+.error-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .field-error {
   color: #ff6b6b;
   font-size: 0.85rem;
   margin: 0;
+}
+
+.restart-link {
+  color: #888 !important;
+  font-size: 0.82rem;
+  text-decoration: underline;
+  white-space: nowrap;
+}
+
+.field-label {
+  font-size: 0.82rem;
+  color: #888;
+  margin-bottom: 4px;
+  display: block;
+}
+
+.required {
+  color: #FF2D95;
+}
+
+.agenda-check {
+  margin-top: 4px;
+}
+
+.agreement-box {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-size: 0.85rem;
+  color: #b0b0b0;
+}
+
+.restart-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
 }
 
 .file-area {
@@ -298,21 +429,6 @@ h2 {
   word-break: break-all;
 }
 
-.cta-button {
-  background: linear-gradient(120deg, #ff7a18, #af002d 60%, #319197);
-  border: none;
-  color: #fff !important;
-  box-shadow: 0 15px 40px rgba(255, 122, 24, 0.35);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  align-self: flex-start;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.cta-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 18px 45px rgba(255, 122, 24, 0.45);
-}
 
 .step--success {
   align-items: center;
@@ -332,30 +448,6 @@ h2 {
   justify-content: center;
 }
 
-.step-indicator {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 32px;
-  padding-top: 24px;
-  border-top: 1px solid #1a1a1a;
-}
-
-.dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #2a2a2a;
-  transition: background 0.3s;
-}
-
-.dot--active {
-  background: #7C3AED;
-}
-
-.dot--done {
-  background: #68ffba;
-}
 
 .footer {
   display: grid;

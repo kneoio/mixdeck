@@ -13,7 +13,7 @@
           <div class="hero-ctas">
             <n-button type="primary" size="large" class="cta-button" @click="goToMixpla">{{ t('welcome.cta_mixplay') }}</n-button>
             <n-button size="large" @click="goToBrands">{{ t('welcome.cta_portal') }}</n-button>
-            <n-button size="large" @click="router.push('/submission')">{{ t('welcome.cta_submit') }}</n-button>
+            <!-- <n-button size="large" @click="router.push('/submission')">{{ t('welcome.cta_submit') }}</n-button> -->
           </div>
         </div>
         <div class="waveform" aria-hidden="true">
