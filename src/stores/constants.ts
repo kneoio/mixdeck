@@ -87,7 +87,7 @@ export const useConstantsStore = defineStore('constants', () => {
     { label: 'Europe/Riga (+2/+3)', value: 'Europe/Riga' },
     { label: 'Europe/Istanbul (+3)', value: 'Europe/Istanbul' },
     { label: 'Asia/Qatar (+3)', value: 'Asia/Qatar' },
-    { label: 'Asia/Dubai (+4)', value: 'Asia/Dubai' },
+    { label: 'Asia/Dubai · Abu Dhabi (+4)', value: 'Asia/Dubai' },
     { label: 'Asia/Tbilisi (+4)', value: 'Asia/Tbilisi' },
     { label: 'Asia/Kolkata (+5:30)', value: 'Asia/Kolkata' },
     { label: 'Asia/Tashkent (+5)', value: 'Asia/Tashkent' },
