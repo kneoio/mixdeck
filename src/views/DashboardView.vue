@@ -297,16 +297,16 @@ const menuOptions = computed<MenuOption[]>(() => [
     key: 'my-sounds-root',
     children: [
       {
+        label: t('menu.unassigned_brands'),
+        key: 'my-sounds-unassigned-to-brands',
+      },
+      {
         label: t('menu.songs'),
         key: 'my-sounds-contributed',
       },
       {
         label: t('menu.received'),
         key: 'my-sounds-received',
-      },
-      {
-        label: t('menu.unassigned_brands'),
-        key: 'my-sounds-unassigned-to-brands',
       },
       {
         label: t('menu.sound_assets'),
