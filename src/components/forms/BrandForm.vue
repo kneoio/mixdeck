@@ -451,9 +451,13 @@ const customScriptGlow = ref(false)
 
 function handleScriptModeChange(val: string) {
   if (val === 'custom') {
+    scriptMode.value = 'custom'
     customScriptGlow.value = true
     message.warning(t('brandForm.custom_script_premium_only'))
-    setTimeout(() => { customScriptGlow.value = false }, 1500)
+    setTimeout(() => {
+      scriptMode.value = 'predefined'
+      customScriptGlow.value = false
+    }, 1500)
     return
   }
   scriptMode.value = val as 'predefined' | 'custom'
