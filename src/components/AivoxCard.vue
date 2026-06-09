@@ -202,19 +202,20 @@ function queuePriorityStyle(item: AivoxQueueEntry): Record<string, string> | und
 
 function updateLocalTime() {
   if (props.timezone) {
-    try {
-      const now = new Date()
-      localTime.value = now.toLocaleTimeString('en-US', {
-        timeZone: props.timezone,
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
-      })
-    } catch (error) {
-      console.error('Error formatting time:', error)
-      localTime.value = 'Invalid timezone'
+    const candidates = props.timezone === 'UTC' ? ['UTC', 'Etc/UTC'] : [props.timezone]
+    for (const tz of candidates) {
+      try {
+        localTime.value = new Date().toLocaleTimeString('en-US', {
+          timeZone: tz,
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        })
+        return
+      } catch { /* try next */ }
     }
+    localTime.value = t('dashboard.invalid_timezone')
   }
 }
 
