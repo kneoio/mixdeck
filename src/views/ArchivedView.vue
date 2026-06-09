@@ -11,6 +11,7 @@ import dictionaryApiService from '@/services/dictionaryApi'
 import PageHeader from '@/components/PageHeader.vue'
 import ActionBar from '@/components/ActionBar.vue'
 import GsapButton from '@/components/GsapButton.vue'
+import ShareToBrandsDialog from '@/components/forms/ShareToBrandsDialog.vue'
 import { handleApiError } from '@/utils/notificationService'
 
 const { t } = useI18n()
@@ -24,6 +25,19 @@ const totalCount = ref(0)
 const pageNum = ref(1)
 const pageSize = ref(10)
 const selectedIds = ref<string[]>([])
+const showShareDialog = ref(false)
+const shareFragmentIds = ref<string[]>([])
+
+function openShareBulk() {
+  if (selectedIds.value.length === 0) return
+  shareFragmentIds.value = [...selectedIds.value]
+  showShareDialog.value = true
+}
+
+function onShareDialogDone() {
+  selectedIds.value = []
+  void fetchData()
+}
 
 const genreMap = ref<Map<string, { name: string; color?: string; fontColor?: string }>>(new Map())
 const labelMap = ref<Map<string, { name: string; color?: string; fontColor?: string }>>(new Map())
@@ -149,6 +163,9 @@ onMounted(async () => {
         <GsapButton type="primary" @click="router.push({ path: '/sound-library/unassigned-to-brands/new', query: { returnTo: route.fullPath } })">
           <span>{{ t('playlistView.new_track') }}</span>
         </GsapButton>
+        <GsapButton :disabled="selectedIds.length === 0" @click="openShareBulk">
+          <span>{{ t('playlistView.share_btn', { count: selectedIds.length }) }}</span>
+        </GsapButton>
         <NPopconfirm @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
           <template #trigger>
             <GsapButton type="error" :disabled="selectedIds.length === 0">
@@ -176,6 +193,11 @@ onMounted(async () => {
       })"
       @update:page="(p) => { pageNum = p; fetchData(p) }"
       @update:page-size="(s) => { pageSize = s; fetchData(1, s) }"
+    />
+    <ShareToBrandsDialog
+      v-model:show="showShareDialog"
+      :fragment-ids="shareFragmentIds"
+      @shared="onShareDialogDone"
     />
   </div>
 </template>
