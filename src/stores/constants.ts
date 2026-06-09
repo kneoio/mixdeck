@@ -80,6 +80,7 @@ export const useConstantsStore = defineStore('constants', () => {
   const timezones = [
     { label: 'UTC (+0)', value: 'UTC' },
     { label: 'Europe/London', value: 'Europe/London' },
+    { label: 'Europe/Oslo (+1/+2)', value: 'Europe/Oslo' },
     { label: 'Europe/Paris (+1/+2)', value: 'Europe/Paris' },
     { label: 'Europe/Berlin (+1/+2)', value: 'Europe/Berlin' },
     { label: 'Europe/Kyiv (+2/+3)', value: 'Europe/Kyiv' },
@@ -89,6 +90,7 @@ export const useConstantsStore = defineStore('constants', () => {
     { label: 'Asia/Tbilisi (+4)', value: 'Asia/Tbilisi' },
     { label: 'Asia/Tashkent (+5)', value: 'Asia/Tashkent' },
     { label: 'Asia/Almaty (+6)', value: 'Asia/Almaty' },
+    { label: 'Asia/Seoul (+9)', value: 'Asia/Seoul' },
     { label: 'Asia/Tokyo (+9)', value: 'Asia/Tokyo' },
     { label: 'America/New_York (-5/-4)', value: 'America/New_York' },
     { label: 'America/Los_Angeles (-8/-7)', value: 'America/Los_Angeles' },
