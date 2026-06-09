@@ -13,6 +13,12 @@ const router = createRouter({
       meta: { requiresAuth: false }
     },
     {
+      path: '/submission',
+      name: 'submission',
+      component: () => import('../views/SubmissionView.vue'),
+      meta: { requiresAuth: false }
+    },
+    {
       // Layout shell — children use absolute paths, URL stays at top level
       path: '/app',
       component: DashboardView,

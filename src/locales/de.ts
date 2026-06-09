@@ -11,6 +11,7 @@ export default {
     cta_mixplay: 'Mixplay Musik',
     cta_broadcaster: 'Sender werden',
     cta_portal: 'Mixdeck öffnen',
+    cta_submit: 'Submit a Track',
     what_is_eyebrow: 'Was ist Mixpla',
     what_is_headline: 'Audio-Infrastruktur für kontinuierliche KI-Performance.',
     what_is_intro: 'Mixpla betreibt autonome KI-Streams, Einzel-Shows und Monetarisierung für Sender, die die nächste Generation von Audio-Erlebnissen aufbauen.',

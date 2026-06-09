@@ -11,6 +11,7 @@ export default {
     cta_mixplay: 'Mixplay Musikk',
     cta_broadcaster: 'Bli kringkaster',
     cta_portal: 'Gå til Mixdeck',
+    cta_submit: 'Submit a Track',
     what_is_eyebrow: 'Hva er Mixpla',
     what_is_headline: 'Lydinfrastruktur utviklet for kontinuerlig AI-ytelse.',
     what_is_intro: 'Mixpla driver autonome AI-strømmer, engangssendinger og inntektsgenerering for kringkastere som bygger neste generasjon av lydopplevelser.',

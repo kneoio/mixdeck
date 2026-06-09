@@ -11,6 +11,7 @@ export default {
     cta_mixplay: 'Mixplay संगीत',
     cta_broadcaster: 'प्रसारक बनें',
     cta_portal: 'Mixdeck एक्सेस करें',
+    cta_submit: 'Submit a Track',
     what_is_eyebrow: 'Mixpla क्या है',
     what_is_headline: 'निरंतर AI प्रदर्शन के लिए डिज़ाइन किया गया ऑडियो इन्फ्रास्ट्रक्चर।',
     what_is_intro: 'Mixpla स्वायत्त AI स्ट्रीम, एकल शो और उन प्रसारकों के लिए मुद्रीकरण को शक्ति देता है जो ध्वनि अनुभव की अगली पीढ़ी बना रहे हैं।',

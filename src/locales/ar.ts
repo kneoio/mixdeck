@@ -11,6 +11,7 @@ export default {
     cta_mixplay: 'موسيقى Mixplay',
     cta_broadcaster: 'كن مذيعاً',
     cta_portal: 'الدخول إلى Mixdeck',
+    cta_submit: 'Submit a Track',
     what_is_eyebrow: 'ما هو Mixpla',
     what_is_headline: 'بنية تحتية صوتية مصممة للأداء المتواصل للذكاء الاصطناعي.',
     what_is_intro: 'يُشغِّل Mixpla بثوث الذكاء الاصطناعي المستقلة والعروض الفردية وتحقيق الدخل للمذيعين الذين يبنون الجيل التالي من التجارب الصوتية.',

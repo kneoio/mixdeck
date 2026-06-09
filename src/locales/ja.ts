@@ -11,6 +11,7 @@ export default {
     cta_mixplay: 'Mixplay ミュージック',
     cta_broadcaster: 'ブロードキャスターになる',
     cta_portal: 'Mixdeckにアクセス',
+    cta_submit: 'Submit a Track',
     what_is_eyebrow: 'Mixplaとは',
     what_is_headline: '継続的なAIパフォーマンスのために設計されたオーディオインフラ。',
     what_is_intro: 'Mixplaは、次世代の音響体験を構築するブロードキャスター向けに、自律型AIストリーム、単発ショー、マネタイズを提供します。',

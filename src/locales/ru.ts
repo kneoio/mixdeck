@@ -11,6 +11,7 @@ export default {
     cta_mixplay: 'Mixplay Музыка',
     cta_broadcaster: 'Стать вещателем',
     cta_portal: 'Открыть Mixdeck',
+    cta_submit: 'Submit a Track',
     what_is_eyebrow: 'Что такое Mixpla',
     what_is_headline: 'Аудиоинфраструктура для непрерывной работы ИИ.',
     what_is_intro: 'Mixpla обеспечивает автономные ИИ-потоки, разовые шоу и монетизацию для вещателей, создающих аудиоопыт нового поколения.',

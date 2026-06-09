@@ -11,6 +11,7 @@ export default {
     cta_mixplay: 'Mixplay Music',
     cta_broadcaster: 'გახდი მაუწყებელი',
     cta_portal: 'Mixdeck-ში შესვლა',
+    cta_submit: 'Submit a Track',
     what_is_eyebrow: 'რა არის Mixpla',
     what_is_headline: 'აუდიო ინფრასტრუქტურა უწყვეტი AI მუშაობისთვის.',
     what_is_intro: 'Mixpla მაუწყებლებს აძლევს ავტონომიურ AI სტრიმებს, ერთჯერად შოუებს და მონეტიზაციის შესაძლებლობებს.',

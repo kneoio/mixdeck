@@ -11,6 +11,7 @@ export default {
     cta_mixplay: 'Mixplay Music',
     cta_broadcaster: 'Таратушы болу',
     cta_portal: 'Mixdeck-ке кіру',
+    cta_submit: 'Submit a Track',
     what_is_eyebrow: 'Mixpla деген не',
     what_is_headline: 'Үздіксіз AI жұмысына арналған аудио инфрақұрылым.',
     what_is_intro: 'Mixpla автономды AI ағындарын, бір реттік шоуларды және келесі буын дыбыстық тәжірибе жасайтын таратушыларға монетизацияны ұсынады.',

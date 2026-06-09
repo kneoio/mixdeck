@@ -403,6 +403,71 @@ class DatanestApiService extends ApiClient {
     const batchId = crypto.randomUUID()
     return this.uploadFileChunked(file, batchId, undefined, fragmentId, onProgress)
   }
+
+  /** Request OTP verification code for public song submission. */
+  async requestSubmissionCode(email: string): Promise<void> {
+    const res = await fetch(`${this.baseUrl}/public/songs/request-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    })
+    if (!res.ok) {
+      const text = await res.text().catch(() => '')
+      throw new Error(text || `Request failed (${res.status})`)
+    }
+  }
+
+  /** Chunked public song upload (no auth header — uses email+code OTP). */
+  async uploadPublicSongChunked(
+    file: File,
+    email: string,
+    code: string,
+    onProgress: (percent: number) => void,
+  ): Promise<any> {
+    const batchId = crypto.randomUUID()
+    const fileId = crypto.randomUUID().replace(/-/g, '')
+    const totalChunks = Math.ceil(file.size / BULK_UPLOAD_CHUNK_SIZE)
+    let lastResponse: any
+
+    for (let i = 0; i < totalChunks; i++) {
+      const start = i * BULK_UPLOAD_CHUNK_SIZE
+      const blob = file.slice(start, Math.min(start + BULK_UPLOAD_CHUNK_SIZE, file.size))
+      const form = new FormData()
+      form.append('chunk', blob, file.name)
+
+      const params = new URLSearchParams({
+        email,
+        code,
+        batchId,
+        fileId,
+        fileName: file.name,
+        chunkIndex: String(i),
+        totalChunks: String(totalChunks),
+      })
+
+      const res = await fetch(`${this.baseUrl}/public/songs/chunk?${params}`, {
+        method: 'POST',
+        body: form,
+      })
+
+      if (!res.ok) {
+        let msg = `Chunk ${i + 1}/${totalChunks} failed (${res.status})`
+        try {
+          const text = (await res.text()).trim()
+          if (text) {
+            try { const b = JSON.parse(text); msg += `: ${b?.message || b?.error || text.slice(0, 120)}` }
+            catch { msg += `: ${text.slice(0, 120)}` }
+          }
+        } catch { /* ignore */ }
+        throw new Error(msg)
+      }
+
+      try { lastResponse = await res.json() } catch { lastResponse = null }
+      onProgress(Math.round(((i + 1) / totalChunks) * 100))
+    }
+
+    return lastResponse
+  }
 }
 
 export const datanestApiService = new DatanestApiService()

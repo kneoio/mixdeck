@@ -11,6 +11,7 @@ export default {
     cta_mixplay: 'Mixplay Musique',
     cta_broadcaster: 'Devenir diffuseur',
     cta_portal: 'Accéder à Mixdeck',
+    cta_submit: 'Submit a Track',
     what_is_eyebrow: "Qu'est-ce que Mixpla",
     what_is_headline: "Infrastructure audio conçue pour la performance continue de l'IA.",
     what_is_intro: "Mixpla propulse des streams IA autonomes, des shows ponctuels et la monétisation pour les diffuseurs qui construisent la prochaine génération d'expériences sonores.",
