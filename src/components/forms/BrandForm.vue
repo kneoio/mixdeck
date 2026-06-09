@@ -1290,7 +1290,7 @@ watch(activeTab, () => {
           <NRadio value="predefined">{{ t('brandForm.card_predefined_script') }}</NRadio>
           <NRadio value="custom">
             {{ t('brandForm.card_your_script') }}
-            <span class="premium-badge" :class="{ 'premium-badge--glow': customScriptGlow }">premium</span>
+            <span class="premium-badge" :class="{ 'premium-badge--glow': customScriptGlow }" style="margin-left: 6px;">premium</span>
           </NRadio>
         </NRadioGroup>
 
