@@ -121,7 +121,7 @@ export default {
     ai_dj_free: 'Regular, Advanced',
     enabled: 'Enabled',
     renewal: 'Renewal',
-    upgrade: 'Upgrade to Plus',
+    upgrade: 'Upgrade',
     security: 'Security',
     password: 'Password',
     tfa: '2FA',
