@@ -12,6 +12,13 @@
 
       <section class="submission-card">
 
+        <div class="unavailable">
+          <h2>{{ t('submission.unavailable_heading') }}</h2>
+          <p class="step-body">{{ t('submission.unavailable_body') }}</p>
+          <GsapButton @click="router.push('/')"><span>{{ t('submission.back') }}</span></GsapButton>
+        </div>
+
+        <template v-if="false">
         <!-- Step 1: Email -->
         <div v-if="step === 1" class="step">
           <h2>{{ t('submission.step1_heading') }}</h2>
@@ -85,7 +92,7 @@
             <label class="field-label">{{ t('submission.file_label') }} <span class="required">*</span></label>
             <div class="file-area" @click="fileInputRef?.click()">
               <span v-if="!selectedFile" class="file-hint">{{ t('submission.choose_file') }}</span>
-              <span v-else class="file-name">{{ selectedFile.name }}</span>
+              <span v-else class="file-name">{{ selectedFile?.name }}</span>
               <input ref="fileInputRef" type="file" accept="audio/*" style="display:none" @change="onFileChange" />
             </div>
           </div>
@@ -131,7 +138,7 @@
             <span>{{ t('submission.back') }}</span>
           </GsapButton>
         </div>
-
+        </template>
 
       </section>
 
@@ -402,6 +409,13 @@ h2 {
   border: none;
   cursor: pointer;
   padding: 0;
+}
+
+.unavailable {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 0;
 }
 
 .file-area {

@@ -427,6 +427,8 @@ export default {
     error_agreement: 'Please accept the terms to submit.',
     error_code_expired: 'Your verification code expired. Please request a new one.',
     start_over: 'Start over',
+    unavailable_heading: 'Coming Soon',
+    unavailable_body: 'Track submissions are not available yet. Check back soon.',
   },
   common: {
     save: 'Save',
