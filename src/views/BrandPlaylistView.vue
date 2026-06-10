@@ -6,7 +6,7 @@ import {
   NDataTable, NSpace, NPopconfirm, NInput, NTag, NIcon, NButton, NProgress,
   type DataTableColumns, useMessage
 } from 'naive-ui'
-import { ShareSocialOutline, PlayOutline, PauseOutline } from '@vicons/ionicons5'
+import { ShareSocialOutline, PlayOutline, PauseOutline, RefreshOutline } from '@vicons/ionicons5'
 import datanestApiService from '@/services/datanestApi'
 import { appConfig } from '@/config/appConfig'
 import { useBrandsStore } from '@/stores/brands'
@@ -403,6 +403,9 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
             </template>
             {{ t('playlistView.delete_confirm', { count: selectedIds.length }) }}
           </NPopconfirm>
+          <NButton quaternary circle :loading="loading" @click="fetchData()">
+            <template #icon><NIcon :component="RefreshOutline" /></template>
+          </NButton>
         </div>
         <NInput
           v-model:value="searchTerm"

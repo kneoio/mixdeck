@@ -3,9 +3,10 @@ import { ref, computed, h, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import {
-  NDataTable, NSpace, NPopconfirm, NTag,
+  NDataTable, NSpace, NPopconfirm, NTag, NButton, NIcon,
   type DataTableColumns, useMessage
 } from 'naive-ui'
+import { RefreshOutline } from '@vicons/ionicons5'
 import datanestApiService from '@/services/datanestApi'
 import dictionaryApiService from '@/services/dictionaryApi'
 import PageHeader from '@/components/PageHeader.vue'
@@ -136,6 +137,9 @@ onMounted(async () => {
           </template>
           {{ t('playlistView.delete_confirm', { count: selectedIds.length }) }}
         </NPopconfirm>
+        <NButton quaternary circle :loading="loading" @click="fetchData()">
+          <template #icon><NIcon :component="RefreshOutline" /></template>
+        </NButton>
       </div>
     </ActionBar>
     <NDataTable
