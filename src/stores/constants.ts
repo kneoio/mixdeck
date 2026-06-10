@@ -46,7 +46,8 @@ export const useConstantsStore = defineStore('constants', () => {
     { label: 'Українська', value: 'uk' },
     { label: 'Русский', value: 'ru' },
     { label: 'Қазақша', value: 'kk' },
-    { label: 'ქართული', value: 'ka' }
+    { label: 'ქართული', value: 'ka' },
+    { label: 'Norsk', value: 'no' },
   ]
 
   const stationFonts = [
