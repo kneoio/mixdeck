@@ -296,9 +296,9 @@ function restart() {
 
 .side-label {
   position: fixed;
-  left: 0;
+  left: 16px;
   top: 50%;
-  transform: translateX(-50%) translateY(-50%) rotate(-90deg);
+  transform: translateY(-50%) rotate(-90deg);
   transform-origin: center center;
   font-size: 0.75rem;
   letter-spacing: 0.4em;
