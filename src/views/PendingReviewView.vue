@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, h, onMounted } from 'vue'
+import { ref, computed, h, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import {
@@ -25,6 +25,10 @@ const totalCount = ref(0)
 const pageNum = ref(1)
 const pageSize = ref(10)
 const selectedIds = ref<string[]>([])
+
+const isMobile = ref(false)
+let mobileMql: MediaQueryList | null = null
+function syncMobile() { isMobile.value = mobileMql?.matches ?? false }
 
 const genreMap = ref<Map<string, { name: string; color?: string; fontColor?: string }>>(new Map())
 const labelMap = ref<Map<string, { name: string; color?: string; fontColor?: string }>>(new Map())
@@ -70,42 +74,79 @@ function resolveLabel(l: any) {
   return { name: l.identifier || l.id, color: l.color, fontColor: l.fontColor }
 }
 
-const columns = computed<DataTableColumns<any>>(() => [
-  { type: 'selection', multiple: true },
-  { title: t('playlistView.col_title'), key: 'title', minWidth: 200, render: (row) => row.title || '-' },
-  { title: t('playlistView.col_artist'), key: 'artist', minWidth: 160, render: (row) => row.artist || '-' },
-  {
-    title: t('playlistView.col_genres'), key: 'genres', width: 180,
-    render: (row) => {
-      if (!row.genres?.length) return '-'
-      return h(NSpace, { size: 4, wrap: true }, {
-        default: () => row.genres.map((g: any) => {
-          const r = resolveGenre(g)
-          return h(NTag, {
-            size: 'small',
-            style: r.color ? `background:${r.color};color:${r.fontColor || '#fff'}` : ''
-          }, { default: () => r.name })
+const columns = computed<DataTableColumns<any>>(() => {
+  if (isMobile.value) {
+    return [
+      { type: 'selection', multiple: true },
+      {
+        key: 'mob',
+        title: '',
+        render: (row) => {
+          const row1 = h('div', { class: 'mob-r1' }, [
+            h('span', { class: 'mob-title' }, row.title || '-'),
+            h('span', { class: 'mob-sep' }, '—'),
+            h('span', { class: 'mob-artist' }, row.artist || '-'),
+          ])
+
+          const genreTags = (row.genres || []).map((g: any) => {
+            const r = resolveGenre(g)
+            return h(NTag, { size: 'small', style: r.color ? `background:${r.color};color:${r.fontColor || '#fff'}` : '' }, { default: () => r.name })
+          })
+          const labelTags = (row.labels || []).map((l: any) => {
+            const r = resolveLabel(l)
+            return h(NTag, { size: 'small', style: r.color ? `background:${r.color};color:${r.fontColor || '#fff'}` : '' }, { default: () => r.name })
+          })
+          const row2 = (genreTags.length || labelTags.length)
+            ? h('div', { class: 'mob-r2' }, [...genreTags, ...labelTags])
+            : null
+
+          const row3 = row.sharerUserName
+            ? h('div', { class: 'mob-r3' }, [h('span', { class: 'mob-meta-item' }, `${t('profile.sharer')}: ${row.sharerUserName}`)])
+            : null
+
+          return h('div', { class: 'mob-card' }, [row1, row2, row3].filter(Boolean))
+        },
+      },
+    ]
+  }
+
+  return [
+    { type: 'selection', multiple: true },
+    { title: t('playlistView.col_title'), key: 'title', minWidth: 200, render: (row) => row.title || '-' },
+    { title: t('playlistView.col_artist'), key: 'artist', minWidth: 160, render: (row) => row.artist || '-' },
+    {
+      title: t('playlistView.col_genres'), key: 'genres', width: 180,
+      render: (row) => {
+        if (!row.genres?.length) return '-'
+        return h(NSpace, { size: 4, wrap: true }, {
+          default: () => row.genres.map((g: any) => {
+            const r = resolveGenre(g)
+            return h(NTag, {
+              size: 'small',
+              style: r.color ? `background:${r.color};color:${r.fontColor || '#fff'}` : ''
+            }, { default: () => r.name })
+          })
         })
-      })
-    }
-  },
-  {
-    title: t('playlistView.col_labels'), key: 'labels', width: 180,
-    render: (row) => {
-      if (!row.labels?.length) return '-'
-      return h(NSpace, { size: 4, wrap: true }, {
-        default: () => row.labels.map((l: any) => {
-          const r = resolveLabel(l)
-          return h(NTag, {
-            size: 'small',
-            style: r.color ? `background:${r.color};color:${r.fontColor || '#fff'}` : ''
-          }, { default: () => r.name })
+      }
+    },
+    {
+      title: t('playlistView.col_labels'), key: 'labels', width: 180,
+      render: (row) => {
+        if (!row.labels?.length) return '-'
+        return h(NSpace, { size: 4, wrap: true }, {
+          default: () => row.labels.map((l: any) => {
+            const r = resolveLabel(l)
+            return h(NTag, {
+              size: 'small',
+              style: r.color ? `background:${r.color};color:${r.fontColor || '#fff'}` : ''
+            }, { default: () => r.name })
+          })
         })
-      })
-    }
-  },
-  { title: t('profile.sharer'), key: 'sharerUserName', minWidth: 160, render: (row) => row.sharerUserName || '-' },
-])
+      }
+    },
+    { title: t('profile.sharer'), key: 'sharerUserName', minWidth: 160, render: (row) => row.sharerUserName || '-' },
+  ]
+})
 
 async function fetchData(page = pageNum.value, size = pageSize.value) {
   loading.value = true
@@ -137,8 +178,16 @@ async function handleBulkDelete() {
 }
 
 onMounted(async () => {
+  mobileMql = window.matchMedia('(max-width: 640px)')
+  isMobile.value = mobileMql.matches
+  mobileMql.addEventListener('change', syncMobile)
   await loadDictionaries()
   await fetchData(1)
+})
+
+onUnmounted(() => {
+  mobileMql?.removeEventListener('change', syncMobile)
+  mobileMql = null
 })
 </script>
 

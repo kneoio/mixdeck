@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, h, onMounted } from 'vue'
+import { ref, computed, h, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import {
@@ -25,6 +25,10 @@ const totalCount = ref(0)
 const pageNum = ref(1)
 const pageSize = ref(10)
 const selectedIds = ref<string[]>([])
+
+const isMobile = ref(false)
+let mobileMql: MediaQueryList | null = null
+function syncMobile() { isMobile.value = mobileMql?.matches ?? false }
 
 const genreMap = ref<Map<string, { name: string; color?: string; fontColor?: string }>>(new Map())
 const labelMap = ref<Map<string, { name: string; color?: string; fontColor?: string }>>(new Map())
@@ -64,24 +68,54 @@ const pagination = computed(() => ({
   itemCount: totalCount.value,
 }))
 
-const columns = computed<DataTableColumns<any>>(() => [
-  { type: 'selection', multiple: true },
-  { title: t('playlistView.col_title'), key: 'title', minWidth: 200, render: (row) => row.title || '-' },
-  { title: t('playlistView.col_type'), key: 'type', width: 160, render: (row) => row.type ? h(NTag, { size: 'small' }, { default: () => row.type }) : '-' },
-  {
-    title: t('playlistView.col_labels'), key: 'labels', width: 180,
-    render: (row) => {
-      if (!row.labels?.length) return '-'
-      return h(NSpace, { size: 4, wrap: true }, {
-        default: () => row.labels.map((l: any) => {
-          const r = resolveLabel(l)
-          return h(NTag, { size: 'small', style: r.color ? `background:${r.color};color:${r.fontColor || '#fff'}` : '' }, { default: () => r.name })
+const columns = computed<DataTableColumns<any>>(() => {
+  if (isMobile.value) {
+    return [
+      { type: 'selection', multiple: true },
+      {
+        key: 'mob',
+        title: '',
+        render: (row) => {
+          const row1 = h('div', { class: 'mob-r1' }, [
+            h('span', { class: 'mob-title' }, row.title || '-'),
+            row.type ? h(NTag, { size: 'small', style: 'flex-shrink:0' }, { default: () => row.type }) : null,
+          ].filter(Boolean))
+
+          const labelTags = (row.labels || []).map((l: any) => {
+            const r = resolveLabel(l)
+            return h(NTag, { size: 'small', style: r.color ? `background:${r.color};color:${r.fontColor || '#fff'}` : '' }, { default: () => r.name })
+          })
+          const row2 = labelTags.length ? h('div', { class: 'mob-r2' }, labelTags) : null
+
+          const row3 = row.description
+            ? h('div', { class: 'mob-r3' }, [h('span', { class: 'mob-meta-item mob-desc' }, row.description)])
+            : null
+
+          return h('div', { class: 'mob-card' }, [row1, row2, row3].filter(Boolean))
+        },
+      },
+    ]
+  }
+
+  return [
+    { type: 'selection', multiple: true },
+    { title: t('playlistView.col_title'), key: 'title', minWidth: 200, render: (row) => row.title || '-' },
+    { title: t('playlistView.col_type'), key: 'type', width: 160, render: (row) => row.type ? h(NTag, { size: 'small' }, { default: () => row.type }) : '-' },
+    {
+      title: t('playlistView.col_labels'), key: 'labels', width: 180,
+      render: (row) => {
+        if (!row.labels?.length) return '-'
+        return h(NSpace, { size: 4, wrap: true }, {
+          default: () => row.labels.map((l: any) => {
+            const r = resolveLabel(l)
+            return h(NTag, { size: 'small', style: r.color ? `background:${r.color};color:${r.fontColor || '#fff'}` : '' }, { default: () => r.name })
+          })
         })
-      })
-    }
-  },
-  { title: t('playlistView.col_description'), key: 'description', minWidth: 160, ellipsis: { tooltip: true } },
-])
+      }
+    },
+    { title: t('playlistView.col_description'), key: 'description', minWidth: 160, ellipsis: { tooltip: true } },
+  ]
+})
 
 async function fetchData(page = pageNum.value, size = pageSize.value) {
   loading.value = true
@@ -113,8 +147,16 @@ async function handleBulkDelete() {
 }
 
 onMounted(async () => {
+  mobileMql = window.matchMedia('(max-width: 640px)')
+  isMobile.value = mobileMql.matches
+  mobileMql.addEventListener('change', syncMobile)
   await loadDictionaries()
   await fetchData(1)
+})
+
+onUnmounted(() => {
+  mobileMql?.removeEventListener('change', syncMobile)
+  mobileMql = null
 })
 </script>
 

@@ -140,6 +140,13 @@ function syncPlaylistTableNarrow() {
   narrowPlaylistTable.value = playlistTableMql?.matches ?? false
 }
 
+const isMobile = ref(false)
+let mobileMql: MediaQueryList | null = null
+
+function syncMobile() {
+  isMobile.value = mobileMql?.matches ?? false
+}
+
 // Lookup maps for resolving IDs → display names
 const genreMap = ref<Map<string, { name: string; color?: string; fontColor?: string }>>(new Map())
 const labelMap = ref<Map<string, { name: string; color?: string; fontColor?: string }>>(new Map())
@@ -190,6 +197,57 @@ const pagination = computed(() => ({
 }))
 
 const columns = computed<DataTableColumns<any>>(() => {
+  if (isMobile.value) {
+    return [
+      { type: 'selection', multiple: true },
+      {
+        key: 'mob',
+        title: '',
+        render: (row) => {
+          const isRowPlaying = playingId.value === row.id
+          const isRowLoading = loadingPlayId.value === row.id
+          const iconClass = isRowLoading ? 'play-icon--loading' : isRowPlaying ? 'play-icon--playing' : ''
+          const playBtn = h(NButton, {
+            text: true, disabled: isRowLoading, style: 'flex-shrink:0',
+            onClick: (e: MouseEvent) => toggleRowPlay(row, e),
+          }, { icon: () => h('span', { class: iconClass }, [h(NIcon, { size: 18 }, { default: () => isRowPlaying ? h(PauseOutline) : h(PlayOutline) })]) })
+
+          const row1 = h('div', { class: 'mob-r1' }, [
+            playBtn,
+            h('span', { class: 'mob-title' }, row.title || '-'),
+            h('span', { class: 'mob-sep' }, '—'),
+            h('span', { class: 'mob-artist' }, row.artist || '-'),
+          ])
+
+          const genreTags = (row.genres || []).map((g: any) => {
+            const r = resolveGenre(g)
+            return h(NTag, { size: 'small', style: r.color ? `background:${r.color};color:${r.fontColor || '#fff'}` : '' }, { default: () => r.name })
+          })
+          const labelTags = (row.labels || []).map((l: any) => {
+            const r = resolveLabel(l)
+            return h(NTag, { size: 'small', style: r.color ? `background:${r.color};color:${r.fontColor || '#fff'}` : '' }, { default: () => r.name })
+          })
+          const row2 = (genreTags.length || labelTags.length)
+            ? h('div', { class: 'mob-r2' }, [...genreTags, ...labelTags])
+            : null
+
+          const played = row.playedByBrandCount ?? 0
+          const rating = row.ratedByBrandCount ?? 0
+          const ratingStr = rating > 0 ? `+${rating}` : String(rating)
+          const metaItems: any[] = [
+            h('span', { class: 'mob-meta-item' }, `${t('playlistView.col_played')}: ${played}`),
+            h('span', { class: 'mob-meta-item' }, `${t('playlistView.col_rating')}: ${ratingStr}`),
+          ]
+          if (row.shared) metaItems.push(h('span', { class: 'mob-meta-item' }, [h(NIcon, { size: 14, color: '#7C3AED' }, { default: () => h(ShareSocialOutline) })]))
+          if (row.description) metaItems.push(h('span', { class: 'mob-meta-item mob-desc' }, row.description))
+          const row3 = h('div', { class: 'mob-r3' }, metaItems)
+
+          return h('div', { class: 'mob-card' }, [row1, row2, row3].filter(Boolean))
+        },
+      },
+    ]
+  }
+
   const nw = narrowPlaylistTable.value
   const genreW = nw ? 100 : 180
   const labelW = nw ? 88 : 180
@@ -352,6 +410,9 @@ onMounted(() => {
   playlistTableMql = window.matchMedia('(max-width: 1100px)')
   narrowPlaylistTable.value = playlistTableMql.matches
   playlistTableMql.addEventListener('change', syncPlaylistTableNarrow)
+  mobileMql = window.matchMedia('(max-width: 640px)')
+  isMobile.value = mobileMql.matches
+  mobileMql.addEventListener('change', syncMobile)
   ensureBrandLoaded()
 })
 
@@ -362,6 +423,8 @@ onUnmounted(() => {
   blobUrlCache.clear()
   playlistTableMql?.removeEventListener('change', syncPlaylistTableNarrow)
   playlistTableMql = null
+  mobileMql?.removeEventListener('change', syncMobile)
+  mobileMql = null
 })
 
 watch(
@@ -383,8 +446,8 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
   <div>
     <PageHeader :title="brandName" :subtitle="t('playlistView.subtitle')" :count="totalCount" />
     <ActionBar>
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:24px">
-        <div class="gsap-row" style="padding-left:0">
+      <div class="playlist-action-row">
+        <div class="gsap-row" style="padding-left:0;flex-wrap:wrap">
           <GsapButton type="primary" @click="router.push({ path: `/brands/${route.params.id}/playlist/new`, query: { returnTo: route.fullPath } })">
             <span>{{ t('playlistView.new_track') }}</span>
           </GsapButton>
@@ -487,5 +550,29 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
   position: absolute;
   inset: -6px 0;
   cursor: pointer;
+}
+.mob-card { display: flex; flex-direction: column; gap: 4px; padding: 2px 0; }
+.mob-r1 { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.mob-title { font-weight: 500; }
+.mob-sep { opacity: 0.35; }
+.mob-artist { opacity: 0.65; font-size: 0.9em; }
+.mob-r2 { display: flex; flex-wrap: wrap; gap: 4px; padding-left: 2px; }
+.mob-r3 { display: flex; flex-wrap: wrap; gap: 8px; font-size: 0.8em; opacity: 0.55; padding-left: 2px; }
+.mob-meta-item { white-space: nowrap; display: flex; align-items: center; gap: 3px; }
+.mob-desc { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.playlist-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+@media (max-width: 600px) {
+  .playlist-action-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .playlist-action-row .n-input {
+    width: 100% !important;
+  }
 }
 </style>
