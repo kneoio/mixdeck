@@ -172,7 +172,7 @@ onMounted(async () => {
           </template>
           {{ t('playlistView.delete_confirm', { count: selectedIds.length }) }}
         </NPopconfirm>
-        <NButton quaternary circle :loading="loading" @click="fetchData()">
+        <NButton quaternary circle size="small" @click="fetchData()">
           <template #icon><NIcon :component="RefreshOutline" /></template>
         </NButton>
       </NSpace>
