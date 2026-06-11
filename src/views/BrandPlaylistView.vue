@@ -400,7 +400,7 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
             </template>
             {{ t('playlistView.delete_confirm', { count: selectedIds.length }) }}
           </NPopconfirm>
-          <NButton quaternary circle size="small" @click="fetchData()">
+          <NButton quaternary circle size="small" style="opacity:0.5" @click="fetchData()">
             <template #icon><NIcon :component="RefreshOutline" /></template>
           </NButton>
         </div>

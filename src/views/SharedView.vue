@@ -3,9 +3,10 @@ import { ref, computed, h, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import {
-  NDataTable, NSpace, NPopconfirm, NTag,
+  NDataTable, NSpace, NPopconfirm, NTag, NButton, NIcon,
   type DataTableColumns, useMessage
 } from 'naive-ui'
+import { RefreshOutline } from '@vicons/ionicons5'
 import datanestApiService from '@/services/datanestApi'
 import { useDictionaryStore } from '@/stores/dictionary'
 import PageHeader from '@/components/PageHeader.vue'
@@ -204,14 +205,19 @@ onMounted(async () => {
   <div>
     <PageHeader :title="t('menu.songs')" :subtitle="t('playlistView.subtitle')" :count="totalCount" />
     <ActionBar>
-      <NPopconfirm @positive-click="handleBulkUnshare" :disabled="selectedIds.length === 0">
-        <template #trigger>
-          <GsapButton type="warning" :disabled="selectedIds.length === 0">
-            <span>{{ t('playlistView.unshare_btn', { count: selectedIds.length }) }}</span>
-          </GsapButton>
-        </template>
-        {{ t('playlistView.unshare_bulk_confirm', { count: selectedIds.length }) }}
-      </NPopconfirm>
+      <NSpace>
+        <NPopconfirm @positive-click="handleBulkUnshare" :disabled="selectedIds.length === 0">
+          <template #trigger>
+            <GsapButton type="warning" :disabled="selectedIds.length === 0">
+              <span>{{ t('playlistView.unshare_btn', { count: selectedIds.length }) }}</span>
+            </GsapButton>
+          </template>
+          {{ t('playlistView.unshare_bulk_confirm', { count: selectedIds.length }) }}
+        </NPopconfirm>
+        <NButton quaternary circle size="small" style="opacity:0.5" @click="fetchData()">
+          <template #icon><NIcon :component="RefreshOutline" /></template>
+        </NButton>
+      </NSpace>
     </ActionBar>
     <NDataTable
       :columns="columns"

@@ -3,10 +3,11 @@ import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
-  NDataTable, NPopconfirm, useMessage, type DataTableColumns
+  NDataTable, NPopconfirm, NButton, NIcon, useMessage, type DataTableColumns
 } from 'naive-ui'
 import { useBrandsStore } from '@/stores/brands'
 import { useListenersStore } from '@/stores/listeners'
+import { RefreshOutline } from '@vicons/ionicons5'
 import datanestApiService from '@/services/datanestApi'
 import PageHeader from '@/components/PageHeader.vue'
 import ActionBar from '@/components/ActionBar.vue'
@@ -117,6 +118,9 @@ watch(slugName, (val) => { if (val) fetchData(1) }, { immediate: true })
           </template>
           {{ t('listenersView.delete_confirm', { count: selectedIds.length }) }}
         </NPopconfirm>
+        <NButton quaternary circle size="small" style="opacity:0.5" @click="fetchData()">
+          <template #icon><NIcon :component="RefreshOutline" /></template>
+        </NButton>
       </div>
     </ActionBar>
     <NDataTable
