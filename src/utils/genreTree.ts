@@ -1,4 +1,4 @@
-import type { GenreEntry } from '@/services/dictionaryApi'
+import type { GenreEntry } from '@/stores/dictionary'
 
 export function getGenreLabel(genre: GenreEntry): string {
   const directName = (genre as { name?: string }).name
