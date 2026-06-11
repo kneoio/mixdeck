@@ -12,8 +12,7 @@ import FormWrapper from '@/components/FormWrapper.vue'
 import AudioMiniPlayer from '@/components/AudioMiniPlayer.vue'
 import { useSoundFragmentsStore, FRAGMENT_TYPE_VALUES } from '@/stores/soundFragments'
 import { useBrandsStore } from '@/stores/brands'
-import dictionaryApiService from '@/services/dictionaryApi'
-import type { LabelEntry } from '@/services/dictionaryApi'
+import { useDictionaryStore } from '@/stores/dictionary'
 import datanestApiService from '@/services/datanestApi'
 import { appConfig } from '@/config/appConfig'
 import { useRoute, useRouter } from 'vue-router'
@@ -32,8 +31,7 @@ const router = useRouter()
 const store = useSoundFragmentsStore()
 const brandsStore = useBrandsStore()
 const message = useMessage()
-
-const labelList = ref<LabelEntry[]>([])
+const dictionaryStore = useDictionaryStore()
 
 const isEditing = computed(() => !!route.params.fragmentId && route.params.fragmentId !== 'new')
 const loading = ref(false)
@@ -75,7 +73,7 @@ const formData = ref({
 })
 
 const labelOptions = computed(() =>
-  labelList.value.map(l => ({
+  dictionaryStore.soundFragmentLabels.map(l => ({
     label: l.localizedName?.en || l.identifier || l.id,
     value: l.id,
   }))
@@ -215,8 +213,7 @@ onMounted(async () => {
   window.addEventListener('resize', updateIsMobile)
   try {
     loading.value = true
-    const labels = await dictionaryApiService.getLabelsByCategory('sound_fragment').catch(() => [])
-    labelList.value = labels
+    await dictionaryStore.loadSoundFragmentLabels().catch(() => {})
 
     if (isEditing.value) {
       const frag = await store.fetchFragment(route.params.fragmentId as string)

@@ -11,8 +11,7 @@ import type { UploadCustomRequestOptions } from 'naive-ui'
 import FormWrapper from '@/components/FormWrapper.vue'
 import { useSoundFragmentsStore, FRAGMENT_TYPE_VALUES } from '@/stores/soundFragments'
 import { useBrandsStore } from '@/stores/brands'
-import dictionaryApiService from '@/services/dictionaryApi'
-import type { GenreEntry, LabelEntry } from '@/services/dictionaryApi'
+import { useDictionaryStore } from '@/stores/dictionary'
 import datanestApiService from '@/services/datanestApi'
 import { appConfig } from '@/config/appConfig'
 import { useRoute, useRouter } from 'vue-router'
@@ -20,6 +19,7 @@ import { handleApiError } from '@/utils/notificationService'
 import { normalizeIdList, toGenreTreeOptions } from '@/utils/genreTree'
 
 const { t } = useI18n()
+const dictionaryStore = useDictionaryStore()
 
 const fragmentTypeOptions = computed(() =>
   FRAGMENT_TYPE_VALUES.map(v => ({
@@ -35,8 +35,6 @@ const brandsStore = useBrandsStore()
 const message = useMessage()
 const loadingBar = useLoadingBar()
 
-const genreList = ref<GenreEntry[]>([])
-const labelList = ref<LabelEntry[]>([])
 
 const fragmentId = computed(() => route.params.fragmentId as string)
 const loading = ref(false)
@@ -92,10 +90,10 @@ function handleClose() {
   router.push(backRoute.value)
 }
 
-const genreTreeOptions = computed(() => toGenreTreeOptions(genreList.value))
+const genreTreeOptions = computed(() => toGenreTreeOptions(dictionaryStore.genres))
 
 const labelOptions = computed(() =>
-  labelList.value.map(l => ({
+  dictionaryStore.soundFragmentLabels.map(l => ({
     label: l.localizedName?.en || l.identifier || l.id,
     value: l.id
   }))
@@ -266,12 +264,10 @@ onMounted(async () => {
   try {
     loading.value = true
 
-    const [genres, labels] = await Promise.allSettled([
-      dictionaryApiService.getGenres(),
-      dictionaryApiService.getLabelsByCategory('sound_fragment'),
+    await Promise.all([
+      dictionaryStore.loadGenres(),
+      dictionaryStore.loadSoundFragmentLabels(),
     ])
-    if (genres.status === 'fulfilled') genreList.value = genres.value
-    if (labels.status === 'fulfilled') labelList.value = labels.value
 
     const frag = await store.fetchFragment(fragmentId.value)
     formData.value = {

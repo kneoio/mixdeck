@@ -10,9 +10,10 @@ import FormWrapper from '@/components/FormWrapper.vue'
 import { useListenersStore } from '@/stores/listeners'
 import { useConstantsStore } from '@/stores/constants'
 import { useRoute, useRouter } from 'vue-router'
-import dictionaryApiService from '@/services/dictionaryApi'
+import { useDictionaryStore } from '@/stores/dictionary'
 
 const { t } = useI18n()
+const dictionaryStore = useDictionaryStore()
 const route = useRoute()
 const router = useRouter()
 const store = useListenersStore()
@@ -103,8 +104,8 @@ onMounted(async () => {
   try {
     loading.value = true
     try {
-      const lbls = await dictionaryApiService.getLabelsByCategory('listener')
-      labelOptions.value = lbls.map(l => ({
+      await dictionaryStore.loadListenerLabels()
+      labelOptions.value = dictionaryStore.listenerLabels.map(l => ({
         label: l.localizedName?.en || l.identifier || l.id,
         value: l.id,
       }))

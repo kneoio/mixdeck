@@ -8,7 +8,7 @@ import {
 } from 'naive-ui'
 import { RefreshOutline } from '@vicons/ionicons5'
 import datanestApiService from '@/services/datanestApi'
-import dictionaryApiService from '@/services/dictionaryApi'
+import { useDictionaryStore } from '@/stores/dictionary'
 import PageHeader from '@/components/PageHeader.vue'
 import ActionBar from '@/components/ActionBar.vue'
 import GsapButton from '@/components/GsapButton.vue'
@@ -17,6 +17,7 @@ import { handleApiError } from '@/utils/notificationService'
 const { t } = useI18n()
 const message = useMessage()
 const router = useRouter()
+const dictionaryStore = useDictionaryStore()
 
 const entries = ref<any[]>([])
 const loading = ref(false)
@@ -29,24 +30,20 @@ const genreMap = ref<Map<string, { name: string; color?: string; fontColor?: str
 const labelMap = ref<Map<string, { name: string; color?: string; fontColor?: string }>>(new Map())
 
 async function loadDictionaries() {
-  const [genres, labels] = await Promise.allSettled([
-    dictionaryApiService.getGenres(),
-    dictionaryApiService.getLabelsByCategory('sound_fragment'),
+  await Promise.all([
+    dictionaryStore.loadGenres(),
+    dictionaryStore.loadSoundFragmentLabels(),
   ])
-  if (genres.status === 'fulfilled') {
-    genreMap.value = new Map(genres.value.map(g => [g.id, {
-      name: g.localizedName?.en || Object.values(g.localizedName || {})[0] || g.identifier || g.id,
-      color: g.color,
-      fontColor: g.fontColor,
-    }]))
-  }
-  if (labels.status === 'fulfilled') {
-    labelMap.value = new Map(labels.value.map(l => [l.id, {
-      name: l.localizedName?.en || l.identifier || l.id,
-      color: l.color,
-      fontColor: l.fontColor,
-    }]))
-  }
+  genreMap.value = new Map(dictionaryStore.genres.map(g => [g.id, {
+    name: g.localizedName?.en || Object.values(g.localizedName || {})[0] || g.identifier || g.id,
+    color: g.color,
+    fontColor: g.fontColor,
+  }]))
+  labelMap.value = new Map(dictionaryStore.soundFragmentLabels.map(l => [l.id, {
+    name: l.localizedName?.en || l.identifier || l.id,
+    color: l.color,
+    fontColor: l.fontColor,
+  }]))
 }
 
 function resolveGenre(g: any) {

@@ -6,13 +6,13 @@ import GsapButton from '@/components/GsapButton.vue'
 import { useRoute, useRouter } from 'vue-router'
 import FormWrapper from '@/components/FormWrapper.vue'
 import { FRAGMENT_TYPE_VALUES } from '@/stores/soundFragments'
-import dictionaryApiService from '@/services/dictionaryApi'
-import type { GenreEntry, LabelEntry } from '@/services/dictionaryApi'
+import { useDictionaryStore } from '@/stores/dictionary'
 import datanestApiService from '@/services/datanestApi'
 import { handleApiError } from '@/utils/notificationService'
 import { normalizeIdList, toGenreTreeOptions } from '@/utils/genreTree'
 
 const { t } = useI18n()
+const dictionaryStore = useDictionaryStore()
 
 const fragmentTypeOptions = computed(() =>
   FRAGMENT_TYPE_VALUES.map(v => ({
@@ -27,8 +27,6 @@ const message = useMessage()
 
 const loading = ref(false)
 const isMobile = ref(false)
-const genreList = ref<GenreEntry[]>([])
-const labelList = ref<LabelEntry[]>([])
 
 const formData = ref({
   type: 'SONG' as string,
@@ -57,10 +55,10 @@ function updateIsMobile() {
   isMobile.value = window.innerWidth <= 768
 }
 
-const genreTreeOptions = computed(() => toGenreTreeOptions(genreList.value))
+const genreTreeOptions = computed(() => toGenreTreeOptions(dictionaryStore.genres))
 
 const labelOptions = computed(() =>
-  labelList.value.map(label => ({
+  dictionaryStore.soundFragmentLabels.map(label => ({
     label: label.localizedName?.en || label.identifier || label.id,
     value: label.id,
   }))
@@ -70,14 +68,12 @@ async function loadData() {
   try {
     loading.value = true
 
-    const [genres, labels, fragment] = await Promise.allSettled([
-      dictionaryApiService.getGenres(),
-      dictionaryApiService.getLabelsByCategory('sound_fragment'),
+    const [, , fragment] = await Promise.allSettled([
+      dictionaryStore.loadGenres(),
+      dictionaryStore.loadSoundFragmentLabels(),
       datanestApiService.getReceivedItem(fragmentId.value),
     ])
 
-    if (genres.status === 'fulfilled') genreList.value = genres.value
-    if (labels.status === 'fulfilled') labelList.value = labels.value
     if (fragment.status !== 'fulfilled') throw fragment.reason
 
     formData.value = {

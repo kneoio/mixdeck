@@ -20,7 +20,8 @@ import { useConstantsStore } from '@/stores/constants'
 import { useRoute, useRouter } from 'vue-router'
 import { useThemeStore } from '@/stores/theme'
 import datanestApiService from '@/services/datanestApi'
-import dictionaryApiService, { type GenreEntry, type LabelEntry } from '@/services/dictionaryApi'
+import { useDictionaryStore } from '@/stores/dictionary'
+import type { GenreEntry, LabelEntry } from '@/stores/dictionary'
 import jesoosApiService, { type DebugInstructionResponse } from '@/services/jesoosApi'
 import { handleApiError } from '@/utils/notificationService'
 import { normalizeIdList, toGenreTreeOptions } from '@/utils/genreTree'
@@ -33,6 +34,7 @@ const router = useRouter()
 const store = useBrandsStore()
 const scriptsStore = useScriptsStore()
 const constantsStore = useConstantsStore()
+const dictionaryStore = useDictionaryStore()
 const message = useMessage()
 const themeStore = useThemeStore()
 const actionsStore = useActionsStore()
@@ -238,8 +240,8 @@ function resolveToUuid(values: string[], list: { id: string; identifier?: string
 function normalizeScenePlaylistIds() {
   for (const scene of scenes.value) {
     const sp = scene.stagePlaylist
-    if (sp.genres?.length) sp.genres = resolveToUuid(sp.genres, genreList.value as any[])
-    if (sp.labels?.length) sp.labels = resolveToUuid(sp.labels, fragmentLabelList.value as any[])
+    if (sp.genres?.length) sp.genres = resolveToUuid(sp.genres, dictionaryStore.genres as any[])
+    if (sp.labels?.length) sp.labels = resolveToUuid(sp.labels, dictionaryStore.soundFragmentLabels as any[])
   }
 }
 
@@ -417,11 +419,9 @@ const agentOptions = ref<AgentOption[]>([])
 const agentsList = ref<Array<{ id: string; description?: string; labels?: AgentLabel[]; name?: string }>>([])
 const profileOptions = ref<{ label: string; value: string }[]>([])
 const scriptOptions = ref<ScriptOption[]>([])
-const genreList = ref<GenreEntry[]>([])
-const genreTreeOptions = computed(() => toGenreTreeOptions(genreList.value))
-const fragmentLabelList = ref<LabelEntry[]>([])
+const genreTreeOptions = computed(() => toGenreTreeOptions(dictionaryStore.genres))
 const fragmentLabelOptions = computed(() =>
-  fragmentLabelList.value.map(l => ({
+  dictionaryStore.soundFragmentLabels.map(l => ({
     label: l.localizedName?.en || l.identifier || l.id,
     value: l.id,
   }))
@@ -956,8 +956,8 @@ onMounted(async () => {
       datanestApiService.getPagedDictionary<any>('/dictionary/agents', 1, 100),
       datanestApiService.getPagedDictionary<any>('/profiles', 1, 100),
       scriptsStore.loadScripts(1, 200),
-      dictionaryApiService.getGenres(),
-      dictionaryApiService.getLabelsByCategory('sound_fragment'),
+      dictionaryStore.loadGenres(),
+      dictionaryStore.loadSoundFragmentLabels(),
     ])
     const isFree = (labels: AgentLabel[]) => labels.some(l => {
       const id = (l.identifier ?? '').toLowerCase()
@@ -999,8 +999,6 @@ onMounted(async () => {
         label: p.name || p.id, value: p.id
       }))
     }
-    if (genres.status === 'fulfilled') genreList.value = genres.value
-    if (fragmentLabels.status === 'fulfilled') fragmentLabelList.value = fragmentLabels.value
     scriptOptions.value = scriptsStore.scripts.map((s: any) => {
       const tags: AgentLabel[] = Array.isArray(s.tags) ? s.tags : []
       return {
