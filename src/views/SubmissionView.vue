@@ -5,11 +5,6 @@
         <div class="logo" @click="router.push('/')" style="cursor:pointer">MIXPLA</div>
       </header>
 
-      <section class="submission-hero">
-        <p class="eyebrow neon-motto">{{ t('submission.title') }}</p>
-        <h1>{{ t('submission.subtitle') }}</h1>
-      </section>
-
       <!-- Success -->
       <section v-if="verified && submitted" class="submission-card">
         <div class="step step--success">
@@ -312,26 +307,6 @@ function restart() {
   color: #c0c0c0;
 }
 
-.submission-hero {
-  padding: 48px 0 32px;
-}
-
-.eyebrow {
-  letter-spacing: 0.4em;
-  text-transform: uppercase;
-  color: #888;
-  font-size: 0.75rem;
-}
-
-.neon-motto {
-  font-size: 0.75rem;
-  text-shadow: 0 0 5px #ffa500, 0 0 15px #ffa500, 0 0 20px #ffa500, 0 0 40px #ffa500, 0 0 60px #ff0000, 0 0 10px #ff8d00, 0 0 98px #ff0000;
-  color: #fff6a9;
-  animation: blink 12s infinite;
-  letter-spacing: 0.4em;
-  text-transform: uppercase;
-}
-
 h1 {
   font-size: clamp(2rem, 4vw, 3rem);
   margin: 16px 0 0;
@@ -344,7 +319,7 @@ h2 {
 
 .submission-card {
   max-width: 560px;
-  margin: 0 auto;
+  margin: 24px auto 0;
   background: #0f0f0f;
   border: 1px solid #1f1f1f;
   border-radius: 16px;
@@ -494,11 +469,4 @@ h2 {
   color: #68ffba;
 }
 
-@keyframes blink {
-  20%, 24%, 55% { color: #111; text-shadow: none; }
-  0%, 19%, 21%, 23%, 25%, 54%, 100% {
-    text-shadow: 0 0 5px #ffa500, 0 0 15px #ffa500, 0 0 20px #ffa500, 0 0 40px #ffa500, 0 0 60px #ff0000, 0 0 10px #ff8d00, 0 0 98px #ff0000;
-    color: #fff6a9;
-  }
-}
 </style>
