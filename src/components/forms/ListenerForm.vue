@@ -174,7 +174,12 @@ onMounted(async () => {
       </NFormItem>
 
       <NFormItem :label="t('listenerForm.labels')">
-        <NSelect v-model:value="labels" :options="labelOptions" multiple filterable style="width:100%" />
+        <div class="field-stack">
+          <div class="field-error-shell">
+            <NSelect v-model:value="labels" :options="labelOptions" multiple filterable style="width:100%" />
+          </div>
+          <div class="field-error-label" />
+        </div>
       </NFormItem>
 
       <hr class="section-divider" />
