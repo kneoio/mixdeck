@@ -296,7 +296,7 @@ function restart() {
 .nav {
   display: flex;
   align-items: center;
-  padding-bottom: 32px;
+  padding-bottom: 16px;
 }
 
 .logo {
@@ -319,7 +319,7 @@ h2 {
 
 .submission-card {
   max-width: 560px;
-  margin: 24px auto 0;
+  margin: 8px auto 0;
   background: #0f0f0f;
   border: 1px solid #1f1f1f;
   border-radius: 16px;
