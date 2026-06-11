@@ -145,7 +145,7 @@ onMounted(async () => {
       </div>
     </template>
 
-    <NForm :label-placement="formLabelPlacement" label-width="140" :disabled="loading" :show-require-mark="false">
+    <NForm :label-placement="formLabelPlacement" label-width="140" :disabled="loading">
 
       <NFormItem :label="t('listenerForm.localized_names')">
         <div class="field-stack">

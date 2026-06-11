@@ -1110,7 +1110,7 @@ watch(activeTab, () => {
 
     <NTabs v-model:value="activeTab">
       <NTabPane name="properties" :tab="t('brandForm.tab_properties')">
-        <NForm :label-placement="formLabelPlacement" label-width="140" :disabled="loading" :show-require-mark="false">
+        <NForm :label-placement="formLabelPlacement" label-width="140" :disabled="loading">
           <NFormItem :label="t('brandForm.localized_names')">
             <div class="field-stack">
               <div
@@ -1235,7 +1235,7 @@ watch(activeTab, () => {
       </NTabPane>
 
       <NTabPane name="dj" :tab="t('brandForm.tab_dj')">
-        <NForm :label-placement="formLabelPlacement" label-width="160" :disabled="loading" :show-require-mark="false">
+        <NForm :label-placement="formLabelPlacement" label-width="160" :disabled="loading">
           <NFormItem :label="t('brandForm.ai_agent')">
             <div class="field-stack">
               <div
@@ -1296,7 +1296,7 @@ watch(activeTab, () => {
           <div v-if="scriptMode === 'predefined'" :class="['player-card', { 'player-card--dark': themeStore.isDark }]">
             <div class="player-card__label">{{ t('brandForm.card_predefined_script') }}</div>
             <div class="player-card__sub">{{ t('brandForm.card_predefined_script_sub') }}</div>
-            <NForm :label-placement="formLabelPlacement" label-width="140" :disabled="loading" style="margin:0" :show-require-mark="false">
+            <NForm :label-placement="formLabelPlacement" label-width="140" :disabled="loading" style="margin:0">
               <NFormItem :label="t('brandForm.script')" style="margin-bottom:8px">
                 <div class="field-stack">
                   <div
@@ -1538,7 +1538,7 @@ watch(activeTab, () => {
       </NTabPane>
 
       <NTabPane name="audience" :tab="t('brandForm.tab_audience')">
-        <NForm :label-placement="formLabelPlacement" label-width="160" :disabled="loading" :show-require-mark="false">
+        <NForm :label-placement="formLabelPlacement" label-width="160" :disabled="loading">
           <NFormItem :label="t('brandForm.audience_type')">
             <div class="field-stack">
               <div class="field-error-shell">
@@ -1573,7 +1573,7 @@ watch(activeTab, () => {
       </NTabPane>
 
       <NTabPane name="features" :tab="t('brandForm.tab_features')">
-        <NForm :label-placement="formLabelPlacement" label-width="180" :disabled="loading" :show-require-mark="false">
+        <NForm :label-placement="formLabelPlacement" label-width="180" :disabled="loading">
           <NFormItem :label="t('brandForm.one_time_stream')">
             <div class="field-stack">
               <div class="field-error-shell">
@@ -1600,7 +1600,7 @@ watch(activeTab, () => {
             <div v-if="localizedNames[0]?.name" :style="{ fontFamily: formData.titleFont || undefined, fontSize: '1.5rem', color: formData.color, lineHeight: '1.2' }">
               {{ localizedNames[0].name }}
             </div>
-            <NForm :label-placement="formLabelPlacement" label-width="120" :disabled="loading" style="margin:0" :show-require-mark="false">
+            <NForm :label-placement="formLabelPlacement" label-width="120" :disabled="loading" style="margin:0">
               <NFormItem :label="t('brandForm.title_font')" style="margin-bottom:8px">
                 <NSelect v-model:value="formData.titleFont" :options="constantsStore.stationFontOptions"
                   filterable clearable style="width: 240px" />
@@ -1625,7 +1625,7 @@ watch(activeTab, () => {
       </NTabPane>
 
       <NTabPane name="owner" :tab="t('brandForm.tab_owner')">
-        <NForm :label-placement="formLabelPlacement" label-width="160" :disabled="loading" :show-require-mark="false">
+        <NForm :label-placement="formLabelPlacement" label-width="160" :disabled="loading">
           <NFormItem :label="t('brandForm.owner_name')">
             <div class="field-stack">
               <div class="field-error-shell">

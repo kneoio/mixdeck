@@ -352,7 +352,7 @@ watch(activeTab, () => {
 
     <NTabs v-model:value="activeTab">
       <NTabPane name="properties" :tab="t('fragmentForm.tab_properties')">
-        <NForm :label-placement="formLabelPlacement" label-width="120" :disabled="loading || isUploading" :show-require-mark="false">
+        <NForm :label-placement="formLabelPlacement" label-width="120" :disabled="loading || isUploading">
 
           <NFormItem :label="t('fragmentForm.type')">
             <div class="field-stack">
@@ -502,7 +502,7 @@ watch(activeTab, () => {
       </NTabPane>
 
       <NTabPane name="description" :tab="t('fragmentForm.tab_description')">
-        <NForm :label-placement="formLabelPlacement" label-width="120" :disabled="loading || isUploading" :show-require-mark="false">
+        <NForm :label-placement="formLabelPlacement" label-width="120" :disabled="loading || isUploading">
           <NFormItem :label="t('fragmentForm.description')">
             <div class="field-stack">
               <div class="field-error-shell">
