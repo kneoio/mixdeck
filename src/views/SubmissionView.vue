@@ -70,13 +70,13 @@
 
           <!-- Artist -->
           <div class="field-row">
-            <label class="field-label">{{ t('submission.artist_label') }} <span class="required">*</span></label>
+            <label class="field-label">{{ t('submission.artist_label') }}</label>
             <n-input v-model:value="artistName" :placeholder="t('submission.artist_placeholder')" :disabled="!verified" />
           </div>
 
           <!-- Genre -->
           <div class="field-row">
-            <label class="field-label">{{ t('submission.genre_label') }} <span class="required">*</span></label>
+            <label class="field-label">{{ t('submission.genre_label') }}</label>
             <n-select
               v-model:value="genre"
               :options="GENRES.map(g => ({ label: g, value: g }))"
@@ -93,7 +93,7 @@
 
           <!-- File -->
           <div class="field-row">
-            <label class="field-label">{{ t('submission.file_label') }} <span class="required">*</span></label>
+            <label class="field-label">{{ t('submission.file_label') }}</label>
             <div class="file-area" :class="{ 'file-area--disabled': !verified }" @click="verified && fileInputRef?.click()">
               <span v-if="!selectedFile" class="file-hint">{{ t('submission.choose_file') }}</span>
               <span v-else class="file-name">{{ selectedFile?.name }}</span>
@@ -388,10 +388,6 @@ h2 {
   font-size: 0.82rem;
   color: #888;
   display: block;
-}
-
-.required {
-  color: #FF2D95;
 }
 
 .file-area {
