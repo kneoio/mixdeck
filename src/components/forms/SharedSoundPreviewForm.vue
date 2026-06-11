@@ -117,7 +117,7 @@ onBeforeUnmount(() => {
       </div>
     </template>
 
-    <NForm :label-placement="formLabelPlacement" label-width="120" :disabled="loading">
+    <NForm :label-placement="formLabelPlacement" label-width="120" :disabled="loading" :show-require-mark="false">
       <NFormItem :label="t('fragmentForm.type')">
         <div class="field-stack">
           <div class="field-shell">
