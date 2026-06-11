@@ -23,32 +23,38 @@
           <!-- Email + OTP row -->
           <div class="field-row">
             <label class="field-label">{{ t('submission.step1_heading') }}</label>
-            <div class="inline-row">
-              <n-input
-                v-model:value="email"
-                :placeholder="t('submission.email_placeholder')"
-                :disabled="codeSent"
-                @keydown.enter="sendCode"
-              />
-              <GsapButton type="primary" :disabled="loading || codeSent" @click="sendCode">
-                <span>{{ t('submission.send_code') }}</span>
-              </GsapButton>
+            <div class="field-error-shell" :class="{ 'field-error-shell--active': !!fieldErrors.email }">
+              <div class="inline-row">
+                <n-input
+                  v-model:value="email"
+                  :placeholder="t('submission.email_placeholder')"
+                  :disabled="codeSent"
+                  @keydown.enter="sendCode"
+                />
+                <GsapButton type="primary" :disabled="loading || codeSent" @click="sendCode">
+                  <span>{{ t('submission.send_code') }}</span>
+                </GsapButton>
+              </div>
             </div>
+            <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.email }">{{ fieldErrors.email || ' ' }}</div>
           </div>
 
           <div v-if="codeSent" class="field-row">
             <label class="field-label">{{ t('submission.step2_heading') }}</label>
-            <div class="inline-row">
-              <n-input
-                v-model:value="code"
-                :placeholder="t('submission.code_placeholder')"
-                :disabled="verified"
-                @keydown.enter="verify"
-              />
-              <GsapButton type="primary" :disabled="loading || verified" @click="verify">
-                <span>{{ verified ? '✓' : t('submission.verify') }}</span>
-              </GsapButton>
+            <div class="field-error-shell" :class="{ 'field-error-shell--active': !!fieldErrors.code }">
+              <div class="inline-row">
+                <n-input
+                  v-model:value="code"
+                  :placeholder="t('submission.code_placeholder')"
+                  :disabled="verified"
+                  @keydown.enter="verify"
+                />
+                <GsapButton type="primary" :disabled="loading || verified" @click="verify">
+                  <span>{{ verified ? '✓' : t('submission.verify') }}</span>
+                </GsapButton>
+              </div>
             </div>
+            <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.code }">{{ fieldErrors.code || ' ' }}</div>
           </div>
 
           <div class="divider" />
@@ -71,34 +77,47 @@
           <!-- Artist -->
           <div class="field-row">
             <label class="field-label">{{ t('submission.artist_label') }}</label>
-            <n-input v-model:value="artistName" :placeholder="t('submission.artist_placeholder')" :disabled="!verified" />
+            <div class="field-error-shell" :class="{ 'field-error-shell--active': !!fieldErrors.artistName }">
+              <n-input v-model:value="artistName" :placeholder="t('submission.artist_placeholder')" :disabled="!verified" @input="fieldErrors.artistName = ''" />
+            </div>
+            <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.artistName }">{{ fieldErrors.artistName || ' ' }}</div>
           </div>
 
           <!-- Genre -->
           <div class="field-row">
             <label class="field-label">{{ t('submission.genre_label') }}</label>
-            <n-select
-              v-model:value="genre"
-              :options="GENRES.map(g => ({ label: g, value: g }))"
-              :placeholder="t('submission.genre_placeholder')"
-              :disabled="!verified"
-            />
+            <div class="field-error-shell" :class="{ 'field-error-shell--active': !!fieldErrors.genre }">
+              <n-select
+                v-model:value="genre"
+                :options="GENRES.map(g => ({ label: g, value: g }))"
+                :placeholder="t('submission.genre_placeholder')"
+                :disabled="!verified"
+                @update:value="fieldErrors.genre = ''"
+              />
+            </div>
+            <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.genre }">{{ fieldErrors.genre || ' ' }}</div>
           </div>
 
           <!-- Country -->
           <div class="field-row">
             <label class="field-label">{{ t('submission.country_label') }}</label>
-            <n-input v-model:value="country" :placeholder="t('submission.country_placeholder')" :disabled="!verified" />
+            <div class="field-error-shell">
+              <n-input v-model:value="country" :placeholder="t('submission.country_placeholder')" :disabled="!verified" />
+            </div>
+            <div class="field-error-label" />
           </div>
 
           <!-- File -->
           <div class="field-row">
             <label class="field-label">{{ t('submission.file_label') }}</label>
-            <div class="file-area" :class="{ 'file-area--disabled': !verified }" @click="verified && fileInputRef?.click()">
-              <span v-if="!selectedFile" class="file-hint">{{ t('submission.choose_file') }}</span>
-              <span v-else class="file-name">{{ selectedFile?.name }}</span>
-              <input ref="fileInputRef" type="file" accept="audio/*" style="display:none" @change="onFileChange" />
+            <div class="field-error-shell" :class="{ 'field-error-shell--active': !!fieldErrors.file }">
+              <div class="file-area" :class="{ 'file-area--disabled': !verified }" @click="verified && fileInputRef?.click()">
+                <span v-if="!selectedFile" class="file-hint">{{ t('submission.choose_file') }}</span>
+                <span v-else class="file-name">{{ selectedFile?.name }}</span>
+                <input ref="fileInputRef" type="file" accept="audio/*" style="display:none" @change="onFileChange" />
+              </div>
             </div>
+            <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.file }">{{ fieldErrors.file || ' ' }}</div>
           </div>
 
           <n-progress
@@ -119,19 +138,22 @@
           </n-checkbox>
 
           <!-- Agreement collapse -->
-          <n-collapse :disabled="!verified">
-            <n-collapse-item :title="t('submission.agreement_title')" name="agreement">
-              <div class="agreement-body">
-                <p>{{ t('submission.agreement_text') }}</p>
-                <n-checkbox v-model:checked="agreed" :disabled="!verified">
-                  {{ t('submission.agreement') }}
-                </n-checkbox>
-              </div>
-            </n-collapse-item>
-          </n-collapse>
+          <div class="field-error-shell" :class="{ 'field-error-shell--active': !!fieldErrors.agreement }">
+            <n-collapse :disabled="!verified">
+              <n-collapse-item :title="t('submission.agreement_title')" name="agreement">
+                <div class="agreement-body">
+                  <p>{{ t('submission.agreement_text') }}</p>
+                  <n-checkbox v-model:checked="agreed" :disabled="!verified" @update:checked="fieldErrors.agreement = ''">
+                    {{ t('submission.agreement') }}
+                  </n-checkbox>
+                </div>
+              </n-collapse-item>
+            </n-collapse>
+          </div>
+          <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.agreement }">{{ fieldErrors.agreement || ' ' }}</div>
 
-          <div v-if="fieldError" class="error-row">
-            <p class="field-error">{{ fieldError }}</p>
+          <div v-if="fieldErrors.api" class="error-row">
+            <p class="field-error">{{ fieldErrors.api }}</p>
             <button class="restart-link" @click="restart">{{ t('submission.start_over') }}</button>
           </div>
 
@@ -193,10 +215,12 @@ const agreed = ref(false)
 const selectedFile = ref<File | null>(null)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const loading = ref(false)
-const fieldError = ref('')
 const uploadProgress = ref(0)
 const stationOptions = ref<{ label: string; value: string }[]>([])
 const stationsLoading = ref(true)
+
+type ValidationField = 'email' | 'code' | 'artistName' | 'genre' | 'file' | 'agreement' | 'api'
+const fieldErrors = ref<Record<ValidationField, string>>({ email: '', code: '', artistName: '', genre: '', file: '', agreement: '', api: '' })
 
 onMounted(async () => {
   stationOptions.value = await datanestApiService.getPublicBrands()
@@ -204,9 +228,9 @@ onMounted(async () => {
 })
 
 async function sendCode() {
-  fieldError.value = ''
+  fieldErrors.value.email = ''
   if (!email.value.trim() || !email.value.includes('@')) {
-    fieldError.value = t('submission.error_email')
+    fieldErrors.value.email = t('submission.error_email')
     return
   }
   loading.value = true
@@ -214,16 +238,16 @@ async function sendCode() {
     await datanestApiService.requestSubmissionCode(email.value.trim())
     codeSent.value = true
   } catch (e: any) {
-    fieldError.value = e?.message || 'Error sending code.'
+    fieldErrors.value.email = e?.message || 'Error sending code.'
   } finally {
     loading.value = false
   }
 }
 
 async function verify() {
-  fieldError.value = ''
+  fieldErrors.value.code = ''
   if (!code.value.trim()) {
-    fieldError.value = t('submission.error_code')
+    fieldErrors.value.code = t('submission.error_code')
     return
   }
   verified.value = true
@@ -232,19 +256,26 @@ async function verify() {
 function onFileChange(e: Event) {
   const input = e.target as HTMLInputElement
   selectedFile.value = input.files?.[0] ?? null
+  if (selectedFile.value) fieldErrors.value.file = ''
 }
 
 async function upload() {
-  fieldError.value = ''
-  if (!artistName.value.trim()) { fieldError.value = t('submission.error_artist'); return }
-  if (!genre.value) { fieldError.value = t('submission.error_genre'); return }
-  if (!selectedFile.value) { fieldError.value = t('submission.error_file'); return }
-  if (!agreed.value) { fieldError.value = t('submission.error_agreement'); return }
+  fieldErrors.value.artistName = ''
+  fieldErrors.value.genre = ''
+  fieldErrors.value.file = ''
+  fieldErrors.value.agreement = ''
+  fieldErrors.value.api = ''
+  let invalid = false
+  if (!artistName.value.trim()) { fieldErrors.value.artistName = t('submission.error_artist'); invalid = true }
+  if (!genre.value) { fieldErrors.value.genre = t('submission.error_genre'); invalid = true }
+  if (!selectedFile.value) { fieldErrors.value.file = t('submission.error_file'); invalid = true }
+  if (!agreed.value) { fieldErrors.value.agreement = t('submission.error_agreement'); invalid = true }
+  if (invalid) return
   loading.value = true
   uploadProgress.value = 0
   try {
     await datanestApiService.uploadPublicSongChunked(
-      selectedFile.value,
+      selectedFile.value!,
       email.value.trim(),
       code.value.trim(),
       (p) => { uploadProgress.value = p },
@@ -254,7 +285,7 @@ async function upload() {
   } catch (e: any) {
     const msg: string = e?.message || 'Upload failed.'
     if (msg.includes('401')) { restart(); return }
-    fieldError.value = msg
+    fieldErrors.value.api = msg
   } finally {
     loading.value = false
   }
@@ -269,7 +300,7 @@ function restart() {
   stationSlugs.value = []
   selectedFile.value = null
   uploadProgress.value = 0
-  fieldError.value = t('submission.error_code_expired')
+  fieldErrors.value = { email: '', code: '', artistName: '', genre: '', file: '', agreement: '', api: t('submission.error_code_expired') }
 }
 </script>
 
@@ -388,6 +419,31 @@ h2 {
   font-size: 0.82rem;
   color: #888;
   display: block;
+}
+
+.field-error-shell {
+  width: 100%;
+  border-left: 2px solid transparent;
+  padding-left: 8px;
+  transition: border-left-color 0.2s ease;
+}
+
+.field-error-shell--active {
+  border-left-color: rgba(255, 77, 79, 0.95);
+}
+
+.field-error-label {
+  margin-top: 2px;
+  min-height: 12px;
+  padding-left: 10px;
+  color: #ff4d4f;
+  font-size: 11px;
+  line-height: 1.3;
+  visibility: hidden;
+}
+
+.field-error-label--visible {
+  visibility: visible;
 }
 
 .file-area {
