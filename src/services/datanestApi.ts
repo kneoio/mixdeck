@@ -417,14 +417,14 @@ class DatanestApiService extends ApiClient {
     }
   }
 
-  /** Fetch publicly available brands/stations (no auth). */
+  /** Fetch publicly available brands/stations for submissions (no auth). */
   async getPublicBrands(): Promise<{ label: string; value: string }[]> {
     try {
-      const res = await fetch(`${this.baseUrl}/brands/discover?page=1&size=100`)
+      const res = await fetch(`${this.baseUrl}/public/songs/brands`)
       if (!res.ok) return []
       const data = await res.json()
-      const entries = data?.payload?.viewData?.entries ?? data?.viewData?.entries ?? []
-      return entries.map((b: any) => ({ label: b.title || b.slug, value: b.slug }))
+      const entries = data?.payload?.viewData?.entries ?? data?.viewData?.entries ?? data?.payload ?? data?.entries ?? (Array.isArray(data) ? data : [])
+      return entries.map((b: any) => ({ label: b.title || b.name || b.slug || b.identifier, value: b.slug || b.identifier || b.id }))
     } catch {
       return []
     }
@@ -436,7 +436,7 @@ class DatanestApiService extends ApiClient {
     email: string,
     code: string,
     onProgress: (percent: number) => void,
-    meta?: { stationSlug?: string; artistName?: string; genre?: string; country?: string; agendaNotify?: boolean },
+    meta?: { stationSlugs?: string[]; artistName?: string; genre?: string; country?: string; agendaNotify?: boolean },
   ): Promise<any> {
     const batchId = crypto.randomUUID()
     const fileId = crypto.randomUUID().replace(/-/g, '')
@@ -457,7 +457,7 @@ class DatanestApiService extends ApiClient {
         fileName: file.name,
         chunkIndex: String(i),
         totalChunks: String(totalChunks),
-        ...(meta?.stationSlug ? { stationSlug: meta.stationSlug } : {}),
+        ...(meta?.stationSlugs?.length ? { stationSlugs: meta.stationSlugs.join(',') } : {}),
         ...(meta?.artistName ? { artistName: meta.artistName } : {}),
         ...(meta?.genre ? { genre: meta.genre } : {}),
         ...(meta?.country ? { country: meta.country } : {}),
