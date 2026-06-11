@@ -76,6 +76,7 @@ export const useConstantsStore = defineStore('constants', () => {
     { label: 'Russia', value: 'RU' }, { label: 'Ukraine', value: 'UA' },
     { label: 'Latvia', value: 'LV' }, { label: 'Georgia', value: 'GE' },
     { label: 'Kazakhstan', value: 'KZ' }, { label: 'Japan', value: 'JP' },
+    { label: 'Norway', value: 'NO' },
   ]
 
   const timezones = [

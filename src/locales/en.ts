@@ -427,6 +427,8 @@ export default {
     error_agreement: 'Please accept the terms to submit.',
     error_code_expired: 'Your verification code expired. Please request a new one.',
     start_over: 'Start over',
+    agreement_title: 'Terms & Rights',
+    agreement_text: 'By submitting this track you confirm that you are the original author or have obtained the necessary rights to distribute this recording. Mixpla may broadcast the track on its radio stations. You retain full ownership of your work.',
     unavailable_heading: 'Coming Soon',
     unavailable_body: 'Track submissions are not available yet. Check back soon.',
   },

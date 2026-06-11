@@ -7,11 +7,12 @@
     </PageHeader>
 
     <NSpin :show="subscriptionProductsStore.loading">
-      <div v-if="cards.length" style="display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start;">
+      <div v-if="cards.length" style="display: flex; gap: 24px; flex-wrap: wrap; align-items: stretch;">
         <NCard
           v-for="card in cards"
           :key="card.id"
-          :style="card.subscribed ? 'flex: 1; min-width: 240px; max-width: 320px; border: 1px solid #7C3AED;' : 'flex: 1; min-width: 240px; max-width: 320px;'"
+          :style="card.subscribed ? 'flex: 1; min-width: 240px; max-width: 320px; border: 1px solid #7C3AED; display: flex; flex-direction: column;' : 'flex: 1; min-width: 240px; max-width: 320px; display: flex; flex-direction: column;'"
+          content-style="display: flex; flex-direction: column; flex: 1;"
         >
           <div style="margin-bottom: 16px;">
             <div style="display: flex; align-items: center; gap: 8px;">
@@ -24,7 +25,7 @@
             <div style="font-size: 13px; opacity: 0.55;">{{ card.description }}</div>
           </div>
           <NDivider style="margin: 0 0 16px;" />
-          <ul style="list-style: none; padding: 0; margin: 0 0 24px; display: flex; flex-direction: column; gap: 10px; font-size: 13px;">
+          <ul style="list-style: none; padding: 0; margin: 0 0 24px; display: flex; flex-direction: column; gap: 10px; font-size: 13px; flex: 1;">
             <li v-for="feature in card.features" :key="feature">✓ {{ feature }}</li>
           </ul>
           <GsapButton block :disabled="card.subscribed" :type="card.subscribed ? 'default' : 'primary'">

@@ -10,87 +10,94 @@
         <h1>{{ t('submission.subtitle') }}</h1>
       </section>
 
-      <section class="submission-card">
-
-        <div class="unavailable">
-          <h2>{{ t('submission.unavailable_heading') }}</h2>
-          <p class="step-body">{{ t('submission.unavailable_body') }}</p>
+      <!-- Success -->
+      <section v-if="verified && submitted" class="submission-card">
+        <div class="step step--success">
+          <div class="success-icon">✓</div>
+          <h2>{{ t('submission.success_heading') }}</h2>
+          <p class="step-body">{{ t('submission.success_body') }}</p>
           <GsapButton @click="router.push('/')"><span>{{ t('submission.back') }}</span></GsapButton>
         </div>
+      </section>
 
-        <template v-if="false">
-        <!-- Step 1: Email -->
-        <div v-if="step === 1" class="step">
-          <h2>{{ t('submission.step1_heading') }}</h2>
-          <p class="step-body">{{ t('submission.step1_body') }}</p>
+      <!-- Form -->
+      <section v-else class="submission-card">
+        <div class="form">
+
+          <!-- Email + OTP row -->
           <div class="field-row">
-            <n-input
-              v-model:value="email"
-              :placeholder="t('submission.email_placeholder')"
-              size="large"
-              @keydown.enter="sendCode"
-            />
+            <label class="field-label">{{ t('submission.step1_heading') }}</label>
+            <div class="inline-row">
+              <n-input
+                v-model:value="email"
+                :placeholder="t('submission.email_placeholder')"
+                :disabled="codeSent"
+                @keydown.enter="sendCode"
+              />
+              <GsapButton type="primary" :disabled="loading || codeSent" @click="sendCode">
+                <span>{{ t('submission.send_code') }}</span>
+              </GsapButton>
+            </div>
           </div>
-          <p v-if="fieldError" class="field-error">{{ fieldError }}</p>
-          <GsapButton type="primary" :disabled="loading" @click="sendCode">
-            <span>{{ t('submission.send_code') }}</span>
-          </GsapButton>
-        </div>
 
-        <!-- Step 2: OTP Code -->
-        <div v-else-if="step === 2" class="step">
-          <h2>{{ t('submission.step2_heading') }}</h2>
-          <p class="step-body">{{ t('submission.step2_body') }}</p>
-          <div class="field-row">
-            <n-input
-              v-model:value="code"
-              :placeholder="t('submission.code_placeholder')"
-              size="large"
-              @keydown.enter="verify"
-            />
+          <div v-if="codeSent" class="field-row">
+            <label class="field-label">{{ t('submission.step2_heading') }}</label>
+            <div class="inline-row">
+              <n-input
+                v-model:value="code"
+                :placeholder="t('submission.code_placeholder')"
+                :disabled="verified"
+                @keydown.enter="verify"
+              />
+              <GsapButton type="primary" :disabled="loading || verified" @click="verify">
+                <span>{{ verified ? '✓' : t('submission.verify') }}</span>
+              </GsapButton>
+            </div>
           </div>
-          <p v-if="fieldError" class="field-error">{{ fieldError }}</p>
-          <GsapButton type="primary" :disabled="loading" @click="verify">
-            <span>{{ t('submission.verify') }}</span>
-          </GsapButton>
-        </div>
 
-        <!-- Step 3: Upload + metadata -->
-        <div v-else-if="step === 3" class="step">
-          <h2>{{ t('submission.step3_heading') }}</h2>
+          <div class="divider" />
 
+          <!-- Station -->
           <div class="field-row">
             <label class="field-label">{{ t('submission.station_label') }}</label>
+            <n-skeleton v-if="stationsLoading" height="34px" :sharp="false" />
             <n-select
+              v-else
               v-model:value="stationSlug"
               :options="stationOptions"
               :placeholder="t('submission.station_placeholder')"
+              :disabled="!verified"
               clearable
             />
           </div>
 
+          <!-- Artist -->
           <div class="field-row">
             <label class="field-label">{{ t('submission.artist_label') }} <span class="required">*</span></label>
-            <n-input v-model:value="artistName" :placeholder="t('submission.artist_placeholder')" />
+            <n-input v-model:value="artistName" :placeholder="t('submission.artist_placeholder')" :disabled="!verified" />
           </div>
 
+          <!-- Genre -->
           <div class="field-row">
             <label class="field-label">{{ t('submission.genre_label') }} <span class="required">*</span></label>
             <n-select
               v-model:value="genre"
               :options="GENRES.map(g => ({ label: g, value: g }))"
               :placeholder="t('submission.genre_placeholder')"
+              :disabled="!verified"
             />
           </div>
 
+          <!-- Country -->
           <div class="field-row">
             <label class="field-label">{{ t('submission.country_label') }}</label>
-            <n-input v-model:value="country" :placeholder="t('submission.country_placeholder')" />
+            <n-input v-model:value="country" :placeholder="t('submission.country_placeholder')" :disabled="!verified" />
           </div>
 
+          <!-- File -->
           <div class="field-row">
             <label class="field-label">{{ t('submission.file_label') }} <span class="required">*</span></label>
-            <div class="file-area" @click="fileInputRef?.click()">
+            <div class="file-area" :class="{ 'file-area--disabled': !verified }" @click="verified && fileInputRef?.click()">
               <span v-if="!selectedFile" class="file-hint">{{ t('submission.choose_file') }}</span>
               <span v-else class="file-name">{{ selectedFile?.name }}</span>
               <input ref="fileInputRef" type="file" accept="audio/*" style="display:none" @change="onFileChange" />
@@ -109,37 +116,33 @@
             rail-color="rgba(255,255,255,0.12)"
           />
 
-          <n-checkbox v-model:checked="agendaNotify" class="agenda-check">
+          <!-- DJ agenda -->
+          <n-checkbox v-model:checked="agendaNotify" :disabled="!verified">
             {{ t('submission.agenda_notify') }}
           </n-checkbox>
 
-          <div class="agreement-box">
-            <n-checkbox v-model:checked="agreed">
-              {{ t('submission.agreement') }}
-            </n-checkbox>
-          </div>
+          <!-- Agreement collapse -->
+          <n-collapse :disabled="!verified">
+            <n-collapse-item :title="t('submission.agreement_title')" name="agreement">
+              <div class="agreement-body">
+                <p>{{ t('submission.agreement_text') }}</p>
+                <n-checkbox v-model:checked="agreed" :disabled="!verified">
+                  {{ t('submission.agreement') }}
+                </n-checkbox>
+              </div>
+            </n-collapse-item>
+          </n-collapse>
 
           <div v-if="fieldError" class="error-row">
             <p class="field-error">{{ fieldError }}</p>
             <button class="restart-link" @click="restart">{{ t('submission.start_over') }}</button>
           </div>
 
-          <GsapButton type="primary" :disabled="loading" @click="upload">
+          <GsapButton type="primary" :disabled="!verified || loading" @click="upload">
             <span>{{ t('submission.submit') }}</span>
           </GsapButton>
-        </div>
 
-        <!-- Success -->
-        <div v-else-if="step === 4" class="step step--success">
-          <div class="success-icon">✓</div>
-          <h2>{{ t('submission.success_heading') }}</h2>
-          <p class="step-body">{{ t('submission.success_body') }}</p>
-          <GsapButton @click="router.push('/')">
-            <span>{{ t('submission.back') }}</span>
-          </GsapButton>
         </div>
-        </template>
-
       </section>
 
       <footer class="footer">
@@ -155,7 +158,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { NConfigProvider, NInput, NProgress, NSelect, NCheckbox, darkTheme, type GlobalThemeOverrides } from 'naive-ui'
+import { NConfigProvider, NInput, NProgress, NSelect, NCheckbox, NSkeleton, NCollapse, NCollapseItem, darkTheme, type GlobalThemeOverrides } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
 import datanestApiService from '@/services/datanestApi'
 
@@ -179,9 +182,11 @@ const themeOverrides: GlobalThemeOverrides = {
 
 const GENRES = ['Electronic','House','Techno','Drum & Bass','Hip-Hop','R&B','Pop','Rock','Jazz','Classical','Latin','Ambient','Country','Other']
 
-const step = ref(1)
 const email = ref('')
 const code = ref('')
+const codeSent = ref(false)
+const verified = ref(false)
+const submitted = ref(false)
 const stationSlug = ref<string | null>(null)
 const artistName = ref('')
 const genre = ref<string | null>(null)
@@ -194,9 +199,11 @@ const loading = ref(false)
 const fieldError = ref('')
 const uploadProgress = ref(0)
 const stationOptions = ref<{ label: string; value: string }[]>([])
+const stationsLoading = ref(true)
 
 onMounted(async () => {
   stationOptions.value = await datanestApiService.getPublicBrands()
+  stationsLoading.value = false
 })
 
 async function sendCode() {
@@ -208,7 +215,7 @@ async function sendCode() {
   loading.value = true
   try {
     await datanestApiService.requestSubmissionCode(email.value.trim())
-    step.value = 2
+    codeSent.value = true
   } catch (e: any) {
     fieldError.value = e?.message || 'Error sending code.'
   } finally {
@@ -222,7 +229,7 @@ async function verify() {
     fieldError.value = t('submission.error_code')
     return
   }
-  step.value = 3
+  verified.value = true
 }
 
 function onFileChange(e: Event) {
@@ -246,7 +253,7 @@ async function upload() {
       (p) => { uploadProgress.value = p },
       { stationSlug: stationSlug.value ?? undefined, artistName: artistName.value.trim(), genre: genre.value, country: country.value.trim() || undefined, agendaNotify: agendaNotify.value },
     )
-    step.value = 4
+    submitted.value = true
   } catch (e: any) {
     const msg: string = e?.message || 'Upload failed.'
     if (msg.includes('401')) { restart(); return }
@@ -257,9 +264,11 @@ async function upload() {
 }
 
 function restart() {
-  step.value = 1
   email.value = ''
   code.value = ''
+  codeSent.value = false
+  verified.value = false
+  submitted.value = false
   selectedFile.value = null
   uploadProgress.value = 0
   fieldError.value = t('submission.error_code_expired')
@@ -334,7 +343,7 @@ h2 {
 }
 
 .submission-card {
-  max-width: 520px;
+  max-width: 560px;
   margin: 0 auto;
   background: #0f0f0f;
   border: 1px solid #1f1f1f;
@@ -342,22 +351,82 @@ h2 {
   padding: 40px;
 }
 
-.step {
+.form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
-.step-body {
-  color: #b0b0b0;
-  margin: 0;
-  font-size: 0.95rem;
+.inline-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.inline-row .n-input {
+  flex: 1;
+}
+
+.divider {
+  height: 1px;
+  background: #1f1f1f;
+  margin: 4px 0;
 }
 
 .field-row {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: 0.82rem;
+  color: #888;
+  display: block;
+}
+
+.required {
+  color: #FF2D95;
+}
+
+.file-area {
+  border: 1px dashed #333;
+  border-radius: 10px;
+  padding: 28px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.file-area:not(.file-area--disabled):hover {
+  border-color: #7C3AED;
+  background: rgba(124, 58, 237, 0.05);
+}
+
+.file-area--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.file-hint {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.file-name {
+  color: #b0b0b0;
+  font-size: 0.9rem;
+  word-break: break-all;
+}
+
+.agreement-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 0 4px;
+  font-size: 0.85rem;
+  color: #b0b0b0;
+  line-height: 1.6;
 }
 
 .error-row {
@@ -374,79 +443,28 @@ h2 {
 }
 
 .restart-link {
-  color: #888 !important;
-  font-size: 0.82rem;
-  text-decoration: underline;
-  white-space: nowrap;
-}
-
-.field-label {
-  font-size: 0.82rem;
-  color: #888;
-  margin-bottom: 4px;
-  display: block;
-}
-
-.required {
-  color: #FF2D95;
-}
-
-.agenda-check {
-  margin-top: 4px;
-}
-
-.agreement-box {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid #2a2a2a;
-  border-radius: 8px;
-  padding: 14px 16px;
-  font-size: 0.85rem;
-  color: #b0b0b0;
-}
-
-.restart-link {
   background: none;
   border: none;
   cursor: pointer;
+  color: #888;
+  font-size: 0.82rem;
+  text-decoration: underline;
   padding: 0;
 }
 
-.unavailable {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 16px 0;
-}
-
-.file-area {
-  border: 1px dashed #333;
-  border-radius: 10px;
-  padding: 32px;
-  text-align: center;
-  cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
-}
-
-.file-area:hover {
-  border-color: #7C3AED;
-  background: rgba(124, 58, 237, 0.05);
-}
-
-.file-hint {
-  color: #666;
-  font-size: 0.9rem;
-}
-
-.file-name {
+.step-body {
   color: #b0b0b0;
-  font-size: 0.9rem;
-  word-break: break-all;
+  margin: 0;
+  font-size: 0.95rem;
 }
-
 
 .step--success {
+  display: flex;
+  flex-direction: column;
   align-items: center;
   text-align: center;
+  gap: 16px;
+  padding: 16px 0;
 }
 
 .success-icon {
@@ -461,7 +479,6 @@ h2 {
   align-items: center;
   justify-content: center;
 }
-
 
 .footer {
   display: grid;
