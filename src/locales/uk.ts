@@ -145,6 +145,8 @@ export default {
     feat_custom_script: 'Власний скрипт',
     feat_stream_duration: 'Тривалість ефіру',
     feat_kbps: 'кбіт/с',
+    feat_min: 'хв',
+    feat_ots: 'Експромт DJ',
   },
   brandForm: {
     create_title: 'Створити бренд',

@@ -145,6 +145,8 @@ export default {
     feat_custom_script: 'Script personalizado',
     feat_stream_duration: 'Duración del stream',
     feat_kbps: 'kbps',
+    feat_min: 'min',
+    feat_ots: 'DJ improvisado',
   },
   brandForm: {
     create_title: 'Crear marca',

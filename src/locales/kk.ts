@@ -145,6 +145,8 @@ export default {
     feat_custom_script: 'Өз сценарий',
     feat_stream_duration: 'Стрим ұзақтығы',
     feat_kbps: 'кбит/с',
+    feat_min: 'мин',
+    feat_ots: 'Жедел DJ',
   },
   brandForm: {
     create_title: 'Бренд құру',

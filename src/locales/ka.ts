@@ -145,6 +145,8 @@ export default {
     feat_custom_script: 'მორგებული სკრიპტი',
     feat_stream_duration: 'ნაკადის ხანგრძლივობა',
     feat_kbps: 'kbps',
+    feat_min: 'წთ',
+    feat_ots: 'სპონტანური DJ',
   },
   brandForm: {
     create_title: 'ბრენდის შექმნა',

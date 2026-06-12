@@ -145,6 +145,8 @@ export default {
     feat_custom_script: 'نص مخصص',
     feat_stream_duration: 'مدة البث',
     feat_kbps: 'كيلوبت/ث',
+    feat_min: 'دقيقة',
+    feat_ots: 'DJ ارتجالي',
   },
   brandForm: {
     create_title: 'إنشاء علامة تجارية',

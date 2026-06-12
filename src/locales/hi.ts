@@ -145,6 +145,8 @@ export default {
     feat_custom_script: 'कस्टम स्क्रिप्ट',
     feat_stream_duration: 'स्ट्रीम अवधि',
     feat_kbps: 'kbps',
+    feat_min: 'मिनट',
+    feat_ots: 'ऑन-द-स्पॉट DJ',
   },
   brandForm: {
     create_title: 'ब्रांड बनाएं',

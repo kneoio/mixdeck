@@ -146,6 +146,8 @@ export default {
     feat_custom_script: '커스텀 스크립트',
     feat_stream_duration: '스트림 시간',
     feat_kbps: 'kbps',
+    feat_min: '분',
+    feat_ots: '즉석 DJ',
   },
   brandForm: {
     create_title: '새 브랜드',

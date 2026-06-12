@@ -145,6 +145,8 @@ export default {
     feat_custom_script: 'カスタムスクリプト',
     feat_stream_duration: 'ストリーム時間',
     feat_kbps: 'kbps',
+    feat_min: '分',
+    feat_ots: 'アドリブDJ',
   },
   brandForm: {
     create_title: 'ブランド作成',

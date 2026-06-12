@@ -51,13 +51,14 @@ import { useSubscriptionProductsStore } from '@/stores/subscriptionProducts'
 interface PlanDescription {
   name?: string
   price?: number
-  djType?: string
+  djTypeId?: string
   maxSongs?: number
   maxStations?: number
+  otsAllowed?: boolean
   bulkUploadAllowed?: boolean
-  streamQualityKbps?: string
+  streamQualityKbps?: number
   customScriptAllowed?: boolean
-  streamDurationMinutes?: string | number
+  streamDurationMinutes?: number
 }
 
 interface SubscriptionProductViewEntry {
@@ -96,9 +97,10 @@ const cards = computed(() =>
       const features: string[] = []
       if (details.maxStations !== undefined) features.push(`${t('plans.feat_max_stations')}: ${details.maxStations}`)
       if (details.maxSongs !== undefined) features.push(`${t('plans.feat_max_songs')}: ${details.maxSongs.toLocaleString()}`)
-      if (details.djType) features.push(`${t('plans.feat_dj_types')}: ${details.djType}`)
-      if (details.streamQualityKbps) features.push(`${t('plans.feat_stream_quality')}: ${details.streamQualityKbps} ${t('plans.feat_kbps')}`)
-      if (details.streamDurationMinutes !== undefined) features.push(`${t('plans.feat_stream_duration')}: ${details.streamDurationMinutes}`)
+      if (details.djTypeId) features.push(`${t('plans.feat_dj_types')}: ${details.djTypeId}`)
+      if (details.streamQualityKbps !== undefined) features.push(`${t('plans.feat_stream_quality')}: ${details.streamQualityKbps} ${t('plans.feat_kbps')}`)
+      if (details.streamDurationMinutes !== undefined) features.push(`${t('plans.feat_stream_duration')}: ${details.streamDurationMinutes} ${t('plans.feat_min')}`)
+      if (details.otsAllowed) features.push(t('plans.feat_ots'))
       if (details.bulkUploadAllowed) features.push(t('plans.feat_bulk_upload'))
       if (details.customScriptAllowed) features.push(t('plans.feat_custom_script'))
 

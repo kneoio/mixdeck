@@ -146,6 +146,8 @@ export default {
     feat_custom_script: 'Eigenes Skript',
     feat_stream_duration: 'Stream-Dauer',
     feat_kbps: 'kbps',
+    feat_min: 'Min.',
+    feat_ots: 'On-The-Spot DJ',
   },
   brandForm: {
     create_title: 'Neue Marke',
