@@ -51,14 +51,13 @@ import { useSubscriptionProductsStore } from '@/stores/subscriptionProducts'
 interface PlanDescription {
   name?: string
   price?: number
-  stations?: number
-  listeners?: number
-  storage_gb?: number
-  bitrate_kbps?: number
-  ai_dj?: string[]
-  bulk_upload?: boolean
-  priority_support?: boolean
-  custom_integrations?: boolean
+  djType?: string
+  maxSongs?: number
+  maxStations?: number
+  bulkUploadAllowed?: boolean
+  streamQualityKbps?: string
+  customScriptAllowed?: boolean
+  streamDurationMinutes?: string | number
 }
 
 interface SubscriptionProductViewEntry {
@@ -88,28 +87,20 @@ function parseDescription(raw: string | undefined): PlanDescription {
   }
 }
 
-function valueOrUnlimited(value: number | undefined, unit: string): string {
-  if (value === undefined) return '-'
-  if (value < 0) return `Unlimited ${unit}`
-  return `${value} ${unit}`
-}
-
 const cards = computed(() =>
   (subscriptionProductsStore.products as SubscriptionProductViewEntry[])
     .filter((entry) => entry.active !== false)
     .map((entry) => {
       const name = entry.name || entry.identifier
       const details = parseDescription(entry.description)
-      const features: string[] = [
-        valueOrUnlimited(details.stations, 'stations'),
-        valueOrUnlimited(details.listeners, 'listeners'),
-        details.storage_gb !== undefined ? `${details.storage_gb} GB storage` : '-',
-        details.bitrate_kbps !== undefined ? `${details.bitrate_kbps} kbps bitrate` : '-',
-      ]
-      if (Array.isArray(details.ai_dj) && details.ai_dj.length > 0) features.push(`AI DJ: ${details.ai_dj.join(', ')}`)
-      if (details.bulk_upload) features.push('Bulk upload')
-      if (details.priority_support) features.push('Priority support')
-      if (details.custom_integrations) features.push('Custom integrations')
+      const features: string[] = []
+      if (details.maxStations !== undefined) features.push(`${t('plans.feat_max_stations')}: ${details.maxStations}`)
+      if (details.maxSongs !== undefined) features.push(`${t('plans.feat_max_songs')}: ${details.maxSongs.toLocaleString()}`)
+      if (details.djType) features.push(`${t('plans.feat_dj_types')}: ${details.djType}`)
+      if (details.streamQualityKbps) features.push(`${t('plans.feat_stream_quality')}: ${details.streamQualityKbps} ${t('plans.feat_kbps')}`)
+      if (details.streamDurationMinutes !== undefined) features.push(`${t('plans.feat_stream_duration')}: ${details.streamDurationMinutes}`)
+      if (details.bulkUploadAllowed) features.push(t('plans.feat_bulk_upload'))
+      if (details.customScriptAllowed) features.push(t('plans.feat_custom_script'))
 
       return {
         id: entry.id,
