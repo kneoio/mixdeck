@@ -223,6 +223,7 @@ export default {
     title_font: 'Tittelskrift',
     color: 'Farge',
     card_native_player: 'Innebygd spiller',
+    card_embed_player: 'Innebygd HTML-spiller',
     card_hls_stream: 'HLS-strøm',
     card_open: 'Åpne spiller',
     card_copy: 'Kopier URL',

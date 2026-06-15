@@ -774,6 +774,29 @@ async function handleCloseBrand() {
 
 /** Server uses bps (e.g. 192000). Values below 1000 are treated as legacy kbps. */
 const hlsCopied = ref(false)
+const embedCopied = ref(false)
+
+const COUNTRY_LANG: Record<string, string> = {
+  US: 'en', GB: 'en', DE: 'de', FR: 'fr', ES: 'es', IT: 'it',
+  PT: 'pt', BR: 'pt', RU: 'ru', UA: 'uk', LV: 'lv', GE: 'ka',
+  KZ: 'kk', JP: 'ja', NO: 'no', KR: 'ko',
+}
+
+const embedLabel = computed(() => {
+  const lang = COUNTRY_LANG[formData.value.country || ''] || 'en'
+  const ln = localizedNames.value.find(l => l.lang === lang) ?? localizedNames.value[0]
+  return ln?.name || brandSlug.value || ''
+})
+
+const embedSnippet = computed(() =>
+  `<mixpla-player slug="${brandSlug.value || ''}" label="${embedLabel.value}"></mixpla-player>\n<script src="https://mixpla-widget-1.justaidajam.workers.dev/mixpla-widget.iife.js"><\/script>`
+)
+
+function copyEmbedSnippet() {
+  navigator.clipboard.writeText(embedSnippet.value)
+  embedCopied.value = true
+  setTimeout(() => { embedCopied.value = false }, 2000)
+}
 
 function openMixplaPlayer() {
   window.open(formData.value.mixplaUrl, '_blank', 'noopener,noreferrer')
@@ -1603,6 +1626,12 @@ watch(activeTab, () => {
             <div class="player-card__url">{{ formData.hlsUrl }}</div>
             <div class="player-card__sub">VLC · foobar2000 · any HLS player</div>
             <div><GsapButton size="small" @click="copyHlsUrl"><span>{{ hlsCopied ? t('brandForm.card_copied') : t('brandForm.card_copy') }}</span></GsapButton></div>
+          </div>
+
+          <div v-if="brandSlug" :class="['player-card', { 'player-card--dark': themeStore.isDark }]">
+            <div class="player-card__label">{{ t('brandForm.card_embed_player') }}</div>
+            <pre style="font-size:11px;white-space:pre-wrap;word-break:break-all;margin:0 0 12px;opacity:0.8;">{{ embedSnippet }}</pre>
+            <div><GsapButton size="small" @click="copyEmbedSnippet"><span>{{ embedCopied ? t('brandForm.card_copied') : t('brandForm.card_copy') }}</span></GsapButton></div>
           </div>
         </div>
       </NTabPane>

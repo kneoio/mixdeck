@@ -223,6 +223,7 @@ export default {
     title_font: '제목 글꼴',
     color: '색상',
     card_native_player: '기본 플레이어',
+    card_embed_player: '임베디드 HTML 플레이어',
     card_hls_stream: 'HLS 스트림',
     card_open: '플레이어 열기',
     card_copy: 'URL 복사',

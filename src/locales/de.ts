@@ -223,6 +223,7 @@ export default {
     title_font: 'Titelschrift',
     color: 'Farbe',
     card_native_player: 'Nativer Player',
+    card_embed_player: 'Eingebetteter HTML-Player',
     card_hls_stream: 'HLS-Stream',
     card_open: 'Player öffnen',
     card_copy: 'URL kopieren',
