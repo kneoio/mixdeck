@@ -789,7 +789,7 @@ const embedLabel = computed(() => {
 })
 
 const embedSnippet = computed(() =>
-  `<mixpla-player slug="${brandSlug.value || ''}" label="${embedLabel.value}"></mixpla-player>\n<script src="https://mixpla-widget-1.justaidajam.workers.dev/mixpla-widget.iife.js"><\/script>`
+  `<mixpla-player slug="${brandSlug.value || ''}" label="${embedLabel.value}"></mixpla-player>\n<script src="https://widget.mixpla.io/mixpla-widget.iife.js"><\/script>`
 )
 
 function copyEmbedSnippet() {
