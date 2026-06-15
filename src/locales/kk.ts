@@ -121,6 +121,7 @@ export default {
     enabled: 'Қосулы',
     renewal: 'Жаңарту',
     upgrade: 'Pro-ға өту',
+    downgrade: 'Төмендету',
     security: 'Қауіпсіздік',
     password: 'Құпиясөз',
     tfa: '2FA',
@@ -146,6 +147,7 @@ export default {
     feat_stream_duration: 'Стрим ұзақтығы',
     feat_kbps: 'кбит/с',
     feat_min: 'мин',
+    feat_duration_nonstop: '24/7 non-stop',
     feat_ots: 'Жедел DJ',
   },
   brandForm: {
@@ -367,5 +369,6 @@ export default {
     save: 'Сақтау',
     close: 'Жабу',
     required_field: '«{field}» өрісі міндетті',
+    no_data: 'Деректер жоқ',
   },
 }

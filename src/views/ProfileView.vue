@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
 import {
   NAvatar, NTag, NDescriptions, NDescriptionsItem,
-  NCard, NSpace, NFlex, NDivider, NSelect
+  NCard, NSpace, NFlex, NDivider, NSelect, NSpin
 } from 'naive-ui'
 import { useAuthStore } from '@/stores/auth'
+import { useSubscriptionProductsStore } from '@/stores/subscriptionProducts'
 import PageHeader from '@/components/PageHeader.vue'
 import GsapButton from '@/components/GsapButton.vue'
 import { LOCALE_LABELS, SUPPORTED_LOCALES, saveLocale, type SupportedLocale } from '@/i18n'
 
 const { t, locale } = useI18n()
 const authStore = useAuthStore()
-const router = useRouter()
+const subscriptionProductsStore = useSubscriptionProductsStore()
 
 const profile = computed(() => authStore.userProfile ?? {})
 
@@ -44,6 +44,56 @@ function onLocaleChange(val: SupportedLocale) {
   locale.value = val
   saveLocale(val)
 }
+
+function parseDescription(raw: string | undefined): Record<string, any> {
+  if (!raw) return {}
+  try { return JSON.parse(raw) } catch { return {} }
+}
+
+function qualityLabel(kbps: number | string): string {
+  const map: Record<number, string> = { 64: t('brandForm.stream_quality_good'), 96: t('brandForm.stream_quality_great'), 128: t('brandForm.stream_quality_best') }
+  return String(kbps).split(',').map(v => map[Number(v.trim())] ?? `${v.trim()} ${t('plans.feat_kbps')}`).join(', ')
+}
+
+function durationLabel(val: number | string): string {
+  return val === 'infinitely' || val === 0 ? t('plans.feat_duration_nonstop') : `${val} ${t('plans.feat_min')}`
+}
+
+
+const currentPrice = computed(() => {
+  const subscribed = subscriptionProductsStore.products.find(p => p.subscribed)
+  if (!subscribed) return 0
+  return parseDescription(subscribed.description).price ?? 0
+})
+
+const planCards = computed(() =>
+  subscriptionProductsStore.products
+    .filter(p => p.active !== false)
+    .map(p => {
+      const details = parseDescription(p.description)
+      const price = details.price ?? 0
+      const features: string[] = []
+      if (details.maxStations != null) features.push(`${t('plans.feat_max_stations')}: ${details.maxStations}`)
+      if (details.maxSongs != null) features.push(`${t('plans.feat_max_songs')}: ${details.maxSongs.toLocaleString()}`)
+      if (details.djTypeId) features.push(`${t('plans.feat_dj_types')}: ${details.djTypeId}`)
+      if (details.streamQualityKbps != null) features.push(`${t('plans.feat_stream_quality')}: ${qualityLabel(details.streamQualityKbps)}`)
+      if (details.streamDurationMinutes != null) features.push(`${t('plans.feat_stream_duration')}: ${durationLabel(details.streamDurationMinutes)}`)
+      if (details.otsAllowed) features.push(t('plans.feat_ots'))
+      if (details.bulkUploadAllowed) features.push(t('plans.feat_bulk_upload'))
+      if (details.customScriptAllowed) features.push(t('plans.feat_custom_script'))
+      const subscribed = p.subscribed ?? false
+      const label = subscribed ? t('plans.current') : price > currentPrice.value ? t('profile.upgrade') : t('profile.downgrade')
+      return { id: p.id, name: p.name, price, description: details.name ?? '', features, subscribed, label }
+    })
+)
+
+onMounted(async () => {
+  try {
+    await subscriptionProductsStore.loadProducts()
+  } catch {
+    // server unavailable
+  }
+})
 </script>
 
 <template>
@@ -66,17 +116,11 @@ function onLocaleChange(val: SupportedLocale) {
 
         <NDescriptions label-placement="left" :column="1" label-style="width: 160px; opacity: 0.55;">
           <NDescriptionsItem :label="t('profile.username')">{{ authStore.userName || '—' }}</NDescriptionsItem>
-          <NDescriptionsItem :label="t('profile.first_name')">{{ profile.firstName || '—' }}</NDescriptionsItem>
-          <NDescriptionsItem :label="t('profile.last_name')">{{ profile.lastName || '—' }}</NDescriptionsItem>
           <NDescriptionsItem :label="t('profile.email')">
             <NSpace :size="8" align="center">
               <span>{{ authStore.userEmail || '—' }}</span>
-              <NTag
-                :type="profile.emailVerified ? 'success' : 'warning'"
-                size="small"
-                round
-              >
-                {{ profile.emailVerified ? t('profile.verified') : t('profile.unverified') }}
+              <NTag v-if="profile.emailVerified" type="success" size="small" round>
+                {{ t('profile.verified') }}
               </NTag>
             </NSpace>
           </NDescriptionsItem>
@@ -97,31 +141,43 @@ function onLocaleChange(val: SupportedLocale) {
 
       <!-- Subscription -->
       <NCard :title="t('profile.subscription')">
-        <NFlex justify="space-between" align="center" style="margin-bottom: 16px;">
-          <div>
-            <div style="font-size: 16px; font-weight: 600;">{{ t('profile.free_plan') }}</div>
-            <div style="opacity: 0.55; font-size: 13px; margin-top: 2px;">{{ t('profile.free_plan_desc') }}</div>
+        <NSpin :show="subscriptionProductsStore.loading">
+
+          <!-- Plan cards -->
+          <div v-if="planCards.length" style="display: flex; gap: 16px; flex-wrap: wrap; align-items: stretch;">
+            <NCard
+              v-for="card in planCards"
+              :key="card.id"
+              :style="card.subscribed
+                ? 'flex: 1; min-width: 180px; border: 1px solid #C2185B; display: flex; flex-direction: column;'
+                : 'flex: 1; min-width: 180px; display: flex; flex-direction: column;'"
+              content-style="display: flex; flex-direction: column; flex: 1;"
+            >
+              <div style="margin-bottom: 12px;">
+                <NFlex align="center" :size="8" style="margin-bottom: 4px;">
+                  <div style="font-size: 15px; font-weight: 700;">{{ card.name }}</div>
+                  <NTag v-if="card.subscribed" type="success" size="small" round>{{ t('plans.current') }}</NTag>
+                </NFlex>
+                <div style="font-size: 22px; font-weight: 800;">
+                  €{{ card.price }} <span style="font-size: 12px; font-weight: 400; opacity: 0.5;">/ mo</span>
+                </div>
+                <div style="font-size: 12px; opacity: 0.55;">{{ card.description }}</div>
+              </div>
+              <NDivider style="margin: 0 0 12px;" />
+              <ul style="list-style: none; padding: 0; margin: 0 0 16px; display: flex; flex-direction: column; gap: 6px; font-size: 12px; flex: 1;">
+                <li v-for="feature in card.features" :key="feature">✓ {{ feature }}</li>
+              </ul>
+              <GsapButton block :disabled="card.subscribed" :type="card.subscribed ? 'default' : 'primary'">
+                <span>{{ card.label }}</span>
+              </GsapButton>
+            </NCard>
           </div>
-          <NTag type="default" size="medium" round>{{ t('profile.free') }}</NTag>
-        </NFlex>
 
-        <NDivider style="margin: 0 0 16px;" />
+          <template v-else-if="!subscriptionProductsStore.loading">
+            <div style="opacity: 0.55; font-size: 13px;">{{ t('profile.free_plan') }}</div>
+          </template>
 
-        <NDescriptions label-placement="left" :column="1" label-style="width: 180px; opacity: 0.55;">
-          <NDescriptionsItem :label="t('profile.brands')">1 / 1</NDescriptionsItem>
-          <NDescriptionsItem :label="t('profile.listeners_quota')">0 / 100</NDescriptionsItem>
-          <NDescriptionsItem :label="t('profile.storage')">0 / 2 GB</NDescriptionsItem>
-          <NDescriptionsItem :label="t('profile.bulk_upload')">
-            <NTag type="success" size="small" round>{{ t('profile.enabled') }}</NTag>
-          </NDescriptionsItem>
-          <NDescriptionsItem :label="t('profile.ai_dj')">{{ t('profile.ai_dj_free') }}</NDescriptionsItem>
-        </NDescriptions>
-
-        <NDivider style="margin: 16px 0;" />
-
-        <GsapButton type="primary" @click="router.push('/plans')">
-          <span>{{ t('profile.upgrade') }}</span>
-        </GsapButton>
+        </NSpin>
       </NCard>
 
       <!-- About -->

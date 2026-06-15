@@ -121,6 +121,7 @@ export default {
     enabled: 'ჩართულია',
     renewal: 'განახლება',
     upgrade: 'Pro-ზე გადასვლა',
+    downgrade: 'დაქვეითება',
     security: 'უსაფრთხოება',
     password: 'პაროლი',
     tfa: '2FA',
@@ -146,6 +147,7 @@ export default {
     feat_stream_duration: 'ნაკადის ხანგრძლივობა',
     feat_kbps: 'kbps',
     feat_min: 'წთ',
+    feat_duration_nonstop: '24/7 non-stop',
     feat_ots: 'სპონტანური DJ',
   },
   brandForm: {
@@ -367,5 +369,6 @@ export default {
     save: 'შენახვა',
     close: 'დახურვა',
     required_field: '{field} სავალდებულოა',
+    no_data: 'მონაცემები არ არის',
   },
 }

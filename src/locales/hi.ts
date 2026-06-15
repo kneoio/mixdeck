@@ -121,6 +121,7 @@ export default {
     enabled: 'सक्षम',
     renewal: 'नवीनीकरण',
     upgrade: 'Pro में अपग्रेड करें',
+    downgrade: 'डाउनग्रेड करें',
     security: 'सुरक्षा',
     password: 'पासवर्ड',
     tfa: '2FA',
@@ -146,6 +147,7 @@ export default {
     feat_stream_duration: 'स्ट्रीम अवधि',
     feat_kbps: 'kbps',
     feat_min: 'मिनट',
+    feat_duration_nonstop: '24/7 non-stop',
     feat_ots: 'ऑन-द-स्पॉट DJ',
   },
   brandForm: {
@@ -366,5 +368,6 @@ export default {
     save: 'सहेजें',
     close: 'बंद करें',
     required_field: '{field} आवश्यक है',
+    no_data: 'कोई डेटा नहीं',
   },
 }

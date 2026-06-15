@@ -121,6 +121,7 @@ export default {
     enabled: 'Включено',
     renewal: 'Продление',
     upgrade: 'Перейти на Pro',
+    downgrade: 'Перейти на тариф ниже',
     security: 'Безопасность',
     password: 'Пароль',
     tfa: 'Двухфакторная аутентификация',
@@ -146,6 +147,7 @@ export default {
     feat_stream_duration: 'Длительность эфира',
     feat_kbps: 'кбит/с',
     feat_min: 'мин',
+    feat_duration_nonstop: '24/7 non-stop',
     feat_ots: 'Экспромт DJ',
   },
   brandForm: {
@@ -366,5 +368,6 @@ export default {
     save: 'Сохранить',
     close: 'Закрыть',
     required_field: 'Поле «{field}» обязательно',
+    no_data: 'Нет данных',
   },
 }

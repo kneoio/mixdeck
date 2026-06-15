@@ -121,6 +121,7 @@ export default {
     enabled: '有効',
     renewal: '更新',
     upgrade: 'Proにアップグレード',
+    downgrade: 'ダウングレード',
     security: 'セキュリティ',
     password: 'パスワード',
     tfa: '二段階認証',
@@ -146,6 +147,7 @@ export default {
     feat_stream_duration: 'ストリーム時間',
     feat_kbps: 'kbps',
     feat_min: '分',
+    feat_duration_nonstop: '24/7 non-stop',
     feat_ots: 'アドリブDJ',
   },
   brandForm: {
@@ -366,5 +368,6 @@ export default {
     save: '保存',
     close: '閉じる',
     required_field: '{field}は必須です',
+    no_data: 'データなし',
   },
 }

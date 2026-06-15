@@ -122,6 +122,7 @@ export default {
     enabled: '활성화됨',
     renewal: '갱신',
     upgrade: 'Plus로 업그레이드',
+    downgrade: '다운그레이드',
     security: '보안',
     password: '비밀번호',
     tfa: '2단계 인증',
@@ -147,6 +148,7 @@ export default {
     feat_stream_duration: '스트림 시간',
     feat_kbps: 'kbps',
     feat_min: '분',
+    feat_duration_nonstop: '24/7 non-stop',
     feat_ots: '즉석 DJ',
   },
   brandForm: {
@@ -418,5 +420,6 @@ export default {
     close: '닫기',
     add: '추가',
     required_field: '{field}은(는) 필수입니다',
+    no_data: '데이터 없음',
   },
 }

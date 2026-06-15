@@ -122,6 +122,7 @@ export default {
     enabled: 'Enabled',
     renewal: 'Renewal',
     upgrade: 'Upgrade',
+    downgrade: 'Downgrade',
     security: 'Security',
     password: 'Password',
     tfa: '2FA',
@@ -147,6 +148,7 @@ export default {
     feat_stream_duration: 'Stream Duration',
     feat_kbps: 'kbps',
     feat_min: 'min',
+    feat_duration_nonstop: '24/7 non-stop',
     feat_ots: 'On-The-Spot DJ',
   },
   brandForm: {
@@ -437,5 +439,6 @@ export default {
     close: 'Close',
     add: 'Add',
     required_field: '{field} is required',
+    no_data: 'No data',
   },
 }

@@ -122,6 +122,7 @@ export default {
     enabled: 'Aktivert',
     renewal: 'Fornyelse',
     upgrade: 'Oppgrader til Plus',
+    downgrade: 'Nedgrader',
     security: 'Sikkerhet',
     password: 'Passord',
     tfa: '2FA',
@@ -147,6 +148,7 @@ export default {
     feat_stream_duration: 'Strømmevarighet',
     feat_kbps: 'kbps',
     feat_min: 'min',
+    feat_duration_nonstop: '24/7 non-stop',
     feat_ots: 'On-The-Spot DJ',
   },
   brandForm: {
@@ -418,5 +420,6 @@ export default {
     close: 'Lukk',
     add: 'Legg til',
     required_field: '{field} er påkrevd',
+    no_data: 'Ingen data',
   },
 }

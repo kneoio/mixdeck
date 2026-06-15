@@ -121,6 +121,7 @@ export default {
     enabled: 'مفعّل',
     renewal: 'التجديد',
     upgrade: 'الترقية إلى Pro',
+    downgrade: 'تخفيض الخطة',
     security: 'الأمان',
     password: 'كلمة المرور',
     tfa: 'التحقق بخطوتين',
@@ -146,6 +147,7 @@ export default {
     feat_stream_duration: 'مدة البث',
     feat_kbps: 'كيلوبت/ث',
     feat_min: 'دقيقة',
+    feat_duration_nonstop: '24/7 non-stop',
     feat_ots: 'DJ ارتجالي',
   },
   brandForm: {
@@ -366,5 +368,6 @@ export default {
     save: 'حفظ',
     close: 'إغلاق',
     required_field: 'حقل {field} مطلوب',
+    no_data: 'لا توجد بيانات',
   },
 }

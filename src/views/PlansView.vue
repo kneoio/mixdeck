@@ -88,6 +88,15 @@ function parseDescription(raw: string | undefined): PlanDescription {
   }
 }
 
+function qualityLabel(kbps: number | string): string {
+  const map: Record<number, string> = { 64: t('brandForm.stream_quality_good'), 96: t('brandForm.stream_quality_great'), 128: t('brandForm.stream_quality_best') }
+  return String(kbps).split(',').map(v => map[Number(v.trim())] ?? `${v.trim()} ${t('plans.feat_kbps')}`).join(', ')
+}
+
+function durationLabel(val: number | string): string {
+  return val === 'infinitely' || val === 0 ? t('plans.feat_duration_nonstop') : `${val} ${t('plans.feat_min')}`
+}
+
 const cards = computed(() =>
   (subscriptionProductsStore.products as SubscriptionProductViewEntry[])
     .filter((entry) => entry.active !== false)
@@ -98,8 +107,8 @@ const cards = computed(() =>
       if (details.maxStations !== undefined) features.push(`${t('plans.feat_max_stations')}: ${details.maxStations}`)
       if (details.maxSongs !== undefined) features.push(`${t('plans.feat_max_songs')}: ${details.maxSongs.toLocaleString()}`)
       if (details.djTypeId) features.push(`${t('plans.feat_dj_types')}: ${details.djTypeId}`)
-      if (details.streamQualityKbps !== undefined) features.push(`${t('plans.feat_stream_quality')}: ${details.streamQualityKbps} ${t('plans.feat_kbps')}`)
-      if (details.streamDurationMinutes !== undefined) features.push(`${t('plans.feat_stream_duration')}: ${details.streamDurationMinutes} ${t('plans.feat_min')}`)
+      if (details.streamQualityKbps !== undefined) features.push(`${t('plans.feat_stream_quality')}: ${qualityLabel(details.streamQualityKbps)}`)
+      if (details.streamDurationMinutes !== undefined) features.push(`${t('plans.feat_stream_duration')}: ${durationLabel(details.streamDurationMinutes)}`)
       if (details.otsAllowed) features.push(t('plans.feat_ots'))
       if (details.bulkUploadAllowed) features.push(t('plans.feat_bulk_upload'))
       if (details.customScriptAllowed) features.push(t('plans.feat_custom_script'))
@@ -118,6 +127,10 @@ const cards = computed(() =>
 )
 
 onMounted(async () => {
-  await subscriptionProductsStore.loadProducts()
+  try {
+    await subscriptionProductsStore.loadProducts()
+  } catch {
+    // server unavailable — empty state shown
+  }
 })
 </script>

@@ -1199,23 +1199,6 @@ watch(activeTab, () => {
             </div>
           </NFormItem>
 
-          <NFormItem :label="t('brandForm.bit_rate')">
-            <div class="field-stack">
-              <div class="field-error-shell">
-                <NSlider
-                  :value="formData.bitRate"
-                  :min="64_000"
-                  :max="128_000"
-                  :step="32_000"
-                  :marks="bitRateMarks"
-                  :format-tooltip="formatBitRateTooltip"
-                  style="max-width: 360px"
-                  @update:value="handleQualityChange"
-                />
-              </div>
-              <div class="field-error-label"></div>
-            </div>
-          </NFormItem>
 
           <NFormItem>
             <template #label>

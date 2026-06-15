@@ -121,6 +121,7 @@ export default {
     enabled: 'Activé',
     renewal: 'Renouvellement',
     upgrade: 'Passer à Pro',
+    downgrade: 'Rétrograder',
     security: 'Sécurité',
     password: 'Mot de passe',
     tfa: '2FA',
@@ -146,6 +147,7 @@ export default {
     feat_stream_duration: 'Durée du stream',
     feat_kbps: 'kbps',
     feat_min: 'min',
+    feat_duration_nonstop: '24/7 non-stop',
     feat_ots: 'DJ improvisation',
   },
   brandForm: {
@@ -366,5 +368,6 @@ export default {
     save: 'Enregistrer',
     close: 'Fermer',
     required_field: '{field} est obligatoire',
+    no_data: 'Aucune donnée',
   },
 }

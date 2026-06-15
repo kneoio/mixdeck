@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import coreApiService, { type SubscriptionProductEntry } from '@/services/coreApi'
+import nivaroApiService from '@/services/nivaroApi'
+import type { SubscriptionProductEntry } from '@/services/coreApi'
 
 export const useSubscriptionProductsStore = defineStore('subscriptionProducts', () => {
   const products = ref<SubscriptionProductEntry[]>([])
@@ -13,7 +14,7 @@ export const useSubscriptionProductsStore = defineStore('subscriptionProducts', 
   async function loadProducts(page = pageNum.value, size = pageSize.value) {
     loading.value = true
     try {
-      const result = await coreApiService.getSubscriptionProducts(page, size)
+      const result = await nivaroApiService.getSubscriptionProducts(page, size)
       products.value = result.entries
       totalCount.value = result.count
       pageNum.value = result.pageNum

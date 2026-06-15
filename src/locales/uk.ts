@@ -121,6 +121,7 @@ export default {
     enabled: 'Увімкнено',
     renewal: 'Продовження',
     upgrade: 'Оновити до Pro',
+    downgrade: 'Перейти на нижчий тариф',
     security: 'Безпека',
     password: 'Пароль',
     tfa: '2FA',
@@ -146,6 +147,7 @@ export default {
     feat_stream_duration: 'Тривалість ефіру',
     feat_kbps: 'кбіт/с',
     feat_min: 'хв',
+    feat_duration_nonstop: '24/7 non-stop',
     feat_ots: 'Експромт DJ',
   },
   brandForm: {
@@ -367,5 +369,6 @@ export default {
     save: 'Зберегти',
     close: 'Закрити',
     required_field: 'Поле «{field}» є обов’язковим',
+    no_data: 'Немає даних',
   },
 }
