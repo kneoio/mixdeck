@@ -16,8 +16,8 @@
             <!-- <n-button size="large" @click="router.push('/submission')">{{ t('welcome.cta_submit') }}</n-button> -->
           </div>
         </div>
-        <div class="waveform" aria-hidden="true">
-          <span v-for="bar in 32" :key="bar" />
+        <div class="player-wrapper">
+          <mixpla-player slug="sunonation" label="Sunonation"></mixpla-player>
         </div>
       </section>
 
@@ -82,12 +82,19 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { NButton, NConfigProvider, darkTheme } from 'naive-ui'
 
 const { t } = useI18n()
 const router = useRouter()
+
+onMounted(() => {
+  const script = document.createElement('script')
+  script.src = 'https://widget.mixpla.io/mixpla-widget.iife.js'
+  document.head.appendChild(script)
+})
 
 function goToMixpla() {
   window.open('https://mixpla.online', '_blank', 'noopener,noreferrer')
@@ -196,30 +203,10 @@ h1 {
   box-shadow: 0 18px 45px rgba(255, 122, 24, 0.45);
 }
 
-.waveform {
+.player-wrapper {
   display: flex;
-  align-items: flex-end;
-  gap: 4px;
-  height: 160px;
-  padding: 24px;
-  background: radial-gradient(circle at top, rgba(255,255,255,0.08), transparent 60%);
-  border-radius: 16px;
-}
-
-.waveform span {
-  width: 4px;
-  background: linear-gradient(180deg, #58d6ff, #7b5bff);
-  border-radius: 2px;
-  animation: pulse 15s ease-in-out infinite;
-  animation-delay: calc(var(--i) * 0.05s);
-}
-
-.waveform span:nth-child(n) {
-  --i: 1;
-}
-
-.waveform span:nth-child(odd) {
-  animation-duration: 1s;
+  justify-content: center;
+  align-items: center;
 }
 
 .what-is {
