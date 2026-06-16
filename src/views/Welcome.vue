@@ -17,7 +17,7 @@
           </div>
         </div>
         <div class="player-wrapper">
-          <mixpla-player slug="sunonation" label="Sunonation"></mixpla-player>
+          <mixpla-player slug="sunonation" label="Sunonation" style="display:block;width:100%;min-height:120px;"></mixpla-player>
         </div>
       </section>
 
@@ -93,6 +93,8 @@ const router = useRouter()
 onMounted(() => {
   const script = document.createElement('script')
   script.src = 'https://widget.mixpla.io/mixpla-widget.iife.js'
+  script.onerror = () => console.error('[mixpla] widget script failed to load')
+  script.onload = () => console.log('[mixpla] widget script loaded')
   document.head.appendChild(script)
 })
 

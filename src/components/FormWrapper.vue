@@ -1,6 +1,9 @@
 <template>
   <div class="form-wrapper">
     <PageHeader :title="title" :subtitle="subtitle">
+      <template v-if="$slots['title-after']" #title-after>
+        <slot name="title-after" />
+      </template>
       <template #actions>
         <slot name="header-actions" />
       </template>

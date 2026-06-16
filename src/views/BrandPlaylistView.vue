@@ -232,11 +232,13 @@ const columns = computed<DataTableColumns<any>>(() => {
             : null
 
           const played = row.playedByBrandCount ?? 0
-          const rating = row.ratedByBrandCount ?? 0
-          const ratingStr = rating > 0 ? `+${rating}` : String(rating)
+          const l = row.likes ?? 0
+          const d = row.dislikes ?? 0
+          const likesBadge = h('span', { class: ['stat-badge', l > 0 ? 'stat-badge--likes' : ''] }, `+${l}`)
+          const dislikesBadge = h('span', { class: ['stat-badge', d > 0 ? 'stat-badge--dislikes' : ''] }, `-${d}`)
           const metaItems: any[] = [
             h('span', { class: 'mob-meta-item' }, `${t('playlistView.col_played')}: ${played}`),
-            h('span', { class: 'mob-meta-item' }, `${t('playlistView.col_rating')}: ${ratingStr}`),
+            h('span', { class: 'mob-meta-item' }, [t('playlistView.col_rating') + ': ', dislikesBadge, ' ', likesBadge]),
           ]
           if (row.shared) metaItems.push(h('span', { class: 'mob-meta-item' }, [h(NIcon, { size: 14, color: '#7C3AED' }, { default: () => h(ShareSocialOutline) })]))
           if (row.description) metaItems.push(h('span', { class: 'mob-meta-item mob-desc' }, row.description))
@@ -255,7 +257,7 @@ const columns = computed<DataTableColumns<any>>(() => {
   const descMin = nw ? 72 : 160
   const titleMin = nw ? 220 : 200
   const artistMin = nw ? 180 : 160
-  const ratingW = nw ? 56 : 72
+  const ratingW = nw ? 100 : 120
   const sharedW = nw ? 56 : 72
 
   return [
@@ -327,8 +329,12 @@ const columns = computed<DataTableColumns<any>>(() => {
   {
     title: t('playlistView.col_rating'), key: 'rating', width: ratingW,
     render: (row) => {
-      const val = row.ratedByBrandCount ?? 0
-      return val > 0 ? `+${val}` : String(val)
+      const l = row.likes ?? 0
+      const d = row.dislikes ?? 0
+      return h('span', { style: 'display:flex;gap:4px;align-items:center' }, [
+        h('span', { class: ['stat-badge', d > 0 ? 'stat-badge--dislikes' : ''] }, `-${d}`),
+        h('span', { class: ['stat-badge', l > 0 ? 'stat-badge--likes' : ''] }, `+${l}`),
+      ])
     }
   },
   {
@@ -550,6 +556,30 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
   position: absolute;
   inset: -6px 0;
   cursor: pointer;
+}
+.stat-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: currentColor;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  padding: 0px 4px;
+  opacity: 0.35;
+}
+.stat-badge--likes {
+  opacity: 1;
+  color: #ca8a04;
+  border-color: rgba(202, 138, 4, 0.5);
+  box-shadow: 0 0 7px 2px rgba(202, 138, 4, 0.25);
+}
+.stat-badge--dislikes {
+  opacity: 1;
+  color: #dc2626;
+  border-color: rgba(220, 38, 38, 0.5);
+  box-shadow: 0 0 7px 2px rgba(220, 38, 38, 0.25);
 }
 .mob-card { display: flex; flex-direction: column; gap: 4px; padding: 2px 0; }
 .mob-r1 { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }

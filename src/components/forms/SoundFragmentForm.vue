@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { gsap } from 'gsap'
 import {
   NSpace, NForm, NFormItem, NInput, NSelect, NTreeSelect,
-  NTabs, NTabPane, NUpload, NProgress, useMessage,
+  NTabs, NTabPane, NUpload, NProgress, NTag, useMessage,
 } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
 import type { UploadCustomRequestOptions } from 'naive-ui'
@@ -61,6 +61,8 @@ const fieldErrors = ref<Record<ValidationField, string>>({
 
 const regDate = ref('')
 const lastModifiedDate = ref('')
+const likes = ref(0)
+const dislikes = ref(0)
 
 interface SharedWithEntry {
   targetBrand: string
@@ -312,6 +314,8 @@ onMounted(async () => {
       }
       regDate.value = frag.regDate || ''
       lastModifiedDate.value = frag.lastModifiedDate || ''
+      likes.value = frag.likes ?? 0
+      dislikes.value = frag.dislikes ?? 0
       sharedWith.value = normalizeSharedWith(frag.sharedWith)
       const opusFile = frag.uploadedFiles?.find((f: any) => f.type === 'opus')
       isOpusPreview.value = !!opusFile
@@ -366,6 +370,10 @@ watch(activeTab, () => {
     :subtitle="formSubtitle"
     :loading="loading"
   >
+    <template v-if="isEditing" #title-after>
+      <span class="opus-badge" :class="{ 'opus-badge--dislikes': dislikes > 0 }" style="margin-left:10px">-{{ dislikes }}</span>
+      <span class="opus-badge" :class="{ 'opus-badge--likes': likes > 0 }" style="margin-left:4px">+{{ likes }}</span>
+    </template>
     <template #header-actions>
       <div v-if="regDate" style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;font-size:12px;opacity:0.5;line-height:1.4;">
         <span>Created: {{ regDate }}</span>
@@ -584,17 +592,33 @@ watch(activeTab, () => {
   font-weight: 600;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: currentColor;
+  border: 1px solid currentColor;
   border-radius: 3px;
   padding: 0px 4px;
-  transition: color 0.3s, border-color 0.3s, box-shadow 0.3s;
+  opacity: 0.35;
+  transition: color 0.3s, border-color 0.3s, box-shadow 0.3s, opacity 0.3s;
 }
 
 .opus-badge--playing {
+  opacity: 1;
   color: #eff605;
   border-color: rgba(239, 246, 5, 0.5);
   box-shadow: 0 0 7px 2px rgba(239, 246, 5, 0.4);
+}
+
+.opus-badge--likes {
+  opacity: 1;
+  color: #ca8a04;
+  border-color: rgba(202, 138, 4, 0.5);
+  box-shadow: 0 0 7px 2px rgba(202, 138, 4, 0.25);
+}
+
+.opus-badge--dislikes {
+  opacity: 1;
+  color: #dc2626;
+  border-color: rgba(220, 38, 38, 0.5);
+  box-shadow: 0 0 7px 2px rgba(220, 38, 38, 0.25);
 }
 
 .field-error-shell {

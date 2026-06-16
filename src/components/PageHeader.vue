@@ -1,6 +1,10 @@
 <template>
   <div class="page-header">
-    <NPageHeader :title="title" :subtitle="subtitle">
+    <NPageHeader :title="!$slots['title-after'] ? title : undefined" :subtitle="subtitle">
+      <template v-if="$slots['title-after']" #title>
+        <span>{{ title }}</span>
+        <slot name="title-after" />
+      </template>
       <template #extra>
         <div class="page-header-extra">
           <span v-if="count !== undefined" class="total-count">
