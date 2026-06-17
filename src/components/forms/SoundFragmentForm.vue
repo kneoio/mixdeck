@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { gsap } from 'gsap'
 import {
   NSpace, NForm, NFormItem, NInput, NSelect, NTreeSelect,
-  NTabs, NTabPane, NUpload, NProgress, NTag, useMessage,
+  NTabs, NTabPane, NUpload, NProgress, useMessage,
 } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
 import type { UploadCustomRequestOptions } from 'naive-ui'
@@ -48,8 +48,9 @@ const artistFieldRef = ref<HTMLElement | null>(null)
 const genresFieldRef = ref<HTMLElement | null>(null)
 const representedInBrandsFieldRef = ref<HTMLElement | null>(null)
 const audioFileFieldRef = ref<HTMLElement | null>(null)
+const streamUrlFieldRef = ref<HTMLElement | null>(null)
 
-type ValidationField = 'title' | 'artist' | 'genres' | 'representedInBrands' | 'audioFile'
+type ValidationField = 'title' | 'artist' | 'genres' | 'representedInBrands' | 'audioFile' | 'streamUrl'
 
 const fieldErrors = ref<Record<ValidationField, string>>({
   title: '',
@@ -57,6 +58,7 @@ const fieldErrors = ref<Record<ValidationField, string>>({
   genres: '',
   representedInBrands: '',
   audioFile: '',
+  streamUrl: '',
 })
 
 const regDate = ref('')
@@ -106,7 +108,14 @@ const formData = ref({
   representedInBrands: brandId.value ? [brandId.value] : [] as string[],
   expiresAt: '' as string | null,
   length: null as number | null,
+  source: 'USER_UPLOAD' as string,
+  streamUrl: '' as string,
 })
+
+const sourceOptions = computed(() => [
+  { label: t('fragmentForm.source_user_upload'), value: 'USER_UPLOAD' },
+  { label: t('fragmentForm.source_stream'), value: 'STREAM' },
+])
 
 const genreTreeOptions = computed(() => toGenreTreeOptions(dictionaryStore.genres))
 
@@ -154,6 +163,7 @@ function getFieldRef(field: ValidationField) {
   if (field === 'artist') return artistFieldRef.value
   if (field === 'genres') return genresFieldRef.value
   if (field === 'representedInBrands') return representedInBrandsFieldRef.value
+  if (field === 'streamUrl') return streamUrlFieldRef.value
   return audioFileFieldRef.value
 }
 
@@ -162,6 +172,7 @@ function getFieldLabel(field: ValidationField) {
   if (field === 'artist') return t('fragmentForm.artist')
   if (field === 'genres') return t('fragmentForm.genres')
   if (field === 'representedInBrands') return t('fragmentForm.assign_to')
+  if (field === 'streamUrl') return t('fragmentForm.stream_url')
   return t('fragmentForm.audio_file')
 }
 
@@ -179,7 +190,7 @@ function clearFieldError(field: ValidationField) {
 }
 
 function clearAllFieldErrors() {
-  const allFields: ValidationField[] = ['title', 'artist', 'genres', 'representedInBrands', 'audioFile']
+  const allFields: ValidationField[] = ['title', 'artist', 'genres', 'representedInBrands', 'audioFile', 'streamUrl']
   for (const field of allFields) {
     clearFieldError(field)
   }
@@ -200,14 +211,19 @@ async function showFieldError(field: ValidationField, customMessage?: string) {
 
 async function validateBeforeSave() {
   const invalidFields: ValidationField[] = []
+  const isStream = formData.value.source === 'STREAM'
 
   if (!formData.value.title.trim()) invalidFields.push('title')
   if (!formData.value.artist.trim()) invalidFields.push('artist')
   if (!Array.isArray(formData.value.genres) || !formData.value.genres.length) invalidFields.push('genres')
   if (!formData.value.representedInBrands.length) invalidFields.push('representedInBrands')
-  if (!existingUrl.value && !uploadedFileNames.value.length) invalidFields.push('audioFile')
+  if (isStream) {
+    if (!formData.value.streamUrl.trim()) invalidFields.push('streamUrl')
+  } else {
+    if (!existingUrl.value && !uploadedFileNames.value.length) invalidFields.push('audioFile')
+  }
 
-  const allFields: ValidationField[] = ['title', 'artist', 'genres', 'representedInBrands', 'audioFile']
+  const allFields: ValidationField[] = ['title', 'artist', 'genres', 'representedInBrands', 'audioFile', 'streamUrl']
   for (const field of allFields) {
     if (!invalidFields.includes(field)) clearFieldError(field)
   }
@@ -311,6 +327,8 @@ onMounted(async () => {
         length: typeof frag.length === 'number'
           ? frag.length
           : (typeof frag.length === 'string' ? parseInt(frag.length) || null : null),
+        source: frag.source || 'USER_UPLOAD',
+        streamUrl: frag.streamUrl || '',
       }
       regDate.value = frag.regDate || ''
       lastModifiedDate.value = frag.lastModifiedDate || ''
@@ -358,6 +376,15 @@ watch(existingUrl, (value) => {
   if (value || uploadedFileNames.value.length) clearFieldError('audioFile')
 })
 
+watch(() => formData.value.streamUrl, (value) => {
+  if (value.trim()) clearFieldError('streamUrl')
+})
+
+watch(() => formData.value.source, () => {
+  clearFieldError('audioFile')
+  clearFieldError('streamUrl')
+})
+
 watch(activeTab, () => {
   if (isTabChangeFromValidation.value) return
   clearAllFieldErrors()
@@ -396,6 +423,15 @@ watch(activeTab, () => {
             <div class="field-stack">
               <div class="field-error-shell">
                 <NSelect v-model:value="formData.type" :options="fragmentTypeOptions" style="width: 200px" disabled />
+              </div>
+              <div class="field-error-label"></div>
+            </div>
+          </NFormItem>
+
+          <NFormItem :label="t('fragmentForm.source')">
+            <div class="field-stack">
+              <div class="field-error-shell">
+                <NSelect v-model:value="formData.source" :options="sourceOptions" style="width: 200px" />
               </div>
               <div class="field-error-label"></div>
             </div>
@@ -489,7 +525,22 @@ watch(activeTab, () => {
             </div>
           </NFormItem>
 
-          <NFormItem>
+          <NFormItem v-if="formData.source === 'STREAM'" :label="t('fragmentForm.stream_url')">
+            <div class="field-stack">
+              <div
+                ref="streamUrlFieldRef"
+                class="field-error-shell"
+                :class="{ 'field-error-shell--active': !!fieldErrors.streamUrl }"
+              >
+                <NInput v-model:value="formData.streamUrl" placeholder="https://..." style="width: 100%" />
+              </div>
+              <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.streamUrl }">
+                {{ fieldErrors.streamUrl || '\u00A0' }}
+              </div>
+            </div>
+          </NFormItem>
+
+          <NFormItem v-else>
             <template #label>
               <span class="form-label-with-badge">
                 {{ t('fragmentForm.audio_file') }}

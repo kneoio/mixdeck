@@ -37,6 +37,7 @@ export interface SoundFragment {
   description: string
   representedInBrands: string[]
   source?: string
+  streamUrl?: string
   length?: string | number
   expiresAt?: string
   uploadedFiles?: UploadedFile[]
