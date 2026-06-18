@@ -385,6 +385,27 @@ class DatanestApiService extends ApiClient {
     URL.revokeObjectURL(objectUrl)
   }
 
+  uploadBrandLogo(brandId: string, file: File): Promise<{ slugName: string }> {
+    return new Promise((resolve, reject) => {
+      const url = `${this.baseUrl}/brands/${encodeURIComponent(brandId)}/logo`
+      const formData = new FormData()
+      formData.append('file', file)
+      const xhr = new XMLHttpRequest()
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try { resolve(JSON.parse(xhr.responseText)) } catch { resolve({ slugName: '' }) }
+        } else {
+          reject(new Error(`Logo upload failed (${xhr.status})`))
+        }
+      }
+      xhr.onerror = () => reject(new Error('Network error during upload'))
+      xhr.open('POST', url)
+      const authHeaders = authService.getAuthHeader()
+      for (const [key, value] of Object.entries(authHeaders)) xhr.setRequestHeader(key, value)
+      xhr.send(formData)
+    })
+  }
+
   /** Fetch authenticated audio (or any binary) as a blob URL for `<audio src>`. Caller must `URL.revokeObjectURL` when done. */
   async fetchBlobUrl(url: string): Promise<string> {
     const authHeaders = authService.getAuthHeader()

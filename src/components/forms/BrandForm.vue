@@ -6,8 +6,11 @@ import {
   NSpace, NForm, NFormItem, NInput, NSelect, NTreeSelect, NSwitch,
   NTabs, NTabPane, NDynamicInput, NInputNumber, NSlider, NTimePicker,
   NCheckbox, NRadioGroup, NRadio,
-  NColorPicker, NTag, NPopconfirm, NAnchor, NAnchorLink, useMessage
+  NColorPicker, NTag, NPopconfirm, NAnchor, NAnchorLink, useMessage,
+  NModal, NCard, NButton,
 } from 'naive-ui'
+import { Cropper } from 'vue-advanced-cropper'
+import 'vue-advanced-cropper/dist/style.css'
 import GsapButton from '@/components/GsapButton.vue'
 import InstructionEditor from '@/components/InstructionEditor.vue'
 import TestStatusLeds from '@/components/TestStatusLeds.vue'
@@ -20,6 +23,7 @@ import { useConstantsStore } from '@/stores/constants'
 import { useRoute, useRouter } from 'vue-router'
 import { useThemeStore } from '@/stores/theme'
 import datanestApiService from '@/services/datanestApi'
+import { appConfig } from '@/config/appConfig'
 import { useDictionaryStore } from '@/stores/dictionary'
 import type { GenreEntry, LabelEntry } from '@/stores/dictionary'
 import jesoosApiService, { type DebugInstructionResponse } from '@/services/jesoosApi'
@@ -82,6 +86,16 @@ const fieldErrors = ref<Record<ValidationField, string>>({
 const localizedNames = ref<{ lang: string; name: string }[]>([{ lang: 'en', name: '' }])
 const coOwners = ref<{ name: string; email: string }[]>([])
 
+const mp3Enabled = ref(false)
+
+const logoSlugName = ref<string | null>(null)
+const logoPreviewUrl = ref<string | null>(null)
+const logoUploading = ref(false)
+const showCropDialog = ref(false)
+const cropSrc = ref<string | null>(null)
+const cropperRef = ref<InstanceType<typeof Cropper> | null>(null)
+const logoFileInput = ref<HTMLInputElement | null>(null)
+
 const formData = ref({
   country: null as string | null,
   description: '',
@@ -98,6 +112,7 @@ const formData = ref({
   color: '#000000',
   titleFont: null as string | null,
   hlsUrl: '',
+  mp3Url: '',
   mixplaUrl: '',
   owner: { name: '', email: '', exposeWhileSharing: false, actionDebugEnabled: false },
   genres: [] as string[],
@@ -505,6 +520,50 @@ function createCoOwner() {
   return { name: '', email: '' }
 }
 
+async function loadLogoPreview(bId: string, slug: string) {
+  try {
+    const url = `${appConfig.datanestServer}/brands/files/${encodeURIComponent(bId)}/${encodeURIComponent(slug)}`
+    logoPreviewUrl.value = await datanestApiService.fetchBlobUrl(url)
+  } catch {}
+}
+
+function openLogoPicker() {
+  logoFileInput.value?.click()
+}
+
+function onLogoFileSelected(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = (ev) => {
+    cropSrc.value = ev.target?.result as string
+    showCropDialog.value = true
+  }
+  reader.readAsDataURL(file)
+  ;(e.target as HTMLInputElement).value = ''
+}
+
+async function cropAndUpload() {
+  if (!cropperRef.value || !isEditing.value || !brandId.value) return
+  logoUploading.value = true
+  try {
+    const { canvas } = cropperRef.value.getResult()
+    if (!canvas) throw new Error('Crop failed')
+    const blob = await new Promise<Blob>((res, rej) =>
+      canvas.toBlob(b => b ? res(b) : rej(new Error('toBlob failed')), 'image/png')
+    )
+    const file = new File([blob], 'logo.png', { type: 'image/png' })
+    const result = await datanestApiService.uploadBrandLogo(brandId.value!, file)
+    logoSlugName.value = result.slugName
+    await loadLogoPreview(brandId.value!, result.slugName)
+    showCropDialog.value = false
+  } catch (e: any) {
+    message.error(e?.message || 'Logo upload failed')
+  } finally {
+    logoUploading.value = false
+  }
+}
+
 function getFieldRef(field: ValidationField) {
   if (field === 'localizedNames') return localizedNamesFieldRef.value
   if (field === 'country') return countryFieldRef.value
@@ -725,6 +784,7 @@ async function handleSave() {
           talkativity: s.talkActivity,
         }))
       } : undefined,
+      streamingOptions: { codecs: mp3Enabled.value ? ['OPUS', 'MP3'] : ['OPUS'] },
       titleFont: formData.value.titleFont || undefined,
       profileOverriding: (formData.value.profileOverriding.name || formData.value.profileOverriding.description)
         ? formData.value.profileOverriding
@@ -774,7 +834,9 @@ async function handleCloseBrand() {
 
 /** Server uses bps (e.g. 192000). Values below 1000 are treated as legacy kbps. */
 const hlsCopied = ref(false)
+const mp3Copied = ref(false)
 const embedCopied = ref(false)
+
 
 const COUNTRY_LANG: Record<string, string> = {
   US: 'en', GB: 'en', DE: 'de', FR: 'fr', ES: 'es', IT: 'it',
@@ -806,6 +868,12 @@ function copyHlsUrl() {
   navigator.clipboard.writeText(formData.value.hlsUrl)
   hlsCopied.value = true
   setTimeout(() => { hlsCopied.value = false }, 2000)
+}
+
+function copyMp3Url() {
+  navigator.clipboard.writeText(formData.value.mp3Url)
+  mp3Copied.value = true
+  setTimeout(() => { mp3Copied.value = false }, 2000)
 }
 
 const scriptImportRef = ref<HTMLInputElement>()
@@ -927,6 +995,7 @@ function applyBrandToForm(brand: any) {
     color: brand.color || '#000000',
     titleFont: brand.titleFont || null,
     hlsUrl: brand.hlsUrl || '',
+    mp3Url: (brand as any).mp3Url || '',
     mixplaUrl: brand.mixplaUrl || '',
     owner: { name: brand.owner?.name || '', email: brand.owner?.email || '', exposeWhileSharing: (brand.owner as any)?.exposeWhileSharing ?? false, actionDebugEnabled: (brand.owner as any)?.actionDebugEnabled ?? false },
     genres: normalizeIdList((brand as any).genres),
@@ -966,6 +1035,15 @@ function applyBrandToForm(brand: any) {
     customActionFormVisible.value[id] = false
     customActionDraft.value[id] = emptyDraft()
     customActionEditingTitle.value[id] = null
+  }
+  mp3Enabled.value = isEditing.value && (brand.streamingOptions?.codecs ?? []).includes('MP3')
+  const logoSlug = (brand as any).logoFiles?.[0]?.slugName
+  if (logoSlug && brand.id) {
+    logoSlugName.value = logoSlug
+    loadLogoPreview(brand.id, logoSlug)
+  } else {
+    logoSlugName.value = null
+    logoPreviewUrl.value = null
   }
 }
 
@@ -1611,10 +1689,33 @@ watch(activeTab, () => {
                 <NSelect v-model:value="formData.titleFont" :options="constantsStore.stationFontOptions"
                   filterable clearable style="width: 240px" />
               </NFormItem>
-              <NFormItem :label="t('brandForm.color')" style="margin-bottom:0">
+              <NFormItem :label="t('brandForm.color')" style="margin-bottom:8px">
                 <div style="width: 200px;">
                   <NColorPicker v-model:value="formData.color" />
                 </div>
+              </NFormItem>
+              <NFormItem :label="t('brandForm.logo')" style="margin-bottom:0">
+                <NSpace vertical :size="8">
+                  <img
+                    v-if="logoPreviewUrl"
+                    :src="logoPreviewUrl"
+                    alt="Brand logo"
+                    style="width: 80px; height: 80px; object-fit: contain; border-radius: 6px; border: 1px solid rgba(128,128,128,0.3);"
+                  />
+                  <template v-if="isEditing">
+                    <input
+                      ref="logoFileInput"
+                      type="file"
+                      accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml"
+                      style="display: none"
+                      @change="onLogoFileSelected"
+                    />
+                    <GsapButton size="small" :disabled="logoUploading" @click="openLogoPicker">
+                      <span>{{ logoSlugName ? t('brandForm.logo_replace') : t('brandForm.logo_upload') }}</span>
+                    </GsapButton>
+                  </template>
+                  <span v-else style="font-size: 12px; opacity: 0.5;">{{ t('brandForm.logo_save_first') }}</span>
+                </NSpace>
               </NFormItem>
             </NForm>
             <div v-if="formData.mixplaUrl" class="player-card__url">{{ formData.mixplaUrl }}</div>
@@ -1622,10 +1723,16 @@ watch(activeTab, () => {
           </div>
 
           <div v-if="formData.hlsUrl" :class="['player-card', { 'player-card--dark': themeStore.isDark }]">
-            <div class="player-card__label">{{ t('brandForm.card_hls_stream') }}</div>
+            <div class="player-card__label">{{ t('brandForm.card_stream_urls') }}</div>
             <div class="player-card__url">{{ formData.hlsUrl }}</div>
-            <div class="player-card__sub">VLC · foobar2000 · any HLS player</div>
             <div><GsapButton size="small" @click="copyHlsUrl"><span>{{ hlsCopied ? t('brandForm.card_copied') : t('brandForm.card_copy') }}</span></GsapButton></div>
+            <hr style="border:none;border-top:1px solid rgba(128,128,128,0.2);margin:4px 0;" />
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-size:13px;">{{ t('brandForm.mp3_stream') }}</span>
+              <NSwitch v-model:value="mp3Enabled" />
+            </div>
+            <div class="player-card__url" :style="!mp3Enabled ? 'opacity:0.35' : ''">{{ formData.mp3Url }}</div>
+            <div><GsapButton size="small" :disabled="!formData.mp3Url || !mp3Enabled" @click="copyMp3Url"><span>{{ mp3Copied ? t('brandForm.card_copied') : t('brandForm.card_copy') }}</span></GsapButton></div>
           </div>
 
           <div v-if="brandSlug" :class="['player-card', { 'player-card--dark': themeStore.isDark }]">
@@ -1714,6 +1821,29 @@ watch(activeTab, () => {
       </NTabPane>
     </NTabs>
   </FormWrapper>
+
+  <NModal v-model:show="showCropDialog" :mask-closable="false" style="width: 480px">
+    <NCard title="Crop Logo" :bordered="false" size="huge" role="dialog" aria-modal="true">
+      <template #header-extra>
+        <NButton text @click="showCropDialog = false">✕</NButton>
+      </template>
+
+      <Cropper
+        v-if="cropSrc"
+        ref="cropperRef"
+        :src="cropSrc"
+        :stencil-props="{ aspectRatio: 1 }"
+        style="max-height: 360px;"
+      />
+
+      <template #footer>
+        <NSpace justify="end">
+          <NButton @click="showCropDialog = false">Cancel</NButton>
+          <NButton type="primary" :loading="logoUploading" @click="cropAndUpload">Crop & Upload</NButton>
+        </NSpace>
+      </template>
+    </NCard>
+  </NModal>
 </template>
 
 <style scoped>
