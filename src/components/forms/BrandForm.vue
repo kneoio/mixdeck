@@ -1038,9 +1038,9 @@ function applyBrandToForm(brand: any) {
   }
   mp3Enabled.value = isEditing.value && (brand.streamingOptions?.codecs ?? []).includes('MP3')
   const logoSlug = (brand as any).logoFiles?.[0]?.slugName
-  if (logoSlug && brand.id) {
+  if (logoSlug) {
     logoSlugName.value = logoSlug
-    loadLogoPreview(brand.id, logoSlug)
+    loadLogoPreview(route.params.id as string, logoSlug)
   } else {
     logoSlugName.value = null
     logoPreviewUrl.value = null
