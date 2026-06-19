@@ -6,7 +6,6 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import { useBrandsStore } from '@/stores/brands'
-import LedIndicator from '@/components/LedIndicator.vue'
 import aivoxApiService from '@/services/aivoxApi'
 import {
   NLayout, NLayoutSider, NLayoutHeader, NLayoutContent,
@@ -252,20 +251,6 @@ const menuOptions = computed<MenuOption[]>(() => [
       ...brandsStore.brands.map(brand => ({
         label: brandLabel(brand),
         key: `brand-root-${brand.id}`,
-        icon: () => {
-            const slug = brand.slugName ?? ''
-            const liveState = brandsStore.streamingStates[slug]
-            const isOnline = liveState === true || (liveState === undefined && brand.status === 'ON_LINE')
-            const isIdle = liveState === false
-              ? brand.status === 'IDLE'
-              : (liveState === undefined && brand.status === 'IDLE')
-            return h(LedIndicator, {
-              active: isOnline || isIdle,
-              pulse: false,
-              size: 16,
-              color: isIdle ? '#FFD600' : '#00FF3C',
-            })
-          },
         children: [
           {
             label: t('menu.listeners'),
