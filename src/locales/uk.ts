@@ -50,6 +50,7 @@ export default {
     sound_assets_new: 'New Asset',
     sound_design: 'Саунд-дизайн',
     my_brands: 'Мої бренди',
+    overview: 'Огляд',
     dashboard: 'Панель керування',
     listeners: 'Слухачі',
     playlist: 'Плейлист',

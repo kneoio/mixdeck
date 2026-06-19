@@ -103,7 +103,7 @@ function goToMixpla() {
 }
 
 function goToBrands() {
-  router.push('/brands')
+  router.push('/mixdeck')
 }
 </script>
 

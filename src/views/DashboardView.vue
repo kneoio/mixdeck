@@ -15,7 +15,6 @@ import {
 } from 'naive-ui'
 import {
   RadioOutline,
-  SpeedometerOutline as DashboardIcon,
   HeadsetOutline as ListenersIcon,
   MusicalNotesOutline as PlaylistIcon,
   SettingsOutline as SettingsIcon,
@@ -205,6 +204,7 @@ watch(
 // Derive active menu key from current route
 const activeKey = computed(() => {
   const path = route.path
+  if (path === '/mixdeck' || path === '/brands') return 'overview'
   if (path === '/shared') return 'my-sounds-contributed'
   if (path === '/sound-library/received') return 'my-sounds-received'
   if (path === '/sound-library/unassigned-to-brands') return 'my-sounds-unassigned-to-brands'
@@ -242,6 +242,10 @@ const brandLabel = (brand: any) =>
 
 const menuOptions = computed<MenuOption[]>(() => [
   {
+    label: () => h('span', { style: 'font-weight: 700;' }, t('menu.overview')),
+    key: 'overview',
+  },
+  {
     label: () => h('span', { style: 'font-weight: 700;' }, t('menu.my_brands')),
     key: 'brands-group',
     children: [
@@ -263,11 +267,6 @@ const menuOptions = computed<MenuOption[]>(() => [
             })
           },
         children: [
-          {
-            label: t('menu.dashboard'),
-            key: `brand-${brand.id}-dashboard`,
-            icon: () => h(NIcon, null, { default: () => h(DashboardIcon) }),
-          },
           {
             label: t('menu.listeners'),
             key: `brand-${brand.id}-listeners`,
@@ -323,7 +322,9 @@ const handleMenuSelect = async (key: string) => {
   }
   if (isMobile.value) mobileDrawerOpen.value = false
 
-  if (key === 'brands-manage') {
+  if (key === 'overview') {
+    router.push('/mixdeck')
+  } else if (key === 'brands-manage') {
     router.push('/brands')
   } else if (key === 'my-sounds-contributed') {
     router.push('/shared')
@@ -335,9 +336,6 @@ const handleMenuSelect = async (key: string) => {
     router.push('/sound-library/sound-assets')
   } else if (key === 'brands-new') {
     router.push('/brands/new')
-  } else if (key.startsWith('brand-') && key.endsWith('-dashboard')) {
-    const id = key.replace('brand-', '').replace('-dashboard', '')
-    router.push(`/brands/${id}/dashboard`)
   } else if (key.startsWith('brand-') && key.endsWith('-listeners')) {
     const id = key.replace('brand-', '').replace('-listeners', '')
     router.push(`/brands/${id}/listeners`)

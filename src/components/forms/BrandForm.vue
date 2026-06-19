@@ -48,7 +48,7 @@ const isSettings = computed(() => route.name === 'brand-settings')
 const isEditing = computed(() => isSettings.value)
 
 const backRoute = computed(() =>
-  isSettings.value ? `/brands/${route.params.id}/dashboard` : '/brands'
+  isSettings.value ? '/mixdeck' : '/brands'
 )
 
 const formTitle = computed(() => {

@@ -50,6 +50,7 @@ export default {
     sound_assets_new: 'Ny ressurs',
     sound_design: 'Lyddesign',
     my_brands: 'Merkevarer',
+    overview: 'Oversikt',
     dashboard: 'Oversikt',
     listeners: 'Lyttere',
     playlist: 'Spilleliste',

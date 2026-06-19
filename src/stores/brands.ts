@@ -38,6 +38,7 @@ export interface Brand {
   owner?: { name?: string; email?: string; coOwners?: Array<{ name: string; email: string }> }
   publicBrand?: number
   bitRate?: number
+  mixplaUrl?: string
   mp3Url?: string
   streamingOptions?: { codecs?: string[] }
   genres?: string[]

@@ -65,6 +65,7 @@ export function saveLocale(locale: SupportedLocale) {
 const i18n = createI18n({
   legacy: false,
   locale: getSavedLocale(),
+  fallbackLocale: 'en',
   messages: { en, ru, de, fr, es, pt, ja, ar, hi, uk, kk, ka, no, ko },
 })
 

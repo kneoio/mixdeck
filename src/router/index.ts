@@ -86,12 +86,6 @@ const router = createRouter({
         },
         // Brand sub-pages (must come after /brands/new)
         {
-          path: '/brands/:id/dashboard',
-          name: 'brand-dashboard',
-          component: () => import('../views/BrandDashboardView.vue'),
-          meta: { requiresAuth: true }
-        },
-        {
           path: '/brands/:id/listeners',
           name: 'brand-listeners',
           component: () => import('../views/BrandListenersView.vue'),
@@ -154,13 +148,13 @@ const router = createRouter({
         {
           path: '/brands',
           name: 'brands-redirect',
-          component: () => import('../views/BrandsRedirectView.vue'),
+          component: () => import('../views/OverviewView.vue'),
           meta: { requiresAuth: true }
         },
         {
           path: '/mixdeck',
-          name: 'mixdeck-redirect',
-          component: () => import('../views/BrandsRedirectView.vue'),
+          name: 'overview',
+          component: () => import('../views/OverviewView.vue'),
           meta: { requiresAuth: true }
         },
       ]

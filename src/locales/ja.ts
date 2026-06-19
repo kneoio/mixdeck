@@ -50,6 +50,7 @@ export default {
     sound_assets_new: 'New Asset',
     sound_design: 'サウンドデザイン',
     my_brands: 'マイブランド',
+    overview: '概要',
     dashboard: 'ダッシュボード',
     listeners: 'リスナー',
     playlist: 'プレイリスト',

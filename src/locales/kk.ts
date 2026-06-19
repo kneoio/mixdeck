@@ -50,6 +50,7 @@ export default {
     sound_assets_new: 'New Asset',
     sound_design: 'Дыбыс дизайны',
     my_brands: 'Менің брендтерім',
+    overview: 'Шолу',
     dashboard: 'Басқару панелі',
     listeners: 'Тыңдармандар',
     playlist: 'Плейлист',

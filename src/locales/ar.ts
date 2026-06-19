@@ -50,6 +50,7 @@ export default {
     sound_assets_new: 'New Asset',
     sound_design: 'التصميم الصوتي',
     my_brands: 'علاماتي التجارية',
+    overview: 'نظرة عامة',
     dashboard: 'لوحة التحكم',
     listeners: 'المستمعون',
     playlist: 'قائمة التشغيل',

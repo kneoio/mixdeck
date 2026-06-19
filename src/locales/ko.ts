@@ -50,6 +50,7 @@ export default {
     sound_assets_new: '새 에셋',
     sound_design: '사운드 디자인',
     my_brands: '브랜드',
+    overview: '개요',
     dashboard: '대시보드',
     listeners: '청취자',
     playlist: '재생 목록',

@@ -50,6 +50,7 @@ export default {
     sound_assets_new: 'New Asset',
     sound_design: 'ხმის დიზაინი',
     my_brands: 'ჩემი ბრენდები',
+    overview: 'მიმოხილვა',
     dashboard: 'დაშბორდი',
     listeners: 'მსმენელები',
     playlist: 'ფლეილისტი',
