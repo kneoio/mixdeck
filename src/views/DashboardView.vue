@@ -6,7 +6,6 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import { useBrandsStore } from '@/stores/brands'
-import aivoxApiService from '@/services/aivoxApi'
 import {
   NLayout, NLayoutSider, NLayoutHeader, NLayoutContent,
   NMenu, NButton, NDropdown, NAvatar, NSpace, NFlex, NIcon,
@@ -134,40 +133,6 @@ onUnmounted(() => {
   headerLineGsapCtx = null
 })
 
-/** Wall-clock: first 30s → poll every 5s; after that → much slower steady polling. */
-const BRANDS_HEARTBEAT_FAST_MS = 5_000
-const BRANDS_HEARTBEAT_STEADY_MS = 300_000
-const BRANDS_HEARTBEAT_FAST_PHASE_MS = 30_000
-
-let brandsPollTimer: ReturnType<typeof setTimeout> | null = null
-let brandsHeartbeatPollCancelled = false
-let brandsHeartbeatFastPhaseStartMs = 0
-
-async function pollAllBrandsHeartbeat() {
-  if (brandsHeartbeatPollCancelled) return
-  const slugs = brandsStore.brands.filter(b => b.slugName).map(b => b.slugName!)
-  if (slugs.length > 0) {
-    const { byBrand } = await aivoxApiService.heartbeatBatch(slugs)
-    if (brandsHeartbeatPollCancelled) return
-    for (const slug of slugs) {
-      brandsStore.setStreamingState(slug, byBrand[slug] ?? false)
-    }
-  }
-  scheduleBrandsHeartbeatPoll()
-}
-
-function scheduleBrandsHeartbeatPoll() {
-  if (brandsHeartbeatPollCancelled) return
-  if (brandsPollTimer) {
-    clearTimeout(brandsPollTimer)
-    brandsPollTimer = null
-  }
-  const elapsed = Date.now() - brandsHeartbeatFastPhaseStartMs
-  const inFastPhase = elapsed < BRANDS_HEARTBEAT_FAST_PHASE_MS
-  const delay = inFastPhase ? BRANDS_HEARTBEAT_FAST_MS : BRANDS_HEARTBEAT_STEADY_MS
-  brandsPollTimer = setTimeout(() => void pollAllBrandsHeartbeat(), delay)
-}
-
 onMounted(async () => {
   if (!authStore.isAuthenticated) {
     router.push('/')
@@ -177,17 +142,6 @@ onMounted(async () => {
   if (brandsStore.brands.length === 0 && route.path !== '/broadcaster-welcome') {
     await router.replace('/broadcaster-welcome')
     return
-  }
-  brandsHeartbeatPollCancelled = false
-  brandsHeartbeatFastPhaseStartMs = Date.now()
-  void pollAllBrandsHeartbeat()
-})
-
-onUnmounted(() => {
-  brandsHeartbeatPollCancelled = true
-  if (brandsPollTimer) {
-    clearTimeout(brandsPollTimer)
-    brandsPollTimer = null
   }
 })
 
