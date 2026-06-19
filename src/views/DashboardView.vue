@@ -217,6 +217,19 @@ const activeKey = computed(() => {
 // Manually controlled expanded keys so user can expand/collapse brand rows
 const expandedKeys = ref<string[]>(['my-sounds-root', 'brands-group'])
 
+watch(
+  () => brandsStore.brands,
+  (brands) => {
+    const brandKeys = brands.map(b => `brand-root-${b.id}`)
+    const next = [...expandedKeys.value]
+    for (const k of brandKeys) {
+      if (!next.includes(k)) next.push(k)
+    }
+    expandedKeys.value = next
+  },
+  { immediate: true }
+)
+
 // When route changes to a brand sub-page, auto-expand that brand
 watch(
   () => route.path,
