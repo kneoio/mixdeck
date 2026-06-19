@@ -133,7 +133,7 @@ onMounted(async () => {
 
           <NDivider v-if="userSubscriptionStore.subscription" style="margin: 0 0 16px;" />
 
-          <GsapButton @click="router.push('/plans')">
+          <GsapButton type="info" @click="router.push('/plans')">
             <span>{{ t('profile.upgrade') }}</span>
           </GsapButton>
 
