@@ -13,8 +13,7 @@ import {
   NDrawer, NDrawerContent, type MenuOption
 } from 'naive-ui'
 import {
-  RadioOutline,
-  HomeOutline as OverviewIcon,
+  AppsSharp as OverviewIcon,
   HeadsetOutline as ListenersIcon,
   MusicalNotesOutline as PlaylistIcon,
   SettingsOutline as SettingsIcon,
@@ -234,7 +233,7 @@ const menuOptions = computed<MenuOption[]>(() => [
   {
     label: () => h('span', { style: 'font-weight: 700;' }, t('menu.overview')),
     key: 'overview',
-    icon: () => h(NIcon, { color: '#2080F0' }, { default: () => h(OverviewIcon) }),
+    icon: () => h(NIcon, { color: '#7C3AED' }, { default: () => h(OverviewIcon) }),
   },
   {
     label: () => h('span', { style: 'font-weight: 700;' }, t('menu.my_brands')),
