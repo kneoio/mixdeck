@@ -27,11 +27,15 @@ import {
   type NLocale, type NDateLocale,
 } from 'naive-ui'
 import { useThemeStore } from '@/stores/theme'
+import { useAuthStore } from '@/stores/auth'
+import { useUserSubscriptionStore } from '@/stores/userSubscription'
 import { onMounted, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { applyDirection, type SupportedLocale } from '@/i18n'
 
 const themeStore = useThemeStore()
+const authStore = useAuthStore()
+const userSubscriptionStore = useUserSubscriptionStore()
 const { locale } = useI18n()
 
 const themeOverrides = computed<GlobalThemeOverrides>(() => ({
@@ -112,6 +116,14 @@ const naiveLocale = computed(() => naiveLocaleMap[locale.value as SupportedLocal
 const naiveDateLocale = computed(() => naiveDateLocaleMap[locale.value as SupportedLocale] ?? dateEnUS)
 
 watch(locale, (val) => applyDirection(val as SupportedLocale), { immediate: true })
+
+watch(() => authStore.isAuthenticated, (isAuthenticated) => {
+  if (isAuthenticated) {
+    void userSubscriptionStore.loadCurrentSubscription()
+  } else {
+    userSubscriptionStore.reset()
+  }
+}, { immediate: true })
 
 onMounted(() => {
   themeStore.initializeTheme()

@@ -1,6 +1,6 @@
 import { ApiClient, type PagedResult } from './base'
 import { appConfig } from '@/config/appConfig'
-import type { SubscriptionProductEntry } from './coreApi'
+import type { SubscriptionProductEntry, UserSubscriptionDTO } from './coreApi'
 
 class NivaroApiService extends ApiClient {
   constructor() {
@@ -11,6 +11,17 @@ class NivaroApiService extends ApiClient {
     const res = await this.request<unknown>('/subscriptions/products')
     const entries: SubscriptionProductEntry[] = Array.isArray(res) ? res : []
     return { entries, count: entries.length, pageNum: page, maxPage: 1, pageSize }
+  }
+
+  async getCurrentUserSubscription(): Promise<UserSubscriptionDTO | null> {
+    try {
+      return await this.request<UserSubscriptionDTO>('/user-subscriptions/current')
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('404')) {
+        return null
+      }
+      throw error
+    }
   }
 }
 

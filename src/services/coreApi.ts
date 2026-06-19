@@ -13,6 +13,29 @@ export interface SubscriptionProductEntry {
   subscriptionStatus?: string
 }
 
+export interface UserSubscriptionDTO {
+  user?: { login?: string }
+  stripeCustomerId?: string
+  subscriptionType?: string
+  subscriptionStatus?: string
+  trialEnd?: string
+  currentPeriodStart?: string
+  currentPeriodEnd?: string
+  cancelAt?: string
+  canceledAt?: string
+  active: boolean
+  streamDurationMinutes?: number
+  otsAllowed: boolean
+  maxSongs?: number
+  streamQualityKbps?: number
+  djTypeId?: string
+  supportLevel: number
+  customScriptAllowed: boolean
+  maxStations?: number
+  priceEur?: number
+  codecs?: string[]
+}
+
 class CoreApiService extends ApiClient {
   constructor() {
     super(appConfig.datanestServer)

@@ -11,13 +11,16 @@ import LedGreen from '@/components/LedGreen.vue'
 import LedIndicator from '@/components/LedIndicator.vue'
 import LoaderProgress from '@/components/LoaderProgress.vue'
 import { useBrandsStore } from '@/stores/brands'
+import { useUserSubscriptionStore } from '@/stores/userSubscription'
 
 const props = defineProps<{ brandSlug: string; timezone?: string }>()
 const { t, te } = useI18n()
 const brandsStore = useBrandsStore()
+const userSubscriptionStore = useUserSubscriptionStore()
 const message = useMessage()
 
 const alive = computed(() => brandsStore.streamingStates[props.brandSlug] ?? false)
+const showFreeBadge = computed(() => !alive.value && userSubscriptionStore.isFreePlan)
 const loading = ref(false)
 const waiting = ref(false)
 const flash = ref(false)
@@ -232,7 +235,16 @@ watch(() => props.brandSlug, (val) => {
   stopPolling()
   stopQueuePolling()
   if (val) startPolling()
-  if (val) startQueuePolling()
+  if (val && alive.value) startQueuePolling()
+})
+
+watch(alive, (val) => {
+  if (val) {
+    startQueuePolling()
+  } else {
+    stopQueuePolling()
+    queueEntries.value = []
+  }
 })
 
 watch(() => props.timezone, (val) => {
@@ -242,7 +254,7 @@ watch(() => props.timezone, (val) => {
 
 onMounted(() => {
   if (props.brandSlug) startPolling()
-  if (props.brandSlug) startQueuePolling()
+  if (props.brandSlug && alive.value) startQueuePolling()
   if (props.timezone) startTimeUpdate()
 })
 
@@ -280,7 +292,7 @@ onUnmounted(() => {
           </div>
           <span class="aivox-label">{{ t('dashboard.onAir') }}</span>
         </div>
-        <span class="free-badge" :class="{ 'free-badge--hidden': alive }">{{ t('dashboard.free_streaming_limit') }}</span>
+        <span class="free-badge" :class="{ 'free-badge--hidden': !showFreeBadge }">{{ t('dashboard.free_streaming_limit') }}</span>
       </div>
       <div v-if="timezone" class="time-right">
         <span class="label tz-caption">{{ t('dashboard.stationTime') }}:</span>
