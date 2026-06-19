@@ -318,7 +318,7 @@ onUnmounted(() => {
 
 <style scoped>
 .aivox-card {
-  margin-top: 24px;
+  margin-top: 0px;
 }
 .aivox-row {
   display: flex;

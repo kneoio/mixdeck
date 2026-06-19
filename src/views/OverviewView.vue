@@ -1,4 +1,4 @@
-<template>
+it is<template>
   <div class="overview">
     <PageHeader :title="t('overview.title')" :count="brandsStore.brands.length" />
 
@@ -7,6 +7,7 @@
         v-for="brand in brandsStore.brands"
         :key="brand.id"
         class="brand-card"
+        :style="brand.color ? { '--brand-color': brand.color } : undefined"
       >
         <template #header>
           <div class="brand-head">
@@ -159,5 +160,11 @@ function copyUrl(brand: Brand) {
 }
 .agenda-collapse {
   margin-top: 12px;
+}
+.brand-card :deep(.n-card__content) {
+  padding-top: 8px;
+}
+.brand-card {
+  border-color: var(--brand-color);
 }
 </style>
