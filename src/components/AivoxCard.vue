@@ -29,13 +29,7 @@ let flashTurn = true
 const localTime = ref('')
 const queueEntries = ref<AivoxQueueEntry[]>([])
 
-const HEARTBEAT_POLL_BASE_MS = 5000
-const HEARTBEAT_POLL_MAX_MS = 180_000
-
-let pollTimer: ReturnType<typeof setTimeout> | null = null
 let flashTimer: ReturnType<typeof setTimeout> | null = null
-let pollIntervalMs = HEARTBEAT_POLL_BASE_MS
-let heartbeatPollCancelled = false
 let timeTimer: ReturnType<typeof setInterval> | null = null
 let queueTimer: ReturnType<typeof setInterval> | null = null
 
@@ -63,32 +57,7 @@ async function fetchHeartbeatAlive(): Promise<boolean> {
   const { alive } = await aivoxApiService.heartbeat(slug)
   if (props.brandSlug !== slug) return alive
   brandsStore.setStreamingState(slug, alive)
-  if (alive) triggerFlash()
   return alive
-}
-
-async function pollHeartbeatScheduled(): Promise<void> {
-  if (heartbeatPollCancelled || !props.brandSlug) return
-  const slug = props.brandSlug
-  const { alive, status } = await aivoxApiService.heartbeat(slug)
-  if (heartbeatPollCancelled || props.brandSlug !== slug) return
-  brandsStore.setStreamingState(slug, alive)
-  if (alive) triggerFlash()
-  if (status === 401) {
-    pollIntervalMs = Math.min(pollIntervalMs * 2, HEARTBEAT_POLL_MAX_MS)
-  } else {
-    pollIntervalMs = HEARTBEAT_POLL_BASE_MS
-  }
-  scheduleHeartbeatPoll()
-}
-
-function scheduleHeartbeatPoll() {
-  if (pollTimer) {
-    clearTimeout(pollTimer)
-    pollTimer = null
-  }
-  if (heartbeatPollCancelled || !props.brandSlug) return
-  pollTimer = setTimeout(() => void pollHeartbeatScheduled(), pollIntervalMs)
 }
 
 async function handleStart() {
@@ -135,19 +104,6 @@ async function handleStop() {
   }
 }
 
-function startPolling() {
-  heartbeatPollCancelled = false
-  pollIntervalMs = HEARTBEAT_POLL_BASE_MS
-  void pollHeartbeatScheduled()
-}
-
-function stopPolling() {
-  heartbeatPollCancelled = true
-  if (pollTimer) {
-    clearTimeout(pollTimer)
-    pollTimer = null
-  }
-}
 
 async function pollQueue() {
   if (!props.brandSlug) return
@@ -232,14 +188,13 @@ function stopTimeUpdate() {
 }
 
 watch(() => props.brandSlug, (val) => {
-  stopPolling()
   stopQueuePolling()
-  if (val) startPolling()
   if (val && alive.value) startQueuePolling()
 })
 
 watch(alive, (val) => {
   if (val) {
+    triggerFlash()
     startQueuePolling()
   } else {
     stopQueuePolling()
@@ -253,13 +208,11 @@ watch(() => props.timezone, (val) => {
 })
 
 onMounted(() => {
-  if (props.brandSlug) startPolling()
   if (props.brandSlug && alive.value) startQueuePolling()
   if (props.timezone) startTimeUpdate()
 })
 
 onUnmounted(() => {
-  stopPolling()
   stopQueuePolling()
   stopTimeUpdate()
   if (flashTimer) clearTimeout(flashTimer)
