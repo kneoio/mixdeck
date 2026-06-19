@@ -11,7 +11,15 @@ export const useUserSubscriptionStore = defineStore('userSubscription', () => {
 
   const hasActiveSubscription = computed(() => subscription.value?.active === true)
   const isFreePlan = computed(() => !hasActiveSubscription.value)
+  const subscriptionType = computed(() => subscription.value?.subscriptionType)
+  const subscriptionStatus = computed(() => subscription.value?.subscriptionStatus)
   const streamDurationMinutes = computed(() => subscription.value?.streamDurationMinutes)
+  const otsAllowed = computed(() => subscription.value?.otsAllowed ?? false)
+  const maxSongs = computed(() => subscription.value?.maxSongs)
+  const streamQualityKbps = computed(() => subscription.value?.streamQualityKbps)
+  const supportLevel = computed(() => subscription.value?.supportLevel ?? 0)
+  const customScriptAllowed = computed(() => subscription.value?.customScriptAllowed ?? false)
+  const codecs = computed(() => subscription.value?.codecs ?? [])
   const maxStations = computed(() => subscription.value?.maxStations)
 
   async function loadCurrentSubscription() {
@@ -44,7 +52,15 @@ export const useUserSubscriptionStore = defineStore('userSubscription', () => {
     hasLoaded,
     hasActiveSubscription,
     isFreePlan,
+    subscriptionType,
+    subscriptionStatus,
     streamDurationMinutes,
+    otsAllowed,
+    maxSongs,
+    streamQualityKbps,
+    supportLevel,
+    customScriptAllowed,
+    codecs,
     maxStations,
     loadCurrentSubscription,
     reset,

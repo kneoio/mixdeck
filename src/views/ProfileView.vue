@@ -7,6 +7,7 @@ import {
 } from 'naive-ui'
 import { useAuthStore } from '@/stores/auth'
 import { useSubscriptionProductsStore } from '@/stores/subscriptionProducts'
+import { useUserSubscriptionStore } from '@/stores/userSubscription'
 import PageHeader from '@/components/PageHeader.vue'
 import GsapButton from '@/components/GsapButton.vue'
 import { LOCALE_LABELS, SUPPORTED_LOCALES, saveLocale, type SupportedLocale } from '@/i18n'
@@ -14,6 +15,7 @@ import { LOCALE_LABELS, SUPPORTED_LOCALES, saveLocale, type SupportedLocale } fr
 const { t, locale } = useI18n()
 const authStore = useAuthStore()
 const subscriptionProductsStore = useSubscriptionProductsStore()
+const userSubscriptionStore = useUserSubscriptionStore()
 
 const profile = computed(() => authStore.userProfile ?? {})
 
@@ -89,7 +91,10 @@ const planCards = computed(() =>
 
 onMounted(async () => {
   try {
-    await subscriptionProductsStore.loadProducts()
+    await Promise.all([
+      subscriptionProductsStore.loadProducts(),
+      userSubscriptionStore.loadCurrentSubscription(),
+    ])
   } catch {
     // server unavailable
   }
@@ -141,6 +146,37 @@ onMounted(async () => {
 
       <!-- Subscription -->
       <NCard :title="t('profile.subscription')">
+        <NSpin :show="subscriptionProductsStore.loading || userSubscriptionStore.loading">
+
+          <!-- Current subscription details -->
+          <NDescriptions
+            v-if="userSubscriptionStore.subscription"
+            label-placement="left"
+            :column="1"
+            label-style="width: 180px; opacity: 0.55;"
+            style="margin-bottom: 20px;"
+          >
+            <NDescriptionsItem label="Plan">
+              <NTag type="info" size="small" round>{{ userSubscriptionStore.subscriptionType }}</NTag>
+            </NDescriptionsItem>
+            <NDescriptionsItem label="Status">
+              <NTag :type="userSubscriptionStore.hasActiveSubscription ? 'success' : 'warning'" size="small" round>
+                {{ userSubscriptionStore.subscriptionStatus }}
+              </NTag>
+            </NDescriptionsItem>
+            <NDescriptionsItem label="Max Songs">{{ userSubscriptionStore.maxSongs?.toLocaleString() ?? '—' }}</NDescriptionsItem>
+            <NDescriptionsItem label="Stream Quality">{{ userSubscriptionStore.streamQualityKbps != null ? `${userSubscriptionStore.streamQualityKbps} kbps` : '—' }}</NDescriptionsItem>
+            <NDescriptionsItem label="Stream Duration">{{ durationLabel(userSubscriptionStore.streamDurationMinutes ?? 0) }}</NDescriptionsItem>
+            <NDescriptionsItem label="OTS Allowed">{{ userSubscriptionStore.otsAllowed ? 'Yes' : 'No' }}</NDescriptionsItem>
+            <NDescriptionsItem label="Custom Script">{{ userSubscriptionStore.customScriptAllowed ? 'Yes' : 'No' }}</NDescriptionsItem>
+            <NDescriptionsItem label="Support Level">{{ userSubscriptionStore.supportLevel }}</NDescriptionsItem>
+            <NDescriptionsItem v-if="userSubscriptionStore.codecs.length" label="Codecs">{{ userSubscriptionStore.codecs.join(', ') }}</NDescriptionsItem>
+          </NDescriptions>
+
+          <NDivider v-if="userSubscriptionStore.subscription" style="margin: 0 0 20px;" />
+
+        </NSpin>
+
         <NSpin :show="subscriptionProductsStore.loading">
 
           <!-- Plan cards -->
