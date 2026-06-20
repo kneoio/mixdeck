@@ -510,9 +510,25 @@ onUnmounted(() => {
   .queue-connector {
     display: none;
   }
-  .queue-type-tag {
-    white-space: nowrap;
-    overflow: visible;
+  .queue-item {
+    overflow: hidden;
+  }
+  .queue-info {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .queue-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .queue-artist {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+  }
+  .queue-mixing {
+    display: none;
   }
 }
 </style>

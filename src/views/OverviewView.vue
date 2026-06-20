@@ -179,6 +179,15 @@ function copyUrl(brand: Brand) {
   border-color: rgba(76, 175, 80, 0.4);
   opacity: 1;
 }
+@media (max-width: 768px) {
+  .brand-url-link {
+    display: none;
+  }
+  .brand-name {
+    word-break: keep-all;
+    white-space: nowrap;
+  }
+}
 .agenda-collapse {
   margin-top: 12px;
 }
