@@ -241,7 +241,7 @@ onUnmounted(() => {
           <div class="aivox-leds">
             <LedYellow :active="flash || waiting" />
             <LedIndicator :active="waiting" :pulse="waiting" color="#CC0000" :size="18" />
-            <LedGreen :active="flashGreen" />
+            <LedGreen :active="flashGreen || alive" />
           </div>
           <span class="aivox-label">{{ t('dashboard.onAir') }}</span>
         </div>
