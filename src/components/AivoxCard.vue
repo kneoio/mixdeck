@@ -256,29 +256,30 @@ onUnmounted(() => {
       </div>
     </div>
     <div class="queue-wrap">
-      <div
-        v-for="item in sortedQueueEntries"
-        :key="`${item.tech.slugName}-${item.tech.pos}`"
-        class="queue-item"
-        :class="[`queue-item--${item.tech.queueType}`]"
-        :style="queuePriorityStyle(item)"
-      >
-        <div class="queue-indicator">
-          <span v-if="item.tech.queueType === 'playing'" class="queue-eq">
-            <span class="bar" /><span class="bar" /><span class="bar" />
-          </span>
-          <span v-else class="queue-num">{{ item.tech.pos }}</span>
+      <template v-for="(item, i) in sortedQueueEntries" :key="`${item.tech.slugName}-${item.tech.pos}`">
+        <span v-if="i > 0" class="queue-connector">›</span>
+        <div
+          class="queue-item"
+          :class="[`queue-item--${item.tech.queueType}`]"
+          :style="queuePriorityStyle(item)"
+        >
+          <div class="queue-indicator">
+            <span v-if="item.tech.queueType === 'playing'" class="queue-eq">
+              <span class="bar" /><span class="bar" /><span class="bar" />
+            </span>
+            <span v-else class="queue-num">{{ item.tech.pos }}</span>
+          </div>
+          <div class="queue-info">
+            <span class="queue-title">{{ item.dj.title }}</span>
+            <span class="queue-sep">·</span>
+            <span class="queue-artist">{{ item.dj.artist }}</span>
+          </div>
+          <div class="queue-right">
+            <span class="queue-mixing">{{ mergingMethodLabel(item) }}</span>
+            <span class="queue-type-tag" :class="`queue-type-tag--${item.tech.queueType}`">{{ queueTypeLabel(item) }}</span>
+          </div>
         </div>
-        <div class="queue-info">
-          <span class="queue-title">{{ item.dj.title }}</span>
-          <span class="queue-sep">·</span>
-          <span class="queue-artist">{{ item.dj.artist }}</span>
-        </div>
-        <div class="queue-right">
-          <span class="queue-mixing">{{ mergingMethodLabel(item) }}</span>
-          <span class="queue-type-tag" :class="`queue-type-tag--${item.tech.queueType}`">{{ queueTypeLabel(item) }}</span>
-        </div>
-      </div>
+      </template>
     </div>
   </NCard>
 </template>
@@ -375,8 +376,17 @@ onUnmounted(() => {
 .queue-wrap {
   margin-top: 10px;
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.queue-connector {
+  font-size: 16px;
+  opacity: 0.25;
+  flex-shrink: 0;
+  line-height: 1;
+  user-select: none;
 }
 .queue-item {
   display: flex;
@@ -386,7 +396,7 @@ onUnmounted(() => {
   padding: 7px 10px;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.07);
-  transition: background 0.2s;
+  flex-shrink: 0;
 }
 .queue-indicator {
   flex-shrink: 0;
@@ -422,18 +432,13 @@ onUnmounted(() => {
   100% { transform: scaleY(1); }
 }
 .queue-info {
-  flex: 1;
-  min-width: 0;
   display: flex;
   align-items: baseline;
   gap: 5px;
-  overflow: hidden;
+  white-space: nowrap;
 }
 .queue-title {
   font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .queue-sep {
   opacity: 0.25;
@@ -442,9 +447,6 @@ onUnmounted(() => {
 .queue-artist {
   font-size: 0.88em;
   opacity: 0.6;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .queue-right {
   flex-shrink: 0;
