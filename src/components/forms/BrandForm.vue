@@ -18,6 +18,7 @@ import type { SelectOption } from 'naive-ui'
 import FormWrapper from '@/components/FormWrapper.vue'
 import { useBrandsStore, SUBMISSION_POLICY_OPTIONS, type SubmissionPolicy } from '@/stores/brands'
 import { useScriptsStore } from '@/stores/scripts'
+import { useUserSubscriptionStore } from '@/stores/userSubscription'
 import { useActionsStore } from '@/stores/actions'
 import { useConstantsStore } from '@/stores/constants'
 import { useRoute, useRouter } from 'vue-router'
@@ -37,6 +38,7 @@ const route = useRoute()
 const router = useRouter()
 const store = useBrandsStore()
 const scriptsStore = useScriptsStore()
+const userSubscriptionStore = useUserSubscriptionStore()
 const constantsStore = useConstantsStore()
 const dictionaryStore = useDictionaryStore()
 const message = useMessage()
@@ -465,14 +467,10 @@ const publicPremiumGlow = ref(false)
 const customScriptGlow = ref(false)
 
 function handleScriptModeChange(val: string) {
-  if (val === 'custom') {
-    scriptMode.value = 'custom'
+  if (val === 'custom' && !userSubscriptionStore.customScriptAllowed) {
     customScriptGlow.value = true
     message.warning(t('brandForm.custom_script_premium_only'))
-    setTimeout(() => {
-      scriptMode.value = 'predefined'
-      customScriptGlow.value = false
-    }, 1500)
+    setTimeout(() => { customScriptGlow.value = false }, 1500)
     return
   }
   scriptMode.value = val as 'predefined' | 'custom'

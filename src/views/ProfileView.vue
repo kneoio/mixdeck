@@ -47,6 +47,11 @@ function onLocaleChange(val: SupportedLocale) {
   saveLocale(val)
 }
 
+function formatPlanName(raw: string | undefined): string {
+  if (!raw) return '—'
+  return raw.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+}
+
 function durationLabel(val: number | string): string {
   return val === 'infinitely' || val === 0 ? t('plans.feat_duration_nonstop') : `${val} ${t('plans.feat_min')}`
 }
@@ -115,7 +120,7 @@ onMounted(async () => {
             style="margin-bottom: 20px;"
           >
             <NDescriptionsItem label="Plan">
-              <NTag type="info" size="small" round>{{ userSubscriptionStore.subscriptionType }}</NTag>
+              <NTag type="info" size="small" round>{{ formatPlanName(userSubscriptionStore.subscriptionType) }}</NTag>
             </NDescriptionsItem>
             <NDescriptionsItem label="Status">
               <NTag :type="userSubscriptionStore.hasActiveSubscription ? 'success' : 'warning'" size="small" round>
@@ -123,17 +128,16 @@ onMounted(async () => {
               </NTag>
             </NDescriptionsItem>
             <NDescriptionsItem label="Max Songs">{{ userSubscriptionStore.maxSongs?.toLocaleString() ?? '—' }}</NDescriptionsItem>
-            <NDescriptionsItem label="Stream Quality">{{ userSubscriptionStore.streamQualityKbps != null ? `${userSubscriptionStore.streamQualityKbps} kbps` : '—' }}</NDescriptionsItem>
+            <NDescriptionsItem label="Stream Quality">{{ userSubscriptionStore.streamQualityKbps != null ? `${userSubscriptionStore.streamQualityKbps} kbps (opus)` : '—' }}</NDescriptionsItem>
             <NDescriptionsItem label="Stream Duration">{{ durationLabel(userSubscriptionStore.streamDurationMinutes ?? 0) }}</NDescriptionsItem>
             <NDescriptionsItem label="OTS Allowed">{{ userSubscriptionStore.otsAllowed ? 'Yes' : 'No' }}</NDescriptionsItem>
             <NDescriptionsItem label="Custom Script">{{ userSubscriptionStore.customScriptAllowed ? 'Yes' : 'No' }}</NDescriptionsItem>
-            <NDescriptionsItem label="Support Level">{{ userSubscriptionStore.supportLevel }}</NDescriptionsItem>
             <NDescriptionsItem v-if="userSubscriptionStore.codecs.length" label="Codecs">{{ userSubscriptionStore.codecs.join(', ') }}</NDescriptionsItem>
           </NDescriptions>
 
           <NDivider v-if="userSubscriptionStore.subscription" style="margin: 0 0 16px;" />
 
-          <GsapButton type="info" @click="router.push('/plans')">
+          <GsapButton type="primary" @click="router.push('/plans')">
             <span>{{ t('profile.upgrade') }}</span>
           </GsapButton>
 
