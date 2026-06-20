@@ -46,7 +46,7 @@ it is<template>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { NCard, NCollapse, NCollapseItem } from 'naive-ui'
@@ -54,10 +54,29 @@ import { useBrandsStore, type Brand } from '@/stores/brands'
 import PageHeader from '@/components/PageHeader.vue'
 import AivoxCard from '@/components/AivoxCard.vue'
 import AgendaCard from '@/components/AgendaCard.vue'
+import aivoxApiService from '@/services/aivoxApi'
 
 const { t } = useI18n()
 const router = useRouter()
 const brandsStore = useBrandsStore()
+
+const HEARTBEAT_POLL_MS = 5_000
+let heartbeatTimer: ReturnType<typeof setTimeout> | null = null
+let cancelled = false
+
+async function pollHeartbeat() {
+  if (cancelled) return
+  const slugs = brandsStore.brands.filter(b => b.slugName).map(b => b.slugName!)
+  if (slugs.length > 0) {
+    const { byBrand } = await aivoxApiService.heartbeatBatch(slugs)
+    if (cancelled) return
+    for (const slug of slugs) brandsStore.setStreamingState(slug, byBrand[slug] ?? false)
+  }
+  if (!cancelled) heartbeatTimer = setTimeout(() => void pollHeartbeat(), HEARTBEAT_POLL_MS)
+}
+
+onMounted(() => { cancelled = false; void pollHeartbeat() })
+onUnmounted(() => { cancelled = true; if (heartbeatTimer) clearTimeout(heartbeatTimer) })
 
 const brandLabel = (brand: Brand) =>
   brand.localizedName?.['en'] || brand.title || brand.slugName || brand.id

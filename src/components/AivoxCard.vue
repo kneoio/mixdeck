@@ -503,4 +503,16 @@ onUnmounted(() => {
 .queue-item--regular {
   border-color: rgba(255, 255, 255, 0.08);
 }
+@media (max-width: 768px) {
+  .queue-wrap {
+    flex-direction: column;
+  }
+  .queue-connector {
+    display: none;
+  }
+  .queue-type-tag {
+    white-space: nowrap;
+    overflow: visible;
+  }
+}
 </style>
