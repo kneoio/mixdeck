@@ -345,7 +345,7 @@ const columns = computed<DataTableColumns<any>>(() => {
   },
   {
     key: 'boost',
-    width: 90,
+    width: 110,
     title: 'Boost',
     render: (row) => {
       const boost = row.boost ?? 0
@@ -356,7 +356,7 @@ const columns = computed<DataTableColumns<any>>(() => {
         style: `color:${boost >= 2 ? '#f59e0b' : 'currentColor'}`,
         onClick: (e: MouseEvent) => changeBoost(row, 1, e),
       }, { icon: () => h(NIcon, { size: 16 }, { default: () => h(ArrowUpOutline) }) })
-      const leds = h('span', { style: 'display:flex;flex-direction:column;align-items:center;gap:0;line-height:1' }, [
+      const leds = h('span', { style: 'display:flex;flex-direction:row;align-items:center;gap:2px' }, [
         h(LedIndicator, { active: boost === 2, color: '#f59e0b', size: 12 }),
         h(LedIndicator, { active: boost === 1, color: '#22c55e', size: 12 }),
         h(LedIndicator, { active: boost === -1, color: '#ef4444', size: 12 }),
@@ -567,7 +567,7 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
       v-model:checked-row-keys="selectedIds"
       :pagination="pagination"
       remote
-      :row-props="(row: any) => ({ style: 'cursor:pointer', onClick: (e: MouseEvent) => { if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return; router.push({ path: `/brands/${route.params.id}/playlist/${row.id}`, query: { returnTo: route.fullPath } }) } })"
+      :row-props="(row: any) => ({ style: 'cursor:pointer;height:48px', onClick: (e: MouseEvent) => { if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return; router.push({ path: `/brands/${route.params.id}/playlist/${row.id}`, query: { returnTo: route.fullPath } }) } })"
       @update:page="(p) => { pageNum = p; fetchData(p) }"
       @update:page-size="(s) => { pageSize = s; fetchData(1, s) }"
     />
