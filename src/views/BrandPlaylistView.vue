@@ -213,14 +213,8 @@ const columns = computed<DataTableColumns<any>>(() => {
             onClick: (e: MouseEvent) => toggleRowPlay(row, e),
           }, { icon: () => h('span', { class: iconClass }, [h(NIcon, { size: 18 }, { default: () => isRowPlaying ? h(PauseOutline) : h(PlayOutline) })]) })
 
-          const boost = row.boost ?? 0
-          const mobUpBtn = h(NButton, { text: true, size: 'tiny', disabled: boostingId.value === row.id || boost >= 2, style: `color:${boost >= 2 ? '#f59e0b' : 'currentColor'}`, onClick: (e: MouseEvent) => changeBoost(row, 1, e) }, { icon: () => h(NIcon, { size: 16 }, { default: () => h(ArrowUpOutline) }) })
-          const mobDownBtn = h(NButton, { text: true, size: 'tiny', disabled: boostingId.value === row.id || boost <= -1, style: `color:${boost <= -1 ? '#ef4444' : 'currentColor'}`, onClick: (e: MouseEvent) => changeBoost(row, -1, e) }, { icon: () => h(NIcon, { size: 16 }, { default: () => h(ArrowDownOutline) }) })
-          const boostWidget = h('span', { style: 'display:flex;align-items:center;gap:1px' }, [mobUpBtn, mobDownBtn])
-
           const row1 = h('div', { class: 'mob-r1' }, [
             playBtn,
-            boostWidget,
             h('span', { class: 'mob-title' }, row.title || '-'),
             h('span', { class: 'mob-sep' }, '—'),
             h('span', { class: 'mob-artist' }, row.artist || '-'),
@@ -353,7 +347,6 @@ const columns = computed<DataTableColumns<any>>(() => {
       const upBtn = h(NButton, {
         text: true, size: 'tiny',
         disabled: busy || boost >= 2,
-        style: `color:${boost >= 2 ? '#f59e0b' : 'currentColor'}`,
         onClick: (e: MouseEvent) => changeBoost(row, 1, e),
       }, { icon: () => h(NIcon, { size: 16 }, { default: () => h(ArrowUpOutline) }) })
       const leds = h('span', { style: 'display:flex;flex-direction:row;align-items:center;gap:2px' }, [
@@ -364,10 +357,9 @@ const columns = computed<DataTableColumns<any>>(() => {
       const downBtn = h(NButton, {
         text: true, size: 'tiny',
         disabled: busy || boost <= -1,
-        style: `color:${boost <= -1 ? '#ef4444' : 'currentColor'}`,
         onClick: (e: MouseEvent) => changeBoost(row, -1, e),
       }, { icon: () => h(NIcon, { size: 16 }, { default: () => h(ArrowDownOutline) }) })
-      return h('span', { style: 'display:flex;align-items:center;gap:3px' }, [upBtn, leds, downBtn])
+      return h('span', { style: 'display:flex;align-items:center;gap:3px', onMousedown: (e: MouseEvent) => e.stopPropagation(), onClick: (e: MouseEvent) => e.stopPropagation() }, [upBtn, leds, downBtn])
     },
   },
   {
