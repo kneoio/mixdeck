@@ -33,11 +33,13 @@ it is<template>
 
         <AivoxCard v-if="brand.slugName" :brand-slug="brand.slugName" :timezone="brand.timeZone" />
 
+        <!--
         <NCollapse v-if="brand.slugName" class="agenda-collapse">
           <NCollapseItem :title="t('agenda.title')" :name="brand.id">
             <AgendaCard :brand-slug="brand.slugName" :alive="isAlive(brand)" />
           </NCollapseItem>
         </NCollapse>
+        -->
       </NCard>
     </div>
   </div>
