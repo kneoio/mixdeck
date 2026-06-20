@@ -261,7 +261,6 @@ onUnmounted(() => {
         <div
           class="queue-item"
           :class="[`queue-item--${item.tech.queueType}`]"
-          :style="queuePriorityStyle(item)"
         >
           <div class="queue-indicator">
             <span v-if="item.tech.queueType === 'playing'" class="queue-eq">
