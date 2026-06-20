@@ -6,7 +6,8 @@ import {
   NDataTable, NSpace, NPopconfirm, NInput, NTag, NIcon, NButton, NProgress,
   type DataTableColumns, useMessage
 } from 'naive-ui'
-import { ShareSocialOutline, PlayOutline, PauseOutline, RefreshOutline } from '@vicons/ionicons5'
+import { ShareSocialOutline, PlayOutline, PauseOutline, RefreshOutline, ArrowUpOutline, ArrowDownOutline } from '@vicons/ionicons5'
+import LedIndicator from '@/components/LedIndicator.vue'
 import datanestApiService from '@/services/datanestApi'
 import { appConfig } from '@/config/appConfig'
 import { useBrandsStore } from '@/stores/brands'
@@ -212,8 +213,14 @@ const columns = computed<DataTableColumns<any>>(() => {
             onClick: (e: MouseEvent) => toggleRowPlay(row, e),
           }, { icon: () => h('span', { class: iconClass }, [h(NIcon, { size: 18 }, { default: () => isRowPlaying ? h(PauseOutline) : h(PlayOutline) })]) })
 
+          const boost = row.boost ?? 0
+          const mobUpBtn = h(NButton, { text: true, size: 'tiny', disabled: boostingId.value === row.id || boost >= 2, style: `color:${boost >= 2 ? '#f59e0b' : 'currentColor'}`, onClick: (e: MouseEvent) => changeBoost(row, 1, e) }, { icon: () => h(NIcon, { size: 16 }, { default: () => h(ArrowUpOutline) }) })
+          const mobDownBtn = h(NButton, { text: true, size: 'tiny', disabled: boostingId.value === row.id || boost <= -1, style: `color:${boost <= -1 ? '#ef4444' : 'currentColor'}`, onClick: (e: MouseEvent) => changeBoost(row, -1, e) }, { icon: () => h(NIcon, { size: 16 }, { default: () => h(ArrowDownOutline) }) })
+          const boostWidget = h('span', { style: 'display:flex;align-items:center;gap:1px' }, [mobUpBtn, mobDownBtn])
+
           const row1 = h('div', { class: 'mob-r1' }, [
             playBtn,
+            boostWidget,
             h('span', { class: 'mob-title' }, row.title || '-'),
             h('span', { class: 'mob-sep' }, '—'),
             h('span', { class: 'mob-artist' }, row.artist || '-'),
@@ -325,7 +332,6 @@ const columns = computed<DataTableColumns<any>>(() => {
       })
     }
   },
-  { title: t('playlistView.col_played'), key: 'playedByBrandCount', width: playedW, render: (row) => row.playedByBrandCount ?? 0 },
   {
     title: t('playlistView.col_rating'), key: 'rating', width: ratingW,
     render: (row) => {
@@ -336,6 +342,33 @@ const columns = computed<DataTableColumns<any>>(() => {
         h('span', { class: ['stat-badge', l > 0 ? 'stat-badge--likes' : ''] }, `+${l}`),
       ])
     }
+  },
+  {
+    key: 'boost',
+    width: 90,
+    title: 'Boost',
+    render: (row) => {
+      const boost = row.boost ?? 0
+      const busy = boostingId.value === row.id
+      const upBtn = h(NButton, {
+        text: true, size: 'tiny',
+        disabled: busy || boost >= 2,
+        style: `color:${boost >= 2 ? '#f59e0b' : 'currentColor'}`,
+        onClick: (e: MouseEvent) => changeBoost(row, 1, e),
+      }, { icon: () => h(NIcon, { size: 16 }, { default: () => h(ArrowUpOutline) }) })
+      const leds = h('span', { style: 'display:flex;flex-direction:column;align-items:center;gap:0;line-height:1' }, [
+        h(LedIndicator, { active: boost === 2, color: '#f59e0b', size: 12 }),
+        h(LedIndicator, { active: boost === 1, color: '#22c55e', size: 12 }),
+        h(LedIndicator, { active: boost === -1, color: '#ef4444', size: 12 }),
+      ])
+      const downBtn = h(NButton, {
+        text: true, size: 'tiny',
+        disabled: busy || boost <= -1,
+        style: `color:${boost <= -1 ? '#ef4444' : 'currentColor'}`,
+        onClick: (e: MouseEvent) => changeBoost(row, -1, e),
+      }, { icon: () => h(NIcon, { size: 16 }, { default: () => h(ArrowDownOutline) }) })
+      return h('span', { style: 'display:flex;align-items:center;gap:3px' }, [upBtn, leds, downBtn])
+    },
   },
   {
     title: t('playlistView.col_shared'),
@@ -404,6 +437,24 @@ function openShareBulk() {
 function onShareDialogDone() {
   selectedIds.value = []
   void fetchData()
+}
+
+const boostingId = ref<string | null>(null)
+
+async function changeBoost(row: any, delta: number, e: MouseEvent) {
+  e.stopPropagation()
+  const cur = row.boost ?? 0
+  const next = Math.min(2, Math.max(-1, cur + delta))
+  if (next === cur) return
+  boostingId.value = row.id
+  try {
+    await datanestApiService.patchSoundFragmentBoost(row.id, route.params.id as string, next)
+    row.boost = next
+  } catch (err: any) {
+    handleApiError(err, message)
+  } finally {
+    boostingId.value = null
+  }
 }
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null

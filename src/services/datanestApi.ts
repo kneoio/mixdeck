@@ -198,6 +198,14 @@ class DatanestApiService extends ApiClient {
     await this.request<void>(`/soundfragments/${id}`, { method: 'DELETE' })
   }
 
+  async patchSoundFragmentBoost(id: string, brandId: string, boost: number): Promise<void> {
+    await this.request<void>(`/soundfragments/${id}/boost/${brandId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ boost }),
+    })
+  }
+
   /** Remove a received share for the current user (rejectShare). */
   async rejectReceivedSoundFragment(id: string): Promise<void> {
     await this.deleteDictionaryItem('/shared-sound-fragments/received', id)
