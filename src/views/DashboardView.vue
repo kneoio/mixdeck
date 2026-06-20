@@ -6,7 +6,6 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import { useBrandsStore } from '@/stores/brands'
-import aivoxApiService from '@/services/aivoxApi'
 import {
   NLayout, NLayoutSider, NLayoutHeader, NLayoutContent,
   NMenu, NButton, NDropdown, NAvatar, NSpace, NFlex, NIcon,
@@ -134,21 +133,6 @@ onUnmounted(() => {
   headerLineGsapCtx = null
 })
 
-const HEARTBEAT_POLL_MS = 5_000
-let heartbeatPollTimer: ReturnType<typeof setTimeout> | null = null
-let heartbeatPollCancelled = false
-
-async function pollHeartbeat() {
-  if (heartbeatPollCancelled) return
-  const slugs = brandsStore.brands.filter(b => b.slugName).map(b => b.slugName!)
-  if (slugs.length > 0) {
-    const { byBrand } = await aivoxApiService.heartbeatBatch(slugs)
-    if (heartbeatPollCancelled) return
-    for (const slug of slugs) brandsStore.setStreamingState(slug, byBrand[slug] ?? false)
-  }
-  if (!heartbeatPollCancelled) heartbeatPollTimer = setTimeout(() => void pollHeartbeat(), HEARTBEAT_POLL_MS)
-}
-
 onMounted(async () => {
   if (!authStore.isAuthenticated) {
     router.push('/')
@@ -157,15 +141,7 @@ onMounted(async () => {
   await brandsStore.loadBrands(1, 10)
   if (brandsStore.brands.length === 0 && route.path !== '/broadcaster-welcome') {
     await router.replace('/broadcaster-welcome')
-    return
   }
-  heartbeatPollCancelled = false
-  void pollHeartbeat()
-})
-
-onUnmounted(() => {
-  heartbeatPollCancelled = true
-  if (heartbeatPollTimer) { clearTimeout(heartbeatPollTimer); heartbeatPollTimer = null }
 })
 
 watch(
