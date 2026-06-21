@@ -1663,7 +1663,7 @@ watch(activeTab, () => {
               <div class="field-error-shell">
                 <NSwitch
                   :value="formData.oneTimeStreamPolicy === 'NO_RESTRICTIONS'"
-                  @update:value="(v) => formData.oneTimeStreamPolicy = v ? 'NO_RESTRICTIONS' : 'NOT_ALLOWED'"
+                  disabled
                 />
               </div>
               <div class="field-error-label"></div>
