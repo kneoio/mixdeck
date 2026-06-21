@@ -1663,7 +1663,7 @@ watch(activeTab, () => {
               <div class="field-error-shell">
                 <NSwitch
                   :value="formData.oneTimeStreamPolicy === 'NO_RESTRICTIONS'"
-                  disabled
+                  style="pointer-events: none"
                 />
               </div>
               <div class="field-error-label"></div>
