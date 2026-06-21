@@ -73,7 +73,7 @@ export default {
       nowPlaying: 'JETZT LÄUFT',
       played: 'Gespielt',
       upNext: 'Als Nächstes',
-      inQueue: 'In der Warteschlange',
+      inQueue: 'Reserve',
       priority: 'Priorität',
       mixing: {
         INTRO_SONG: 'Intro → Titel',

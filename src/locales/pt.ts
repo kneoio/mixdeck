@@ -73,7 +73,7 @@ export default {
       nowPlaying: 'TOCANDO AGORA',
       played: 'Tocada',
       upNext: 'A seguir',
-      inQueue: 'Na fila',
+      inQueue: 'Reserva',
       priority: 'Prioridade',
       mixing: {
         INTRO_SONG: 'Intro → faixa',

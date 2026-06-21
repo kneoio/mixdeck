@@ -73,7 +73,7 @@ export default {
       nowPlaying: 'SONANDO AHORA',
       played: 'Reproducido',
       upNext: 'A continuación',
-      inQueue: 'En cola',
+      inQueue: 'Reserva',
       priority: 'Prioridad',
       mixing: {
         INTRO_SONG: 'Intro → tema',

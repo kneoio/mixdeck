@@ -73,7 +73,7 @@ export default {
       nowPlaying: '再生中',
       played: '再生済み',
       upNext: '次に再生',
-      inQueue: 'キュー内',
+      inQueue: '予備',
       priority: '優先度',
       mixing: {
         INTRO_SONG: 'イントロ → 曲',

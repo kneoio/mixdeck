@@ -73,7 +73,7 @@ export default {
       nowPlaying: 'ЗАРАЗ ГРАЄ',
       played: 'Відтворено',
       upNext: 'Далі',
-      inQueue: 'У черзі',
+      inQueue: 'Резерв',
       priority: 'Пріоритет',
       mixing: {
         INTRO_SONG: 'Інтро → трек',

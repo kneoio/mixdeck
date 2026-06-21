@@ -73,7 +73,7 @@ export default {
       nowPlaying: 'EN COURS',
       played: 'Lu',
       upNext: 'À suivre',
-      inQueue: 'Dans la file',
+      inQueue: 'Réserve',
       priority: 'Priorité',
       mixing: {
         INTRO_SONG: 'Intro → morceau',

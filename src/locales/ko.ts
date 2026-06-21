@@ -73,7 +73,7 @@ export default {
       nowPlaying: '지금 재생 중',
       played: '재생됨',
       upNext: '다음',
-      inQueue: '대기 중',
+      inQueue: '예비',
       priority: '우선순위',
       mixing: {
         INTRO_SONG: '인트로 → 노래',

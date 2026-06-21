@@ -73,7 +73,7 @@ export default {
       nowPlaying: 'SPILLER NÅ',
       played: 'Spilt',
       upNext: 'Neste',
-      inQueue: 'I kø',
+      inQueue: 'Reserve',
       priority: 'Prioritet',
       mixing: {
         INTRO_SONG: 'Intro → sang',

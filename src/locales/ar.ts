@@ -73,7 +73,7 @@ export default {
       nowPlaying: 'قيد التشغيل الآن',
       played: 'تم التشغيل',
       upNext: 'التالي',
-      inQueue: 'في قائمة الانتظار',
+      inQueue: 'احتياطي',
       priority: 'الأولوية',
       mixing: {
         INTRO_SONG: 'مقدمة → أغنية',

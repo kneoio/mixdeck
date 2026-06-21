@@ -80,7 +80,7 @@ export default {
       nowPlaying: 'NOW PLAYING',
       played: 'Played',
       upNext: 'Up Next',
-      inQueue: 'In Queue',
+      inQueue: 'Fallback',
       priority: 'Priority',
       mixing: {
         INTRO_SONG: 'Intro → song',

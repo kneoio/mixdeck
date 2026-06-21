@@ -73,7 +73,7 @@ export default {
       nowPlaying: 'ახლა უკრავს',
       played: 'დაკრულია',
       upNext: 'შემდეგი',
-      inQueue: 'რიგშია',
+      inQueue: 'სარეზერვო',
       priority: 'პრიორიტეტი',
       mixing: {
         INTRO_SONG: 'ინტრო → ტრეკი',

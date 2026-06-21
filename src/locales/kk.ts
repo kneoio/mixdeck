@@ -73,7 +73,7 @@ export default {
       nowPlaying: 'ҚАЗІР ОЙНАЛУДА',
       played: 'Ойнатылды',
       upNext: 'Келесі',
-      inQueue: 'Кезекте',
+      inQueue: 'Резерв',
       priority: 'Басымдық',
       mixing: {
         INTRO_SONG: 'Интро → трек',

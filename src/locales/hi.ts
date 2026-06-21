@@ -73,7 +73,7 @@ export default {
       nowPlaying: 'अभी चल रहा है',
       played: 'चल चुका',
       upNext: 'अगला',
-      inQueue: 'कतार में',
+      inQueue: 'रिज़र्व',
       priority: 'प्राथमिकता',
       mixing: {
         INTRO_SONG: 'इंट्रो → गाना',
