@@ -241,7 +241,7 @@ onUnmounted(() => {
           <div class="aivox-leds">
             <LedYellow :active="flash || waiting" />
             <LedIndicator :active="waiting" :pulse="waiting" color="#CC0000" :size="18" />
-            <LedGreen :active="flashGreen || alive" />
+            <LedGreen :active="flashGreen || alive" :pulse="alive" />
           </div>
           <span class="aivox-label">{{ t('dashboard.onAir') }}</span>
         </div>
@@ -506,11 +506,15 @@ onUnmounted(() => {
 @media (max-width: 768px) {
   .queue-wrap {
     flex-direction: column;
+    align-items: stretch;
   }
   .queue-connector {
     display: none;
   }
   .queue-item {
+    width: 100%;
+    box-sizing: border-box;
+    flex-shrink: 1;
     overflow: hidden;
   }
   .queue-info {
