@@ -342,6 +342,7 @@ const columns = computed<DataTableColumns<any>>(() => {
     width: 110,
     title: 'Boost',
     render: (row) => {
+      if (row.shared) return null
       const boost = row.boost ?? 0
       const busy = boostingId.value === row.id
       const upBtn = h(NButton, {
@@ -440,7 +441,7 @@ async function changeBoost(row: any, delta: number, e: MouseEvent) {
   if (next === cur) return
   boostingId.value = row.id
   try {
-    await datanestApiService.patchSoundFragmentBoost(row.id, route.params.id as string, next)
+    await datanestApiService.patchSoundFragmentBoost(row.id, route.params.id as string, next, row.shared ? 'shared' : 'brand')
     row.boost = next
   } catch (err: any) {
     handleApiError(err, message)
