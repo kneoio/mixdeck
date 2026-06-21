@@ -228,6 +228,7 @@ export default {
     messaging: 'Messaging',
     one_time_stream: 'One-Time Stream',
     accept_shared_sounds: 'Accept Shared Sounds',
+    chat_with_dj: 'Chat with DJ',
     preview: 'Preview',
     title_font: 'Title Font',
     color: 'Color',

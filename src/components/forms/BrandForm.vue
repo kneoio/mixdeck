@@ -108,6 +108,7 @@ const formData = ref({
   profileId: null as string | null,
   oneTimeStreamPolicy: 'NOT_ALLOWED' as SubmissionPolicy,
   submissionPolicy: 'NOT_ALLOWED' as SubmissionPolicy,
+  messagingPolicy: 'NOT_ALLOWED' as SubmissionPolicy,
   aiOverriding: { enabled: false, name: '', prompt: '' },
   scriptId: null as string | null,
   profileOverriding: { name: '', description: '' },
@@ -984,6 +985,7 @@ function applyBrandToForm(brand: any) {
     profileId: brand.profileId || null,
     oneTimeStreamPolicy: brand.oneTimeStreamPolicy || 'NOT_ALLOWED',
     submissionPolicy: brand.submissionPolicy || 'NOT_ALLOWED',
+    messagingPolicy: brand.messagingPolicy || 'NOT_ALLOWED',
     aiOverriding: { enabled: !!(brand.aiOverriding?.name || brand.aiOverriding?.prompt), name: brand.aiOverriding?.name || '', prompt: brand.aiOverriding?.prompt || '' },
     scriptId: firstScript?.scriptId || null,
     profileOverriding: {
@@ -1659,7 +1661,10 @@ watch(activeTab, () => {
           <NFormItem :label="t('brandForm.one_time_stream')">
             <div class="field-stack">
               <div class="field-error-shell">
-                <NSelect v-model:value="formData.oneTimeStreamPolicy" :options="SUBMISSION_POLICY_OPTIONS" style="width: 220px" />
+                <NSwitch
+                  :value="formData.oneTimeStreamPolicy === 'NO_RESTRICTIONS'"
+                  @update:value="(v) => formData.oneTimeStreamPolicy = v ? 'NO_RESTRICTIONS' : 'NOT_ALLOWED'"
+                />
               </div>
               <div class="field-error-label"></div>
             </div>
@@ -1667,7 +1672,21 @@ watch(activeTab, () => {
           <NFormItem :label="t('brandForm.accept_shared_sounds')">
             <div class="field-stack">
               <div class="field-error-shell">
-                <NSelect v-model:value="formData.submissionPolicy" :options="SUBMISSION_POLICY_OPTIONS" style="width: 220px" />
+                <NSwitch
+                  :value="formData.submissionPolicy === 'NO_RESTRICTIONS'"
+                  @update:value="(v) => formData.submissionPolicy = v ? 'NO_RESTRICTIONS' : 'NOT_ALLOWED'"
+                />
+              </div>
+              <div class="field-error-label"></div>
+            </div>
+          </NFormItem>
+          <NFormItem :label="t('brandForm.chat_with_dj')">
+            <div class="field-stack">
+              <div class="field-error-shell">
+                <NSwitch
+                  :value="formData.messagingPolicy === 'NO_RESTRICTIONS'"
+                  @update:value="(v) => formData.messagingPolicy = v ? 'NO_RESTRICTIONS' : 'NOT_ALLOWED'"
+                />
               </div>
               <div class="field-error-label"></div>
             </div>
