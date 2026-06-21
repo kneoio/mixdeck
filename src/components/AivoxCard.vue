@@ -32,6 +32,7 @@ const queueEntries = ref<AivoxQueueEntry[]>([])
 let flashTimer: ReturnType<typeof setTimeout> | null = null
 let timeTimer: ReturnType<typeof setInterval> | null = null
 let queueTimer: ReturnType<typeof setInterval> | null = null
+let heartbeatTimer: ReturnType<typeof setInterval> | null = null
 
 function triggerFlash() {
   if (flashTimer) clearTimeout(flashTimer)
@@ -127,6 +128,29 @@ function stopQueuePolling() {
   if (queueTimer) { clearInterval(queueTimer); queueTimer = null }
 }
 
+function flashGreenOnce() {
+  if (flashTimer) clearTimeout(flashTimer)
+  flashGreen.value = true
+  flashTimer = setTimeout(() => { flashGreen.value = false }, 600)
+}
+
+async function pollHeartbeat() {
+  const slug = props.brandSlug
+  if (!slug) return
+  const isAlive = await fetchHeartbeatAlive()
+  if (props.brandSlug !== slug) return
+  if (isAlive) flashGreenOnce()
+}
+
+function startHeartbeatPolling() {
+  pollHeartbeat()
+  heartbeatTimer = setInterval(pollHeartbeat, 5000)
+}
+
+function stopHeartbeatPolling() {
+  if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null }
+}
+
 function queueTypeLabel(item: AivoxQueueEntry): string {
   if (item.tech.queueType === 'playing') return t('dashboard.queue.nowPlaying')
   if (item.tech.queueType === 'played') return t('dashboard.queue.played')
@@ -189,12 +213,13 @@ function stopTimeUpdate() {
 
 watch(() => props.brandSlug, (val) => {
   stopQueuePolling()
+  stopHeartbeatPolling()
+  if (val) startHeartbeatPolling()
   if (val && alive.value) startQueuePolling()
 })
 
 watch(alive, (val) => {
   if (val) {
-    triggerFlash()
     startQueuePolling()
   } else {
     stopQueuePolling()
@@ -208,12 +233,14 @@ watch(() => props.timezone, (val) => {
 })
 
 onMounted(() => {
+  if (props.brandSlug) startHeartbeatPolling()
   if (props.brandSlug && alive.value) startQueuePolling()
   if (props.timezone) startTimeUpdate()
 })
 
 onUnmounted(() => {
   stopQueuePolling()
+  stopHeartbeatPolling()
   stopTimeUpdate()
   if (flashTimer) clearTimeout(flashTimer)
 })
