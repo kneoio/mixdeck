@@ -6,8 +6,7 @@ import {
   NDataTable, NSpace, NPopconfirm, NTag, NButton, NIcon,
   type DataTableColumns, useMessage
 } from 'naive-ui'
-import { RefreshOutline, ArrowUpOutline, ArrowDownOutline } from '@vicons/ionicons5'
-import LedIndicator from '@/components/LedIndicator.vue'
+import { RefreshOutline } from '@vicons/ionicons5'
 import datanestApiService from '@/services/datanestApi'
 import { useDictionaryStore } from '@/stores/dictionary'
 import PageHeader from '@/components/PageHeader.vue'
@@ -28,23 +27,6 @@ const totalCount = ref(0)
 const pageNum = ref(1)
 const pageSize = ref(10)
 const selectedIds = ref<string[]>([])
-const boostingId = ref<string | null>(null)
-
-async function changeBoost(row: any, delta: number, e: MouseEvent) {
-  e.stopPropagation()
-  const cur = row.boost ?? 0
-  const next = Math.min(2, Math.max(-1, cur + delta))
-  if (next === cur) return
-  boostingId.value = row.id
-  try {
-    await datanestApiService.patchSoundFragmentBoost(row.id, row.id, next, 'shared')
-    row.boost = next
-  } catch (err: any) {
-    handleApiError(err, message)
-  } finally {
-    boostingId.value = null
-  }
-}
 
 const genreMap = ref<Map<string, { name: string; color?: string; fontColor?: string }>>(new Map())
 const labelMap = ref<Map<string, { name: string; color?: string; fontColor?: string }>>(new Map())
@@ -117,31 +99,6 @@ const columns = computed<DataTableColumns<any>>(() => [
         })
       })
     }
-  },
-  {
-    key: 'boost',
-    width: 110,
-    title: 'Boost',
-    render: (row) => {
-      const boost = row.boost ?? 0
-      const busy = boostingId.value === row.id
-      const upBtn = h(NButton, {
-        text: true, size: 'tiny',
-        disabled: busy || boost >= 2,
-        onClick: (e: MouseEvent) => changeBoost(row, 1, e),
-      }, { icon: () => h(NIcon, { size: 16 }, { default: () => h(ArrowUpOutline) }) })
-      const leds = h('span', { style: 'display:flex;flex-direction:row;align-items:center;gap:2px' }, [
-        h(LedIndicator, { active: boost === 2, color: '#f59e0b', size: 12 }),
-        h(LedIndicator, { active: boost === 1, color: '#22c55e', size: 12 }),
-        h(LedIndicator, { active: boost === -1, color: '#ef4444', size: 12 }),
-      ])
-      const downBtn = h(NButton, {
-        text: true, size: 'tiny',
-        disabled: busy || boost <= -1,
-        onClick: (e: MouseEvent) => changeBoost(row, -1, e),
-      }, { icon: () => h(NIcon, { size: 16 }, { default: () => h(ArrowDownOutline) }) })
-      return h('span', { style: 'display:flex;align-items:center;gap:3px', onMousedown: (e: MouseEvent) => e.stopPropagation(), onClick: (e: MouseEvent) => e.stopPropagation() }, [upBtn, leds, downBtn])
-    },
   },
   { title: t('playlistView.col_description'), key: 'description', minWidth: 160, ellipsis: { tooltip: true } },
 ])
