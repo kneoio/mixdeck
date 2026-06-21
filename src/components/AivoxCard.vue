@@ -194,19 +194,12 @@ watch(() => props.brandSlug, (val) => {
 
 watch(alive, (val) => {
   if (val) {
+    triggerFlash()
     startQueuePolling()
   } else {
     stopQueuePolling()
     queueEntries.value = []
   }
-})
-
-// Flash green on every heartbeat response for this brand (real per-request feedback)
-watch(() => brandsStore.heartbeatTicks[props.brandSlug], () => {
-  if (!alive.value) return
-  if (flashTimer) clearTimeout(flashTimer)
-  flashGreen.value = true
-  flashTimer = setTimeout(() => { flashGreen.value = false }, 600)
 })
 
 watch(() => props.timezone, (val) => {
