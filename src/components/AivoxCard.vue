@@ -194,12 +194,16 @@ watch(() => props.brandSlug, (val) => {
 
 watch(alive, (val) => {
   if (val) {
-    triggerFlash()
     startQueuePolling()
   } else {
     stopQueuePolling()
     queueEntries.value = []
   }
+})
+
+// Flash on every heartbeat response for this brand (real per-request feedback)
+watch(() => brandsStore.heartbeatTicks[props.brandSlug], () => {
+  if (alive.value) triggerFlash()
 })
 
 watch(() => props.timezone, (val) => {
@@ -241,7 +245,7 @@ onUnmounted(() => {
           <div class="aivox-leds">
             <LedYellow :active="flash || waiting" />
             <LedIndicator :active="waiting" :pulse="waiting" color="#CC0000" :size="18" />
-            <LedGreen :active="flashGreen || alive" :pulse="alive" />
+            <LedGreen :active="flashGreen" />
           </div>
           <span class="aivox-label">{{ t('dashboard.onAir') }}</span>
         </div>
