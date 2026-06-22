@@ -40,24 +40,29 @@ const isTabChangeFromValidation = ref(false)
 const isMobile = ref(false)
 
 const titleFieldRef = ref<HTMLElement | null>(null)
+const artistFieldRef = ref<HTMLElement | null>(null)
 const representedInBrandsFieldRef = ref<HTMLElement | null>(null)
 const audioFileFieldRef = ref<HTMLElement | null>(null)
 
-type ValidationField = 'title' | 'representedInBrands' | 'audioFile'
+type ValidationField = 'title' | 'artist' | 'representedInBrands' | 'audioFile'
 
 const fieldErrors = ref<Record<ValidationField, string>>({
   title: '',
+  artist: '',
   representedInBrands: '',
   audioFile: '',
 })
 
 const regDate = ref('')
 const lastModifiedDate = ref('')
+const playHistory = ref<{ playedAt: string; djName: string; duration: number }[]>([])
+const playHistoryStats = ref<{ total: number; djs: number; first: string; last: string } | null>(null)
 
 
 const existingUrl = ref('')
 const existingFileName = ref('')
 const activeFileType = ref('unknown')
+const existingFiles = ref<{ id: string; name: string; url: string; status?: string }[]>([])
 const uploadProgress = ref(0)
 const isUploading = ref(false)
 const uploadedFileNames = ref<string[]>([])
@@ -65,12 +70,17 @@ const uploadedFileNames = ref<string[]>([])
 const formData = ref({
   type: 'ADVERTISEMENT' as string,
   title: '',
+  artist: '',
   description: '',
   labels: [] as string[],
   representedInBrands: [] as string[],
   expiresAt: '' as string | null,
   length: null as number | null,
 })
+
+const isPrerecorded = computed(() =>
+  formData.value.type === 'PRERECORDED_ADVERTISEMENT' || formData.value.type === 'PRERECORDED_PODCAST'
+)
 
 const labelOptions = computed(() =>
   dictionaryStore.soundFragmentLabels.map(l => ({
@@ -106,12 +116,14 @@ const formSubtitle = computed(() =>
 
 function getFieldRef(field: ValidationField) {
   if (field === 'title') return titleFieldRef.value
+  if (field === 'artist') return artistFieldRef.value
   if (field === 'representedInBrands') return representedInBrandsFieldRef.value
   return audioFileFieldRef.value
 }
 
 function getFieldLabel(field: ValidationField) {
   if (field === 'title') return t('fragmentForm.title')
+  if (field === 'artist') return t('fragmentForm.artist')
   if (field === 'representedInBrands') return t('fragmentForm.assign_to')
   return t('fragmentForm.audio_file')
 }
@@ -126,7 +138,7 @@ function clearFieldError(field: ValidationField) {
 }
 
 function clearAllFieldErrors() {
-  const allFields: ValidationField[] = ['title', 'representedInBrands', 'audioFile']
+  const allFields: ValidationField[] = ['title', 'artist', 'representedInBrands', 'audioFile']
   for (const field of allFields) clearFieldError(field)
 }
 
@@ -146,9 +158,15 @@ async function showFieldError(field: ValidationField, customMessage?: string) {
 async function validateBeforeSave() {
   const invalidFields: ValidationField[] = []
   if (!formData.value.title.trim()) invalidFields.push('title')
-  if (!existingUrl.value && !uploadedFileNames.value.length) invalidFields.push('audioFile')
+  if (!formData.value.artist.trim()) invalidFields.push('artist')
+  if (isPrerecorded.value) {
+    const hasExisting = existingFiles.value.some(f => f.status !== 'removed')
+    if (!hasExisting && !uploadedFileNames.value.length) invalidFields.push('audioFile')
+  } else {
+    if (!existingUrl.value && !uploadedFileNames.value.length) invalidFields.push('audioFile')
+  }
 
-  const allFields: ValidationField[] = ['title', 'representedInBrands', 'audioFile']
+  const allFields: ValidationField[] = ['title', 'artist', 'representedInBrands', 'audioFile']
   for (const field of allFields) {
     if (!invalidFields.includes(field)) clearFieldError(field)
   }
@@ -162,6 +180,11 @@ async function validateBeforeSave() {
   return false
 }
 
+
+function removeExistingFile(id: string) {
+  const f = existingFiles.value.find(f => f.id === id)
+  if (f) f.status = 'removed'
+}
 
 async function handleFileCapture({ file, onFinish, onError }: UploadCustomRequestOptions) {
   const chosen = file.file
@@ -190,6 +213,7 @@ async function handleSave() {
     const id = isEditing.value ? (route.params.fragmentId as string) : null
     const payload: any = { ...formData.value }
     if (uploadedFileNames.value.length) payload.newlyUploaded = uploadedFileNames.value
+    if (isPrerecorded.value) payload.uploadedFiles = existingFiles.value.map(f => ({ id: f.id, status: f.status }))
     await store.saveFragment(id, payload)
     message.success(t('fragmentForm.saved'))
     router.push(backRoute)
@@ -220,6 +244,7 @@ onMounted(async () => {
       formData.value = {
         type: frag.type || 'ADVERTISEMENT',
         title: frag.title || '',
+        artist: frag.artist || '',
         description: frag.description || '',
         labels: frag.labels || [],
         representedInBrands: frag.representedInBrands || [],
@@ -230,12 +255,26 @@ onMounted(async () => {
       }
       regDate.value = frag.regDate || ''
       lastModifiedDate.value = frag.lastModifiedDate || ''
-const opusFile = frag.uploadedFiles?.find((f: any) => f.type === 'opus')
-      const f0 = opusFile || frag.uploadedFiles?.[0]
-      activeFileType.value = f0?.type ?? 'unknown'
-      const fileUrl = f0?.url || frag.url || ''
-      existingUrl.value = fileUrl.startsWith('http') ? fileUrl : fileUrl ? `${appConfig.datanestServer}${fileUrl}` : ''
-      existingFileName.value = frag.uploadedFiles?.find((f: any) => f.type === 'original')?.name || f0?.name || fileUrl.split('/').pop()?.split('?')[0] || ''
+      playHistory.value = (frag.playHistory || []).map((e: any) => ({
+        playedAt: e.playedAt,
+        djName: e.djName || '',
+        duration: e.duration ?? 0,
+      }))
+if (isPrerecorded.value) {
+        existingFiles.value = (frag.uploadedFiles || []).map((f: any) => ({
+          id: f.id,
+          name: f.name || f.id,
+          url: f.url?.startsWith('http') ? f.url : f.url ? `${appConfig.datanestServer}${f.url}` : '',
+          status: f.status,
+        }))
+      } else {
+        const opusFile = frag.uploadedFiles?.find((f: any) => f.type === 'opus')
+        const f0 = opusFile || frag.uploadedFiles?.[0]
+        activeFileType.value = f0?.type ?? 'unknown'
+        const fileUrl = f0?.url || frag.url || ''
+        existingUrl.value = fileUrl.startsWith('http') ? fileUrl : fileUrl ? `${appConfig.datanestServer}${fileUrl}` : ''
+        existingFileName.value = frag.uploadedFiles?.find((f: any) => f.type === 'original')?.name || f0?.name || fileUrl.split('/').pop()?.split('?')[0] || ''
+      }
     }
   } catch (error: any) {
     message.error(error?.message || t('fragmentForm.load_failed'))
@@ -246,12 +285,28 @@ const opusFile = frag.uploadedFiles?.find((f: any) => f.type === 'opus')
 })
 
 watch(() => formData.value.title, (value) => { if (value.trim()) clearFieldError('title') })
+watch(() => formData.value.artist, (value) => { if (value.trim()) clearFieldError('artist') })
 watch(() => formData.value.representedInBrands, (value) => { if (value.length) clearFieldError('representedInBrands') }, { deep: true })
 watch(uploadedFileNames, (value) => { if (value.length || existingUrl.value) clearFieldError('audioFile') }, { deep: true })
 watch(existingUrl, (value) => {
   if (value || uploadedFileNames.value.length) clearFieldError('audioFile')
 })
-watch(activeTab, () => { if (isTabChangeFromValidation.value) return; clearAllFieldErrors() })
+watch(existingFiles, (value) => {
+  if (value.some(f => f.status !== 'removed') || uploadedFileNames.value.length) clearFieldError('audioFile')
+}, { deep: true })
+watch(activeTab, (tab) => {
+  if (isTabChangeFromValidation.value) return
+  clearAllFieldErrors()
+  if (tab === 'play-history' && playHistory.value.length && !playHistoryStats.value) {
+    const h = playHistory.value
+    playHistoryStats.value = {
+      total: h.length,
+      djs: new Set(h.map(e => e.djName)).size,
+      first: new Date(h[0].playedAt).toLocaleDateString(),
+      last: new Date(h.at(-1)!.playedAt).toLocaleDateString(),
+    }
+  }
+})
 </script>
 
 <template>
@@ -298,6 +353,20 @@ watch(activeTab, () => { if (isTabChangeFromValidation.value) return; clearAllFi
             </div>
           </NFormItem>
 
+          <NFormItem :label="t('fragmentForm.artist')">
+            <div class="field-stack">
+              <div
+                ref="artistFieldRef"
+                class="field-error-shell"
+                :class="{ 'field-error-shell--active': !!fieldErrors.artist }"
+              >
+                <NInput v-model:value="formData.artist" style="width: 100%" />
+              </div>
+              <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.artist }">
+                {{ fieldErrors.artist || ' ' }}
+              </div>
+            </div>
+          </NFormItem>
 
           <NFormItem :label="t('fragmentForm.assign_to')">
             <div class="field-stack">
@@ -322,12 +391,38 @@ watch(activeTab, () => { if (isTabChangeFromValidation.value) return; clearAllFi
                 :class="{ 'field-error-shell--active': !!fieldErrors.audioFile }"
               >
                 <NSpace vertical style="width: 100%">
-                  <AudioMiniPlayer v-if="existingUrl" :url="existingUrl" :filename="existingFileName" @playing-change="(v) => { if (v) console.log('[AudioPlayer] playing file type:', activeFileType) }" />
-                  <NUpload :max="1" :custom-request="handleFileCapture" accept=".mp3,.wav,.flac,.ogg,.m4a,.aac" :disabled="isUploading">
-                    <GsapButton :disabled="isUploading">
-                      <span>{{ existingUrl ? t('fragmentForm.replace_file') : t('fragmentForm.choose_file') }}</span>
-                    </GsapButton>
-                  </NUpload>
+                  <template v-if="isPrerecorded">
+                    <div
+                      v-for="f in existingFiles.filter(f => f.status !== 'removed')"
+                      :key="f.id"
+                      class="prerecorded-file-row"
+                    >
+                      <div class="prerecorded-file-info">
+                        <span class="prerecorded-file-name">{{ f.name }}</span>
+                        <AudioMiniPlayer :url="f.url" :filename="f.name" />
+                      </div>
+                      <GsapButton @click.stop="removeExistingFile(f.id)"><span>×</span></GsapButton>
+                    </div>
+                    <NUpload
+                      :max="10"
+                      :custom-request="handleFileCapture"
+                      accept=".mp3,.wav,.flac,.ogg,.m4a,.aac"
+                      :disabled="isUploading"
+                      multiple
+                    >
+                      <GsapButton :disabled="isUploading">
+                        <span>{{ t('fragmentForm.choose_file') }}</span>
+                      </GsapButton>
+                    </NUpload>
+                  </template>
+                  <template v-else>
+                    <AudioMiniPlayer v-if="existingUrl" :url="existingUrl" :filename="existingFileName" @playing-change="(v) => { if (v) console.log('[AudioPlayer] playing file type:', activeFileType) }" />
+                    <NUpload :max="1" :custom-request="handleFileCapture" accept=".mp3,.wav,.flac,.ogg,.m4a,.aac" :disabled="isUploading">
+                      <GsapButton :disabled="isUploading">
+                        <span>{{ existingUrl ? t('fragmentForm.replace_file') : t('fragmentForm.choose_file') }}</span>
+                      </GsapButton>
+                    </NUpload>
+                  </template>
                   <NProgress v-if="isUploading" type="line" :percentage="uploadProgress" :show-indicator="false" :height="2" :border-radius="1" :fill-border-radius="1" color="#eff605" rail-color="rgba(255,255,255,0.12)" />
                 </NSpace>
               </div>
@@ -361,12 +456,63 @@ watch(activeTab, () => { if (isTabChangeFromValidation.value) return; clearAllFi
         </NForm>
       </NTabPane>
 
+      <NTabPane v-if="isEditing && playHistory.length" name="play-history" tab="Play History">
+        <div v-if="playHistoryStats" class="ph-stats">
+          <div class="ph-stat">
+            <span class="ph-stat__val">{{ playHistoryStats.total }}</span>
+            <span class="ph-stat__lbl">Total plays</span>
+          </div>
+          <div class="ph-stat">
+            <span class="ph-stat__val">{{ playHistoryStats.djs }}</span>
+            <span class="ph-stat__lbl">DJs</span>
+          </div>
+          <div class="ph-stat">
+            <span class="ph-stat__val">{{ playHistoryStats.first }}</span>
+            <span class="ph-stat__lbl">First played</span>
+          </div>
+          <div class="ph-stat">
+            <span class="ph-stat__val">{{ playHistoryStats.last }}</span>
+            <span class="ph-stat__lbl">Last played</span>
+          </div>
+        </div>
+        <div class="play-history-table-wrap">
+          <table class="play-history-table">
+            <thead>
+              <tr>
+                <th>Played At</th>
+                <th>DJ</th>
+                <th>Duration</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(entry, i) in playHistory" :key="i">
+                <td>{{ new Date(entry.playedAt).toLocaleString() }}</td>
+                <td>{{ entry.djName }}</td>
+                <td>{{ entry.duration > 0 ? entry.duration + 's' : '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </NTabPane>
+
     </NTabs>
   </FormWrapper>
 </template>
 
 <style scoped>
+.ph-stats { display: flex; gap: 24px; padding: 12px 0 16px; flex-wrap: wrap; }
+.ph-stat { display: flex; flex-direction: column; gap: 2px; }
+.ph-stat__val { font-size: 20px; font-weight: 600; line-height: 1.2; }
+.ph-stat__lbl { font-size: 11px; opacity: 0.45; text-transform: uppercase; letter-spacing: 0.05em; }
+.play-history-table-wrap { overflow-x: auto; }
+.play-history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.play-history-table th { text-align: left; padding: 6px 12px; opacity: 0.5; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.play-history-table td { padding: 6px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.play-history-table tbody tr:last-child td { border-bottom: none; }
 .field-stack { width: 100%; display: block; }
+.prerecorded-file-row { display: flex; align-items: center; gap: 8px; }
+.prerecorded-file-info { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
+.prerecorded-file-name { font-size: 11px; opacity: 0.55; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .field-error-shell { width: 100%; border-left: 2px solid transparent; padding-left: 8px; transition: border-left-color 0.2s ease; }
 .field-error-shell--active { border-left-color: rgba(255, 77, 79, 0.95); }
 .field-error-label { margin-top: 3px; min-height: 12px; padding-left: 10px; color: #ff4d4f; font-size: 11px; line-height: 1.3; visibility: hidden; }
