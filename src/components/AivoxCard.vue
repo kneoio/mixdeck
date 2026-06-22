@@ -296,9 +296,9 @@ onUnmounted(() => {
             <span v-else class="queue-num">{{ item.tech.pos }}</span>
           </div>
           <div class="queue-info">
-            <span class="queue-title">{{ item.dj.title }}</span>
+            <span class="queue-title">{{ item.songInfo.title }}</span>
             <span class="queue-sep">·</span>
-            <span class="queue-artist">{{ item.dj.artist }}</span>
+            <span class="queue-artist">{{ item.songInfo.artist }}</span>
           </div>
           <div class="queue-right">
             <span class="queue-mixing">{{ mergingMethodLabel(item) }}</span>
