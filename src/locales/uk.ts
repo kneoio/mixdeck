@@ -199,6 +199,7 @@ export default {
     optional_override: 'Опціональне перевизначення',
     messaging: 'Обмін повідомленнями',
     one_time_stream: 'Разова трансляція',
+    chat_with_dj: 'Чат з DJ',
     accept_shared_sounds: 'Приймати спільні звуки',
     preview: 'Попередній перегляд',
     title_font: 'Шрифт заголовка',
@@ -215,6 +216,10 @@ export default {
     owner_email: 'Email власника',
     saved: 'Бренд успішно збережено',
     load_failed: 'Не вдалося завантажити',
+    danger_zone: 'Небезпечна зона',
+    close_brand_desc: 'Закрити цей бренд і видалити його зі списку.',
+    close_brand: 'Закрити бренд',
+    close_brand_confirm: 'Закрити цей бренд?',
   },
   listenerForm: {
     create_title: 'Створити слухача',

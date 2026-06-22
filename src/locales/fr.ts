@@ -199,6 +199,7 @@ export default {
     optional_override: 'Remplacement optionnel',
     messaging: 'Messagerie',
     one_time_stream: 'Stream ponctuel',
+    chat_with_dj: 'Chat avec le DJ',
     accept_shared_sounds: 'Accepter les sons partagés',
     preview: 'Aperçu',
     title_font: 'Police du titre',
@@ -215,6 +216,10 @@ export default {
     owner_email: 'E-mail du propriétaire',
     saved: 'Marque enregistrée avec succès',
     load_failed: 'Échec du chargement',
+    danger_zone: 'Zone dangereuse',
+    close_brand_desc: 'Fermer ce brand et le supprimer de votre liste.',
+    close_brand: 'Fermer le brand',
+    close_brand_confirm: 'Fermer ce brand ?',
   },
   listenerForm: {
     create_title: 'Créer un auditeur',

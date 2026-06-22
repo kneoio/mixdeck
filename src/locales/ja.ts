@@ -199,6 +199,7 @@ export default {
     optional_override: '任意の上書き',
     messaging: 'メッセージ',
     one_time_stream: '単発ストリーム',
+    chat_with_dj: 'DJとチャット',
     accept_shared_sounds: '共有サウンドを受け入れる',
     preview: 'プレビュー',
     title_font: 'タイトルフォント',
@@ -215,6 +216,10 @@ export default {
     owner_email: 'オーナーのメール',
     saved: 'ブランドを保存しました',
     load_failed: '読み込み失敗',
+    danger_zone: '危険ゾーン',
+    close_brand_desc: 'このブランドを閉じてリストから削除します。',
+    close_brand: 'ブランドを閉じる',
+    close_brand_confirm: 'このブランドを閉じますか?',
   },
   listenerForm: {
     create_title: 'リスナー作成',

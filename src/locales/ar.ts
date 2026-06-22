@@ -199,6 +199,7 @@ export default {
     optional_override: 'تخطي اختياري',
     messaging: 'الرسائل',
     one_time_stream: 'بث فردي',
+    chat_with_dj: 'محادثة مع DJ',
     accept_shared_sounds: 'قبول الأصوات المشتركة',
     preview: 'معاينة',
     title_font: 'خط العنوان',
@@ -215,6 +216,10 @@ export default {
     owner_email: 'بريد المالك الإلكتروني',
     saved: 'تم حفظ العلامة التجارية بنجاح',
     load_failed: 'فشل التحميل',
+    danger_zone: 'المنطقة الخطرة',
+    close_brand_desc: 'إغلاق هذه العلامة وإزالتها من قائمتك.',
+    close_brand: 'إغلاق العلامة',
+    close_brand_confirm: 'إغلاق هذه العلامة؟',
   },
   listenerForm: {
     create_title: 'إنشاء مستمع',

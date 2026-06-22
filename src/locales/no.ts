@@ -231,6 +231,7 @@ export default {
     optional_override: 'Valgfri overstyring',
     messaging: 'Meldinger',
     one_time_stream: 'Engangsstrøm',
+    chat_with_dj: 'Chat med DJ',
     accept_shared_sounds: 'Godta delte lyder',
     preview: 'Forhåndsvisning',
     title_font: 'Tittelskrift',
@@ -253,6 +254,10 @@ export default {
     owner_email: 'Eier-e-post',
     saved: 'Merkevare lagret',
     load_failed: 'Innlasting mislyktes',
+    danger_zone: 'Farlig sone',
+    close_brand_desc: 'Lukk dette merket og fjern det fra listen din.',
+    close_brand: 'Lukk merket',
+    close_brand_confirm: 'Lukke dette merket?',
   },
   listenerForm: {
     create_title: 'Opprett lytter',

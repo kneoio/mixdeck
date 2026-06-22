@@ -231,6 +231,7 @@ export default {
     optional_override: '선택적 재정의',
     messaging: '메시지',
     one_time_stream: '일회성 스트림',
+    chat_with_dj: 'DJ와 채팅',
     accept_shared_sounds: '공유된 사운드 수락',
     preview: '미리보기',
     title_font: '제목 글꼴',
@@ -253,6 +254,10 @@ export default {
     owner_email: '소유자 이메일',
     saved: '브랜드가 저장되었습니다',
     load_failed: '불러오기 실패',
+    danger_zone: '위험 구역',
+    close_brand_desc: '이 브랜드를 닫고 목록에서 제거합니다.',
+    close_brand: '브랜드 닫기',
+    close_brand_confirm: '이 브랜드를 닫으시겠습니까?',
   },
   listenerForm: {
     create_title: '청취자 만들기',

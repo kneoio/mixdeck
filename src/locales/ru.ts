@@ -199,6 +199,7 @@ export default {
     optional_override: 'Необязательное переопределение',
     messaging: 'Сообщения',
     one_time_stream: 'Разовый поток',
+    chat_with_dj: 'Чат с DJ',
     accept_shared_sounds: 'Принимать общие звуки',
     preview: 'Предпросмотр',
     title_font: 'Шрифт названия',
@@ -215,6 +216,10 @@ export default {
     owner_email: 'Email владельца',
     saved: 'Бренд успешно сохранён',
     load_failed: 'Ошибка загрузки',
+    danger_zone: 'Опасная зона',
+    close_brand_desc: 'Закрыть этот бренд и удалить его из списка.',
+    close_brand: 'Закрыть бренд',
+    close_brand_confirm: 'Закрыть этот бренд?',
   },
   listenerForm: {
     create_title: 'Создать слушателя',

@@ -199,6 +199,7 @@ export default {
     optional_override: 'वैकल्पिक ओवरराइड',
     messaging: 'संदेश',
     one_time_stream: 'एकल स्ट्रीम',
+    chat_with_dj: 'DJ से चैट',
     accept_shared_sounds: 'साझा ध्वनियाँ स्वीकार करें',
     preview: 'पूर्वावलोकन',
     title_font: 'शीर्षक फ़ॉन्ट',
@@ -215,6 +216,10 @@ export default {
     owner_email: 'मालिक का ईमेल',
     saved: 'ब्रांड सफलतापूर्वक सहेजा गया',
     load_failed: 'लोड करने में विफल',
+    danger_zone: 'खतरे का क्षेत्र',
+    close_brand_desc: 'इस ब्रांड को बंद करें और अपनी सूची से हटाएं।',
+    close_brand: 'ब्रांड बंद करें',
+    close_brand_confirm: 'इस ब्रांड को बंद करें?',
   },
   listenerForm: {
     create_title: 'श्रोता बनाएं',

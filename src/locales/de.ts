@@ -231,6 +231,7 @@ export default {
     optional_override: 'Optionale Überschreibung',
     messaging: 'Nachrichten',
     one_time_stream: 'Einmaliger Stream',
+    chat_with_dj: 'Chat mit DJ',
     accept_shared_sounds: 'Geteilte Sounds akzeptieren',
     preview: 'Vorschau',
     title_font: 'Titelschrift',
@@ -253,6 +254,10 @@ export default {
     owner_email: 'Inhaber-E-Mail',
     saved: 'Marke erfolgreich gespeichert',
     load_failed: 'Fehler beim Laden',
+    danger_zone: 'Gefahrenzone',
+    close_brand_desc: 'Diesen Brand schließen und aus der Liste entfernen.',
+    close_brand: 'Brand schließen',
+    close_brand_confirm: 'Diesen Brand schließen?',
   },
   listenerForm: {
     create_title: 'Hörer erstellen',

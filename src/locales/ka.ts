@@ -199,6 +199,7 @@ export default {
     optional_override: 'არასავალდებულო override',
     messaging: 'შეტყობინებები',
     one_time_stream: 'ერთჯერადი სტრიმი',
+    chat_with_dj: 'ჩათი DJ-სთან',
     accept_shared_sounds: 'გაზიარებული ხმების მიღება',
     preview: 'წინასწარი ნახვა',
     title_font: 'სათაურის შრიფტი',
@@ -215,6 +216,10 @@ export default {
     owner_email: 'მფლობელის email',
     saved: 'ბრენდი წარმატებით შეინახა',
     load_failed: 'ჩატვირთვა ვერ მოხერხდა',
+    danger_zone: 'საშიში ზონა',
+    close_brand_desc: 'დახურეთ ეს ბრენდი და წაშალეთ სიიდან.',
+    close_brand: 'ბრენდის დახურვა',
+    close_brand_confirm: 'დახურვა?',
   },
   listenerForm: {
     create_title: 'მსმენელის შექმნა',

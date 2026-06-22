@@ -262,6 +262,10 @@ export default {
     owner_email: 'Owner Email',
     saved: 'Brand saved successfully',
     load_failed: 'Failed to load',
+    danger_zone: 'Danger zone',
+    close_brand_desc: 'Close this brand and remove it from your brands list.',
+    close_brand: 'Close Brand',
+    close_brand_confirm: 'Close this brand?',
   },
   listenerForm: {
     create_title: 'Create Listener',

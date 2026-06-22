@@ -199,6 +199,7 @@ export default {
     optional_override: 'Қалауыңызша override',
     messaging: 'Хабарлама',
     one_time_stream: 'Бір реттік ағын',
+    chat_with_dj: 'DJ-мен чат',
     accept_shared_sounds: 'Ортақ дыбыстарды қабылдау',
     preview: 'Алдын ала көру',
     title_font: 'Тақырып қарпі',
@@ -215,6 +216,10 @@ export default {
     owner_email: 'Иесінің email-ы',
     saved: 'Бренд сәтті сақталды',
     load_failed: 'Жүктеу сәтсіз аяқталды',
+    danger_zone: 'Қауіпті аймақ',
+    close_brand_desc: 'Бұл брендті жабу және тізімнен жою.',
+    close_brand: 'Брендті жабу',
+    close_brand_confirm: 'Бұл брендті жабасыз ба?',
   },
   listenerForm: {
     create_title: 'Тыңдарман құру',

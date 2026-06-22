@@ -1819,10 +1819,10 @@ watch(activeTab, () => {
           v-if="isEditing"
           style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255, 0, 0, 0.28); padding-left: 10px;"
         >
-          <div style="font-weight: 600; color: #ff6b6b; margin-bottom: 6px;">Danger zone</div>
+          <div style="font-weight: 600; color: #ff6b6b; margin-bottom: 6px;">{{ t('brandForm.danger_zone') }}</div>
           <NAnchor style="margin-bottom: 12px;">
             <NAnchorLink
-              title="Close this brand and remove it from your brands list."
+              :title="t('brandForm.close_brand_desc')"
             />
           </NAnchor>
           <NPopconfirm
@@ -1830,9 +1830,9 @@ watch(activeTab, () => {
             @positive-click="handleCloseBrand"
           >
             <template #trigger>
-              <GsapButton type="error" :disabled="loading"><span>Close Brand</span></GsapButton>
+              <GsapButton type="error" :disabled="loading"><span>{{ t('brandForm.close_brand') }}</span></GsapButton>
             </template>
-            Close this brand?
+            {{ t('brandForm.close_brand_confirm') }}
           </NPopconfirm>
         </div>
       </NTabPane>
