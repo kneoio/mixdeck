@@ -119,20 +119,20 @@ onMounted(async () => {
             label-style="width: 180px; opacity: 0.55;"
             style="margin-bottom: 20px;"
           >
-            <NDescriptionsItem label="Plan">
+            <NDescriptionsItem :label="t('profile.plan')">
               <NTag type="info" size="small" round>{{ formatPlanName(userSubscriptionStore.subscriptionType) }}</NTag>
             </NDescriptionsItem>
-            <NDescriptionsItem label="Status">
+            <NDescriptionsItem :label="t('profile.status')">
               <NTag :type="userSubscriptionStore.hasActiveSubscription ? 'success' : 'warning'" size="small" round>
                 {{ userSubscriptionStore.subscriptionStatus }}
               </NTag>
             </NDescriptionsItem>
-            <NDescriptionsItem label="Max Songs">{{ userSubscriptionStore.maxSongs?.toLocaleString() ?? '—' }}</NDescriptionsItem>
-            <NDescriptionsItem label="Stream Quality">{{ userSubscriptionStore.streamQualityKbps != null ? `${userSubscriptionStore.streamQualityKbps} kbps (opus)` : '—' }}</NDescriptionsItem>
-            <NDescriptionsItem label="Stream Duration">{{ durationLabel(userSubscriptionStore.streamDurationMinutes ?? 0) }}</NDescriptionsItem>
-            <NDescriptionsItem label="OTS Allowed">{{ userSubscriptionStore.otsAllowed ? 'Yes' : 'No' }}</NDescriptionsItem>
-            <NDescriptionsItem label="Custom Script">{{ userSubscriptionStore.customScriptAllowed ? 'Yes' : 'No' }}</NDescriptionsItem>
-            <NDescriptionsItem v-if="userSubscriptionStore.codecs.length" label="Codecs">{{ userSubscriptionStore.codecs.join(', ') }}</NDescriptionsItem>
+            <NDescriptionsItem :label="t('profile.max_songs')">{{ userSubscriptionStore.maxSongs?.toLocaleString() ?? '—' }}</NDescriptionsItem>
+            <NDescriptionsItem :label="t('profile.stream_quality')">{{ userSubscriptionStore.streamQualityKbps != null ? `${userSubscriptionStore.streamQualityKbps} kbps (opus)` : '—' }}</NDescriptionsItem>
+            <NDescriptionsItem :label="t('profile.stream_duration')">{{ durationLabel(userSubscriptionStore.streamDurationMinutes ?? 0) }}</NDescriptionsItem>
+            <NDescriptionsItem :label="t('profile.ots_allowed')">{{ userSubscriptionStore.otsAllowed ? t('profile.yes') : t('profile.no') }}</NDescriptionsItem>
+            <NDescriptionsItem :label="t('profile.custom_script')">{{ userSubscriptionStore.customScriptAllowed ? t('profile.yes') : t('profile.no') }}</NDescriptionsItem>
+            <NDescriptionsItem v-if="userSubscriptionStore.codecs.length" :label="t('profile.codecs')">{{ userSubscriptionStore.codecs.join(', ') }}</NDescriptionsItem>
           </NDescriptions>
 
           <NDivider v-if="userSubscriptionStore.subscription" style="margin: 0 0 16px;" />
@@ -145,9 +145,9 @@ onMounted(async () => {
       </NCard>
 
       <!-- About -->
-      <NCard title="About Mixdeck">
+      <NCard :title="t('profile.about_title')">
         <NDescriptions label-placement="left" :column="1" label-style="width: 160px; opacity: 0.55;">
-          <NDescriptionsItem label="Version">
+          <NDescriptionsItem :label="t('profile.version')">
             <NTag type="default" size="small" round>v0.0.1</NTag>
           </NDescriptionsItem>
         </NDescriptions>
