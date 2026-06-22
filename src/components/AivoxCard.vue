@@ -26,6 +26,7 @@ const showRemainingPill = computed(() => remainingMinutes.value > 0)
 const remainingPillWarning = computed(() => remainingMinutes.value > 0 && remainingMinutes.value < 10)
 const loading = ref(false)
 const waiting = ref(false)
+const hasError = ref(false)
 const flash = ref(false)
 const flashGreen = ref(false)
 let flashTurn = true
@@ -70,6 +71,7 @@ async function handleStart() {
   const slug = props.brandSlug
   if (!slug) return
   loading.value = true
+  hasError.value = false
   try {
     await aivoxApiService.start(slug)
     waiting.value = true
@@ -80,6 +82,7 @@ async function handleStart() {
   } catch (e) {
     flashTurn = true
     waiting.value = false
+    hasError.value = true
     if (e instanceof ApiNotEnoughSongsError) {
       message.error(t('dashboard.not_enough_songs', { current: e.current, required: e.required }))
     } else if (props.brandSlug === slug) {
@@ -95,6 +98,7 @@ async function handleStop() {
   const slug = props.brandSlug
   if (!slug) return
   loading.value = true
+  hasError.value = false
   try {
     await aivoxApiService.stop(slug)
     waiting.value = true
@@ -103,6 +107,7 @@ async function handleStop() {
     if (props.brandSlug === slug) brandsStore.setStreamingState(slug, isAlive)
   } catch {
     waiting.value = false
+    hasError.value = true
     if (props.brandSlug === slug) await fetchHeartbeatAlive()
   } finally {
     loading.value = false
@@ -271,13 +276,13 @@ onUnmounted(() => {
         <div class="aivox-led-wrap">
           <div class="aivox-leds">
             <LedYellow :active="flash || waiting" />
-            <LedIndicator :active="waiting" :pulse="waiting" color="#CC0000" :size="18" />
+            <LedIndicator :active="hasError" :pulse="hasError" color="#CC0000" :size="18" />
             <LedGreen :active="flashGreen" />
           </div>
           <span class="aivox-label">{{ t('dashboard.onAir') }}</span>
         </div>
         <span class="free-badge" :class="{ 'free-badge--hidden': !showFreeBadge }">{{ t('dashboard.free_streaming_limit') }}</span>
-        <span v-if="showRemainingPill" class="remaining-pill" :class="{ 'remaining-pill--warning': remainingPillWarning }">{{ remainingMinutes }}m left</span>
+        <span v-if="showRemainingPill" class="remaining-pill" :class="{ 'remaining-pill--warning': remainingPillWarning }">{{ remainingMinutes }}m</span>
       </div>
       <div v-if="timezone" class="time-right">
         <span class="label tz-caption">{{ t('dashboard.stationTime') }}:</span>
@@ -365,20 +370,23 @@ onUnmounted(() => {
   opacity: 0;
 }
 .remaining-pill {
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  padding: 2px 7px;
-  border-radius: 10px;
-  background: rgba(24, 160, 88, 0.15);
-  border: 1px solid rgba(24, 160, 88, 0.5);
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
   color: rgba(24, 160, 88, 0.9);
-  white-space: nowrap;
+  border: 1px solid rgba(24, 160, 88, 0.5);
+  border-radius: 3px;
+  padding: 0px 4px;
+  opacity: 1;
+  box-shadow: 0 0 7px 2px rgba(24, 160, 88, 0.25);
+  transition: color 0.3s, border-color 0.3s, box-shadow 0.3s;
 }
 .remaining-pill--warning {
-  background: rgba(255, 160, 0, 0.15);
-  border-color: rgba(255, 160, 0, 0.5);
   color: #FFA000;
+  border-color: rgba(255, 160, 0, 0.5);
+  box-shadow: 0 0 7px 2px rgba(255, 160, 0, 0.4);
 }
 .time-right {
   display: flex;
