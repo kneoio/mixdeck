@@ -28,6 +28,7 @@ export interface AivoxQueueResponse {
 
 export interface AivoxHeartbeatResult {
   alive: boolean
+  remainingMinutes: number
   /** Response status, or 0 if the request failed before a response (e.g. network). */
   status: number
 }
@@ -36,11 +37,13 @@ export interface AivoxHeartbeatBatchRow {
   brand: string
   status?: string
   heartbeat?: boolean
+  remainingMinutes?: number
 }
 
 export interface AivoxHeartbeatBatchResult {
   /** Live flag keyed by brand slug as returned by the API. */
   byBrand: Record<string, boolean>
+  remainingByBrand: Record<string, number>
   /** Response status, or 0 if the request failed before a response (e.g. network). */
   status: number
 }
@@ -67,23 +70,25 @@ class AivoxApiService extends ApiClient {
       }
       const data = (await response.json()) as { brands?: AivoxHeartbeatBatchRow[] }
       const byBrand: Record<string, boolean> = Object.fromEntries(unique.map(s => [s, false]))
+      const remainingByBrand: Record<string, number> = Object.fromEntries(unique.map(s => [s, -2]))
       for (const row of data.brands ?? []) {
         if (row?.brand == null) continue
-        const alive = row.heartbeat ?? row.status === 'ON_LINE'
-        byBrand[row.brand] = alive
+        byBrand[row.brand] = row.heartbeat ?? row.status === 'ON_LINE'
+        remainingByBrand[row.brand] = row.remainingMinutes ?? -2
       }
-      return { byBrand, status: response.status }
+      return { byBrand, remainingByBrand, status: response.status }
     } catch {
       return {
         byBrand: Object.fromEntries(unique.map(s => [s, false])),
+        remainingByBrand: Object.fromEntries(unique.map(s => [s, -2])),
         status: 0,
       }
     }
   }
 
   async heartbeat(brandSlug: string): Promise<AivoxHeartbeatResult> {
-    const { byBrand, status } = await this.heartbeatBatch([brandSlug])
-    return { alive: byBrand[brandSlug] ?? false, status }
+    const { byBrand, remainingByBrand, status } = await this.heartbeatBatch([brandSlug])
+    return { alive: byBrand[brandSlug] ?? false, remainingMinutes: remainingByBrand[brandSlug] ?? -2, status }
   }
 
   heartbeatStream(brandSlug: string, waitFor = true, timeoutMs = 120_000): Promise<boolean> {

@@ -21,6 +21,9 @@ const message = useMessage()
 
 const alive = computed(() => brandsStore.streamingStates[props.brandSlug] ?? false)
 const showFreeBadge = computed(() => !alive.value && userSubscriptionStore.isFreePlan)
+const remainingMinutes = ref<number>(-2)
+const showRemainingPill = computed(() => remainingMinutes.value > 0)
+const remainingPillWarning = computed(() => remainingMinutes.value > 0 && remainingMinutes.value < 10)
 const loading = ref(false)
 const waiting = ref(false)
 const flash = ref(false)
@@ -55,9 +58,10 @@ const sortedQueueEntries = computed(() =>
 async function fetchHeartbeatAlive(): Promise<boolean> {
   if (!props.brandSlug) return false
   const slug = props.brandSlug
-  const { alive } = await aivoxApiService.heartbeat(slug)
+  const { alive, remainingMinutes: rm } = await aivoxApiService.heartbeat(slug)
   if (props.brandSlug !== slug) return alive
   brandsStore.setStreamingState(slug, alive)
+  remainingMinutes.value = rm
   return alive
 }
 
@@ -273,6 +277,7 @@ onUnmounted(() => {
           <span class="aivox-label">{{ t('dashboard.onAir') }}</span>
         </div>
         <span class="free-badge" :class="{ 'free-badge--hidden': !showFreeBadge }">{{ t('dashboard.free_streaming_limit') }}</span>
+        <span v-if="showRemainingPill" class="remaining-pill" :class="{ 'remaining-pill--warning': remainingPillWarning }">{{ remainingMinutes }}m left</span>
       </div>
       <div v-if="timezone" class="time-right">
         <span class="label tz-caption">{{ t('dashboard.stationTime') }}:</span>
@@ -358,6 +363,22 @@ onUnmounted(() => {
 }
 .free-badge--hidden {
   opacity: 0;
+}
+.remaining-pill {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: rgba(24, 160, 88, 0.15);
+  border: 1px solid rgba(24, 160, 88, 0.5);
+  color: rgba(24, 160, 88, 0.9);
+  white-space: nowrap;
+}
+.remaining-pill--warning {
+  background: rgba(255, 160, 0, 0.15);
+  border-color: rgba(255, 160, 0, 0.5);
+  color: #FFA000;
 }
 .time-right {
   display: flex;
