@@ -7,8 +7,9 @@ import {
   NTabs, NTabPane, NDynamicInput, NInputNumber, NSlider, NTimePicker,
   NCheckbox, NRadioGroup, NRadio,
   NColorPicker, NTag, NPopconfirm, NAnchor, NAnchorLink, useMessage,
-  NModal, NCard, NButton, NMarkdown,
+  NModal, NCard, NButton,
 } from 'naive-ui'
+import MarkdownIt from 'markdown-it'
 import { Cropper } from 'vue-advanced-cropper'
 import 'vue-advanced-cropper/dist/style.css'
 import GsapButton from '@/components/GsapButton.vue'
@@ -492,6 +493,11 @@ const selectedScript = computed(() =>
   formData.value.scriptId
     ? scriptsStore.scripts.find(s => s.id === formData.value.scriptId)
     : null
+)
+
+const md = new MarkdownIt()
+const renderedDescription = computed(() =>
+  selectedScript.value?.description ? md.render(selectedScript.value.description) : ''
 )
 
 const selectedAgent = computed(() =>
@@ -1398,7 +1404,7 @@ watch(activeTab, () => {
               </NFormItem>
 
               <NFormItem v-if="selectedScript?.description" :label="t('fragmentForm.description')" style="margin-bottom:8px">
-                <NMarkdown :value="selectedScript.description" style="font-size: 13px;" />
+                <div class="script-description" v-html="renderedDescription" />
               </NFormItem>
 
               <template v-if="selectedScript?.requiredVariables?.length">
@@ -1863,6 +1869,27 @@ watch(activeTab, () => {
   width: 100%;
   display: block;
 }
+
+.script-description {
+  font-size: 13px;
+  color: #aaa;
+  line-height: 1.6;
+}
+.script-description :deep(h1),
+.script-description :deep(h2),
+.script-description :deep(h3) {
+  color: #ddd;
+  margin: 8px 0 4px;
+}
+.script-description :deep(p) { margin: 4px 0; }
+.script-description :deep(code) {
+  background: #2a2a2a;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+.script-description :deep(ul),
+.script-description :deep(ol) { padding-left: 20px; margin: 4px 0; }
 
 .form-label-with-badge {
   display: flex;
