@@ -12,6 +12,7 @@ import PageHeader from '@/components/PageHeader.vue'
 import GsapButton from '@/components/GsapButton.vue'
 import { LOCALE_LABELS, SUPPORTED_LOCALES, saveLocale, type SupportedLocale } from '@/i18n'
 
+const appVersion = __APP_VERSION__
 const { t, locale } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
@@ -148,7 +149,7 @@ onMounted(async () => {
       <NCard :title="t('profile.about_title')">
         <NDescriptions label-placement="left" :column="1" label-style="width: 160px; opacity: 0.55;">
           <NDescriptionsItem :label="t('profile.version')">
-            <NTag type="default" size="small" round>v{{ __APP_VERSION__ }}</NTag>
+            <NTag type="default" size="small" round>v{{ appVersion }}</NTag>
           </NDescriptionsItem>
         </NDescriptions>
       </NCard>
