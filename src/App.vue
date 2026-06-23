@@ -12,6 +12,17 @@
       <NMessageProvider>
         <NGlobalStyle/>
         <RouterView/>
+        <NModal
+          v-model:show="needRefresh"
+          preset="dialog"
+          type="info"
+          title="Update available"
+          :content="`Mixdeck v${__APP_VERSION__} is ready. Reload now to get the latest features and fixes.`"
+          positive-text="Update"
+          negative-text="Later"
+          :mask-closable="false"
+          @positive-click="applyUpdate"
+        />
       </NMessageProvider>
     </NLoadingBarProvider>
   </NConfigProvider>
@@ -19,13 +30,14 @@
 
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
-import { NMessageProvider, NLoadingBarProvider, NGlobalStyle, NConfigProvider } from 'naive-ui'
+import { NMessageProvider, NLoadingBarProvider, NGlobalStyle, NConfigProvider, NModal } from 'naive-ui'
 import { darkTheme, type GlobalThemeOverrides } from 'naive-ui'
 import {
   enUS, deDE, esAR, frFR, jaJP, ptBR, ruRU, ukUA, arDZ,
   dateEnUS, dateDeDE, dateEsAR, dateFrFR, dateJaJP, datePtBR, dateRuRU, dateUkUA, dateArDZ,
   type NLocale, type NDateLocale,
 } from 'naive-ui'
+import { useServiceWorker } from '@/composables/useServiceWorker'
 import { useThemeStore } from '@/stores/theme'
 import { useAuthStore } from '@/stores/auth'
 import { useUserSubscriptionStore } from '@/stores/userSubscription'
@@ -33,6 +45,7 @@ import { onMounted, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { applyDirection, type SupportedLocale } from '@/i18n'
 
+const { needRefresh, applyUpdate } = useServiceWorker()
 const themeStore = useThemeStore()
 const authStore = useAuthStore()
 const userSubscriptionStore = useUserSubscriptionStore()

@@ -1,5 +1,14 @@
 import './assets/main.css'
 
+// Reload once on chunk load failures caused by a stale deployment
+window.addEventListener('vite:preloadError', () => {
+  const key = '__mixdeck_chunk_reload__'
+  if (!sessionStorage.getItem(key)) {
+    sessionStorage.setItem(key, '1')
+    window.location.reload()
+  }
+})
+
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import naive from 'naive-ui'

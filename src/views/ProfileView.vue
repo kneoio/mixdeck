@@ -148,7 +148,7 @@ onMounted(async () => {
       <NCard :title="t('profile.about_title')">
         <NDescriptions label-placement="left" :column="1" label-style="width: 160px; opacity: 0.55;">
           <NDescriptionsItem :label="t('profile.version')">
-            <NTag type="default" size="small" round>v0.0.1</NTag>
+            <NTag type="default" size="small" round>v{{ __APP_VERSION__ }}</NTag>
           </NDescriptionsItem>
         </NDescriptions>
       </NCard>
