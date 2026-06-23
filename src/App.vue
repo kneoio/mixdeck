@@ -15,7 +15,6 @@
         <NModal
           v-model:show="needRefresh"
           preset="dialog"
-          type="info"
           title="Update available"
           :content="`Mixdeck v${__APP_VERSION__} is ready. Reload now to get the latest features and fixes.`"
           positive-text="Update"
