@@ -7,7 +7,7 @@ import {
   NTabs, NTabPane, NDynamicInput, NInputNumber, NSlider, NTimePicker,
   NCheckbox, NRadioGroup, NRadio,
   NColorPicker, NTag, NPopconfirm, NAnchor, NAnchorLink, useMessage,
-  NModal, NCard, NButton,
+  NModal, NCard, NButton, NMarkdown,
 } from 'naive-ui'
 import { Cropper } from 'vue-advanced-cropper'
 import 'vue-advanced-cropper/dist/style.css'
@@ -1398,12 +1398,7 @@ watch(activeTab, () => {
               </NFormItem>
 
               <NFormItem v-if="selectedScript?.description" :label="t('fragmentForm.description')" style="margin-bottom:8px">
-                <div class="field-stack">
-                  <div class="field-error-shell">
-                    <span style="color: #888; font-size: 13px;">{{ selectedScript.description }}</span>
-                  </div>
-                  <div class="field-error-label"></div>
-                </div>
+                <NMarkdown :value="selectedScript.description" style="font-size: 13px;" />
               </NFormItem>
 
               <template v-if="selectedScript?.requiredVariables?.length">
