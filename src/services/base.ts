@@ -81,6 +81,7 @@ export class ApiClient {
     params.set('page', String(pageNum))
     params.set('size', String(pageSize))
 
+
     if (filters && Object.keys(filters).length > 0) {
       const cleanFilters: Record<string, any> = {}
       for (const [key, value] of Object.entries(filters)) {
@@ -93,7 +94,8 @@ export class ApiClient {
       }
     }
 
-    const response = await this.request<any>(`${endpoint}?${params.toString()}`)
+    const separator = endpoint.includes('?') ? '&' : '?'
+    const response = await this.request<any>(`${endpoint}${separator}${params.toString()}`)
     const viewData = response?.payload?.viewData ?? response?.viewData
     if (!viewData) throw new Error('Unexpected paged response format')
     return {

@@ -7,7 +7,7 @@ import {
   NTabs, NTabPane, NDynamicInput, NInputNumber, NSlider, NTimePicker,
   NCheckbox, NRadioGroup, NRadio,
   NColorPicker, NTag, NPopconfirm, NAnchor, NAnchorLink, useMessage,
-  NModal, NCard, NButton,
+  NModal, NCard, NButton, NSkeleton,
 } from 'naive-ui'
 import MarkdownIt from 'markdown-it'
 import { Cropper } from 'vue-advanced-cropper'
@@ -433,6 +433,14 @@ type ScriptOption = SelectOption & {
   tags?: AgentLabel[]
 }
 
+function isFree(labels: AgentLabel[]) {
+  return labels.some(l => {
+    const id = (l.identifier ?? '').toLowerCase()
+    const name = (l.name ?? '').toLowerCase()
+    return id === 'free' || name === 'free'
+  })
+}
+
 const agentOptions = ref<AgentOption[]>([])
 /** Raw agent rows from API (like scripts in scriptsStore) — used for description under DJ select. */
 const agentsList = ref<Array<{ id: string; description?: string; labels?: AgentLabel[]; name?: string }>>([])
@@ -476,6 +484,7 @@ function handleScriptModeChange(val: string) {
     return
   }
   scriptMode.value = val as 'predefined' | 'custom'
+  if (val === 'custom') actionsStore.loadOptions()
 }
 
 function handlePublicToggle(v: boolean) {
@@ -1058,70 +1067,6 @@ onMounted(async () => {
   window.addEventListener('resize', updateIsMobile)
   try {
     loading.value = true
-    actionsStore.loadOptions()
-    const [agents, profiles, scripts, genres, fragmentLabels] = await Promise.allSettled([
-      datanestApiService.getPagedDictionary<any>('/dictionary/agents', 1, 100, brandSlug.value ? { brand: brandSlug.value } : undefined),
-      datanestApiService.getPagedDictionary<any>('/profiles', 1, 100),
-      scriptsStore.loadScripts(1, 200),
-      dictionaryStore.loadGenres(),
-      dictionaryStore.loadSoundFragmentLabels(),
-    ])
-    const isFree = (labels: AgentLabel[]) => labels.some(l => {
-      const id = (l.identifier ?? '').toLowerCase()
-      const name = (l.name ?? '').toLowerCase()
-      return id === 'free' || name === 'free'
-    })
-    if (agents.status === 'fulfilled') {
-      const entries = agents.value.entries as any[]
-      agentsList.value = entries.map((a: any) => {
-        const top = typeof a.description === 'string' ? a.description.trim() : ''
-        const nested = typeof a.docData?.description === 'string' ? a.docData.description.trim() : ''
-        const description = top || nested
-        return {
-          id: a.id,
-          name: a.name,
-          labels: Array.isArray(a.labels) ? a.labels : [],
-          ...(description ? { description } : {}),
-        }
-      })
-      agentOptions.value = entries.map((a: any) => {
-        const labels: AgentLabel[] = Array.isArray(a.labels) ? a.labels : []
-        return {
-          label: a.name || a.id,
-          value: a.id,
-          labels,
-          preferredLang: Array.isArray(a.preferredLang) ? a.preferredLang : [],
-          disabled: !isFree(labels),
-        }
-      }).sort((a, b) => {
-        const aFree = isFree(a.labels)
-        const bFree = isFree(b.labels)
-        if (aFree && !bFree) return -1
-        if (!aFree && bFree) return 1
-        return 0
-      })
-    }
-    if (profiles.status === 'fulfilled') {
-      profileOptions.value = profiles.value.entries.map((p: any) => ({
-        label: p.name || p.id, value: p.id
-      }))
-    }
-    scriptOptions.value = scriptsStore.scripts.map((s: any) => {
-      const tags: AgentLabel[] = Array.isArray(s.tags) ? s.tags : []
-      return {
-        label: s.name || s.id,
-        value: s.id,
-        tags,
-        disabled: !isFree(tags),
-      }
-    }).sort((a, b) => {
-      const aFree = isFree(a.tags ?? [])
-      const bFree = isFree(b.tags ?? [])
-      if (aFree && !bFree) return -1
-      if (!aFree && bFree) return 1
-      return 0
-    })
-
     if (isEditing.value) {
       const brand = await store.fetchBrand(route.params.id as string)
       applyBrandToForm(brand)
@@ -1196,9 +1141,54 @@ watch(() => formData.value.scriptId, (value) => {
   if (value) clearFieldError('scriptId')
 })
 
-watch(activeTab, () => {
+const agentsLoaded = ref(false)
+const scriptsLoaded = ref(false)
+const audienceLoaded = ref(false)
+
+watch(activeTab, async (tab) => {
   if (isTabChangeFromValidation.value) return
   clearAllFieldErrors()
+  if (tab === 'dj' && !agentsLoaded.value) {
+    const result = await datanestApiService.getPagedDictionary<any>(`/dictionary/agents?brand=${encodeURIComponent(brandSlug.value ?? '')}`, 1, 100)
+    const entries = result.entries as any[]
+    agentsList.value = entries.map((a: any) => {
+      const top = typeof a.description === 'string' ? a.description.trim() : ''
+      const nested = typeof a.docData?.description === 'string' ? a.docData.description.trim() : ''
+      const description = top || nested
+      return { id: a.id, name: a.name, labels: Array.isArray(a.labels) ? a.labels : [], ...(description ? { description } : {}) }
+    })
+    agentOptions.value = entries.map((a: any) => {
+      const labels: AgentLabel[] = Array.isArray(a.labels) ? a.labels : []
+      return { label: a.name || a.id, value: a.id, labels, preferredLang: Array.isArray(a.preferredLang) ? a.preferredLang : [] }
+    })
+    agentsLoaded.value = true
+  }
+  if (tab === 'script' && scriptMode.value === 'custom') {
+    actionsStore.loadOptions()
+  }
+  if (tab === 'script' && !scriptsLoaded.value) {
+    await scriptsStore.loadScripts(1, 200)
+    scriptOptions.value = scriptsStore.scripts.map((s: any) => {
+      const tags: AgentLabel[] = Array.isArray(s.tags) ? s.tags : []
+      return { label: s.name || s.id, value: s.id, tags, disabled: !isFree(tags) }
+    }).sort((a, b) => {
+      if (isFree(a.tags ?? []) && !isFree(b.tags ?? [])) return -1
+      if (!isFree(a.tags ?? []) && isFree(b.tags ?? [])) return 1
+      return 0
+    })
+    scriptsLoaded.value = true
+  }
+  if (tab === 'audience' && !audienceLoaded.value) {
+    const [profiles] = await Promise.allSettled([
+      datanestApiService.getPagedDictionary<any>('/profiles', 1, 100),
+      dictionaryStore.loadGenres(),
+      dictionaryStore.loadSoundFragmentLabels(),
+    ])
+    if (profiles.status === 'fulfilled') {
+      profileOptions.value = profiles.value.entries.map((p: any) => ({ label: p.name || p.id, value: p.id }))
+    }
+    audienceLoaded.value = true
+  }
 })
 </script>
 
@@ -1333,7 +1323,8 @@ watch(activeTab, () => {
                 class="field-error-shell"
                 :class="{ 'field-error-shell--active': !!fieldErrors.aiAgentId }"
               >
-                <NSelect v-model:value="formData.aiAgentId" :options="agentOptions"
+                <NSkeleton v-if="!agentsLoaded" text style="width: 100%; height: 34px; border-radius: 3px;" />
+                <NSelect v-else v-model:value="formData.aiAgentId" :options="agentOptions"
                   :render-label="renderAgentOptionLabel" style="width: 100%" />
               </div>
               <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.aiAgentId }">
@@ -1394,7 +1385,8 @@ watch(activeTab, () => {
                     class="field-error-shell"
                     :class="{ 'field-error-shell--active': !!fieldErrors.scriptId }"
                   >
-                    <NSelect v-model:value="formData.scriptId" :options="scriptOptions"
+                    <NSkeleton v-if="!scriptsLoaded" text style="width: 100%; max-width: 440px; height: 34px; border-radius: 3px;" />
+                    <NSelect v-else v-model:value="formData.scriptId" :options="scriptOptions"
                       :render-label="renderScriptOptionLabel" filterable style="width: 100%; max-width: 440px" />
                   </div>
                   <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.scriptId }">
@@ -1627,7 +1619,8 @@ watch(activeTab, () => {
           <NFormItem :label="t('brandForm.audience_type')">
             <div class="field-stack">
               <div class="field-error-shell">
-                <NSelect v-model:value="formData.profileId" :options="profileOptions"
+                <NSkeleton v-if="!audienceLoaded" text style="width: 100%; max-width: 500px; height: 34px; border-radius: 3px;" />
+                <NSelect v-else v-model:value="formData.profileId" :options="profileOptions"
                   filterable clearable style="width: 100%; max-width: 500px" />
               </div>
               <div class="field-error-label"></div>
