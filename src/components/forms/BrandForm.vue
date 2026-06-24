@@ -509,6 +509,16 @@ const renderedDescription = computed(() =>
   selectedScript.value?.description ? md.render(selectedScript.value.description) : ''
 )
 
+const djLanguageFilter = ref(true)
+
+const filteredAgentOptions = computed(() => {
+  const lang = COUNTRY_LANG[formData.value.country || '']
+  if (!djLanguageFilter.value || !lang) return agentOptions.value
+  return agentOptions.value.filter(opt =>
+    (opt.preferredLang ?? []).some(l => l.languageTag?.split('-')[0]?.toLowerCase() === lang)
+  )
+})
+
 const selectedAgent = computed(() =>
   formData.value.aiAgentId
     ? agentsList.value.find(a => a.id === formData.value.aiAgentId) ?? null
@@ -1324,12 +1334,21 @@ watch(activeTab, async (tab) => {
                 :class="{ 'field-error-shell--active': !!fieldErrors.aiAgentId }"
               >
                 <NSkeleton v-if="!agentsLoaded" text style="width: 100%; height: 34px; border-radius: 3px;" />
-                <NSelect v-else v-model:value="formData.aiAgentId" :options="agentOptions"
+                <NSelect v-else v-model:value="formData.aiAgentId" :options="filteredAgentOptions"
                   :render-label="renderAgentOptionLabel" style="width: 100%" />
               </div>
               <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.aiAgentId }">
                 {{ fieldErrors.aiAgentId || '\u00A0' }}
               </div>
+            </div>
+          </NFormItem>
+
+          <NFormItem :label="t('brandForm.dj_language_filter')">
+            <div class="field-stack">
+              <div class="field-error-shell">
+                <NSwitch v-model:value="djLanguageFilter" />
+              </div>
+              <div class="field-error-label"></div>
             </div>
           </NFormItem>
 

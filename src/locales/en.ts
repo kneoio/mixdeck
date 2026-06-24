@@ -197,6 +197,7 @@ export default {
     public_premium_only: 'Making a station public is available for Premium subscribers only.',
     custom_script_premium_only: 'Custom scripts are available for Premium subscribers only.',
     ai_agent: 'AI Agent',
+    dj_language_filter: 'Only DJs speaking the country language',
     ai_override: 'AI Override',
     ai_override_name: 'DJ Name',
     ai_override_name_placeholder: 'e.g. Alex',
