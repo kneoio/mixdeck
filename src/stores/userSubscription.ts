@@ -20,6 +20,7 @@ export const useUserSubscriptionStore = defineStore('userSubscription', () => {
   const supportLevel = computed(() => subscription.value?.supportLevel ?? 0)
   const customScriptAllowed = computed(() => subscription.value?.customScriptAllowed ?? false)
   const codecs = computed(() => subscription.value?.codecs ?? [])
+  const djType = computed(() => subscription.value?.djType ?? [])
   const maxStations = computed(() => subscription.value?.maxStations)
 
   async function loadCurrentSubscription() {
@@ -61,6 +62,7 @@ export const useUserSubscriptionStore = defineStore('userSubscription', () => {
     supportLevel,
     customScriptAllowed,
     codecs,
+    djType,
     maxStations,
     loadCurrentSubscription,
     reset,

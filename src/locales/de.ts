@@ -144,6 +144,7 @@ export default {
     ots_allowed: 'OTS erlaubt',
     custom_script: 'Benutzerdefiniertes Skript',
     codecs: 'Codecs',
+    dj_type: 'DJ Type',
     yes: 'Ja',
     no: 'Nein',
   },

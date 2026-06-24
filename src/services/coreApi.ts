@@ -28,7 +28,7 @@ export interface UserSubscriptionDTO {
   otsAllowed: boolean
   maxSongs?: number
   streamQualityKbps?: number
-  djTypeId?: string
+  djType?: string[]
   supportLevel: number
   customScriptAllowed: boolean
   maxStations?: number

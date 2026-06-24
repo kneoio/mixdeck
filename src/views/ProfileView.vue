@@ -134,6 +134,7 @@ onMounted(async () => {
             <NDescriptionsItem :label="t('profile.ots_allowed')">{{ userSubscriptionStore.otsAllowed ? t('profile.yes') : t('profile.no') }}</NDescriptionsItem>
             <NDescriptionsItem :label="t('profile.custom_script')">{{ userSubscriptionStore.customScriptAllowed ? t('profile.yes') : t('profile.no') }}</NDescriptionsItem>
             <NDescriptionsItem v-if="userSubscriptionStore.codecs.length" :label="t('profile.codecs')">{{ userSubscriptionStore.codecs.join(', ') }}</NDescriptionsItem>
+            <NDescriptionsItem v-if="userSubscriptionStore.djType.length" :label="t('profile.dj_type')">{{ userSubscriptionStore.djType.join(', ') }}</NDescriptionsItem>
           </NDescriptions>
 
           <NDivider v-if="userSubscriptionStore.subscription" style="margin: 0 0 16px;" />
