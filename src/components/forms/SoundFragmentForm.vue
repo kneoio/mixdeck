@@ -5,6 +5,7 @@ import { gsap } from 'gsap'
 import {
   NSpace, NForm, NFormItem, NInput, NSelect, NTreeSelect,
   NTabs, NTabPane, NUpload, NProgress, useMessage,
+  NCard, NCheckbox, NCheckboxGroup, NButton, NButtonGroup, NSlider, NInputNumber, NText, NDynamicInput,
 } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
 import type { UploadCustomRequestOptions } from 'naive-ui'
@@ -110,7 +111,41 @@ const formData = ref({
   length: null as number | null,
   source: 'USER_UPLOAD' as string,
   streamUrl: '' as string,
+  schedule: {
+    enabled: false,
+    tasks: [] as any[],
+  },
 })
+
+const scheduleTasksArray = ref<any[]>([])
+
+const timeMarks = {
+  0: '00:00',
+  360: '06:00',
+  720: '12:00',
+  1080: '18:00',
+  1440: '24:00',
+}
+
+function formatMinutesToTime(minutes: number): string {
+  const hours = Math.floor(minutes / 60)
+  const mins = minutes % 60
+  return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`
+}
+
+function timeToMinutes(timeStr: string): number {
+  const [hours, minutes] = timeStr.split(':').map(Number)
+  return hours * 60 + minutes
+}
+
+function createScheduleTask() {
+  return {
+    startTime: 540,
+    endTime: 600,
+    interval: 60,
+    weekdays: [] as string[],
+  }
+}
 
 const sourceOptions = computed(() => [
   { label: t('fragmentForm.source_user_upload'), value: 'USER_UPLOAD' },
@@ -283,6 +318,20 @@ async function handleSave() {
     const id = isEditing.value ? (route.params.fragmentId as string) : null
     const payload: any = { ...formData.value }
     if (uploadedFileNames.value.length) payload.newlyUploaded = uploadedFileNames.value
+    if (formData.value.type === 'PRERECORDED_ADVERTISEMENT') {
+      payload.schedule = {
+        enabled: formData.value.schedule.enabled,
+        tasks: scheduleTasksArray.value.map(task => ({
+          triggerType: 'PERIODIC',
+          periodicTrigger: {
+            startTime: formatMinutesToTime(task.startTime),
+            endTime: formatMinutesToTime(task.endTime),
+            interval: task.interval,
+            weekdays: task.weekdays ?? [],
+          },
+        })),
+      }
+    }
     await store.saveFragment(id, payload)
     message.success(t('fragmentForm.saved'))
     router.push(backRoute.value)
@@ -335,6 +384,20 @@ onMounted(async () => {
       likes.value = frag.likes ?? 0
       dislikes.value = frag.dislikes ?? 0
       sharedWith.value = normalizeSharedWith(frag.sharedWith)
+      formData.value.schedule = {
+        enabled: (frag as any).schedule?.enabled ?? false,
+        tasks: (frag as any).schedule?.tasks ?? [],
+      }
+      if ((frag as any).schedule?.tasks?.length > 0) {
+        scheduleTasksArray.value = (frag as any).schedule.tasks
+          .filter((task: any) => task.triggerType === 'PERIODIC' && task.periodicTrigger)
+          .map((task: any) => ({
+            startTime: timeToMinutes(task.periodicTrigger.startTime),
+            endTime: timeToMinutes(task.periodicTrigger.endTime),
+            interval: task.periodicTrigger.interval,
+            weekdays: task.periodicTrigger.weekdays ?? [],
+          }))
+      }
       const opusFile = frag.uploadedFiles?.find((f: any) => f.type === 'opus')
       isOpusPreview.value = !!opusFile
       const f0 = opusFile || frag.uploadedFiles?.[0]
@@ -609,6 +672,82 @@ watch(activeTab, () => {
         </NForm>
       </NTabPane>
 
+      <NTabPane v-if="formData.type === 'PRERECORDED_ADVERTISEMENT'" name="schedule" tab="Scheduler">
+        <NForm label-placement="left" label-width="auto" :disabled="loading">
+          <NFormItem>
+            <NCheckbox v-model:checked="formData.schedule.enabled">Enable Schedule</NCheckbox>
+          </NFormItem>
+          <NFormItem label="Scheduled Tasks">
+            <NDynamicInput v-model:value="scheduleTasksArray" :on-create="createScheduleTask" style="width: 100%">
+              <template #default="{ value, index }">
+                <NCard size="small" class="sf-scheduler-task-card mb-3">
+                  <template #header>
+                    <NText strong>Task {{ index + 1 }}</NText>
+                  </template>
+                  <NSpace vertical size="medium">
+                    <NFormItem label="Time Range" style="margin-bottom: 0;">
+                      <NSpace vertical style="width: 100%;">
+                        <NSlider
+                          :value="[value.startTime, value.endTime]"
+                          range
+                          :marks="timeMarks"
+                          :step="15"
+                          :min="0"
+                          :max="1440"
+                          class="sf-scheduler-slider"
+                          :tooltip="false"
+                          @update:value="(v) => { value.startTime = (v as number[])[0]; value.endTime = (v as number[])[1] }"
+                        />
+                        <NSpace align="center" :size="24">
+                          <NText depth="3" style="font-size: 12px;">
+                            {{ formatMinutesToTime(value.startTime) }} — {{ formatMinutesToTime(value.endTime) }}
+                          </NText>
+                          <NSpace align="center" :size="4">
+                            <NText depth="3" style="font-size: 11px;">Width</NText>
+                            <NButtonGroup size="small">
+                              <NButton @click="() => { const s = value.startTime + 15; const e = value.endTime - 15; if (s < e) { value.startTime = s; value.endTime = e } }">−</NButton>
+                              <NButton @click="() => { value.startTime = Math.max(0, value.startTime - 15); value.endTime = Math.min(1440, value.endTime + 15) }">+</NButton>
+                            </NButtonGroup>
+                          </NSpace>
+                          <NSpace align="center" :size="4">
+                            <NText depth="3" style="font-size: 11px;">Slide</NText>
+                            <NButtonGroup size="small">
+                              <NButton @click="() => { const d = Math.min(value.startTime, 15); value.startTime -= d; value.endTime -= d }">−</NButton>
+                              <NButton @click="() => { const d = Math.min(1440 - value.endTime, 15); value.startTime += d; value.endTime += d }">+</NButton>
+                            </NButtonGroup>
+                          </NSpace>
+                        </NSpace>
+                      </NSpace>
+                    </NFormItem>
+                    <NFormItem label="Interval (minutes)" style="margin-bottom: 0;">
+                      <NSpace align="center">
+                        <NInputNumber v-model:value="value.interval" :min="1" :max="1440" style="width: 150px;" />
+                        <NText v-if="value.interval > 0" depth="3" style="font-size: 12px;">
+                          {{ Math.floor((value.endTime - value.startTime) / value.interval) }} plays
+                        </NText>
+                      </NSpace>
+                    </NFormItem>
+                    <NFormItem label="Days" style="margin-bottom: 0;">
+                      <NCheckboxGroup v-model:value="value.weekdays" class="sf-scheduler-weekdays">
+                        <NSpace vertical :size="4">
+                          <NCheckbox value="MONDAY" label="Monday" />
+                          <NCheckbox value="TUESDAY" label="Tuesday" />
+                          <NCheckbox value="WEDNESDAY" label="Wednesday" />
+                          <NCheckbox value="THURSDAY" label="Thursday" />
+                          <NCheckbox value="FRIDAY" label="Friday" />
+                          <NCheckbox value="SATURDAY" label="Saturday" />
+                          <NCheckbox value="SUNDAY" label="Sunday" />
+                        </NSpace>
+                      </NCheckboxGroup>
+                    </NFormItem>
+                  </NSpace>
+                </NCard>
+              </template>
+            </NDynamicInput>
+          </NFormItem>
+        </NForm>
+      </NTabPane>
+
       <NTabPane name="sharing" :tab="t('fragmentForm.tab_sharing')">
         <div v-if="activeSharedWith.length" class="sharing-list">
           <div v-for="(entry, idx) in activeSharedWith" :key="`${entry.targetBrand}-${idx}`" class="sharing-row">
@@ -718,6 +857,23 @@ watch(activeTab, () => {
   .field-stack {
     padding-right: 10px;
   }
+}
+
+.sf-scheduler-task-card {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.sf-scheduler-slider {
+  margin: 8px 16px 24px;
+}
+
+.sf-scheduler-weekdays :deep(.n-checkbox) {
+  margin-right: 0;
+}
+
+.mb-3 {
+  margin-bottom: 12px;
 }
 
 .sharing-list {
