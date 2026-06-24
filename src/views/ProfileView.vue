@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, h } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import {
@@ -8,6 +8,7 @@ import {
 } from 'naive-ui'
 import { useAuthStore } from '@/stores/auth'
 import { useUserSubscriptionStore } from '@/stores/userSubscription'
+import { useThemeStore } from '@/stores/theme'
 import PageHeader from '@/components/PageHeader.vue'
 import GsapButton from '@/components/GsapButton.vue'
 import { LOCALE_LABELS, SUPPORTED_LOCALES, saveLocale, type SupportedLocale } from '@/i18n'
@@ -17,6 +18,7 @@ const { t, locale } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
 const userSubscriptionStore = useUserSubscriptionStore()
+const themeStore = useThemeStore()
 
 const profile = computed(() => authStore.userProfile ?? {})
 
@@ -55,6 +57,19 @@ function formatPlanName(raw: string | undefined): string {
 
 function durationLabel(val: number | string): string {
   return val === 'infinitely' || val === 0 ? t('plans.feat_duration_nonstop') : `${val} ${t('plans.feat_min')}`
+}
+
+function renderCodecTag(codec: string) {
+  const isMp3 = codec === 'MP3' || codec === 'mp3'
+  const dark = themeStore.isDark
+  const tagColor = isMp3
+    ? { color: dark ? 'rgba(34,197,94,0.10)' : 'rgba(34,197,94,0.08)', textColor: dark ? '#22C55E' : '#16A34A', borderColor: 'rgba(34,197,94,0.40)' }
+    : { color: dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)', textColor: dark ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.65)', borderColor: dark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)' }
+  return h(NTag, {
+    size: 'small',
+    bordered: true,
+    color: tagColor,
+  }, { default: () => codec.toUpperCase() })
 }
 
 onMounted(async () => {
@@ -135,9 +150,7 @@ onMounted(async () => {
             <NDescriptionsItem :label="t('profile.custom_script')">{{ userSubscriptionStore.customScriptAllowed ? t('profile.yes') : t('profile.no') }}</NDescriptionsItem>
             <NDescriptionsItem v-if="userSubscriptionStore.codecs.length" :label="t('profile.codecs')">
               <NSpace :size="6">
-                <NTag v-for="codec in userSubscriptionStore.codecs" :key="codec" size="small" round :type="codec === 'mp3' ? 'success' : 'default'">
-                  {{ codec }}
-                </NTag>
+                <component :is="renderCodecTag(codec)" v-for="codec in userSubscriptionStore.codecs" :key="codec" />
               </NSpace>
             </NDescriptionsItem>
             <NDescriptionsItem v-if="userSubscriptionStore.djType.length" :label="t('profile.dj_type')">{{ userSubscriptionStore.djType.join(', ') }}</NDescriptionsItem>
