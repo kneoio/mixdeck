@@ -1060,7 +1060,7 @@ onMounted(async () => {
     loading.value = true
     actionsStore.loadOptions()
     const [agents, profiles, scripts, genres, fragmentLabels] = await Promise.allSettled([
-      datanestApiService.getPagedDictionary<any>('/dictionary/agents', 1, 100),
+      datanestApiService.getPagedDictionary<any>('/dictionary/agents', 1, 100, brandSlug.value ? { brand: brandSlug.value } : undefined),
       datanestApiService.getPagedDictionary<any>('/profiles', 1, 100),
       scriptsStore.loadScripts(1, 200),
       dictionaryStore.loadGenres(),

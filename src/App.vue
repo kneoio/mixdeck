@@ -16,7 +16,7 @@
           v-model:show="needRefresh"
           preset="dialog"
           title="Update available"
-          :content="`Mixdeck v${__APP_VERSION__} is ready. Reload now to get the latest features and fixes.`"
+          :content="`Mixdeck v${appVersion} is ready. Reload now to get the latest features and fixes.`"
           positive-text="Update"
           negative-text="Later"
           :mask-closable="false"
@@ -45,6 +45,7 @@ import { useI18n } from 'vue-i18n'
 import { applyDirection, type SupportedLocale } from '@/i18n'
 
 const { needRefresh, applyUpdate } = useServiceWorker()
+const appVersion = __APP_VERSION__
 const themeStore = useThemeStore()
 const authStore = useAuthStore()
 const userSubscriptionStore = useUserSubscriptionStore()
