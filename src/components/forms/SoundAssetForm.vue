@@ -519,80 +519,79 @@ watch(activeTab, (tab) => {
         </NForm>
       </NTabPane>
 
-      <NTabPane v-if="formData.type === 'PRERECORDED_ADVERTISEMENT'" name="schedule" tab="Scheduler">
-        <NForm label-placement="left" label-width="auto" :disabled="loading">
+      <NTabPane v-if="formData.type === 'PRERECORDED_ADVERTISEMENT'" name="schedule" :tab="t('fragmentForm.tab_scheduler')">
+        <NForm :label-placement="formLabelPlacement" label-width="120" :disabled="loading">
           <NFormItem>
-            <NCheckbox v-model:checked="formData.schedule.enabled">Enable Schedule</NCheckbox>
-          </NFormItem>
-          <NFormItem label="Scheduled Tasks">
-            <NDynamicInput v-model:value="scheduleTasksArray" :on-create="createScheduleTask" style="width: 100%">
-              <template #default="{ value, index }">
-                <NCard size="small" class="sa-scheduler-task-card mb-3">
-                  <template #header>
-                    <NText strong>Task {{ index + 1 }}</NText>
-                  </template>
-                  <NSpace vertical size="medium">
-                    <NFormItem label="Time Range" style="margin-bottom: 0;">
-                      <NSpace vertical style="width: 100%;">
-                        <NSlider
-                          :value="[value.startTime, value.endTime]"
-                          range
-                          :marks="timeMarks"
-                          :step="15"
-                          :min="0"
-                          :max="1440"
-                          class="sa-scheduler-slider"
-                          :tooltip="false"
-                          @update:value="(v) => { value.startTime = (v as number[])[0]; value.endTime = (v as number[])[1] }"
-                        />
-                        <NSpace align="center" :size="24">
-                          <NText depth="3" style="font-size: 12px;">
-                            {{ formatMinutesToTime(value.startTime) }} — {{ formatMinutesToTime(value.endTime) }}
-                          </NText>
-                          <NSpace align="center" :size="4">
-                            <NText depth="3" style="font-size: 11px;">Width</NText>
-                            <NButtonGroup size="small">
-                              <NButton @click="() => { const s = value.startTime + 15; const e = value.endTime - 15; if (s < e) { value.startTime = s; value.endTime = e } }">−</NButton>
-                              <NButton @click="() => { value.startTime = Math.max(0, value.startTime - 15); value.endTime = Math.min(1440, value.endTime + 15) }">+</NButton>
-                            </NButtonGroup>
-                          </NSpace>
-                          <NSpace align="center" :size="4">
-                            <NText depth="3" style="font-size: 11px;">Slide</NText>
-                            <NButtonGroup size="small">
-                              <NButton @click="() => { const d = Math.min(value.startTime, 15); value.startTime -= d; value.endTime -= d }">−</NButton>
-                              <NButton @click="() => { const d = Math.min(1440 - value.endTime, 15); value.startTime += d; value.endTime += d }">+</NButton>
-                            </NButtonGroup>
-                          </NSpace>
-                        </NSpace>
-                      </NSpace>
-                    </NFormItem>
-                    <NFormItem label="Interval (minutes)" style="margin-bottom: 0;">
-                      <NSpace align="center">
-                        <NInputNumber v-model:value="value.interval" :min="1" :max="1440" style="width: 150px;" />
-                        <NText v-if="value.interval > 0" depth="3" style="font-size: 12px;">
-                          {{ Math.floor((value.endTime - value.startTime) / value.interval) }} plays
-                        </NText>
-                      </NSpace>
-                    </NFormItem>
-                    <NFormItem label="Days" style="margin-bottom: 0;">
-                      <NCheckboxGroup v-model:value="value.weekdays" class="sa-scheduler-weekdays">
-                        <NSpace vertical :size="4">
-                          <NCheckbox value="MONDAY" label="Monday" />
-                          <NCheckbox value="TUESDAY" label="Tuesday" />
-                          <NCheckbox value="WEDNESDAY" label="Wednesday" />
-                          <NCheckbox value="THURSDAY" label="Thursday" />
-                          <NCheckbox value="FRIDAY" label="Friday" />
-                          <NCheckbox value="SATURDAY" label="Saturday" />
-                          <NCheckbox value="SUNDAY" label="Sunday" />
-                        </NSpace>
-                      </NCheckboxGroup>
-                    </NFormItem>
-                  </NSpace>
-                </NCard>
-              </template>
-            </NDynamicInput>
+            <NCheckbox v-model:checked="formData.schedule.enabled">{{ t('fragmentForm.scheduler_enable') }}</NCheckbox>
           </NFormItem>
         </NForm>
+        <NDynamicInput v-model:value="scheduleTasksArray" :on-create="createScheduleTask" style="width: 100%">
+          <template #default="{ value, index }">
+            <NSpace vertical size="small" style="width: 100%; padding: 12px 0 4px;">
+              <NText strong style="font-size: 13px; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.05em;">
+                {{ t('fragmentForm.scheduler_task', { n: index + 1 }) }}
+              </NText>
+              <NForm :label-placement="formLabelPlacement" label-width="120" :disabled="loading">
+                <NFormItem :label="t('fragmentForm.scheduler_time_range')" style="margin-bottom: 0;">
+                  <NSpace vertical style="width: 100%;">
+                    <NSlider
+                      :value="[value.startTime, value.endTime]"
+                      range
+                      :marks="timeMarks"
+                      :step="15"
+                      :min="0"
+                      :max="1440"
+                      class="sa-scheduler-slider"
+                      :tooltip="false"
+                      @update:value="(v) => { value.startTime = (v as number[])[0]; value.endTime = (v as number[])[1] }"
+                    />
+                    <NSpace align="center" :size="isMobile ? 12 : 24" wrap>
+                      <NText depth="3" style="font-size: 12px;">
+                        {{ formatMinutesToTime(value.startTime) }} — {{ formatMinutesToTime(value.endTime) }}
+                      </NText>
+                      <NSpace align="center" :size="4">
+                        <NText depth="3" style="font-size: 11px;">{{ t('fragmentForm.scheduler_width') }}</NText>
+                        <NButtonGroup size="small">
+                          <NButton @click="() => { const s = value.startTime + 15; const e = value.endTime - 15; if (s < e) { value.startTime = s; value.endTime = e } }">−</NButton>
+                          <NButton @click="() => { value.startTime = Math.max(0, value.startTime - 15); value.endTime = Math.min(1440, value.endTime + 15) }">+</NButton>
+                        </NButtonGroup>
+                      </NSpace>
+                      <NSpace align="center" :size="4">
+                        <NText depth="3" style="font-size: 11px;">{{ t('fragmentForm.scheduler_slide') }}</NText>
+                        <NButtonGroup size="small">
+                          <NButton @click="() => { const d = Math.min(value.startTime, 15); value.startTime -= d; value.endTime -= d }">−</NButton>
+                          <NButton @click="() => { const d = Math.min(1440 - value.endTime, 15); value.startTime += d; value.endTime += d }">+</NButton>
+                        </NButtonGroup>
+                      </NSpace>
+                    </NSpace>
+                  </NSpace>
+                </NFormItem>
+                <NFormItem :label="t('fragmentForm.scheduler_interval')" style="margin-bottom: 0;">
+                  <NSpace align="center">
+                    <NInputNumber v-model:value="value.interval" :min="1" :max="1440" style="width: 150px;" />
+                    <NText v-if="value.interval > 0" depth="3" style="font-size: 12px;">
+                      {{ t('fragmentForm.scheduler_plays', { n: Math.floor((value.endTime - value.startTime) / value.interval) }) }}
+                    </NText>
+                  </NSpace>
+                </NFormItem>
+                <NFormItem :label="t('fragmentForm.scheduler_days')" style="margin-bottom: 0;">
+                  <NCheckboxGroup v-model:value="value.weekdays" class="sa-scheduler-weekdays">
+                    <NSpace :vertical="isMobile" :size="isMobile ? 4 : 8" wrap>
+                      <NCheckbox value="MONDAY" :label="t('fragmentForm.scheduler_mon')" />
+                      <NCheckbox value="TUESDAY" :label="t('fragmentForm.scheduler_tue')" />
+                      <NCheckbox value="WEDNESDAY" :label="t('fragmentForm.scheduler_wed')" />
+                      <NCheckbox value="THURSDAY" :label="t('fragmentForm.scheduler_thu')" />
+                      <NCheckbox value="FRIDAY" :label="t('fragmentForm.scheduler_fri')" />
+                      <NCheckbox value="SATURDAY" :label="t('fragmentForm.scheduler_sat')" />
+                      <NCheckbox value="SUNDAY" :label="t('fragmentForm.scheduler_sun')" />
+                    </NSpace>
+                  </NCheckboxGroup>
+                </NFormItem>
+              </NForm>
+              <div v-if="index < scheduleTasksArray.length - 1" class="sa-scheduler-divider" />
+            </NSpace>
+          </template>
+        </NDynamicInput>
       </NTabPane>
 
       <NTabPane v-if="isEditing && playHistory.length" name="play-history" tab="Play History">
@@ -648,10 +647,9 @@ watch(activeTab, (tab) => {
 .play-history-table th { text-align: left; padding: 6px 12px; opacity: 0.5; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid rgba(255,255,255,0.08); }
 .play-history-table td { padding: 6px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
 .play-history-table tbody tr:last-child td { border-bottom: none; }
-.sa-scheduler-task-card { width: 100%; margin-bottom: 12px; }
 .sa-scheduler-slider { margin: 8px 16px 24px; }
 .sa-scheduler-weekdays :deep(.n-checkbox) { margin-right: 0; }
-.mb-3 { margin-bottom: 12px; }
+.sa-scheduler-divider { height: 1px; background: rgba(255,255,255,0.07); margin: 8px 0 4px; }
 .field-stack { width: 100%; display: block; }
 .prerecorded-file-row { display: flex; align-items: center; gap: 8px; }
 .prerecorded-file-info { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
