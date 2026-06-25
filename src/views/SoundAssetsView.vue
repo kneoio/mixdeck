@@ -105,7 +105,7 @@ const columns = computed<DataTableColumns<any>>(() => {
   return [
     { type: 'selection', multiple: true },
     { title: t('playlistView.col_title'), key: 'title', minWidth: 200, render: (row) => row.title || '-' },
-    { title: t('playlistView.col_type'), key: 'type', width: 160, render: (row) => row.type ? h(NTag, { size: 'small' }, { default: () => row.type }) : '-' },
+    { title: t('playlistView.col_type'), key: 'type', width: 160, render: (row) => row.type ? h(NTag, { size: 'small', style: 'max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }, { default: () => row.type }) : '-' },
     {
       title: t('playlistView.col_scheduler'), key: 'schedule', width: 110,
       render: (row) => {
