@@ -558,7 +558,7 @@ watch(activeTab, (tab) => {
                       :disabled="loading"
                       @update:value="(v) => { value.startTime = (v as number[])[0]; value.endTime = (v as number[])[1] }"
                     />
-                    <NSpace align="center" :size="16" style="margin-top: 6px;" wrap>
+                    <NSpace align="center" :size="16" style="margin-top: 16px;" wrap>
                       <NText depth="3" style="font-size: 12px; min-width: 110px;">
                         {{ formatMinutesToTime(value.startTime) }} — {{ formatMinutesToTime(value.endTime) }}
                       </NText>
