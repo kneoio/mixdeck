@@ -359,6 +359,7 @@ export default {
     status_processing: 'جارٍ المعالجة',
     status_queued: 'في الانتظار',
     status_create_entity: 'إنشاء السجل',
+    status_creating_entity: 'إنشاء السجل',
     alert_reconnecting: 'انقطع الاتصال، إعادة الاتصال…',
     alert_no_files: 'يُرجى اختيار ملفات للرفع',
     summary_mixed: 'تم: {ok} ناجح، {warnings} بدون بيانات وصفية، {errors} فشل',

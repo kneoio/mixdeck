@@ -401,6 +401,7 @@ export default {
     status_processing: 'Behandler',
     status_queued: 'I kø',
     status_create_entity: 'Oppretter post',
+    status_creating_entity: 'Oppretter post',
     alert_reconnecting: 'Tilkobling avbrutt, kobler til igjen…',
     alert_no_files: 'Velg filer å laste opp',
     summary_mixed: 'Ferdig: {ok} ok, {warnings} uten metadata, {errors} mislyktes',

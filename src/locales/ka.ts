@@ -360,6 +360,7 @@ export default {
     status_processing: 'დამუშავება',
     status_queued: 'რიგში',
     status_create_entity: 'ჩანაწერის შექმნა',
+    status_creating_entity: 'ჩანაწერის შექმნა',
     alert_reconnecting: 'კავშირი გაწყდა, ხელახლა დაკავშირება…',
     alert_no_files: 'აირჩიეთ ფაილები ასატვირთად',
     summary_mixed: 'მზადაა: {ok} წარმატებით, {warnings} მეტამონაცემების გარეშე, {errors} ჩავარდნილი',

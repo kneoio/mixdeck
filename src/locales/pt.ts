@@ -360,6 +360,7 @@ export default {
     status_processing: 'Processando',
     status_queued: 'Na fila',
     status_create_entity: 'Criando registro',
+    status_creating_entity: 'Criando registro',
     alert_reconnecting: 'Conexão interrompida, reconectando…',
     alert_no_files: 'Selecione arquivos para enviar',
     summary_mixed: 'Concluído: {ok} OK, {warnings} sem metadados, {errors} falhas',

@@ -359,6 +359,7 @@ export default {
     status_processing: '処理中',
     status_queued: '待機中',
     status_create_entity: 'レコード作成中',
+    status_creating_entity: 'レコード作成中',
     alert_reconnecting: '接続が切れました。再接続中…',
     alert_no_files: 'アップロードするファイルを選択してください',
     summary_mixed: '完了: {ok} 件成功、{warnings} 件はメタデータなし、{errors} 件失敗',

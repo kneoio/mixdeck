@@ -415,6 +415,7 @@ export default {
     status_processing: 'Processing',
     status_queued: 'Queued',
     status_create_entity: 'Creating record',
+    status_creating_entity: 'Creating record',
     alert_reconnecting: 'Connection interrupted, reconnecting…',
     alert_no_files: 'Please select files to upload',
     summary_mixed: 'Done: {ok} ok, {warnings} without metadata, {errors} failed',

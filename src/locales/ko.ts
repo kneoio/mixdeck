@@ -401,6 +401,7 @@ export default {
     status_processing: '처리 중',
     status_queued: '대기 중',
     status_create_entity: '레코드 생성 중',
+    status_creating_entity: '레코드 생성 중',
     alert_reconnecting: '연결이 끊겼습니다. 재연결 중…',
     alert_no_files: '업로드할 파일을 선택해 주세요',
     summary_mixed: '완료: {ok}개 성공, {warnings}개 메타데이터 없음, {errors}개 실패',

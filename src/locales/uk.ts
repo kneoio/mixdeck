@@ -360,6 +360,7 @@ export default {
     status_processing: 'Обробка',
     status_queued: 'У черзі',
     status_create_entity: 'Створення запису',
+    status_creating_entity: 'Створення запису',
     alert_reconnecting: "З'єднання перервано, повторне підключення…",
     alert_no_files: 'Виберіть файли для завантаження',
     summary_mixed: 'Готово: {ok} успішно, {warnings} без метаданих, {errors} з помилкою',

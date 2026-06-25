@@ -360,6 +360,7 @@ export default {
     status_processing: 'Өңдеу',
     status_queued: 'Кезекте',
     status_create_entity: 'Жазба жасалуда',
+    status_creating_entity: 'Жазба жасалуда',
     alert_reconnecting: 'Байланыс үзілді, қайта қосылуда…',
     alert_no_files: 'Жүктеу үшін файлдарды таңдаңыз',
     summary_mixed: 'Дайын: {ok} сәтті, {warnings} метадеректерсіз, {errors} сәтсіз',

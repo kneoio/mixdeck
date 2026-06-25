@@ -359,6 +359,7 @@ export default {
     status_processing: 'Procesando',
     status_queued: 'En cola',
     status_create_entity: 'Creando registro',
+    status_creating_entity: 'Creando registro',
     alert_reconnecting: 'Conexión interrumpida, reconectando…',
     alert_no_files: 'Seleccione archivos para subir',
     summary_mixed: 'Listo: {ok} correctos, {warnings} sin metadatos, {errors} fallidos',

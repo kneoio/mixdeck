@@ -402,6 +402,7 @@ export default {
     status_processing: 'Verarbeitung',
     status_queued: 'In Warteschlange',
     status_create_entity: 'Eintrag wird erstellt',
+    status_creating_entity: 'Eintrag wird erstellt',
     alert_reconnecting: 'Verbindung unterbrochen, verbinde erneut…',
     alert_no_files: 'Bitte Dateien zum Hochladen auswählen',
     summary_mixed: 'Fertig: {ok} OK, {warnings} ohne Metadaten, {errors} fehlgeschlagen',

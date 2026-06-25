@@ -359,6 +359,7 @@ export default {
     status_processing: 'Обработка',
     status_queued: 'В очереди',
     status_create_entity: 'Создание записи',
+    status_creating_entity: 'Создание записи',
     alert_reconnecting: 'Соединение прервано, переподключение…',
     alert_no_files: 'Выберите файлы для загрузки',
     summary_mixed: 'Готово: {ok} успешно, {warnings} без метаданных, {errors} с ошибкой',

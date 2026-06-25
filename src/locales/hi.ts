@@ -359,6 +359,7 @@ export default {
     status_processing: 'प्रसंस्करण',
     status_queued: 'कतार में',
     status_create_entity: 'रिकॉर्ड बनाया जा रहा है',
+    status_creating_entity: 'रिकॉर्ड बनाया जा रहा है',
     alert_reconnecting: 'कनेक्शन टूट गया, पुन: कनेक्ट हो रहा है…',
     alert_no_files: 'कृपया अपलोड के लिए फ़ाइलें चुनें',
     summary_mixed: 'पूर्ण: {ok} ठीक, {warnings} मेटाडेटा के बिना, {errors} विफल',
