@@ -77,12 +77,8 @@ const columns = computed<DataTableColumns<any>>(() => {
         title: '',
         render: (row) => {
           const schedActive = row.type === 'PRERECORDED_ADVERTISEMENT' && row.schedule?.enabled === true && Array.isArray(row.schedule?.tasks) && row.schedule.tasks.length > 0
-          const schedTag = row.type === 'PRERECORDED_ADVERTISEMENT'
-            ? h(NTag, {
-                size: 'small', style: schedActive
-                  ? 'background:rgba(34,197,94,0.12);color:#22c55e;border:1px solid rgba(34,197,94,0.35);flex-shrink:0'
-                  : 'background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.3);border:1px solid rgba(255,255,255,0.1);flex-shrink:0',
-              }, { default: () => schedActive ? t('playlistView.scheduler_active') : t('playlistView.scheduler_inactive') })
+          const schedTag = schedActive
+            ? h(NTag, { size: 'small', style: 'background:rgba(34,197,94,0.12);color:#22c55e;border:1px solid rgba(34,197,94,0.35);flex-shrink:0' }, { default: () => t('playlistView.scheduler_active') })
             : null
           const row1 = h('div', { class: 'mob-r1' }, [
             h('span', { class: 'mob-title' }, row.title || '-'),
@@ -113,14 +109,12 @@ const columns = computed<DataTableColumns<any>>(() => {
     {
       title: t('playlistView.col_scheduler'), key: 'schedule', width: 110,
       render: (row) => {
-        if (row.type !== 'PRERECORDED_ADVERTISEMENT') return h('span', { style: 'opacity:0.25' }, '—')
-        const active = row.schedule?.enabled === true && Array.isArray(row.schedule?.tasks) && row.schedule.tasks.length > 0
+        const active = row.type === 'PRERECORDED_ADVERTISEMENT' && row.schedule?.enabled === true && Array.isArray(row.schedule?.tasks) && row.schedule.tasks.length > 0
+        if (!active) return null
         return h(NTag, {
           size: 'small',
-          style: active
-            ? 'background:rgba(34,197,94,0.12);color:#22c55e;border:1px solid rgba(34,197,94,0.35)'
-            : 'background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.3);border:1px solid rgba(255,255,255,0.1)',
-        }, { default: () => active ? t('playlistView.scheduler_active') : t('playlistView.scheduler_inactive') })
+          style: 'background:rgba(34,197,94,0.12);color:#22c55e;border:1px solid rgba(34,197,94,0.35)',
+        }, { default: () => t('playlistView.scheduler_active') })
       },
     },
     {
