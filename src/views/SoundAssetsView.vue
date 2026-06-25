@@ -76,9 +76,18 @@ const columns = computed<DataTableColumns<any>>(() => {
         key: 'mob',
         title: '',
         render: (row) => {
+          const schedActive = row.type === 'PRERECORDED_ADVERTISEMENT' && row.schedule?.enabled === true && Array.isArray(row.schedule?.tasks) && row.schedule.tasks.length > 0
+          const schedTag = row.type === 'PRERECORDED_ADVERTISEMENT'
+            ? h(NTag, {
+                size: 'small', style: schedActive
+                  ? 'background:rgba(34,197,94,0.12);color:#22c55e;border:1px solid rgba(34,197,94,0.35);flex-shrink:0'
+                  : 'background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.3);border:1px solid rgba(255,255,255,0.1);flex-shrink:0',
+              }, { default: () => schedActive ? t('playlistView.scheduler_active') : t('playlistView.scheduler_inactive') })
+            : null
           const row1 = h('div', { class: 'mob-r1' }, [
             h('span', { class: 'mob-title' }, row.title || '-'),
             row.type ? h(NTag, { size: 'small', style: 'flex-shrink:0' }, { default: () => row.type }) : null,
+            schedTag,
           ].filter(Boolean))
 
           const labelTags = (row.labels || []).map((l: any) => {
@@ -101,6 +110,19 @@ const columns = computed<DataTableColumns<any>>(() => {
     { type: 'selection', multiple: true },
     { title: t('playlistView.col_title'), key: 'title', minWidth: 200, render: (row) => row.title || '-' },
     { title: t('playlistView.col_type'), key: 'type', width: 160, render: (row) => row.type ? h(NTag, { size: 'small' }, { default: () => row.type }) : '-' },
+    {
+      title: t('playlistView.col_scheduler'), key: 'schedule', width: 110,
+      render: (row) => {
+        if (row.type !== 'PRERECORDED_ADVERTISEMENT') return h('span', { style: 'opacity:0.25' }, '—')
+        const active = row.schedule?.enabled === true && Array.isArray(row.schedule?.tasks) && row.schedule.tasks.length > 0
+        return h(NTag, {
+          size: 'small',
+          style: active
+            ? 'background:rgba(34,197,94,0.12);color:#22c55e;border:1px solid rgba(34,197,94,0.35)'
+            : 'background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.3);border:1px solid rgba(255,255,255,0.1)',
+        }, { default: () => active ? t('playlistView.scheduler_active') : t('playlistView.scheduler_inactive') })
+      },
+    },
     {
       title: t('playlistView.col_labels'), key: 'labels', width: 180,
       render: (row) => {
