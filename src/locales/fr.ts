@@ -360,7 +360,7 @@ export default {
     status_processing: 'Traitement',
     status_queued: 'En file d\'attente',
     status_create_entity: 'Création de l\'enregistrement',
-    status_creating_entity: 'Création de l'enregistrement',
+    status_creating_entity: 'Création de l\'enregistrement',
     alert_reconnecting: 'Connexion interrompue, reconnexion…',
     alert_no_files: 'Veuillez sélectionner des fichiers à envoyer',
     summary_mixed: 'Terminé : {ok} OK, {warnings} sans métadonnées, {errors} échecs',

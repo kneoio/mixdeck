@@ -56,13 +56,14 @@ class AivoxApiService extends ApiClient {
   async heartbeatBatch(brandSlugs: string[]): Promise<AivoxHeartbeatBatchResult> {
     const unique = [...new Set(brandSlugs.filter(Boolean))]
     if (unique.length === 0) {
-      return { byBrand: {}, status: 0 }
+      return { byBrand: {}, remainingByBrand: {}, status: 0 }
     }
     const path = unique.map(s => encodeURIComponent(s)).join(',')
     try {
       const response = await fetch(`${this.baseUrl}/info/heartbeat/${path}`)
       const dead = (): AivoxHeartbeatBatchResult => ({
         byBrand: Object.fromEntries(unique.map(s => [s, false])),
+        remainingByBrand: Object.fromEntries(unique.map(s => [s, -1])),
         status: response.status,
       })
       if (!response.ok) {

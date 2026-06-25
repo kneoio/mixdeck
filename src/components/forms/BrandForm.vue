@@ -342,8 +342,8 @@ function submitCustomAction(scene: Scene) {
 
 const instructionEditorRefs = ref<Record<string, any>>({})
 
-function insertVar(sceneId: string, name: string) {
-  instructionEditorRefs.value[sceneId]?.insertText('{{' + name + '}}')
+function insertVar(sceneId: string | number, name: string) {
+  instructionEditorRefs.value[String(sceneId)]?.insertText('{{' + name + '}}')
 }
 function wrapVar(name: string) {
   return '{{' + name + '}}'
@@ -357,8 +357,8 @@ function cancelCustomAction(scene: Scene) {
 }
 
 function renderSceneActionTag(scene: Scene) {
-  return ({ option, handleClose }: { option: { label: string; value: string }; handleClose: () => void }) => {
-    const isCustom = Boolean(scene.customActionDefs[option.value])
+  return ({ option, handleClose }: { option: SelectOption; handleClose: () => void }) => {
+    const isCustom = Boolean(scene.customActionDefs[option.value as string])
     const dark = themeStore.isDark
     const tagColor = isCustom
       ? { color: dark ? 'rgba(56,189,237,0.10)' : 'rgba(56,189,237,0.08)', textColor: dark ? '#38BDE5' : '#0e7fa8', borderColor: 'rgba(56,189,237,0.40)' }
@@ -371,15 +371,15 @@ function renderSceneActionTag(scene: Scene) {
     }, {
       default: () => isCustom
         ? [
-            h('span', { style: 'font-size:0.82rem;' }, option.label),
+            h('span', { style: 'font-size:0.82rem;' }, String(option.label ?? '')),
             h('button', {
               style: `margin-left:7px;font-size:0.72rem;padding:1px 6px;border-radius:4px;border:1px solid ${themeStore.isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.25)'};background:transparent;color:${themeStore.isDark ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.55)'};cursor:pointer;line-height:1.4;transition:opacity 0.15s;`,
               onMouseenter: (e: MouseEvent) => { (e.target as HTMLElement).style.opacity = '1' },
               onMouseleave: (e: MouseEvent) => { (e.target as HTMLElement).style.opacity = '0.7' },
-              onClick: (e: MouseEvent) => { e.stopPropagation(); editCustomAction(scene, option.value) },
+              onClick: (e: MouseEvent) => { e.stopPropagation(); editCustomAction(scene, option.value as string) },
             }, t('brandForm.action_tag_edit')),
           ]
-        : h('span', { style: 'font-size:0.82rem;' }, option.label),
+        : h('span', { style: 'font-size:0.82rem;' }, String(option.label ?? '')),
     })
   }
 }

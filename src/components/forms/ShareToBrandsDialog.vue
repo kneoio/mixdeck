@@ -64,7 +64,7 @@ import LoaderProgress from '@/components/LoaderProgress.vue'
 const props = defineProps<{
   show: boolean
   fragmentIds: string[]
-  brandSlug: string
+  brandSlug?: string
 }>()
 
 const emit = defineEmits<{

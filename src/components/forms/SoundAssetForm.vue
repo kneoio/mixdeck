@@ -301,13 +301,13 @@ onMounted(async () => {
         length: typeof frag.length === 'number'
           ? frag.length
           : (typeof frag.length === 'string' ? parseInt(frag.length) || null : null),
+        schedule: {
+          enabled: (frag as any).schedule?.enabled ?? false,
+          tasks: (frag as any).schedule?.tasks ?? [],
+        },
       }
       regDate.value = frag.regDate || ''
       lastModifiedDate.value = frag.lastModifiedDate || ''
-      formData.value.schedule = {
-        enabled: (frag as any).schedule?.enabled ?? false,
-        tasks: (frag as any).schedule?.tasks ?? [],
-      }
       if ((frag as any).schedule?.tasks?.length > 0) {
         scheduleTasksArray.value = (frag as any).schedule.tasks
           .filter((task: any) => task.triggerType === 'PERIODIC' && task.periodicTrigger)
@@ -366,7 +366,7 @@ watch(activeTab, (tab) => {
       total: h.length,
       djs: new Set(h.map(e => e.djName)).size,
       first: new Date(h[0].playedAt).toLocaleDateString(),
-      last: new Date(h.at(-1)!.playedAt).toLocaleDateString(),
+      last: new Date(h[h.length - 1]!.playedAt).toLocaleDateString(),
     }
   }
 })

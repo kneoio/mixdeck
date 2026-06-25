@@ -279,7 +279,7 @@ async function upload() {
       email.value.trim(),
       code.value.trim(),
       (p) => { uploadProgress.value = p },
-      { stationSlugs: stationSlugs.value.length ? stationSlugs.value : undefined, artistName: artistName.value.trim(), genre: genre.value, country: country.value.trim() || undefined, agendaNotify: agendaNotify.value },
+      { stationSlugs: stationSlugs.value.length ? stationSlugs.value : undefined, artistName: artistName.value.trim(), genre: genre.value ?? undefined, country: country.value.trim() || undefined, agendaNotify: agendaNotify.value },
     )
     submitted.value = true
   } catch (e: any) {

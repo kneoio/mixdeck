@@ -20,6 +20,7 @@ export interface UploadedFile {
   status: string
   url: string
   percentage: number
+  type?: string
 }
 
 export interface SoundFragment {
@@ -43,6 +44,9 @@ export interface SoundFragment {
   length?: string | number
   expiresAt?: string
   uploadedFiles?: UploadedFile[]
+  playHistory?: any[]
+  likes?: number
+  dislikes?: number
   sharedWith?: Array<{
     targetBrand: string
     status?: number
