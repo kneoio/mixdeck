@@ -3,13 +3,15 @@ import { ref } from 'vue'
 import datanestApiService from '@/services/datanestApi'
 
 export type FragmentType =
-  | 'SONG' | 'JINGLE'
+  | 'SONG' | 'ADVERTISEMENT' | 'JINGLE'
   | 'JINGLE_INTRO' | 'JINGLE_OUTRO' | 'BACKGROUND_LOOP'
   | 'PRERECORDED_ADVERTISEMENT' | 'PRERECORDED_PODCAST'
+  | 'NEWS' | 'WEATHER'
 
 export const FRAGMENT_TYPE_VALUES: FragmentType[] = [
-  'SONG', 'PRERECORDED_ADVERTISEMENT', 'JINGLE',
-  'JINGLE_INTRO', 'JINGLE_OUTRO', 'BACKGROUND_LOOP', 'PRERECORDED_PODCAST',
+  'SONG', 'ADVERTISEMENT', 'PRERECORDED_ADVERTISEMENT', 'PRERECORDED_PODCAST',
+  'JINGLE', 'JINGLE_INTRO', 'JINGLE_OUTRO', 'BACKGROUND_LOOP',
+  'NEWS', 'WEATHER',
 ]
 
 export interface UploadedFile {

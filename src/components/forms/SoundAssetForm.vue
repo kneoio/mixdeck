@@ -69,7 +69,7 @@ const isUploading = ref(false)
 const uploadedFileNames = ref<string[]>([])
 
 const formData = ref({
-  type: 'ADVERTISEMENT' as string,
+  type: 'PRERECORDED_ADVERTISEMENT' as string,
   title: '',
   artist: '',
   description: '',
@@ -291,7 +291,7 @@ onMounted(async () => {
     if (isEditing.value) {
       const frag = await store.fetchFragment(route.params.fragmentId as string)
       formData.value = {
-        type: frag.type || 'ADVERTISEMENT',
+        type: frag.type || 'PRERECORDED_ADVERTISEMENT',
         title: frag.title || '',
         artist: frag.artist || '',
         description: frag.description || '',
