@@ -1340,15 +1340,10 @@ watch(activeTab, async (tab) => {
               <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.aiAgentId }">
                 {{ fieldErrors.aiAgentId || '\u00A0' }}
               </div>
-            </div>
-          </NFormItem>
-
-          <NFormItem :label="t('brandForm.dj_language_filter')">
-            <div class="field-stack">
-              <div class="field-error-shell">
-                <NSwitch v-model:value="djLanguageFilter" />
+              <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
+                <NCheckbox v-model:checked="djLanguageFilter" size="small" />
+                <span style="font-size: 11px; color: #888;">{{ t('brandForm.dj_language_filter') }}</span>
               </div>
-              <div class="field-error-label"></div>
             </div>
           </NFormItem>
 
