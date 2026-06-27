@@ -202,7 +202,6 @@
       </div><!-- end page-center -->
 
       <footer class="footer">
-        <div class="logo">MIXPLA</div>
         <div class="copyright">© Mixpla</div>
       </footer>
     </div>
