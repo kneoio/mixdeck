@@ -7,6 +7,8 @@
         <div class="logo" @click="router.push('/')" style="cursor:pointer">MIXPLA</div>
       </header>
 
+      <div class="page-center">
+
       <!-- Success -->
       <section v-if="verified && submitted" class="submission-card">
         <div class="step step--success">
@@ -197,6 +199,8 @@
 
       </section>
 
+      </div><!-- end page-center -->
+
       <footer class="footer">
         <div class="logo">MIXPLA</div>
         <div class="status">{{ t('welcome.footer_status') }}</div>
@@ -369,6 +373,16 @@ function restart() {
   color: #f5f5f5;
   font-family: 'Inter', sans-serif;
   padding: 24px clamp(16px, 4vw, 64px);
+  display: flex;
+  flex-direction: column;
+}
+
+.page-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 0;
 }
 
 .side-label {
@@ -419,8 +433,8 @@ h2 {
 
 /* Card */
 .submission-card {
+  width: 100%;
   max-width: 600px;
-  margin: 0 auto;
   background: #0f0f0f;
   border: 1px solid #1f1f1f;
   border-radius: 16px;
