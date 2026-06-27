@@ -15,7 +15,10 @@
           <div class="success-icon">✓</div>
           <h2>{{ t('submission.success_heading') }}</h2>
           <p class="step-body">{{ t('submission.success_body') }}</p>
-          <GsapButton @click="router.push('/')"><span>{{ t('submission.back') }}</span></GsapButton>
+          <div class="success-actions">
+            <GsapButton type="primary" @click="submitAnother"><span>Submit another track</span></GsapButton>
+            <GsapButton @click="router.push('/')"><span>{{ t('submission.back') }}</span></GsapButton>
+          </div>
         </div>
       </section>
 
@@ -39,6 +42,11 @@
         <transition name="slide" mode="out-in">
           <div v-if="step === 1" key="auth" class="wizard-body">
 
+            <p class="step-intro">
+              Thank you for submitting your track to Mixpla.<br><br>
+              Mixpla is a facility to keep your files for DJs that create on the platform. It will not use them without your permission. After upload, you can access your files by registering in Mixpla under the same email — and do anything with them, including delete.
+            </p>
+
             <div class="field-row">
               <label class="field-label">{{ t('submission.email_placeholder') }}</label>
               <div class="field-error-shell" :class="{ 'field-error-shell--active': !!fieldErrors.email }">
@@ -57,24 +65,23 @@
               <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.email }">{{ fieldErrors.email || ' ' }}</div>
             </div>
 
-            <transition name="fade">
-              <div v-if="codeSent" class="field-row">
-                <label class="field-label">{{ t('submission.code_placeholder') }}</label>
-                <div class="field-error-shell" :class="{ 'field-error-shell--active': !!fieldErrors.code }">
-                  <div class="inline-row">
-                    <n-input
-                      v-model:value="code"
-                      :placeholder="t('submission.code_placeholder')"
-                      @keydown.enter="verifyAndNext"
-                    />
-                    <GsapButton type="primary" :disabled="loading" @click="verifyAndNext">
-                      <span>{{ t('submission.verify') }}</span>
-                    </GsapButton>
-                  </div>
+            <div class="field-row">
+              <label class="field-label">{{ t('submission.code_placeholder') }}</label>
+              <div class="field-error-shell" :class="{ 'field-error-shell--active': !!fieldErrors.code }">
+                <div class="inline-row">
+                  <n-input
+                    v-model:value="code"
+                    :placeholder="t('submission.code_placeholder')"
+                    :disabled="!codeSent"
+                    @keydown.enter="verifyAndNext"
+                  />
+                  <GsapButton type="primary" :disabled="loading || !codeSent" @click="verifyAndNext">
+                    <span>{{ t('submission.verify') }}</span>
+                  </GsapButton>
                 </div>
-                <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.code }">{{ fieldErrors.code || ' ' }}</div>
               </div>
-            </transition>
+              <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.code }">{{ fieldErrors.code || ' ' }}</div>
+            </div>
 
           </div>
         </transition>
@@ -168,7 +175,7 @@
             <div class="checks-row">
               <n-checkbox v-model:checked="agendaNotify">{{ t('submission.agenda_notify') }}</n-checkbox>
               <div class="field-error-shell" :class="{ 'field-error-shell--active': !!fieldErrors.agreement }">
-                <n-collapse>
+                <n-collapse :default-expanded-names="['agreement']">
                   <n-collapse-item :title="t('submission.agreement_title')" name="agreement">
                     <div class="agreement-body">
                       <p>{{ t('submission.agreement_text') }}</p>
@@ -334,6 +341,20 @@ async function upload() {
   } finally {
     loading.value = false
   }
+}
+
+function submitAnother() {
+  submitted.value = false
+  selectedFile.value = null
+  artistName.value = ''
+  genre.value = null
+  country.value = ''
+  stationSlugs.value = []
+  agendaNotify.value = false
+  agreed.value = false
+  uploadProgress.value = 0
+  fieldErrors.value = { email: '', code: '', artistName: '', genre: '', file: '', agreement: '', api: '' }
+  step.value = 2
 }
 
 function restart() {
@@ -505,6 +526,13 @@ h2 {
   background: #7C3AED;
 }
 
+.step-intro {
+  font-size: 0.85rem;
+  color: #777;
+  line-height: 1.65;
+  margin: 0 0 4px;
+}
+
 /* Wizard body */
 .wizard-body {
   display: flex;
@@ -663,6 +691,13 @@ h2 {
 }
 
 /* Success */
+.success-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
 .step--success {
   display: flex;
   flex-direction: column;
