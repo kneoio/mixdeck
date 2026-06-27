@@ -28,12 +28,12 @@
         <!-- Step indicator -->
         <div class="wizard-steps">
           <div class="wizard-step" :class="{ active: step === 1, done: step > 1 }">
-            <div class="wizard-dot">{{ step > 1 ? '✓' : '1' }}</div>
+            <div class="wizard-dot">I</div>
             <span>{{ t('submission.step1_heading') }}</span>
           </div>
           <div class="wizard-connector" :class="{ done: step > 1 }" />
-          <div class="wizard-step" :class="{ active: step === 2 }">
-            <div class="wizard-dot">2</div>
+          <div class="wizard-step" :class="{ active: step === 2, done: submitted }">
+            <div class="wizard-dot">II</div>
             <span>{{ t('submission.submit') }}</span>
           </div>
         </div>
@@ -160,7 +160,6 @@
             </div>
 
             <n-progress
-              v-if="loading"
               type="line"
               :percentage="uploadProgress"
               :show-indicator="false"
@@ -324,7 +323,7 @@ async function upload() {
   if (!agreed.value) { fieldErrors.value.agreement = t('submission.error_agreement'); invalid = true }
   if (invalid) return
   loading.value = true
-  uploadProgress.value = 0
+  uploadProgress.value = 1 + Math.random() * 2
   try {
     await datanestApiService.uploadPublicSongChunked(
       selectedFile.value!,
@@ -423,6 +422,11 @@ function restart() {
   animation: blink 12s infinite;
 }
 
+@keyframes led-pulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(104, 255, 186, 0.3); opacity: 1; }
+  50% { box-shadow: 0 0 10px rgba(104, 255, 186, 0.7), 0 0 20px rgba(104, 255, 186, 0.2); opacity: 0.6; }
+}
+
 @keyframes blink {
   20%, 24%, 55% { color: #111; text-shadow: none; }
   0%, 19%, 21%, 23%, 25%, 54%, 100% {
@@ -492,26 +496,33 @@ h2 {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  border: 1.5px solid #333;
+  border: 1.5px solid #1a3d28;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
-  color: #555;
-  transition: all 0.3s;
+  font-size: 0.65rem;
+  font-family: 'Georgia', serif;
+  letter-spacing: 0.05em;
+  color: #1e4a2e;
+  transition: all 0.4s ease;
   flex-shrink: 0;
 }
 
 .wizard-step.active .wizard-dot {
-  border-color: #7C3AED;
-  color: #7C3AED;
-  box-shadow: 0 0 8px rgba(124, 58, 237, 0.4);
+  border-color: #68ffba;
+  color: #68ffba;
+  animation: led-pulse 1.4s ease-in-out infinite;
 }
 
 .wizard-step.done .wizard-dot {
-  background: #7C3AED;
-  border-color: #7C3AED;
-  color: #fff;
+  border-color: #68ffba;
+  color: #68ffba;
+  box-shadow: 0 0 6px rgba(104, 255, 186, 0.45), 0 0 14px rgba(104, 255, 186, 0.15);
+}
+
+.wizard-step.done span {
+  color: #68ffba !important;
 }
 
 .wizard-connector {
