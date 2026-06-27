@@ -478,7 +478,7 @@ export default {
     country_label: 'Country',
     country_placeholder: 'Your country (optional)',
     file_label: 'Audio file',
-    agenda_notify: "Send me the DJ's agenda so I can see when my track will play",
+    agenda_notify: "Send me a notification when a DJ is going to play it on air",
     agreement: 'I confirm that I own the rights to this track and agree to the Mixpla submission terms.',
     error_email: 'Please enter a valid email address.',
     error_code: 'Please enter the verification code.',

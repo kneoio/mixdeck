@@ -10,7 +10,7 @@
       <div class="page-center">
 
       <!-- Success -->
-      <section v-if="verified && submitted" class="submission-card">
+      <section v-if="verified && submitted && step === 4" class="submission-card">
         <div class="step step--success">
           <div class="success-icon">✓</div>
           <h2>{{ t('submission.success_heading') }}</h2>
@@ -31,8 +31,12 @@
             <div class="wizard-dot"><span class="arcade step-led">1</span></div>
           </div>
           <div class="wizard-connector" :class="{ done: step > 1 }" />
-          <div class="wizard-step" :class="{ active: step === 2, done: submitted }">
+          <div class="wizard-step" :class="{ active: step === 2, done: step > 2 }">
             <div class="wizard-dot"><span class="arcade step-led">2</span></div>
+          </div>
+          <div class="wizard-connector" :class="{ done: step > 2 }" />
+          <div class="wizard-step" :class="{ active: step === 3, done: step > 3 }">
+            <div class="wizard-dot"><span class="arcade step-led">3</span></div>
           </div>
         </div>
 
@@ -201,6 +205,28 @@
           </div>
         </transition>
 
+        <!-- Step 3: Description (optional) -->
+        <transition name="slide" mode="out-in">
+          <div v-if="step === 3" key="description" class="wizard-body">
+            <p class="step-intro">Optional — add a short description of your track. You can skip this.</p>
+            <div class="field-row">
+              <label class="field-label">Description</label>
+              <n-input
+                v-model:value="description"
+                type="textarea"
+                :rows="4"
+                placeholder="Tell us about your track..."
+              />
+            </div>
+            <div class="wizard-actions">
+              <button class="back-btn" @click="submitAnother">Skip →</button>
+              <GsapButton type="primary" @click="submitAnother">
+                <span>Submit another track</span>
+              </GsapButton>
+            </div>
+          </div>
+        </transition>
+
       </section>
 
       </div><!-- end page-center -->
@@ -251,6 +277,7 @@ const artistName = ref('')
 const genre = ref<string | null>(null)
 const country = ref('')
 const agendaNotify = ref(false)
+const description = ref('')
 const agreed = ref(false)
 const selectedFile = ref<File | null>(null)
 const fileInputRef = ref<HTMLInputElement | null>(null)
@@ -331,6 +358,7 @@ async function upload() {
       { stationSlugs: stationSlugs.value.length ? stationSlugs.value : undefined, artistName: artistName.value.trim(), genre: genre.value ?? undefined, country: country.value.trim() || undefined, agendaNotify: agendaNotify.value },
     )
     submitted.value = true
+    step.value = 3
   } catch (e: any) {
     const msg: string = e?.message || 'Upload failed.'
     if (msg.includes('401')) { restart(); return }
@@ -349,6 +377,7 @@ function submitAnother() {
   stationSlugs.value = []
   agendaNotify.value = false
   agreed.value = false
+  description.value = ''
   uploadProgress.value = 0
   fieldErrors.value = { email: '', code: '', artistName: '', genre: '', file: '', agreement: '', api: '' }
   step.value = 2
