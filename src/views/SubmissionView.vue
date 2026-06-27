@@ -28,13 +28,11 @@
         <!-- Step indicator -->
         <div class="wizard-steps">
           <div class="wizard-step" :class="{ active: step === 1, done: step > 1 }">
-            <NIcon :size="18" class="wizard-led"><component :is="step > 1 ? RadioButtonOn : RadioButtonOff" /></NIcon>
-            <span class="arcade">1</span>
+            <div class="wizard-dot"><span class="arcade step-led">1</span></div>
           </div>
           <div class="wizard-connector" :class="{ done: step > 1 }" />
           <div class="wizard-step" :class="{ active: step === 2, done: submitted }">
-            <NIcon :size="18" class="wizard-led"><component :is="submitted ? RadioButtonOn : RadioButtonOff" /></NIcon>
-            <span class="arcade">2</span>
+            <div class="wizard-dot"><span class="arcade step-led">2</span></div>
           </div>
         </div>
 
@@ -218,8 +216,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { NConfigProvider, NInput, NProgress, NSelect, NCheckbox, NSkeleton, NCollapse, NCollapseItem, NIcon, darkTheme, type GlobalThemeOverrides } from 'naive-ui'
-import { RadioButtonOff, RadioButtonOn } from '@vicons/ionicons5'
+import { NConfigProvider, NInput, NProgress, NSelect, NCheckbox, NSkeleton, NCollapse, NCollapseItem, darkTheme, type GlobalThemeOverrides } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
 import datanestApiService from '@/services/datanestApi'
 
@@ -375,6 +372,12 @@ function restart() {
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Press+Start+2P&display=swap');
 
 @font-face {
+  font-family: 'Digital Play Italic St';
+  src: url('/src/assets/fonts/Digital Play Italic St.ttf') format('truetype');
+  font-display: swap;
+}
+
+@font-face {
   font-family: 'Kaylon';
   src: url('/src/assets/fonts/kaylonbold.otf') format('opentype');
   font-weight: 700;
@@ -424,8 +427,8 @@ function restart() {
 }
 
 @keyframes led-pulse {
-  0%, 100% { filter: drop-shadow(0 0 2px rgba(104, 255, 186, 0.2)); }
-  50% { filter: drop-shadow(0 0 6px rgba(104, 255, 186, 0.9)); }
+  0%, 70%, 100% { opacity: 1; text-shadow: 0 0 18px #00FF3C; }
+  40% { opacity: 0.25; text-shadow: 0 0 4px #00FF3C; }
 }
 
 @keyframes blink {
@@ -480,7 +483,7 @@ h2 {
   flex-shrink: 0;
 }
 
-.wizard-step span {
+.wizard-step span:not(.step-led) {
   font-size: 0.78rem;
   color: #555;
   text-transform: uppercase;
@@ -488,35 +491,49 @@ h2 {
   transition: color 0.3s;
 }
 
-.wizard-step.active span,
-.wizard-step.done span {
+.wizard-step.active span:not(.step-led),
+.wizard-step.done span:not(.step-led) {
   color: #b0b0b0;
 }
 
-.arcade {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 0.6rem;
-}
-
-.wizard-led {
-  color: #1a3a28;
-  transition: color 0.4s ease, filter 0.4s ease;
+.wizard-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid #222;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
 
-.wizard-step.active .wizard-led {
-  color: #68ffba;
-  animation: led-pulse 1.4s ease-in-out infinite;
+.arcade {
+  font-family: 'Digital Play Italic St', monospace;
+  font-size: 1rem;
+  line-height: 1;
 }
 
-.wizard-step.done .wizard-led {
-  color: #68ffba;
-  filter: drop-shadow(0 0 4px rgba(104, 255, 186, 0.8));
+.step-led {
+  color: #00FF3C;
+  opacity: 0.25;
+  text-shadow: none;
+  transition: opacity 3s ease-out, text-shadow 3s ease-out;
 }
 
-.wizard-step.done span {
-  color: #68ffba !important;
+.wizard-step.active .step-led {
+  opacity: 1;
+  transition: opacity 0.05s, text-shadow 0.05s;
+  animation: led-pulse 0.8s ease-in-out infinite;
 }
+
+.wizard-step.done .step-led {
+  opacity: 1;
+  transition: opacity 0.05s, text-shadow 0.05s;
+  text-shadow: 0 0 6px #00FF3C, 0 0 16px #00FF3C, 0 0 36px #00FF3C, 0 0 60px #00FF3C;
+}
+
+
 
 .wizard-connector {
   flex: 1;
