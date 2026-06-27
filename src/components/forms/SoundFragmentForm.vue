@@ -428,14 +428,6 @@ watch(activeTab, () => {
             </div>
           </NFormItem>
 
-          <NFormItem :label="t('fragmentForm.source')">
-            <div class="field-stack">
-              <div class="field-error-shell">
-                <NSelect v-model:value="formData.source" :options="sourceOptions" style="width: 200px" />
-              </div>
-              <div class="field-error-label"></div>
-            </div>
-          </NFormItem>
 
           <NFormItem :label="t('fragmentForm.title')">
             <div class="field-stack">
