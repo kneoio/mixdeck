@@ -203,7 +203,6 @@
 
       <footer class="footer">
         <div class="logo">MIXPLA</div>
-        <div class="status">{{ t('welcome.footer_status') }}</div>
         <div class="copyright">© Mixpla</div>
       </footer>
     </div>
