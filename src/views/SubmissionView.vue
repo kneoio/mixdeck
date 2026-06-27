@@ -518,7 +518,7 @@ h2 {
   color: #00FF3C;
   opacity: 0.25;
   text-shadow: none;
-  transition: opacity 3s ease-out, text-shadow 3s ease-out;
+  transition: opacity 0.3s ease, text-shadow 0.3s ease;
 }
 
 .wizard-step.active .step-led {
@@ -748,19 +748,22 @@ h2 {
 }
 
 /* Transitions */
-.slide-enter-active,
+.slide-enter-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
 .slide-leave-active {
-  transition: opacity 0.22s ease, transform 0.22s ease;
+  transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
 .slide-enter-from {
   opacity: 0;
-  transform: translateX(20px);
+  transform: translateX(24px);
 }
 
 .slide-leave-to {
   opacity: 0;
-  transform: translateX(-20px);
+  transform: translateX(-24px);
 }
 
 .fade-enter-active,
