@@ -1355,14 +1355,14 @@ watch(activeTab, async (tab) => {
             </div>
           </NFormItem>
 
+          <div style="display: flex; align-items: center; gap: 6px; margin: -4px 0 8px 164px;">
+            <span style="font-size: 11px; color: #888;">Show country language</span>
+            <NCheckbox v-model:checked="djLanguageFilter" size="small" />
+          </div>
+
           <NDivider v-if="selectedAgent?.description" style="margin: 4px 0 12px 0" />
           <div v-if="selectedAgent?.description" style="padding: 0 0 12px 0">
             <span style="color: #888; font-size: 13px;">{{ selectedAgent.description }}</span>
-          </div>
-
-          <div style="display: flex; align-items: center; gap: 6px; margin: -4px 0 8px 0;">
-            <NCheckbox v-model:checked="djLanguageFilter" size="small" />
-            <span style="font-size: 11px; color: #888;">Show country language</span>
           </div>
 
           <NFormItem :label="t('brandForm.ai_override')">
