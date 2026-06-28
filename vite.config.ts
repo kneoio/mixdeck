@@ -1,5 +1,8 @@
 import { fileURLToPath, URL } from 'node:url'
+import { webcrypto } from 'node:crypto'
 import { defineConfig } from 'vite'
+
+if (!globalThis.crypto) (globalThis as any).crypto = webcrypto
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import { VitePWA } from 'vite-plugin-pwa'
@@ -16,9 +19,10 @@ export default defineConfig({
       injectRegister: false,
       devOptions: {
         enabled: true,
+        suppressWarnings: true,
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        globPatterns: [],
         navigateFallback: null,
         cleanupOutdatedCaches: true,
       },
