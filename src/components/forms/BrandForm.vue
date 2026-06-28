@@ -1348,14 +1348,10 @@ watch(activeTab, async (tab) => {
             <span style="font-size: 11px; color: #888;">Show country language</span>
           </div>
 
-          <NFormItem v-if="selectedAgent?.description" :label="t('fragmentForm.description')">
-            <div class="field-stack">
-              <div class="field-error-shell">
-                <span style="color: #888; font-size: 13px;">{{ selectedAgent.description }}</span>
-              </div>
-              <div class="field-error-label"></div>
-            </div>
-          </NFormItem>
+          <NDivider v-if="selectedAgent?.description" style="margin: 4px 0 12px 0" />
+          <div v-if="selectedAgent?.description" style="padding: 0 0 12px 0">
+            <span style="color: #888; font-size: 13px;">{{ selectedAgent.description }}</span>
+          </div>
 
           <NFormItem :label="t('brandForm.ai_override')">
             <div class="field-stack">
