@@ -32,7 +32,8 @@ export interface Brand {
   messagingPolicy?: SubmissionPolicy
   aiOverriding?: { prompt?: string; talkativity?: number }
   scriptId?: string
-  scripts?: Array<{ scriptId: string; userVariables?: Record<string, any> }>
+  scriptIds?: Array<{ scriptId: string; userVariables?: Record<string, any> }>
+  customScriptId?: string
   profileOverriding?: { name?: string; description?: string }
   titleFont?: string
   owner?: { name?: string; email?: string; coOwners?: Array<{ name: string; email: string }> }

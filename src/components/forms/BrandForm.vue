@@ -778,6 +778,7 @@ async function handleSave() {
   if (!valid) return
   try {
     loading.value = true
+    console.log('[BrandForm] save | scriptMode:', scriptMode.value, '| scriptId:', formData.value.scriptId, '| customScriptId will be:', scriptMode.value === 'custom' ? formData.value.scriptId || undefined : undefined)
     const savedBrand = await store.saveBrand(isEditing.value ? brandId.value : null, {
       ...formData.value,
       localizedName: buildLocalizedName(),
@@ -786,10 +787,10 @@ async function handleSave() {
       aiAgentId: formData.value.aiAgentId || undefined,
       profileId: formData.value.profileId || undefined,
       aiOverriding: formData.value.aiOverriding.enabled ? { name: formData.value.aiOverriding.name, prompt: formData.value.aiOverriding.prompt } : undefined,
-      scripts: formData.value.scriptId
+      scriptIds: scriptMode.value === 'predefined' && formData.value.scriptId
         ? [{ scriptId: formData.value.scriptId, userVariables: userVariables.value }]
         : undefined,
-      scriptId: formData.value.scriptId || undefined,
+      customScriptId: scriptMode.value === 'custom' ? formData.value.scriptId || undefined : undefined,
       scriptMode: scriptMode.value.toUpperCase(),
       customScript: scriptMode.value === 'custom' ? {
         title: customScriptTitle.value || undefined,
@@ -999,7 +1000,10 @@ function applyBrandToForm(brand: any) {
   localizedNames.value = Object.entries(ln).map(([lang, name]) => ({ lang, name: String(name ?? '') }))
   if (!localizedNames.value.length) localizedNames.value = [{ lang: 'en', name: '' }]
 
-  const firstScript = brand.scripts?.[0] ?? (brand.scriptId ? { scriptId: brand.scriptId } : null)
+  const isCustomMode = brand.scriptMode?.toLowerCase() === 'custom'
+  const firstScript = isCustomMode
+    ? (brand.customScriptId ? { scriptId: brand.customScriptId } : null)
+    : (brand.scriptIds?.[0] ?? (brand.scriptId ? { scriptId: brand.scriptId } : null))
   formData.value = {
     country: brand.country || null,
     description: brand.description || '',
