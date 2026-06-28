@@ -1004,6 +1004,7 @@ function applyBrandToForm(brand: any) {
   const firstScript = isCustomMode
     ? (brand.customScriptId ? { scriptId: brand.customScriptId } : null)
     : (brand.scriptIds?.[0] ?? (brand.scriptId ? { scriptId: brand.scriptId } : null))
+  console.log('[BrandForm] load | scriptMode:', brand.scriptMode, '| scriptIds:', brand.scriptIds, '| customScriptId:', brand.customScriptId, '| resolved scriptId:', firstScript?.scriptId)
   formData.value = {
     country: brand.country || null,
     description: brand.description || '',
@@ -1190,6 +1191,7 @@ watch(activeTab, async (tab) => {
       if (!isFree(a.tags ?? []) && isFree(b.tags ?? [])) return 1
       return 0
     })
+    console.log('[BrandForm] scriptOptions loaded:', scriptOptions.value.length, '| current scriptId:', formData.value.scriptId, '| match:', scriptOptions.value.find(o => o.value === formData.value.scriptId))
     scriptsLoaded.value = true
   }
   if (tab === 'audience' && !audienceLoaded.value) {
