@@ -514,9 +514,15 @@ const djLanguageFilter = ref(true)
 const filteredAgentOptions = computed(() => {
   const lang = COUNTRY_LANG[formData.value.country || '']
   if (!djLanguageFilter.value || !lang) return agentOptions.value
-  return agentOptions.value.filter(opt =>
+  const filtered = agentOptions.value.filter(opt =>
     (opt.preferredLang ?? []).some(l => l.languageTag?.split('-')[0]?.toLowerCase() === lang)
   )
+  const selectedId = formData.value.aiAgentId
+  if (selectedId && !filtered.some(o => o.value === selectedId)) {
+    const current = agentOptions.value.find(o => o.value === selectedId)
+    if (current) return [current, ...filtered]
+  }
+  return filtered
 })
 
 const selectedAgent = computed(() =>
@@ -1349,14 +1355,14 @@ watch(activeTab, async (tab) => {
             </div>
           </NFormItem>
 
-          <div style="display: flex; align-items: center; gap: 6px; margin: -8px 0 8px 164px;">
-            <NCheckbox v-model:checked="djLanguageFilter" size="small" />
-            <span style="font-size: 11px; color: #888;">Show country language</span>
-          </div>
-
           <NDivider v-if="selectedAgent?.description" style="margin: 4px 0 12px 0" />
           <div v-if="selectedAgent?.description" style="padding: 0 0 12px 0">
             <span style="color: #888; font-size: 13px;">{{ selectedAgent.description }}</span>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 6px; margin: -4px 0 8px 0;">
+            <NCheckbox v-model:checked="djLanguageFilter" size="small" />
+            <span style="font-size: 11px; color: #888;">Show country language</span>
           </div>
 
           <NFormItem :label="t('brandForm.ai_override')">
