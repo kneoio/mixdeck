@@ -94,9 +94,24 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { NConfigProvider, NButton, NIcon, NProgress, darkTheme, type GlobalThemeOverrides } from 'naive-ui'
 import { PlayOutline, PauseOutline } from '@vicons/ionicons5'
+import manchine1 from '../assets/audio/ENG-DJ_Manchine_1.mp3'
+import clentara1 from '../assets/audio/ENG-DJ_Clentara_1_with_AD.mp3'
+import synapso1 from '../assets/audio/ES-DJ-Synapso_1.mp3'
+import elio from '../assets/audio/FR-DJ-Elio.mp3'
+import fumo1 from '../assets/audio/PT-DJ-Fumo_1.mp3'
+import cornholio from '../assets/audio/ENG-DJ_Cornholio_1.mp3'
 import lexclo0 from '../assets/audio/ENG-DJ_Lexclo.mp3'
 import lexclo1 from '../assets/audio/ENG-DJ_Lexclo_1.mp3'
+import manchine2 from '../assets/audio/ENG-DJ_Manchine_2_with_AD.mp3'
+import manchine3 from '../assets/audio/ENG-DJ_Manchine_3.mp3'
+import synapso2 from '../assets/audio/ES-DJ-Synapso_2.mp3'
+import elio2 from '../assets/audio/FR-DJ-Elio_2.mp3'
+import fumo2 from '../assets/audio/PT-DJ-Fumo_2_with_greeting.mp3'
+import aricardo from '../assets/audio/PT-DJ-Aricardo_1.mp3'
 import kaia from '../assets/audio/NO-dj-Kaia.wav'
+import kuon from '../assets/audio/ja-JP-DJ_Kuon.mp3'
+import akee from '../assets/audio/Kazakh-DJ_Akee.mp3'
+import bogdan from '../assets/audio/UKR-DJ_Bogdan_1.mp3'
 
 const router = useRouter()
 
@@ -110,9 +125,24 @@ const themeOverrides: GlobalThemeOverrides = {
 }
 
 const tracks = [
+  { title: 'DJ Manchine — Mix 1 (ENG)', src: manchine1 },
+  { title: 'DJ Clentara (ENG)', src: clentara1 },
+  { title: 'DJ Synapso — Mix 1 (ES)', src: synapso1 },
+  { title: 'DJ Elio (FR)', src: elio },
+  { title: 'DJ Fumo — Mix 1 (PT)', src: fumo1 },
+  { title: 'DJ Cornholio (ENG)', src: cornholio },
   { title: 'DJ Lexclo (ENG)', src: lexclo0 },
   { title: 'DJ Lexclo — Mix 1 (ENG)', src: lexclo1 },
+  { title: 'DJ Manchine — Mix 2 (ENG)', src: manchine2 },
+  { title: 'DJ Manchine — Mix 3 (ENG)', src: manchine3 },
+  { title: 'DJ Synapso — Mix 2 (ES)', src: synapso2 },
+  { title: 'DJ Elio — Mix 2 (FR)', src: elio2 },
+  { title: 'DJ Fumo — Mix 2 (PT)', src: fumo2 },
+  { title: 'DJ Aricardo (PT)', src: aricardo },
   { title: 'DJ Kaia (NO)', src: kaia },
+  { title: 'DJ Kuon (JA)', src: kuon },
+  { title: 'DJ Akee (KZ)', src: akee },
+  { title: 'DJ Bogdan (UKR)', src: bogdan },
 ]
 
 const states = reactive(tracks.map(() => ({
