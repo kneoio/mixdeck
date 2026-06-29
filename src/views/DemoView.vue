@@ -112,6 +112,9 @@ import kaia from '../assets/audio/NO-dj-Kaia.wav'
 import kuon from '../assets/audio/ja-JP-DJ_Kuon.mp3'
 import akee from '../assets/audio/Kazakh-DJ_Akee.mp3'
 import bogdan from '../assets/audio/UKR-DJ_Bogdan_1.mp3'
+import crossfade from '../assets/audio/Automatic_crossfade.mp3'
+import weatherBlock from '../assets/audio/ENG_weather_block.mp3'
+import jingle1 from '../assets/audio/Jingle_1.mp3'
 
 const router = useRouter()
 
@@ -125,24 +128,27 @@ const themeOverrides: GlobalThemeOverrides = {
 }
 
 const tracks = [
-  { title: 'DJ Manchine — Mix 1 (ENG)', src: manchine1 },
-  { title: 'DJ Clentara (ENG)', src: clentara1 },
-  { title: 'DJ Synapso — Mix 1 (ES)', src: synapso1 },
+  { title: 'DJ Manchine (ENG)', src: manchine1 },
+  { title: 'DJ Clentara — with AD (ENG)', src: clentara1 },
+  { title: 'DJ Synapso (ES)', src: synapso1 },
   { title: 'DJ Elio (FR)', src: elio },
-  { title: 'DJ Fumo — Mix 1 (PT)', src: fumo1 },
+  { title: 'DJ Fumo (PT)', src: fumo1 },
   { title: 'DJ Cornholio (ENG)', src: cornholio },
   { title: 'DJ Lexclo (ENG)', src: lexclo0 },
-  { title: 'DJ Lexclo — Mix 1 (ENG)', src: lexclo1 },
-  { title: 'DJ Manchine — Mix 2 (ENG)', src: manchine2 },
-  { title: 'DJ Manchine — Mix 3 (ENG)', src: manchine3 },
-  { title: 'DJ Synapso — Mix 2 (ES)', src: synapso2 },
-  { title: 'DJ Elio — Mix 2 (FR)', src: elio2 },
-  { title: 'DJ Fumo — Mix 2 (PT)', src: fumo2 },
+  { title: 'DJ Lexclo (ENG)', src: lexclo1 },
+  { title: 'DJ Manchine — with AD (ENG)', src: manchine2 },
+  { title: 'DJ Manchine (ENG)', src: manchine3 },
+  { title: 'DJ Synapso (ES)', src: synapso2 },
+  { title: 'DJ Elio (FR)', src: elio2 },
+  { title: 'DJ Fumo — with Greeting (PT)', src: fumo2 },
   { title: 'DJ Aricardo (PT)', src: aricardo },
   { title: 'DJ Kaia (NO)', src: kaia },
   { title: 'DJ Kuon (JA)', src: kuon },
   { title: 'DJ Akee (KZ)', src: akee },
   { title: 'DJ Bogdan (UKR)', src: bogdan },
+  { title: 'Automatic Crossfade', src: crossfade },
+  { title: 'Weather Block (ENG)', src: weatherBlock },
+  { title: 'Jingle 1', src: jingle1 },
 ]
 
 const states = reactive(tracks.map(() => ({
