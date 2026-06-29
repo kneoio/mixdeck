@@ -1352,13 +1352,12 @@ watch(activeTab, async (tab) => {
               <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.aiAgentId }">
                 {{ fieldErrors.aiAgentId || '\u00A0' }}
               </div>
+              <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
+                <span style="font-size: 11px; color: #888;">Show country language</span>
+                <NCheckbox v-model:checked="djLanguageFilter" size="small" />
+              </div>
             </div>
           </NFormItem>
-
-          <div style="display: flex; align-items: center; gap: 6px; margin: -4px 0 8px 164px;">
-            <span style="font-size: 11px; color: #888;">Show country language</span>
-            <NCheckbox v-model:checked="djLanguageFilter" size="small" />
-          </div>
 
           <NDivider v-if="selectedAgent?.description" style="margin: 4px 0 12px 0" />
           <div v-if="selectedAgent?.description" style="padding: 0 0 12px 0">
@@ -1454,7 +1453,6 @@ watch(activeTab, async (tab) => {
               <button class="script-io-btn" @click="importScript">{{ t('brandForm.script_import') }}</button>
               <input ref="scriptImportRef" type="file" accept=".json" style="display:none" @change="onScriptFileChange" />
             </div>
-            <div class="player-card__sub">{{ t('brandForm.card_your_script_sub') }}</div>
 
             <div v-for="scene in scenes" :key="scene.id" :class="['scene-card', { 'scene-card--dark': themeStore.isDark }]">
               <div class="scene-card__header">
