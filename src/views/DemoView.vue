@@ -19,7 +19,7 @@
       <div v-else class="page-center">
         <section class="submission-card">
           <p class="step-intro">Listen to our demo tracks below.</p>
-          <p class="step-note">Radio stations mentioned in these demos — <span class="station-name">Mixplaclon</span>, <span class="station-name">Lumisonci</span>, and <span class="station-name">Sunonation</span> — are fictional example stations used for demonstration purposes only.</p>
+          <p class="step-note">Radio stations mentioned in these demos — <span class="station-name">Mixplaclone</span>, <span class="station-name">Lumisonic</span>, and <span class="station-name">Sunonation</span> — are fictional example stations used for demonstration purposes only.</p>
 
           <div class="tracks-list">
             <div v-for="(track, i) in tracks" :key="track.src" class="track-row">
