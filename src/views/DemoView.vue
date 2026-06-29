@@ -7,9 +7,19 @@
         <div class="logo" @click="router.push('/')" style="cursor:pointer">MIXPLA</div>
       </header>
 
-      <div class="page-center">
+      <div v-if="!mounted" class="page-center">
+        <div class="loading-bar-wrap">
+          <div class="loading-bar-track">
+            <div class="loading-bar-fill" />
+          </div>
+          <div class="loading-label">Loading tracks…</div>
+        </div>
+      </div>
+
+      <div v-else class="page-center">
         <section class="submission-card">
           <p class="step-intro">Listen to our demo tracks below.</p>
+          <p class="step-note">Radio stations mentioned in these demos — <span class="station-name">Mixplaclon</span>, <span class="station-name">Lumisonci</span>, and <span class="station-name">Sunonation</span> — are fictional example stations used for demonstration purposes only.</p>
 
           <div class="tracks-list">
             <div v-for="(track, i) in tracks" :key="track.src" class="track-row">
@@ -81,6 +91,7 @@
           </div>
         </section>
       </div>
+      <!-- end v-else -->
 
       <footer class="footer">
         <div class="copyright">© Mixpla</div>
@@ -90,7 +101,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { NConfigProvider, NButton, NIcon, NProgress, darkTheme, type GlobalThemeOverrides } from 'naive-ui'
 import { PlayOutline, PauseOutline } from '@vicons/ionicons5'
@@ -117,6 +128,8 @@ import weatherBlock from '../assets/audio/ENG_weather_block.mp3'
 import jingle1 from '../assets/audio/Jingle_1.mp3'
 
 const router = useRouter()
+const mounted = ref(false)
+onMounted(() => { setTimeout(() => { mounted.value = true }, 300) })
 
 const themeOverrides: GlobalThemeOverrides = {
   common: {
@@ -302,6 +315,18 @@ function formatTime(s: number): string {
   gap: 20px;
 }
 
+.step-note {
+  font-size: 0.78rem;
+  color: #555;
+  line-height: 1.65;
+  margin: 0;
+}
+
+.station-name {
+  color: #888;
+  font-style: italic;
+}
+
 .step-intro {
   font-size: 0.85rem;
   color: #777;
@@ -341,6 +366,40 @@ function formatTime(s: number): string {
 .audio-mini-player__seek-hit { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); height: 22px; z-index: 1; cursor: pointer; user-select: none; }
 .audio-mini-player__times { display: flex; align-items: center; gap: 4px; font-size: 11px; line-height: 1.2; opacity: 0.55; font-variant-numeric: tabular-nums; }
 .audio-mini-player__sep { opacity: 0.7; }
+
+.loading-bar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.loading-bar-track {
+  width: 220px;
+  height: 2px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.loading-bar-fill {
+  height: 100%;
+  width: 40%;
+  background: #eff605;
+  border-radius: 2px;
+  animation: loading-slide 1.2s ease-in-out infinite;
+}
+
+@keyframes loading-slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
+}
+
+.loading-label {
+  font-size: 0.75rem;
+  color: #555;
+  letter-spacing: 0.1em;
+}
 
 .footer {
   padding-top: 40px;
