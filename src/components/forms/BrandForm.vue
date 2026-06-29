@@ -1398,7 +1398,6 @@ watch(activeTab, async (tab) => {
         <div class="script-cards">
           <div v-if="scriptMode === 'predefined'" :class="['player-card', { 'player-card--dark': themeStore.isDark }]">
             <div class="player-card__label">{{ t('brandForm.card_predefined_script') }}</div>
-            <div class="player-card__sub">{{ t('brandForm.card_predefined_script_sub') }}</div>
             <NForm :label-placement="formLabelPlacement" label-width="140" :disabled="loading" style="margin:0">
               <NFormItem :label="t('brandForm.script')" style="margin-bottom:8px">
                 <div class="field-stack">
