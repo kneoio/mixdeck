@@ -332,7 +332,10 @@ async function verifyAndNext() {
 function onFileChange(e: Event) {
   const input = e.target as HTMLInputElement
   selectedFile.value = input.files?.[0] ?? null
-  if (selectedFile.value) fieldErrors.value.file = ''
+  if (selectedFile.value) {
+    fieldErrors.value.file = ''
+    uploadProgress.value = 1 + Math.random() * 2
+  }
 }
 
 function onDrop(e: DragEvent) {
@@ -340,6 +343,7 @@ function onDrop(e: DragEvent) {
   if (file && file.type.startsWith('audio/')) {
     selectedFile.value = file
     fieldErrors.value.file = ''
+    uploadProgress.value = 1 + Math.random() * 2
   }
 }
 
