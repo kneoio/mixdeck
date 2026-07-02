@@ -509,7 +509,7 @@ const renderedDescription = computed(() =>
   selectedScript.value?.description ? md.render(selectedScript.value.description) : ''
 )
 
-const djLanguageFilter = ref(true)
+const djLanguageFilter = ref(false)
 
 const filteredAgentOptions = computed(() => {
   const lang = COUNTRY_LANG[formData.value.country || '']
@@ -1338,7 +1338,16 @@ watch(activeTab, async (tab) => {
 
       <NTabPane name="dj" :tab="t('brandForm.tab_dj')">
         <NForm :label-placement="formLabelPlacement" label-width="160" :disabled="loading">
-          <NFormItem :label="t('brandForm.ai_agent')">
+          <NFormItem>
+            <template #label>
+              <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                <span>{{ t('brandForm.ai_agent') }}</span>
+                <span style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #888; font-weight: 400; white-space: nowrap;">
+                  Show country language
+                  <NCheckbox v-model:checked="djLanguageFilter" size="small" />
+                </span>
+              </div>
+            </template>
             <div class="field-stack">
               <div
                 ref="aiAgentFieldRef"
@@ -1352,15 +1361,11 @@ watch(activeTab, async (tab) => {
               <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.aiAgentId }">
                 {{ fieldErrors.aiAgentId || '\u00A0' }}
               </div>
-              <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
-                <span style="font-size: 11px; color: #888;">Show country language</span>
-                <NCheckbox v-model:checked="djLanguageFilter" size="small" />
-              </div>
             </div>
           </NFormItem>
 
           <NDivider v-if="selectedAgent?.description" style="margin: 4px 0 12px 0" />
-          <div v-if="selectedAgent?.description" style="padding: 0 0 12px 0">
+          <div v-if="selectedAgent?.description" style="padding: 0 0 8px 0">
             <span style="color: #888; font-size: 13px;">{{ selectedAgent.description }}</span>
           </div>
 
