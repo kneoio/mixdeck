@@ -460,7 +460,13 @@ class DatanestApiService extends ApiClient {
         return []
       }
       const data = await res.json()
-      const entries = data?.payload?.viewData?.entries ?? data?.viewData?.entries ?? data?.payload ?? data?.entries ?? (Array.isArray(data) ? data : [])
+      // /public/stations always returns a raw array (no {payload:{viewData:{entries}}} envelope).
+      // Array.isArray must be checked BEFORE touching data?.entries: every array inherits a built-in
+      // .entries() method, so `data?.entries` resolves to that function (not undefined) for a raw
+      // array, silently short-circuiting the ?? chain before it ever reached the array fallback.
+      const entries = Array.isArray(data)
+        ? data
+        : (data?.payload?.viewData?.entries ?? data?.viewData?.entries ?? data?.payload ?? [])
       if (!entries.length) {
         console.warn('getPublicBrands: no stations returned — check that at least one brand has submissionPolicy = NO_RESTRICTIONS', data)
       }
