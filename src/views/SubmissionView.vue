@@ -118,13 +118,16 @@
               <div class="field-row">
                 <label class="field-label">{{ t('submission.station_label') }}</label>
                 <n-skeleton v-if="stationsLoading" height="34px" :sharp="false" />
-                <n-select
-                  v-else
-                  v-model:value="stationSlug"
-                  :options="stationOptions"
-                  :placeholder="t('submission.station_placeholder')"
-                  clearable
-                />
+                <div v-else class="field-error-shell" :class="{ 'field-error-shell--active': !!fieldErrors.station }">
+                  <n-select
+                    v-model:value="stationSlug"
+                    :options="stationOptions"
+                    :placeholder="t('submission.station_placeholder')"
+                    clearable
+                    @update:value="fieldErrors.station = ''"
+                  />
+                </div>
+                <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.station }">{{ fieldErrors.station || ' ' }}</div>
               </div>
             </div>
 
@@ -286,8 +289,8 @@ const uploadProgress = ref(0)
 const stationOptions = ref<{ label: string; value: string }[]>([])
 const stationsLoading = ref(true)
 
-type ValidationField = 'email' | 'code' | 'artistName' | 'genre' | 'file' | 'agreement' | 'api'
-const fieldErrors = ref<Record<ValidationField, string>>({ email: '', code: '', artistName: '', genre: '', file: '', agreement: '', api: '' })
+type ValidationField = 'email' | 'code' | 'artistName' | 'genre' | 'station' | 'file' | 'agreement' | 'api'
+const fieldErrors = ref<Record<ValidationField, string>>({ email: '', code: '', artistName: '', genre: '', station: '', file: '', agreement: '', api: '' })
 
 const lastSubmission = computed(() => ({
   artistName: artistName.value,
@@ -350,12 +353,14 @@ function onDrop(e: DragEvent) {
 async function upload() {
   fieldErrors.value.artistName = ''
   fieldErrors.value.genre = ''
+  fieldErrors.value.station = ''
   fieldErrors.value.file = ''
   fieldErrors.value.agreement = ''
   fieldErrors.value.api = ''
   let invalid = false
   if (!artistName.value.trim()) { fieldErrors.value.artistName = t('submission.error_artist'); invalid = true }
   if (!genre.value) { fieldErrors.value.genre = t('submission.error_genre'); invalid = true }
+  if (!stationSlug.value) { fieldErrors.value.station = t('submission.error_station'); invalid = true }
   if (!selectedFile.value) { fieldErrors.value.file = t('submission.error_file'); invalid = true }
   if (!agreed.value) { fieldErrors.value.agreement = t('submission.error_agreement'); invalid = true }
   if (invalid) return
@@ -391,7 +396,7 @@ function submitAnother() {
   agreed.value = false
   description.value = ''
   uploadProgress.value = 0
-  fieldErrors.value = { email: '', code: '', artistName: '', genre: '', file: '', agreement: '', api: '' }
+  fieldErrors.value = { email: '', code: '', artistName: '', genre: '', station: '', file: '', agreement: '', api: '' }
   step.value = 2
 }
 
@@ -405,7 +410,7 @@ function restart() {
   stationSlug.value = null
   selectedFile.value = null
   uploadProgress.value = 0
-  fieldErrors.value = { email: '', code: '', artistName: '', genre: '', file: '', agreement: '', api: t('submission.error_code_expired') }
+  fieldErrors.value = { email: '', code: '', artistName: '', genre: '', station: '', file: '', agreement: '', api: t('submission.error_code_expired') }
 }
 </script>
 
