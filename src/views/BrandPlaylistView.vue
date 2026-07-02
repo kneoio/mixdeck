@@ -266,6 +266,7 @@ const columns = computed<DataTableColumns<any>>(() => {
   {
     title: t('playlistView.col_title'),
     key: 'title',
+    width: nw ? titleMin : undefined,
     minWidth: titleMin,
     ellipsis: { tooltip: true },
     render: (row) => row.title || '-',
@@ -273,6 +274,7 @@ const columns = computed<DataTableColumns<any>>(() => {
   {
     title: t('playlistView.col_artist'),
     key: 'artist',
+    width: nw ? artistMin : undefined,
     minWidth: artistMin,
     ellipsis: { tooltip: true },
     render: (row) => row.artist || '-',
