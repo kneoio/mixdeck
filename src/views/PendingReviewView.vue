@@ -98,6 +98,18 @@ function originTag(origin: string | undefined) {
     : { text: t('playlistView.origin_shared'), type: 'info' as const }
 }
 
+// SUBMISSION rows use LifecycleStatus (11=NOT_APPROVED, 12=APPROVED, 13=REJECTED);
+// SHARE rows use ApprovalStatus (506=PENDING, 500/505=OPEN/ACCEPTED, 501/502/503=rejected variants).
+function statusTag(row: any) {
+  const isSubmission = row.origin === 'SUBMISSION'
+  const status = row.status
+  const isPending = isSubmission ? status === 11 : status === 506
+  const isRejected = isSubmission ? status === 13 : [501, 502, 503].includes(status)
+  if (isPending) return { text: t('playlistView.status_pending'), type: 'warning' as const }
+  if (isRejected) return { text: t('playlistView.status_rejected'), type: 'error' as const }
+  return { text: t('playlistView.status_accepted'), type: 'success' as const }
+}
+
 const columns = computed<DataTableColumns<any>>(() => {
   if (isMobile.value) {
     return [
@@ -107,11 +119,13 @@ const columns = computed<DataTableColumns<any>>(() => {
         title: '',
         render: (row) => {
           const originInfo = originTag(row.origin)
+          const statusInfo = statusTag(row)
           const row1 = h('div', { class: 'mob-r1' }, [
             h('span', { class: 'mob-title' }, row.title || '-'),
             h('span', { class: 'mob-sep' }, '—'),
             h('span', { class: 'mob-artist' }, row.artist || '-'),
             h(NTag, { size: 'small', type: originInfo.type }, { default: () => originInfo.text }),
+            h(NTag, { size: 'small', type: statusInfo.type }, { default: () => statusInfo.text }),
           ])
 
           const genreTags = (row.genres || []).map((g: any) => {
@@ -174,6 +188,13 @@ const columns = computed<DataTableColumns<any>>(() => {
       title: t('playlistView.col_origin'), key: 'origin', width: 140,
       render: (row) => {
         const tag = originTag(row.origin)
+        return h(NTag, { size: 'small', type: tag.type }, { default: () => tag.text })
+      }
+    },
+    {
+      title: t('playlistView.col_status'), key: 'status', width: 120,
+      render: (row) => {
+        const tag = statusTag(row)
         return h(NTag, { size: 'small', type: tag.type }, { default: () => tag.text })
       }
     },
