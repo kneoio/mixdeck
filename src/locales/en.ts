@@ -383,7 +383,7 @@ export default {
     received_removed: 'Removed {count} shared song(s) from received',
     col_origin: 'Origin',
     origin_shared: 'Shared',
-    origin_submission: 'Chat submission',
+    origin_submission: 'Contribution',
     col_status: 'Status',
     status_pending: 'Pending',
     status_accepted: 'Accepted',

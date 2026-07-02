@@ -100,13 +100,17 @@ function originTag(origin: string | undefined) {
 
 // SUBMISSION rows use LifecycleStatus (11=NOT_APPROVED, 12=APPROVED, 13=REJECTED);
 // SHARE rows use ApprovalStatus (506=PENDING, 500/505=OPEN/ACCEPTED, 501/502/503=rejected variants).
+function isRejectedRow(row: any): boolean {
+  const isSubmission = row.origin === 'SUBMISSION'
+  return isSubmission ? row.status === 13 : [501, 502, 503].includes(row.status)
+}
+
 function statusTag(row: any) {
   const isSubmission = row.origin === 'SUBMISSION'
   const status = row.status
   const isPending = isSubmission ? status === 11 : status === 506
-  const isRejected = isSubmission ? status === 13 : [501, 502, 503].includes(status)
   if (isPending) return { text: t('playlistView.status_pending'), type: 'warning' as const }
-  if (isRejected) return { text: t('playlistView.status_rejected'), type: 'error' as const }
+  if (isRejectedRow(row)) return { text: t('playlistView.status_rejected'), type: 'error' as const }
   return { text: t('playlistView.status_accepted'), type: 'success' as const }
 }
 
@@ -144,7 +148,7 @@ const columns = computed<DataTableColumns<any>>(() => {
             ? h('div', { class: 'mob-r3' }, [h('span', { class: 'mob-meta-item' }, `${t('profile.sharer')}: ${row.sharerUserName}`)])
             : null
 
-          return h('div', { class: 'mob-card' }, [row1, row2, row3].filter(Boolean))
+          return h('div', { class: 'mob-card', style: isRejectedRow(row) ? 'opacity:0.45' : '' }, [row1, row2, row3].filter(Boolean))
         },
       },
     ]
@@ -297,7 +301,7 @@ onUnmounted(() => {
       :pagination="pagination"
       remote
       :row-props="(row: any) => ({
-        style: 'cursor:pointer',
+        style: isRejectedRow(row) ? 'cursor:pointer;opacity:0.45' : 'cursor:pointer',
         onClick: (e: MouseEvent) => {
           if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return
           router.push(`/sound-library/received/${row.id}`)
