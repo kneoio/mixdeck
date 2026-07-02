@@ -92,6 +92,12 @@ function resolveLabel(l: any) {
   return { name: l.identifier || l.id, color: l.color, fontColor: l.fontColor }
 }
 
+function originTag(origin: string | undefined) {
+  return origin === 'SUBMISSION'
+    ? { text: t('playlistView.origin_submission'), type: 'warning' as const }
+    : { text: t('playlistView.origin_shared'), type: 'info' as const }
+}
+
 const columns = computed<DataTableColumns<any>>(() => {
   if (isMobile.value) {
     return [
@@ -100,10 +106,12 @@ const columns = computed<DataTableColumns<any>>(() => {
         key: 'mob',
         title: '',
         render: (row) => {
+          const originInfo = originTag(row.origin)
           const row1 = h('div', { class: 'mob-r1' }, [
             h('span', { class: 'mob-title' }, row.title || '-'),
             h('span', { class: 'mob-sep' }, '—'),
             h('span', { class: 'mob-artist' }, row.artist || '-'),
+            h(NTag, { size: 'small', type: originInfo.type }, { default: () => originInfo.text }),
           ])
 
           const genreTags = (row.genres || []).map((g: any) => {
@@ -160,6 +168,13 @@ const columns = computed<DataTableColumns<any>>(() => {
             }, { default: () => r.name })
           })
         })
+      }
+    },
+    {
+      title: t('playlistView.col_origin'), key: 'origin', width: 140,
+      render: (row) => {
+        const tag = originTag(row.origin)
+        return h(NTag, { size: 'small', type: tag.type }, { default: () => tag.text })
       }
     },
     { title: t('profile.sharer'), key: 'sharerUserName', minWidth: 160, render: (row) => row.sharerUserName || '-' },

@@ -211,6 +211,11 @@ class DatanestApiService extends ApiClient {
     await this.deleteDictionaryItem('/shared-sound-fragments/received', id)
   }
 
+  /** Approve a received item for the current user (accept share, or approve a chat submission). */
+  async acceptReceivedSoundFragment(id: string): Promise<void> {
+    await this.request<void>(`/shared-sound-fragments/received/${id}/accept`, { method: 'PATCH' })
+  }
+
   /** Revoke current user's access to a sound fragment (backend: DELETE …/:id/access). */
   async revokeSoundFragmentAccess(id: string): Promise<void> {
     await this.request<void>(`/soundfragments/${id}/access`, { method: 'DELETE' })

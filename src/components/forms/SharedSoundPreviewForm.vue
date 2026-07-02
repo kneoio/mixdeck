@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NSpace, NForm, NFormItem, NInput, NSelect, NTreeSelect, useMessage } from 'naive-ui'
+import { NForm, NFormItem, NInput, NPopconfirm, NSelect, NTreeSelect, useMessage } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
 import { useRoute, useRouter } from 'vue-router'
 import FormWrapper from '@/components/FormWrapper.vue'
@@ -27,6 +27,7 @@ const message = useMessage()
 
 const loading = ref(false)
 const isMobile = ref(false)
+const actionBusy = ref(false)
 
 const formData = ref({
   type: 'SONG' as string,
@@ -49,6 +50,32 @@ const formSubtitle = computed(() => {
 
 function handleClose() {
   router.push('/sound-library/received')
+}
+
+async function handleApprove() {
+  actionBusy.value = true
+  try {
+    await datanestApiService.acceptReceivedSoundFragment(fragmentId.value)
+    message.success(t('playlistView.approved'))
+    handleClose()
+  } catch (error: unknown) {
+    handleApiError(error, message)
+  } finally {
+    actionBusy.value = false
+  }
+}
+
+async function handleReject() {
+  actionBusy.value = true
+  try {
+    await datanestApiService.rejectReceivedSoundFragment(fragmentId.value)
+    message.success(t('playlistView.rejected'))
+    handleClose()
+  } catch (error: unknown) {
+    handleApiError(error, message)
+  } finally {
+    actionBusy.value = false
+  }
 }
 
 function updateIsMobile() {
@@ -113,6 +140,18 @@ onBeforeUnmount(() => {
   >
     <template #actions>
       <div class="gsap-row">
+        <NPopconfirm @positive-click="handleApprove">
+          <template #trigger>
+            <GsapButton type="success" :disabled="actionBusy"><span>{{ t('playlistView.approve_btn') }}</span></GsapButton>
+          </template>
+          {{ t('playlistView.approve_confirm') }}
+        </NPopconfirm>
+        <NPopconfirm @positive-click="handleReject">
+          <template #trigger>
+            <GsapButton type="error" :disabled="actionBusy"><span>{{ t('playlistView.reject_btn') }}</span></GsapButton>
+          </template>
+          {{ t('playlistView.reject_confirm') }}
+        </NPopconfirm>
         <GsapButton @click="handleClose"><span>{{ t('common.close') }}</span></GsapButton>
       </div>
     </template>
