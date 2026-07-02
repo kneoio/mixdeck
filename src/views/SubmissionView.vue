@@ -10,14 +10,21 @@
       <div class="page-center">
 
       <!-- Success -->
-      <section v-if="verified && submitted && step === 4" class="submission-card">
+      <section v-if="verified && submitted && step === 3" class="submission-card">
         <div class="step step--success">
           <div class="success-icon">✓</div>
           <h2>{{ t('submission.success_heading') }}</h2>
           <p class="step-body">{{ t('submission.success_body') }}</p>
+          <div class="summary-box">
+            <div class="summary-row"><span class="summary-label">{{ t('submission.artist_label') }}</span><span>{{ lastSubmission.artistName }}</span></div>
+            <div class="summary-row"><span class="summary-label">{{ t('submission.genre_label') }}</span><span>{{ lastSubmission.genre }}</span></div>
+            <div class="summary-row" v-if="lastSubmission.stationLabel"><span class="summary-label">{{ t('submission.station_label') }}</span><span>{{ lastSubmission.stationLabel }}</span></div>
+            <div class="summary-row"><span class="summary-label">{{ t('submission.file_label') }}</span><span>{{ lastSubmission.fileName }}</span></div>
+            <div class="summary-row" v-if="lastSubmission.description"><span class="summary-label">{{ t('submission.description_label') }}</span><span>{{ lastSubmission.description }}</span></div>
+          </div>
           <div class="success-actions">
-            <GsapButton type="primary" @click="submitAnother"><span>Submit another track</span></GsapButton>
-            <GsapButton @click="router.push('/')"><span>{{ t('submission.back') }}</span></GsapButton>
+            <GsapButton type="primary" @click="submitAnother"><span>{{ t('submission.submit_another') }}</span></GsapButton>
+            <GsapButton @click="router.push('/')"><span>{{ t('submission.finish') }}</span></GsapButton>
           </div>
         </div>
       </section>
@@ -33,10 +40,6 @@
           <div class="wizard-connector" :class="{ done: step > 1 }" />
           <div class="wizard-step" :class="{ active: step === 2, done: step > 2 }">
             <div class="wizard-dot"><span class="arcade step-led">2</span></div>
-          </div>
-          <div class="wizard-connector" :class="{ done: step > 2 }" />
-          <div class="wizard-step" :class="{ active: step === 3, done: step > 3 }">
-            <div class="wizard-dot"><span class="arcade step-led">3</span></div>
           </div>
         </div>
 
@@ -160,6 +163,17 @@
               <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.file }">{{ fieldErrors.file || ' ' }}</div>
             </div>
 
+            <!-- Description (optional) -->
+            <div class="field-row">
+              <label class="field-label">{{ t('submission.description_label') }}</label>
+              <n-input
+                v-model:value="description"
+                type="textarea"
+                :rows="3"
+                :placeholder="t('submission.description_placeholder')"
+              />
+            </div>
+
             <n-progress
               type="line"
               :percentage="uploadProgress"
@@ -204,28 +218,6 @@
           </div>
         </transition>
 
-        <!-- Step 3: Description (optional) -->
-        <transition name="slide" mode="out-in">
-          <div v-if="step === 3" key="description" class="wizard-body">
-            <p class="step-intro">Optional — add a short description of your track. You can skip this.</p>
-            <div class="field-row">
-              <label class="field-label">Description</label>
-              <n-input
-                v-model:value="description"
-                type="textarea"
-                :rows="4"
-                placeholder="Tell us about your track..."
-              />
-            </div>
-            <div class="wizard-actions">
-              <button class="back-btn" @click="submitAnother">Skip →</button>
-              <GsapButton type="primary" @click="submitAnother">
-                <span>Submit another track</span>
-              </GsapButton>
-            </div>
-          </div>
-        </transition>
-
       </section>
 
       </div><!-- end page-center -->
@@ -238,7 +230,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { NConfigProvider, NInput, NProgress, NSelect, NCheckbox, NSkeleton, NCollapse, NCollapseItem, darkTheme, type GlobalThemeOverrides } from 'naive-ui'
@@ -287,6 +279,14 @@ const stationsLoading = ref(true)
 
 type ValidationField = 'email' | 'code' | 'artistName' | 'genre' | 'file' | 'agreement' | 'api'
 const fieldErrors = ref<Record<ValidationField, string>>({ email: '', code: '', artistName: '', genre: '', file: '', agreement: '', api: '' })
+
+const lastSubmission = computed(() => ({
+  artistName: artistName.value,
+  genre: genre.value || '',
+  stationLabel: stationOptions.value.find(o => o.value === stationSlug.value)?.label || '',
+  fileName: selectedFile.value?.name || '',
+  description: description.value,
+}))
 
 onMounted(async () => {
   stationOptions.value = await datanestApiService.getPublicBrands()
@@ -354,7 +354,7 @@ async function upload() {
       email.value.trim(),
       code.value.trim(),
       (p) => { uploadProgress.value = p },
-      { stationSlug: stationSlug.value ?? undefined, artistName: artistName.value.trim(), genre: genre.value ?? undefined, country: country.value.trim() || undefined, agendaNotify: agendaNotify.value },
+      { stationSlug: stationSlug.value ?? undefined, artistName: artistName.value.trim(), genre: genre.value ?? undefined, country: country.value.trim() || undefined, agendaNotify: agendaNotify.value, description: description.value.trim() || undefined },
     )
     submitted.value = true
     step.value = 3
@@ -773,6 +773,32 @@ h2 {
   color: #b0b0b0;
   margin: 0;
   font-size: 0.95rem;
+}
+
+.summary-box {
+  width: 100%;
+  max-width: 420px;
+  background: #0f0f0f;
+  border: 1px solid #1f1f1f;
+  border-radius: 8px;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: #ddd;
+  text-align: left;
+}
+
+.summary-label {
+  color: #777;
+  flex-shrink: 0;
 }
 
 /* Transitions */
