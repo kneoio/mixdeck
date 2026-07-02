@@ -9,28 +9,8 @@
 
       <div class="page-center">
 
-      <!-- Success -->
-      <section v-if="verified && submitted && step === 3" class="submission-card">
-        <div class="step step--success">
-          <div class="success-icon">✓</div>
-          <h2>{{ t('submission.success_heading') }}</h2>
-          <p class="step-body">{{ t('submission.success_body') }}</p>
-          <div class="summary-box">
-            <div class="summary-row"><span class="summary-label">{{ t('submission.artist_label') }}</span><span>{{ lastSubmission.artistName }}</span></div>
-            <div class="summary-row"><span class="summary-label">{{ t('submission.genre_label') }}</span><span>{{ lastSubmission.genre }}</span></div>
-            <div class="summary-row" v-if="lastSubmission.stationLabel"><span class="summary-label">{{ t('submission.station_label') }}</span><span>{{ lastSubmission.stationLabel }}</span></div>
-            <div class="summary-row"><span class="summary-label">{{ t('submission.file_label') }}</span><span>{{ lastSubmission.fileName }}</span></div>
-            <div class="summary-row" v-if="lastSubmission.description"><span class="summary-label">{{ t('submission.description_label') }}</span><span>{{ lastSubmission.description }}</span></div>
-          </div>
-          <div class="success-actions">
-            <GsapButton type="primary" @click="submitAnother"><span>{{ t('submission.submit_another') }}</span></GsapButton>
-            <GsapButton @click="router.push('/')"><span>{{ t('submission.finish') }}</span></GsapButton>
-          </div>
-        </div>
-      </section>
-
       <!-- Wizard -->
-      <section v-else class="submission-card">
+      <section class="submission-card">
 
         <!-- Step indicator -->
         <div class="wizard-steps">
@@ -40,6 +20,10 @@
           <div class="wizard-connector" :class="{ done: step > 1 }" />
           <div class="wizard-step" :class="{ active: step === 2, done: step > 2 }">
             <div class="wizard-dot"><span class="arcade step-led">2</span></div>
+          </div>
+          <div class="wizard-connector" :class="{ done: step > 2 }" />
+          <div class="wizard-step" :class="{ active: step === 3, done: step > 3 }">
+            <div class="wizard-dot"><span class="arcade step-led">3</span></div>
           </div>
         </div>
 
@@ -213,6 +197,31 @@
               <GsapButton type="primary" :disabled="loading" @click="upload">
                 <span>{{ t('submission.submit') }}</span>
               </GsapButton>
+            </div>
+
+          </div>
+        </transition>
+
+        <!-- Step 3: Success + Summary -->
+        <transition name="slide" mode="out-in">
+          <div v-if="step === 3" key="success" class="wizard-body">
+
+            <div class="step step--success">
+              <h2>{{ t('submission.success_heading') }}</h2>
+              <p class="step-body">{{ t('submission.success_body') }}</p>
+            </div>
+
+            <div class="summary-box">
+              <div class="summary-row"><span class="summary-label">{{ t('submission.artist_label') }}</span><span>{{ lastSubmission.artistName }}</span></div>
+              <div class="summary-row"><span class="summary-label">{{ t('submission.genre_label') }}</span><span>{{ lastSubmission.genre }}</span></div>
+              <div class="summary-row" v-if="lastSubmission.stationLabel"><span class="summary-label">{{ t('submission.station_label') }}</span><span>{{ lastSubmission.stationLabel }}</span></div>
+              <div class="summary-row"><span class="summary-label">{{ t('submission.file_label') }}</span><span>{{ lastSubmission.fileName }}</span></div>
+              <div class="summary-row" v-if="lastSubmission.description"><span class="summary-label">{{ t('submission.description_label') }}</span><span>{{ lastSubmission.description }}</span></div>
+            </div>
+
+            <div class="success-actions">
+              <GsapButton @click="router.push('/')"><span>{{ t('submission.finish') }}</span></GsapButton>
+              <GsapButton type="primary" @click="submitAnother"><span>{{ t('submission.submit_another') }}</span></GsapButton>
             </div>
 
           </div>
@@ -756,19 +765,6 @@ h2 {
   padding: 16px 0;
 }
 
-.success-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: rgba(104, 255, 186, 0.15);
-  border: 2px solid #68ffba;
-  color: #68ffba;
-  font-size: 1.8rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .step-body {
   color: #b0b0b0;
   margin: 0;
@@ -778,6 +774,7 @@ h2 {
 .summary-box {
   width: 100%;
   max-width: 420px;
+  align-self: center;
   background: #0f0f0f;
   border: 1px solid #1f1f1f;
   border-radius: 8px;
