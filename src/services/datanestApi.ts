@@ -449,11 +449,11 @@ class DatanestApiService extends ApiClient {
   /** Fetch publicly available brands/stations for submissions (no auth). */
   async getPublicBrands(): Promise<{ label: string; value: string }[]> {
     try {
-      const res = await fetch(`${this.baseUrl}/public/songs/brands`)
+      const res = await fetch(`${this.baseUrl}/public/stations`)
       if (!res.ok) return []
       const data = await res.json()
       const entries = data?.payload?.viewData?.entries ?? data?.viewData?.entries ?? data?.payload ?? data?.entries ?? (Array.isArray(data) ? data : [])
-      return entries.map((b: any) => ({ label: b.title || b.name || b.slug || b.identifier, value: b.slug || b.identifier || b.id }))
+      return entries.map((b: any) => ({ label: b.title || b.name || b.slugName || b.slug || b.identifier, value: b.slugName || b.slug || b.identifier || b.id }))
     } catch {
       return []
     }
