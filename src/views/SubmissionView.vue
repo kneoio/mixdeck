@@ -133,10 +133,9 @@
                 <n-skeleton v-if="stationsLoading" height="34px" :sharp="false" />
                 <n-select
                   v-else
-                  v-model:value="stationSlugs"
+                  v-model:value="stationSlug"
                   :options="stationOptions"
                   :placeholder="t('submission.station_placeholder')"
-                  multiple
                   clearable
                 />
               </div>
@@ -272,7 +271,7 @@ const code = ref('')
 const codeSent = ref(false)
 const verified = ref(false)
 const submitted = ref(false)
-const stationSlugs = ref<string[]>([])
+const stationSlug = ref<string | null>(null)
 const artistName = ref('')
 const genre = ref<string | null>(null)
 const country = ref('')
@@ -355,7 +354,7 @@ async function upload() {
       email.value.trim(),
       code.value.trim(),
       (p) => { uploadProgress.value = p },
-      { stationSlugs: stationSlugs.value.length ? stationSlugs.value : undefined, artistName: artistName.value.trim(), genre: genre.value ?? undefined, country: country.value.trim() || undefined, agendaNotify: agendaNotify.value },
+      { stationSlug: stationSlug.value ?? undefined, artistName: artistName.value.trim(), genre: genre.value ?? undefined, country: country.value.trim() || undefined, agendaNotify: agendaNotify.value },
     )
     submitted.value = true
     step.value = 3
@@ -374,7 +373,7 @@ function submitAnother() {
   artistName.value = ''
   genre.value = null
   country.value = ''
-  stationSlugs.value = []
+  stationSlug.value = null
   agendaNotify.value = false
   agreed.value = false
   description.value = ''
@@ -390,7 +389,7 @@ function restart() {
   verified.value = false
   submitted.value = false
   step.value = 1
-  stationSlugs.value = []
+  stationSlug.value = null
   selectedFile.value = null
   uploadProgress.value = 0
   fieldErrors.value = { email: '', code: '', artistName: '', genre: '', file: '', agreement: '', api: t('submission.error_code_expired') }
