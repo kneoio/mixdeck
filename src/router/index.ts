@@ -172,17 +172,21 @@ router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore()
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
 
-  // Ensure auth is initialized for all routes
+  // Public routes pass through immediately — no auth needed.
+  // Kick off auth init in the background (unawaited) so nav bar/login state
+  // can still catch up later, without blocking the public page on it.
+  if (!requiresAuth) {
+    if (authStore.isLoading) {
+      authStore.initializeAuth()
+    }
+    return next()
+  }
+
+  // Protected route — auth state must be known before deciding
   if (authStore.isLoading) {
     await authStore.initializeAuth()
   }
 
-  // Public routes pass through immediately — no auth needed
-  if (!requiresAuth) {
-    return next()
-  }
-
-  // Protected route — check authentication
   if (!authStore.isAuthenticated) {
     await authStore.login(window.location.origin + to.fullPath)
     return next(false)
