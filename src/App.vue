@@ -11,6 +11,9 @@
   }">
       <NMessageProvider>
         <NGlobalStyle/>
+        <div v-if="showBootOverlay" class="app-boot-overlay">
+          <NSpin size="large"/>
+        </div>
         <RouterView/>
         <NModal
           v-model:show="needRefresh"
@@ -29,7 +32,7 @@
 
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
-import { NMessageProvider, NLoadingBarProvider, NGlobalStyle, NConfigProvider, NModal } from 'naive-ui'
+import { NMessageProvider, NLoadingBarProvider, NGlobalStyle, NConfigProvider, NModal, NSpin } from 'naive-ui'
 import { darkTheme, type GlobalThemeOverrides } from 'naive-ui'
 import {
   enUS, deDE, esAR, frFR, jaJP, ptBR, ruRU, ukUA, arDZ,
@@ -40,6 +43,7 @@ import { useServiceWorker } from '@/composables/useServiceWorker'
 import { useThemeStore } from '@/stores/theme'
 import { useAuthStore } from '@/stores/auth'
 import { useUserSubscriptionStore } from '@/stores/userSubscription'
+import { isRouteResolving } from '@/router'
 import { onMounted, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { applyDirection, type SupportedLocale } from '@/i18n'
@@ -89,6 +93,11 @@ const themeOverrides = computed<GlobalThemeOverrides>(() => ({
 }))
 
 const naiveTheme = computed(() => themeStore.isDark ? darkTheme : null)
+
+// Shown while a protected route is waiting on auth init / login redirect / lazy chunk
+// load, so the screen never goes blank between the Keycloak redirect and the view mounting.
+// Public routes render immediately and are unaffected (isRouteResolving stays false for them).
+const showBootOverlay = computed(() => isRouteResolving.value)
 
 const naiveLocaleMap: Record<SupportedLocale, NLocale> = {
   en: enUS,
@@ -144,6 +153,16 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.app-boot-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-background);
+}
+
 .n-loading-bar-container {
   height: 6px !important;
   overflow: visible !important;

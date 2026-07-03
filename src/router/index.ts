@@ -1,7 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import Welcome from '../views/Welcome.vue'
 import DashboardView from '../views/DashboardView.vue'
+
+/** True while a protected-route navigation is waiting on auth init / login redirect / lazy chunk load. */
+export const isRouteResolving = ref(false)
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -183,16 +187,27 @@ router.beforeEach(async (to, _from, next) => {
   }
 
   // Protected route — auth state must be known before deciding
+  isRouteResolving.value = true
+
   if (authStore.isLoading) {
     await authStore.initializeAuth()
   }
 
   if (!authStore.isAuthenticated) {
     await authStore.login(window.location.origin + to.fullPath)
+    isRouteResolving.value = false
     return next(false)
   } else {
     next()
   }
+})
+
+router.afterEach(() => {
+  isRouteResolving.value = false
+})
+
+router.onError(() => {
+  isRouteResolving.value = false
 })
 
 export default router
