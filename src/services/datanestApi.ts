@@ -506,6 +506,7 @@ class DatanestApiService extends ApiClient {
       const form = new FormData()
       form.append('chunk', blob, file.name)
 
+      const isFirstChunk = i === 0
       const isLastChunk = i === totalChunks - 1
       const params = new URLSearchParams({
         email,
@@ -515,7 +516,9 @@ class DatanestApiService extends ApiClient {
         fileName: file.name,
         chunkIndex: String(i),
         totalChunks: String(totalChunks),
-        ...(meta?.stationSlug ? { stationSlug: meta.stationSlug } : {}),
+        // stationSlug is only resolved (and cached per batchId) once, on the first chunk — see
+        // datanest's FileUploadService.resolveBrandSlugIfNeeded. No need to resend it after that.
+        ...(isFirstChunk && meta?.stationSlug ? { stationSlug: meta.stationSlug } : {}),
         ...(isLastChunk && meta?.artistName ? { artistName: meta.artistName } : {}),
         ...(isLastChunk && meta?.genre ? { genre: meta.genre } : {}),
         ...(isLastChunk && meta?.country ? { country: meta.country } : {}),
