@@ -477,7 +477,17 @@ class DatanestApiService extends ApiClient {
     }
   }
 
-  /** Chunked public song upload (no auth header — uses email+code OTP). */
+  /** SSE URL for polling a public submission's post-upload processing status (no auth needed). */
+  getPublicSubmissionStatusStreamUrl(batchId: string): string {
+    return `${this.baseUrl}/public/songs/status/${encodeURIComponent(batchId)}/stream`
+  }
+
+  /**
+   * Chunked public song upload (no auth header — uses email+code OTP). Mirrors
+   * uploadFileChunked's chunk-loop shape, but station/email/code are re-sent per chunk (the
+   * backend re-validates them on every chunk) while descriptive metadata (artist/genre/etc.) is
+   * only sent on the last chunk — that's the only one the backend ever reads it from.
+   */
   async uploadPublicSongChunked(
     file: File,
     email: string,
@@ -496,6 +506,7 @@ class DatanestApiService extends ApiClient {
       const form = new FormData()
       form.append('chunk', blob, file.name)
 
+      const isLastChunk = i === totalChunks - 1
       const params = new URLSearchParams({
         email,
         code,
@@ -505,11 +516,11 @@ class DatanestApiService extends ApiClient {
         chunkIndex: String(i),
         totalChunks: String(totalChunks),
         ...(meta?.stationSlug ? { stationSlug: meta.stationSlug } : {}),
-        ...(meta?.artistName ? { artistName: meta.artistName } : {}),
-        ...(meta?.genre ? { genre: meta.genre } : {}),
-        ...(meta?.country ? { country: meta.country } : {}),
-        ...(meta?.agendaNotify ? { agendaNotify: 'true' } : {}),
-        ...(meta?.description ? { description: meta.description } : {}),
+        ...(isLastChunk && meta?.artistName ? { artistName: meta.artistName } : {}),
+        ...(isLastChunk && meta?.genre ? { genre: meta.genre } : {}),
+        ...(isLastChunk && meta?.country ? { country: meta.country } : {}),
+        ...(isLastChunk && meta?.agendaNotify ? { agendaNotify: 'true' } : {}),
+        ...(isLastChunk && meta?.description ? { description: meta.description } : {}),
       })
 
       const res = await fetch(`${this.baseUrl}/public/songs/chunk?${params}`, {
@@ -530,10 +541,45 @@ class DatanestApiService extends ApiClient {
       }
 
       try { lastResponse = await res.json() } catch { lastResponse = null }
-      onProgress(Math.round(((i + 1) / totalChunks) * 100))
+      onProgress(Math.round(((i + 1) / totalChunks) * 90))
     }
 
+    // The last chunk's HTTP response only means "assembly started" (status "processing") — the
+    // backend extracts metadata and creates the entity asynchronously afterward. Poll the same
+    // SSE status stream the authenticated bulk-upload dialog uses so we report real completion
+    // (or a real backend-side failure) instead of trusting that response as final.
+    await this.waitForPublicSubmissionFinished(batchId, fileId, onProgress)
     return lastResponse
+  }
+
+  private waitForPublicSubmissionFinished(
+    batchId: string,
+    fileId: string,
+    onProgress: (percent: number) => void,
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const es = new EventSource(this.getPublicSubmissionStatusStreamUrl(batchId))
+      es.addEventListener('error', () => {})
+      es.onmessage = (event) => {
+        const data = JSON.parse(event.data)
+        const fd = data[fileId]
+        if (!fd) return
+        if (fd.status === 'finished') {
+          onProgress(100)
+          es.close()
+          resolve()
+        } else if (fd.status === 'error') {
+          es.close()
+          reject(new Error(fd.errorMessage || 'Processing failed after upload'))
+        } else {
+          onProgress(90)
+        }
+      }
+      es.onerror = () => {
+        es.close()
+        reject(new Error('Lost connection while waiting for upload to finish processing'))
+      }
+    })
   }
 }
 
