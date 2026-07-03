@@ -11,7 +11,7 @@
   }">
       <NMessageProvider>
         <NGlobalStyle/>
-        <div v-if="showBootOverlay" class="app-boot-overlay">
+        <div v-if="showBootOverlay" class="app-boot-overlay" :class="{ 'app-boot-overlay--dark': themeStore.isDark }">
           <NSpin size="large"/>
         </div>
         <RouterView/>
@@ -160,7 +160,11 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-background);
+  background: #ffffff;
+}
+
+.app-boot-overlay--dark {
+  background: #181818;
 }
 
 .n-loading-bar-container {

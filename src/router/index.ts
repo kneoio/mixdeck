@@ -186,14 +186,16 @@ router.beforeEach(async (to, _from, next) => {
     return next()
   }
 
-  // Protected route — auth state must be known before deciding
-  isRouteResolving.value = true
-
+  // Protected route — auth state must be known before deciding.
+  // Only show the overlay when there's actually something to wait on, so
+  // ordinary in-app navigation (already authenticated) never flickers it.
   if (authStore.isLoading) {
+    isRouteResolving.value = true
     await authStore.initializeAuth()
   }
 
   if (!authStore.isAuthenticated) {
+    isRouteResolving.value = true
     await authStore.login(window.location.origin + to.fullPath)
     isRouteResolving.value = false
     return next(false)
