@@ -92,24 +92,15 @@ function resolveLabel(l: any) {
   return { name: l.identifier || l.id, color: l.color, fontColor: l.fontColor }
 }
 
-function originTag(origin: string | undefined) {
-  return origin === 'SUBMISSION'
-    ? { text: t('playlistView.origin_submission'), type: 'warning' as const }
-    : { text: t('playlistView.origin_shared'), type: 'info' as const }
-}
-
-// SUBMISSION rows use LifecycleStatus (11=NOT_APPROVED, 12=APPROVED, 13=REJECTED);
-// SHARE rows use ApprovalStatus (506=PENDING, 500/505=OPEN/ACCEPTED, 501/502/503=rejected variants).
+// One status enum for everything shown here (station shares and artist contributions are both
+// created as a share — see datanest's SHARING_WORKFLOW.md / CONTRIBUTION_WORKFLOW.md):
+// 506=PENDING, 500=ACCEPTED, 501=REJECTED.
 function isRejectedRow(row: any): boolean {
-  const isSubmission = row.origin === 'SUBMISSION'
-  return isSubmission ? row.status === 13 : [501, 502, 503].includes(row.status)
+  return row.status === 501
 }
 
 function statusTag(row: any) {
-  const isSubmission = row.origin === 'SUBMISSION'
-  const status = row.status
-  const isPending = isSubmission ? status === 11 : status === 506
-  if (isPending) return { text: t('playlistView.status_pending'), type: 'warning' as const }
+  if (row.status === 506) return { text: t('playlistView.status_pending'), type: 'warning' as const }
   if (isRejectedRow(row)) return { text: t('playlistView.status_rejected'), type: 'error' as const }
   return { text: t('playlistView.status_accepted'), type: 'success' as const }
 }
@@ -122,13 +113,11 @@ const columns = computed<DataTableColumns<any>>(() => {
         key: 'mob',
         title: '',
         render: (row) => {
-          const originInfo = originTag(row.origin)
           const statusInfo = statusTag(row)
           const row1 = h('div', { class: 'mob-r1' }, [
             h('span', { class: 'mob-title' }, row.title || '-'),
             h('span', { class: 'mob-sep' }, '—'),
             h('span', { class: 'mob-artist' }, row.artist || '-'),
-            h(NTag, { size: 'small', type: originInfo.type }, { default: () => originInfo.text }),
             h(NTag, { size: 'small', type: statusInfo.type }, { default: () => statusInfo.text }),
           ])
 
@@ -186,13 +175,6 @@ const columns = computed<DataTableColumns<any>>(() => {
             }, { default: () => r.name })
           })
         })
-      }
-    },
-    {
-      title: t('playlistView.col_origin'), key: 'origin', width: 140,
-      render: (row) => {
-        const tag = originTag(row.origin)
-        return h(NTag, { size: 'small', type: tag.type }, { default: () => tag.text })
       }
     },
     {

@@ -34,7 +34,6 @@ const formData = ref({
   title: '',
   artist: '',
   album: '',
-  origin: '' as string,
   status: null as number | null,
   sharerUserName: '',
   sharerUserEmail: '',
@@ -42,18 +41,13 @@ const formData = ref({
   labels: [] as string[],
 })
 
-// Mirrors PendingReviewView's origin/status tagging so the detail form matches the list.
-const originInfo = computed(() => formData.value.origin === 'SUBMISSION'
-  ? { text: t('playlistView.origin_submission'), type: 'warning' as const }
-  : { text: t('playlistView.origin_shared'), type: 'info' as const })
-
+// One status enum for everything shown here (station shares and artist contributions are both
+// created as a share — see datanest's SHARING_WORKFLOW.md / CONTRIBUTION_WORKFLOW.md):
+// 506=PENDING, 500=ACCEPTED, 501=REJECTED.
 const statusInfo = computed(() => {
-  const isSubmission = formData.value.origin === 'SUBMISSION'
   const status = formData.value.status
-  const isPending = isSubmission ? status === 11 : status === 506
-  const isRejected = isSubmission ? status === 13 : [501, 502, 503].includes(status as number)
-  if (isPending) return { text: t('playlistView.status_pending'), type: 'warning' as const }
-  if (isRejected) return { text: t('playlistView.status_rejected'), type: 'error' as const }
+  if (status === 506) return { text: t('playlistView.status_pending'), type: 'warning' as const }
+  if (status === 501) return { text: t('playlistView.status_rejected'), type: 'error' as const }
   return { text: t('playlistView.status_accepted'), type: 'success' as const }
 })
 
@@ -125,7 +119,6 @@ async function loadData() {
       title: fragment.value?.title || '',
       artist: fragment.value?.artist || '',
       album: fragment.value?.album || '',
-      origin: fragment.value?.origin || '',
       status: fragment.value?.status ?? null,
       sharerUserName: fragment.value?.sharerUserName || '',
       sharerUserEmail: fragment.value?.sharerUserEmail || '',
@@ -209,14 +202,6 @@ onBeforeUnmount(() => {
         <div class="field-stack">
           <div class="field-shell">
             <NInput :value="formData.album" readonly style="width: 100%" />
-          </div>
-        </div>
-      </NFormItem>
-
-      <NFormItem :label="t('playlistView.col_origin')">
-        <div class="field-stack">
-          <div class="field-shell">
-            <NTag size="small" :type="originInfo.type">{{ originInfo.text }}</NTag>
           </div>
         </div>
       </NFormItem>
