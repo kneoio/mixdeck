@@ -170,6 +170,7 @@
               :fill-border-radius="1"
               color="#eff605"
               rail-color="rgba(255,255,255,0.12)"
+              :processing="loading"
             />
 
             <!-- Checkboxes row -->
