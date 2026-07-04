@@ -207,8 +207,13 @@ class DatanestApiService extends ApiClient {
     })
   }
 
-  /** Remove a received share for the current user (rejectShare). */
+  /** Reject a received share — keeps it visible (tagged rejected) until explicitly deleted. */
   async rejectReceivedSoundFragment(id: string): Promise<void> {
+    await this.request<void>(`/shared-sound-fragments/received/${id}/reject`, { method: 'PATCH' })
+  }
+
+  /** Permanently delete an already-rejected received share. Backend requires status = rejected. */
+  async deleteReceivedSoundFragment(id: string): Promise<void> {
     await this.deleteDictionaryItem('/shared-sound-fragments/received', id)
   }
 

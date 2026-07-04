@@ -68,11 +68,26 @@ async function handleApprove() {
   }
 }
 
+const isRejected = computed(() => formData.value.status === 501)
+
 async function handleReject() {
   actionBusy.value = true
   try {
     await datanestApiService.rejectReceivedSoundFragment(fragmentId.value)
     message.success(t('playlistView.rejected'))
+    handleClose()
+  } catch (error: unknown) {
+    handleApiError(error, message)
+  } finally {
+    actionBusy.value = false
+  }
+}
+
+async function handleDelete() {
+  actionBusy.value = true
+  try {
+    await datanestApiService.deleteReceivedSoundFragment(fragmentId.value)
+    message.success(t('playlistView.received_removed', { count: 1 }))
     handleClose()
   } catch (error: unknown) {
     handleApiError(error, message)
@@ -143,18 +158,28 @@ onBeforeUnmount(() => {
   >
     <template #actions>
       <div class="gsap-row">
-        <NPopconfirm @positive-click="handleApprove">
-          <template #trigger>
-            <GsapButton type="primary" :disabled="actionBusy"><span>{{ t('playlistView.approve_btn') }}</span></GsapButton>
-          </template>
-          {{ t('playlistView.approve_confirm') }}
-        </NPopconfirm>
-        <NPopconfirm @positive-click="handleReject">
-          <template #trigger>
-            <GsapButton type="error" :disabled="actionBusy"><span>{{ t('playlistView.reject_btn') }}</span></GsapButton>
-          </template>
-          {{ t('playlistView.reject_confirm') }}
-        </NPopconfirm>
+        <template v-if="isRejected">
+          <NPopconfirm @positive-click="handleDelete">
+            <template #trigger>
+              <GsapButton type="error" :disabled="actionBusy"><span>{{ t('playlistView.received_delete_btn') }}</span></GsapButton>
+            </template>
+            {{ t('playlistView.received_delete_confirm') }}
+          </NPopconfirm>
+        </template>
+        <template v-else>
+          <NPopconfirm @positive-click="handleApprove">
+            <template #trigger>
+              <GsapButton type="primary" :disabled="actionBusy"><span>{{ t('playlistView.approve_btn') }}</span></GsapButton>
+            </template>
+            {{ t('playlistView.approve_confirm') }}
+          </NPopconfirm>
+          <NPopconfirm @positive-click="handleReject">
+            <template #trigger>
+              <GsapButton type="error" :disabled="actionBusy"><span>{{ t('playlistView.reject_btn') }}</span></GsapButton>
+            </template>
+            {{ t('playlistView.reject_confirm') }}
+          </NPopconfirm>
+        </template>
         <GsapButton @click="handleClose"><span>{{ t('common.close') }}</span></GsapButton>
       </div>
     </template>

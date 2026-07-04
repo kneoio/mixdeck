@@ -231,7 +231,14 @@ async function fetchData(page = pageNum.value, size = pageSize.value) {
 async function handleBulkDelete() {
   try {
     loading.value = true
-    await Promise.all(selectedIds.value.map(id => datanestApiService.rejectReceivedSoundFragment(id)))
+    // Rejected rows are already dimmed in this list (see isRejectedRow) - clicking remove on one
+    // of those permanently deletes it; on anything else it just rejects it (row stays, dims).
+    await Promise.all(selectedIds.value.map(id => {
+      const row = entries.value.find(e => e.id === id)
+      return isRejectedRow(row)
+        ? datanestApiService.deleteReceivedSoundFragment(id)
+        : datanestApiService.rejectReceivedSoundFragment(id)
+    }))
     message.success(t('playlistView.received_removed', { count: selectedIds.value.length }))
     selectedIds.value = []
     await fetchData()
