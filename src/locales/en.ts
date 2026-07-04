@@ -318,6 +318,7 @@ export default {
     sharing_empty: 'Song not shared',
     sharing_target_brand: 'Brand',
     sharing_shared_with: 'Shared with',
+    sharing_status_not_accepted: 'Not accepted',
     type: 'Type',
     type_song: 'Song',
     type_prerecorded_advertisement: 'Prerecorded Advertisement',

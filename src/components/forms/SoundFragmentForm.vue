@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { gsap } from 'gsap'
 import {
   NSpace, NForm, NFormItem, NInput, NSelect, NTreeSelect,
-  NTabs, NTabPane, NUpload, NProgress, useMessage,
+  NTabs, NTabPane, NUpload, NProgress, NTag, useMessage,
 } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
 import type { UploadCustomRequestOptions } from 'naive-ui'
@@ -72,8 +72,17 @@ interface SharedWithEntry {
 const sharedWith = ref<SharedWithEntry[]>([])
 
 const activeSharedWith = computed(() =>
-  sharedWith.value.filter(e => e.targetBrand && e.shared !== false)
+  sharedWith.value.filter(e => e.targetBrand)
 )
+
+// 506=PENDING, 500=ACCEPTED, 501=REJECTED (same enum as ReceivedView). Rejected is shown muted/
+// neutral here rather than as an alarming red tag - the sharer just needs to know it wasn't taken
+// up, not feel like something went wrong.
+function sharedWithStatusInfo(entry: SharedWithEntry) {
+  if (entry.status === 506) return { text: t('playlistView.status_pending'), type: 'warning' as const }
+  if (entry.status === 501) return { text: t('fragmentForm.sharing_status_not_accepted'), type: 'default' as const }
+  return { text: t('playlistView.status_accepted'), type: 'success' as const }
+}
 
 function normalizeSharedWith(raw: unknown): SharedWithEntry[] {
   if (!Array.isArray(raw)) return []
@@ -594,6 +603,7 @@ watch(activeTab, () => {
           <div v-for="(entry, idx) in activeSharedWith" :key="`${entry.targetBrand}-${idx}`" class="sharing-row">
             <span class="sharing-row__label">{{ t('fragmentForm.sharing_shared_with') }}</span>
             <span class="sharing-row__value">{{ entry.targetBrand }}</span>
+            <NTag size="small" :type="sharedWithStatusInfo(entry).type">{{ sharedWithStatusInfo(entry).text }}</NTag>
           </div>
         </div>
         <div v-else class="sharing-empty">
