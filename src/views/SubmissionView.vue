@@ -52,6 +52,7 @@
                 </div>
               </div>
               <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.email }">{{ fieldErrors.email || ' ' }}</div>
+              <div class="field-success-label" :class="{ 'field-success-label--visible': codeSent }">{{ codeSent ? t('submission.code_sent_message') : ' ' }}</div>
             </div>
 
             <div class="field-row">
@@ -645,6 +646,20 @@ h2 {
 }
 
 .field-error-label--visible {
+  visibility: visible;
+}
+
+.field-success-label {
+  margin-top: 1px;
+  min-height: 12px;
+  padding-left: 10px;
+  color: #68ffba;
+  font-size: 10px;
+  line-height: 1.3;
+  visibility: hidden;
+}
+
+.field-success-label--visible {
   visibility: visible;
 }
 

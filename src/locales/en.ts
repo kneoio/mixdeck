@@ -468,6 +468,7 @@ export default {
     step1_body: "We'll send you a one-time verification code.",
     email_placeholder: "your{'@'}email.com",
     send_code: 'Send Code',
+    code_sent_message: 'Code sent — check your inbox.',
     step2_heading: 'Enter verification code',
     step2_body: 'Check your inbox for the code we sent.',
     code_placeholder: 'Enter code',
