@@ -157,10 +157,10 @@ watch(
 const activeKey = computed(() => {
   const path = route.path
   if (path === '/mixdeck' || path === '/brands') return 'overview'
-  if (path === '/shared') return 'my-sounds-contributed'
-  if (path === '/sound-library/received') return 'my-sounds-received'
-  if (path === '/sound-library/unassigned-to-brands') return 'my-sounds-unassigned-to-brands'
-  if (path === '/sound-library/sound-assets') return 'my-sounds-assets'
+  if (path === '/shared') return 'sound-library-contributed'
+  if (path === '/sound-library/received') return 'sound-library-received'
+  if (path === '/sound-library/archived') return 'sound-library-archived'
+  if (path === '/sound-library/sound-assets') return 'sound-library-assets'
   const m = path.match(/^\/brands\/([^/]+)\/(\w+)$/)
   if (m) return `brand-${m[1]}-${m[2]}`
   if (path === '/brands/new') return 'brands-manage'
@@ -168,7 +168,7 @@ const activeKey = computed(() => {
 })
 
 // Manually controlled expanded keys so user can expand/collapse brand rows
-const expandedKeys = ref<string[]>(['my-sounds-root', 'brands-group'])
+const expandedKeys = ref<string[]>(['sound-library-root', 'brands-group'])
 
 watch(
   () => brandsStore.brands,
@@ -245,23 +245,23 @@ const menuOptions = computed<MenuOption[]>(() => [
   },
   {
     label: () => h('span', { style: 'font-weight: 700;' }, t('menu.my_sounds')),
-    key: 'my-sounds-root',
+    key: 'sound-library-root',
     children: [
       {
         label: t('menu.unassigned_brands'),
-        key: 'my-sounds-unassigned-to-brands',
+        key: 'sound-library-archived',
       },
       {
         label: t('menu.songs'),
-        key: 'my-sounds-contributed',
+        key: 'sound-library-contributed',
       },
       {
         label: t('menu.received'),
-        key: 'my-sounds-received',
+        key: 'sound-library-received',
       },
       {
         label: t('menu.sound_assets'),
-        key: 'my-sounds-assets',
+        key: 'sound-library-assets',
       },
     ],
   },
@@ -278,13 +278,13 @@ const handleMenuSelect = async (key: string) => {
     router.push('/mixdeck')
   } else if (key === 'brands-manage') {
     router.push('/brands')
-  } else if (key === 'my-sounds-contributed') {
+  } else if (key === 'sound-library-contributed') {
     router.push('/shared')
-  } else if (key === 'my-sounds-received') {
+  } else if (key === 'sound-library-received') {
     router.push('/sound-library/received')
-  } else if (key === 'my-sounds-unassigned-to-brands') {
-    router.push('/sound-library/unassigned-to-brands')
-  } else if (key === 'my-sounds-assets') {
+  } else if (key === 'sound-library-archived') {
+    router.push('/sound-library/archived')
+  } else if (key === 'sound-library-assets') {
     router.push('/sound-library/sound-assets')
   } else if (key === 'brands-new') {
     router.push('/brands/new')

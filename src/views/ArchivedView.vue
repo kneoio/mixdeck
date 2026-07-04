@@ -158,7 +158,7 @@ onMounted(async () => {
     <PageHeader :title="pageTitle" :subtitle="t('playlistView.subtitle')" :count="totalCount" />
     <ActionBar>
       <NSpace>
-        <GsapButton type="primary" @click="router.push({ path: '/sound-library/unassigned-to-brands/new', query: { returnTo: route.fullPath } })">
+        <GsapButton type="primary" @click="router.push({ path: '/sound-library/archived/new', query: { returnTo: route.fullPath } })">
           <span>{{ t('playlistView.new_track') }}</span>
         </GsapButton>
         <GsapButton :disabled="selectedIds.length === 0" @click="openShareBulk">
@@ -189,7 +189,7 @@ onMounted(async () => {
         style: 'cursor:pointer',
         onClick: (e: MouseEvent) => {
           if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return
-          router.push(`/sound-library/unassigned-to-brands/${row.id}`)
+          router.push(`/sound-library/archived/${row.id}`)
         }
       })"
       @update:page="(p) => { pageNum = p; fetchData(p) }"

@@ -16,6 +16,7 @@ import { handleApiError } from '@/utils/notificationService'
 import { useBrandsStore } from '@/stores/brands'
 
 const { t } = useI18n()
+const pageTitle = computed(() => `${t('menu.my_sounds')} / ${t('menu.songs')}`)
 const message = useMessage()
 const router = useRouter()
 const brandsStore = useBrandsStore()
@@ -188,9 +189,7 @@ function rowProps(row: any) {
       if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return
       const fragmentId = row.id
       if (!fragmentId) return
-      const brandId = resolveBrandIdForRow(row)
-      if (!brandId) return
-      router.push({ path: `/brands/${brandId}/playlist/${fragmentId}`, query: { returnTo: '/shared' } })
+      router.push({ path: `/shared/${fragmentId}` })
     },
   }
 }
@@ -203,7 +202,7 @@ onMounted(async () => {
 
 <template>
   <div>
-    <PageHeader :title="t('menu.songs')" :subtitle="t('playlistView.subtitle')" :count="totalCount" />
+    <PageHeader :title="pageTitle" :subtitle="t('playlistView.subtitle')" :count="totalCount" />
     <ActionBar>
       <NSpace>
         <NPopconfirm @positive-click="handleBulkUnshare" :disabled="selectedIds.length === 0">

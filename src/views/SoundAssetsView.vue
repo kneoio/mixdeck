@@ -15,6 +15,7 @@ import GsapButton from '@/components/GsapButton.vue'
 import { handleApiError } from '@/utils/notificationService'
 
 const { t } = useI18n()
+const pageTitle = computed(() => `${t('menu.my_sounds')} / ${t('menu.sound_assets')}`)
 const message = useMessage()
 const router = useRouter()
 const dictionaryStore = useDictionaryStore()
@@ -178,7 +179,7 @@ onUnmounted(() => {
 
 <template>
   <div>
-    <PageHeader :title="t('menu.sound_assets')" :subtitle="t('playlistView.subtitle')" :count="totalCount" />
+    <PageHeader :title="pageTitle" :subtitle="t('playlistView.subtitle')" :count="totalCount" />
     <ActionBar>
       <div class="gsap-row" style="padding-left:0">
         <GsapButton type="primary" @click="router.push('/sound-library/sound-assets/new')">

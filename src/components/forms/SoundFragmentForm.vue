@@ -137,7 +137,8 @@ const returnToRoute = computed(() => {
   const value = route.query.returnTo
   return typeof value === 'string' && value ? value : null
 })
-const backRoute = computed(() => returnToRoute.value ?? (brandId.value ? `/brands/${brandId.value}/playlist` : '/sound-library/unassigned-to-brands'))
+const isSharedRoute = computed(() => route.path.startsWith('/shared'))
+const backRoute = computed(() => returnToRoute.value ?? (isSharedRoute.value ? '/shared' : (brandId.value ? `/brands/${brandId.value}/playlist` : '/sound-library/archived')))
 const formLabelPlacement = computed(() => (isMobile.value ? 'top' : 'left'))
 
 function updateIsMobile() {
@@ -313,7 +314,9 @@ onMounted(async () => {
     ])
 
     if (isEditing.value) {
-      const frag = await store.fetchFragment(route.params.fragmentId as string)
+      const frag = (isSharedRoute.value || route.path.startsWith('/sound-library/archived'))
+        ? await datanestApiService.getSharedFragment(route.params.fragmentId as string)
+        : await store.fetchFragment(route.params.fragmentId as string)
       formData.value = {
         type: frag.type || 'SONG',
         title: frag.title || '',

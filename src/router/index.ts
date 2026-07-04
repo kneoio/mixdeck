@@ -41,19 +41,25 @@ const router = createRouter({
           meta: { requiresAuth: true }
         },
         {
-          path: '/sound-library/received',
-          name: 'sound-library-received',
-          component: () => import('../views/PendingReviewView.vue'),
+          path: '/shared/:fragmentId',
+          name: 'sound-library-contributed-edit',
+          component: () => import('../components/forms/SoundFragmentForm.vue'),
           meta: { requiresAuth: true }
         },
         {
-          path: '/sound-library/unassigned-to-brands',
-          name: 'sound-library-unassigned-to-brands',
+          path: '/sound-library/received',
+          name: 'sound-library-received',
+          component: () => import('../views/ReceivedView.vue'),
+          meta: { requiresAuth: true }
+        },
+        {
+          path: '/sound-library/archived',
+          name: 'sound-library-archived',
           component: () => import('../views/ArchivedView.vue'),
           meta: { requiresAuth: true }
         },
         {
-          path: '/sound-library/unassigned-to-brands/new',
+          path: '/sound-library/archived/new',
           name: 'sound-library-unassigned-new',
           component: () => import('../components/forms/SoundFragmentForm.vue'),
           meta: { requiresAuth: true }
@@ -79,13 +85,13 @@ const router = createRouter({
         {
           path: '/sound-library/received/:fragmentId',
           name: 'sound-library-received-edit',
-          component: () => import('../components/forms/SharedSoundPreviewForm.vue'),
+          component: () => import('../components/forms/ReceivedForm.vue'),
           meta: { requiresAuth: true }
         },
         {
-          path: '/sound-library/unassigned-to-brands/:fragmentId',
-          name: 'sound-library-unassigned-to-brands-edit',
-          component: () => import('../components/forms/ReceivedForm.vue'),
+          path: '/sound-library/archived/:fragmentId',
+          name: 'sound-library-archived-edit',
+          component: () => import('../components/forms/SoundFragmentForm.vue'),
           meta: { requiresAuth: true }
         },
         {
@@ -98,7 +104,7 @@ const router = createRouter({
         {
           path: '/brands/:id/listeners',
           name: 'brand-listeners',
-          component: () => import('../views/BrandListenersView.vue'),
+          component: () => import('../views/ListenersView.vue'),
           meta: { requiresAuth: true }
         },
         {
@@ -116,7 +122,7 @@ const router = createRouter({
         {
           path: '/brands/:id/playlist',
           name: 'brand-playlist',
-          component: () => import('../views/BrandPlaylistView.vue'),
+          component: () => import('../views/PlaylistView.vue'),
           meta: { requiresAuth: true }
         },
         {

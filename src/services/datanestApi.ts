@@ -60,8 +60,7 @@ class DatanestApiService extends ApiClient {
     const params = new URLSearchParams()
     params.set('page', String(page))
     params.set('size', String(pageSize))
-    params.set('filter', JSON.stringify({ shared: true }))
-    const response = await this.request<any>(`/soundfragments?${params}`)
+    const response = await this.request<any>(`/public/soundfragments/shared?${params}`)
     const viewData = response?.payload?.viewData ?? response?.viewData
     if (!viewData) throw new Error('Unexpected response format')
     return {
@@ -71,6 +70,10 @@ class DatanestApiService extends ApiClient {
       maxPage: viewData.maxPage ?? 1,
       pageSize: viewData.pageSize ?? pageSize,
     }
+  }
+
+  async getSharedFragment(id: string): Promise<any> {
+    return this.getDocument<any>('/public/soundfragments', id)
   }
 
   /** PATCH body matches backend `SharedSoundFragmentPatchDTO`: `addTargetBrandIds`, `removeTargetBrandIds`, `stayIncognito` (UUID strings). */
@@ -165,10 +168,8 @@ class DatanestApiService extends ApiClient {
   }
 
   async getSoundAssets(page = 1, pageSize = 10): Promise<PagedResult<any>> {
-    const types = ['ADVERTISEMENT', 'PRERECORDED_ADVERTISEMENT', 'PRERECORDED_PODCAST', 'JINGLE', 'JINGLE_INTRO', 'JINGLE_OUTRO', 'BACKGROUND_LOOP', 'NEWS', 'WEATHER']
     const params = new URLSearchParams({ page: String(page), size: String(pageSize) })
-    params.set('filter', JSON.stringify({ type: types }))
-    const response = await this.request<any>(`/soundfragments?${params}`)
+    const response = await this.request<any>(`/public/soundfragments/sound-assets?${params}`)
     const viewData = response?.payload?.viewData ?? response?.viewData
     if (!viewData) throw new Error('Unexpected response format')
     return {
@@ -182,7 +183,7 @@ class DatanestApiService extends ApiClient {
 
   async getUnassignedBrands(page = 1, pageSize = 10): Promise<PagedResult<any>> {
     const params = new URLSearchParams({ page: String(page), size: String(pageSize) })
-    const response = await this.request<any>(`/soundfragments/unassigned-brands?${params}`)
+    const response = await this.request<any>(`/public/soundfragments/unassigned-brands?${params}`)
     const viewData = response?.payload?.viewData ?? response?.viewData
     if (!viewData) throw new Error('Unexpected response format')
     return {
