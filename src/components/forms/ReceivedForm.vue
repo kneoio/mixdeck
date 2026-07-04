@@ -74,6 +74,7 @@ async function handleApprove() {
 }
 
 const isRejected = computed(() => formData.value.status === 501)
+const isAccepted = computed(() => formData.value.status === 500)
 
 async function handleReject() {
   actionBusy.value = true
@@ -176,6 +177,14 @@ onBeforeUnmount(() => {
               <GsapButton type="error" :disabled="actionBusy"><span>{{ t('playlistView.received_delete_btn') }}</span></GsapButton>
             </template>
             {{ t('playlistView.received_delete_confirm') }}
+          </NPopconfirm>
+        </template>
+        <template v-else-if="isAccepted">
+          <NPopconfirm @positive-click="handleReject">
+            <template #trigger>
+              <GsapButton type="error" :disabled="actionBusy"><span>{{ t('playlistView.reject_btn') }}</span></GsapButton>
+            </template>
+            {{ t('playlistView.reject_confirm') }}
           </NPopconfirm>
         </template>
         <template v-else>
