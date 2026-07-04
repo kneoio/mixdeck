@@ -149,7 +149,7 @@ async function handleSubmit() {
     message.warning(t('playlistView.share_dialog_select_brands'))
     return
   }
-  if (props.fragmentIds.length === 0 || !props.brandSlug) return
+  if (props.fragmentIds.length === 0) return
   submitting.value = true
   try {
     await datanestApiService.shareSoundFragmentsWithBrands(

@@ -131,21 +131,27 @@ class DatanestApiService extends ApiClient {
     return this.getPagedDictionary('/brands/discover', page, pageSize)
   }
 
-  /** Add share targets (brand document UUIDs) via `SharedSoundFragmentPatchDTO.addTargetBrandIds`. */
+  /**
+   * Add share targets (brand document UUIDs) via `SharedSoundFragmentPatchDTO.addTargetBrandIds`.
+   * `slug` is the source station sharing the fragment - omit it for a fragment with no brand
+   * association (e.g. the "unassigned to brands" page), which has no source station to slug;
+   * this sends the NO_BRAND sentinel the backend expects
+   * (must match SharedSoundFragmentService.NO_BRAND_SLUG in datanest).
+   */
   async shareSoundFragmentsWithBrands(
-    slug: string,
+    slug: string | null | undefined,
     fragmentIds: string[],
     brandIds: string[],
     options?: { stayIncognito?: boolean }
   ): Promise<void> {
     const ids = [...new Set(brandIds.filter(Boolean))]
-    if (ids.length === 0 || !slug) return
+    if (ids.length === 0) return
     const body = {
       addTargetBrandIds: ids,
       stayIncognito: options?.stayIncognito ?? false,
     }
     await Promise.all(
-      fragmentIds.map(id => this.patchShared(slug, id, body))
+      fragmentIds.map(id => this.patchShared(slug || 'NO_BRAND', id, body))
     )
   }
 
