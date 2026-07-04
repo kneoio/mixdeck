@@ -296,6 +296,7 @@ export default {
     create_subtitle: 'Create track',
     edit_title: 'Edit Track',
     edit_subtitle: 'Update track',
+    preview: 'Preview',
     tab_properties: 'Main properties',
     tab_description: 'Description',
     tab_sharing: 'Sharing',

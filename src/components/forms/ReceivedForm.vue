@@ -3,12 +3,14 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NForm, NFormItem, NInput, NPopconfirm, NSelect, NTabs, NTabPane, NTag, NTreeSelect, useMessage } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
+import AudioMiniPlayer from '@/components/AudioMiniPlayer.vue'
 import { useRoute, useRouter } from 'vue-router'
 import FormWrapper from '@/components/FormWrapper.vue'
 import { useDictionaryStore } from '@/stores/dictionary'
 import datanestApiService from '@/services/datanestApi'
 import { handleApiError } from '@/utils/notificationService'
 import { normalizeIdList, toGenreTreeOptions } from '@/utils/genreTree'
+import { appConfig } from '@/config/appConfig'
 
 const { t } = useI18n()
 const dictionaryStore = useDictionaryStore()
@@ -32,6 +34,9 @@ const formData = ref({
   genres: [] as string[],
   labels: [] as string[],
 })
+
+const previewUrl = ref('')
+const previewFileName = ref('')
 
 // One status enum for everything shown here (station shares and artist contributions are both
 // created as a share — see datanest's SHARING_WORKFLOW.md / CONTRIBUTION_WORKFLOW.md):
@@ -131,6 +136,13 @@ async function loadData() {
       genres: normalizeIdList(fragment.value?.genres),
       labels: normalizeIdList(fragment.value?.labels),
     }
+
+    const files = fragment.value?.uploadedFiles as any[] | undefined
+    const opusFile = files?.find(f => f?.type === 'opus')
+    const f0 = opusFile || files?.[0]
+    const fileUrl = f0?.url || ''
+    previewUrl.value = fileUrl.startsWith('http') ? fileUrl : fileUrl ? `${appConfig.datanestServer}${fileUrl}` : ''
+    previewFileName.value = f0?.name || fileUrl.split('/').pop()?.split('?')[0] || ''
   } catch (error: unknown) {
     handleApiError(error, message)
     handleClose()
@@ -187,6 +199,14 @@ onBeforeUnmount(() => {
     <NTabs v-model:value="activeTab">
       <NTabPane name="properties" :tab="t('fragmentForm.tab_properties')">
         <NForm :label-placement="formLabelPlacement" label-width="120" :disabled="loading">
+          <NFormItem v-if="previewUrl" :label="t('fragmentForm.preview')">
+            <div class="field-stack">
+              <div class="field-shell">
+                <AudioMiniPlayer :url="previewUrl" :filename="previewFileName" />
+              </div>
+            </div>
+          </NFormItem>
+
           <NFormItem :label="t('fragmentForm.title')">
             <div class="field-stack">
               <div class="field-shell">
