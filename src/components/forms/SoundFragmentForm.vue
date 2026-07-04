@@ -46,17 +46,15 @@ const isMobile = ref(false)
 const titleFieldRef = ref<HTMLElement | null>(null)
 const artistFieldRef = ref<HTMLElement | null>(null)
 const genresFieldRef = ref<HTMLElement | null>(null)
-const representedInBrandsFieldRef = ref<HTMLElement | null>(null)
 const audioFileFieldRef = ref<HTMLElement | null>(null)
 const streamUrlFieldRef = ref<HTMLElement | null>(null)
 
-type ValidationField = 'title' | 'artist' | 'genres' | 'representedInBrands' | 'audioFile' | 'streamUrl'
+type ValidationField = 'title' | 'artist' | 'genres' | 'audioFile' | 'streamUrl'
 
 const fieldErrors = ref<Record<ValidationField, string>>({
   title: '',
   artist: '',
   genres: '',
-  representedInBrands: '',
   audioFile: '',
   streamUrl: '',
 })
@@ -163,7 +161,6 @@ function getFieldRef(field: ValidationField) {
   if (field === 'title') return titleFieldRef.value
   if (field === 'artist') return artistFieldRef.value
   if (field === 'genres') return genresFieldRef.value
-  if (field === 'representedInBrands') return representedInBrandsFieldRef.value
   if (field === 'streamUrl') return streamUrlFieldRef.value
   return audioFileFieldRef.value
 }
@@ -172,7 +169,6 @@ function getFieldLabel(field: ValidationField) {
   if (field === 'title') return t('fragmentForm.title')
   if (field === 'artist') return t('fragmentForm.artist')
   if (field === 'genres') return t('fragmentForm.genres')
-  if (field === 'representedInBrands') return t('fragmentForm.assign_to')
   if (field === 'streamUrl') return t('fragmentForm.stream_url')
   return t('fragmentForm.audio_file')
 }
@@ -191,7 +187,7 @@ function clearFieldError(field: ValidationField) {
 }
 
 function clearAllFieldErrors() {
-  const allFields: ValidationField[] = ['title', 'artist', 'genres', 'representedInBrands', 'audioFile', 'streamUrl']
+  const allFields: ValidationField[] = ['title', 'artist', 'genres', 'audioFile', 'streamUrl']
   for (const field of allFields) {
     clearFieldError(field)
   }
@@ -217,14 +213,13 @@ async function validateBeforeSave() {
   if (!formData.value.title.trim()) invalidFields.push('title')
   if (!formData.value.artist.trim()) invalidFields.push('artist')
   if (!Array.isArray(formData.value.genres) || !formData.value.genres.length) invalidFields.push('genres')
-  if (!formData.value.representedInBrands.length) invalidFields.push('representedInBrands')
   if (isStream) {
     if (!formData.value.streamUrl.trim()) invalidFields.push('streamUrl')
   } else {
     if (!existingUrl.value && !uploadedFileNames.value.length) invalidFields.push('audioFile')
   }
 
-  const allFields: ValidationField[] = ['title', 'artist', 'genres', 'representedInBrands', 'audioFile', 'streamUrl']
+  const allFields: ValidationField[] = ['title', 'artist', 'genres', 'audioFile', 'streamUrl']
   for (const field of allFields) {
     if (!invalidFields.includes(field)) clearFieldError(field)
   }
@@ -367,10 +362,6 @@ watch(() => formData.value.genres, (value) => {
   if (Array.isArray(value) && value.length) clearFieldError('genres')
 }, { deep: true })
 
-watch(() => formData.value.representedInBrands, (value) => {
-  if (value.length) clearFieldError('representedInBrands')
-}, { deep: true })
-
 watch(uploadedFileNames, (value) => {
   if (value.length || existingUrl.value) clearFieldError('audioFile')
 }, { deep: true })
@@ -506,17 +497,11 @@ watch(activeTab, () => {
 
           <NFormItem :label="t('fragmentForm.assign_to')">
             <div class="field-stack">
-              <div
-                ref="representedInBrandsFieldRef"
-                class="field-error-shell"
-                :class="{ 'field-error-shell--active': !!fieldErrors.representedInBrands }"
-              >
+              <div class="field-error-shell">
                 <NSelect v-model:value="formData.representedInBrands" :options="brandOptions"
                   multiple filterable style="width: 100%" />
               </div>
-              <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.representedInBrands }">
-                {{ fieldErrors.representedInBrands || '\u00A0' }}
-              </div>
+              <div class="field-error-label"></div>
             </div>
           </NFormItem>
 
