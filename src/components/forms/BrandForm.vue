@@ -110,6 +110,7 @@ const formData = ref({
   oneTimeStreamPolicy: 'NOT_ALLOWED' as SubmissionPolicy,
   submissionPolicy: 'NOT_ALLOWED' as SubmissionPolicy,
   messagingPolicy: 'NOT_ALLOWED' as SubmissionPolicy,
+  chatFeatureFlags: { CREATE_AD: false, STORE_PROMO: false },
   aiOverriding: { enabled: false, name: '', prompt: '' },
   scriptId: null as string | null,
   profileOverriding: { name: '', description: '' },
@@ -485,6 +486,14 @@ function handleScriptModeChange(val: string) {
   }
   scriptMode.value = val as 'predefined' | 'custom'
   if (val === 'custom') actionsStore.loadOptions()
+}
+
+function handleChatWithDjToggle(v: boolean) {
+  formData.value.messagingPolicy = v ? 'NO_RESTRICTIONS' : 'NOT_ALLOWED'
+  if (!v) {
+    formData.value.chatFeatureFlags.CREATE_AD = false
+    formData.value.chatFeatureFlags.STORE_PROMO = false
+  }
 }
 
 function handlePublicToggle(v: boolean) {
@@ -1022,6 +1031,10 @@ function applyBrandToForm(brand: any) {
     oneTimeStreamPolicy: brand.oneTimeStreamPolicy || 'NOT_ALLOWED',
     submissionPolicy: brand.submissionPolicy || 'NOT_ALLOWED',
     messagingPolicy: brand.messagingPolicy || 'NOT_ALLOWED',
+    chatFeatureFlags: {
+      CREATE_AD: brand.chatFeatureFlags?.CREATE_AD ?? false,
+      STORE_PROMO: brand.chatFeatureFlags?.STORE_PROMO ?? false,
+    },
     aiOverriding: { enabled: !!(brand.aiOverriding?.name || brand.aiOverriding?.prompt), name: brand.aiOverriding?.name || '', prompt: brand.aiOverriding?.prompt || '' },
     scriptId: firstScript?.scriptId || null,
     profileOverriding: {
@@ -1700,14 +1713,33 @@ watch(activeTab, async (tab) => {
             </div>
           </NFormItem>
           <NFormItem :label="t('brandForm.chat_with_dj')">
-            <div class="field-stack">
+            <div class="field-stack" style="width: 100%">
               <div class="field-error-shell">
                 <NSwitch
                   :value="formData.messagingPolicy === 'NO_RESTRICTIONS'"
-                  @update:value="(v) => formData.messagingPolicy = v ? 'NO_RESTRICTIONS' : 'NOT_ALLOWED'"
+                  @update:value="handleChatWithDjToggle"
                 />
               </div>
               <div class="field-error-label"></div>
+              <NCard size="small" :disabled="formData.messagingPolicy !== 'NO_RESTRICTIONS'" style="max-width: 200px; margin-top: 8px">
+                <template #header>
+                  <span style="font-size: 12px">{{ t('brandForm.chat_features') }}</span>
+                </template>
+                <div class="field-stack">
+                  <div class="field-error-shell" style="display:flex;align-items:center;justify-content:flex-end;gap:10px">
+                    <span style="font-size: 12px">{{ t('brandForm.chat_feature_create_ad') }}</span>
+                    <NSwitch size="small" :disabled="formData.messagingPolicy !== 'NO_RESTRICTIONS'" v-model:value="formData.chatFeatureFlags.CREATE_AD" />
+                  </div>
+                  <div class="field-error-label"></div>
+                </div>
+                <div class="field-stack">
+                  <div class="field-error-shell" style="display:flex;align-items:center;justify-content:flex-end;gap:10px">
+                    <span style="font-size: 12px">{{ t('brandForm.chat_feature_store_promo') }}</span>
+                    <NSwitch size="small" :disabled="formData.messagingPolicy !== 'NO_RESTRICTIONS'" v-model:value="formData.chatFeatureFlags.STORE_PROMO" />
+                  </div>
+                  <div class="field-error-label"></div>
+                </div>
+              </NCard>
             </div>
           </NFormItem>
         </NForm>
