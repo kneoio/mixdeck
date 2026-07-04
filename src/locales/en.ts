@@ -492,7 +492,6 @@ export default {
     file_label: 'Audio file',
     description_label: 'Description',
     description_placeholder: 'Tell us about your track... (optional)',
-    agenda_notify: "Send me a notification when a DJ is going to play it on air",
     agreement: 'I confirm that I own the rights to this track and agree to the Mixpla submission terms.',
     error_email: 'Please enter a valid email address.',
     error_code: 'Please enter the verification code.',

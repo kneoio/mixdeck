@@ -494,7 +494,7 @@ class DatanestApiService extends ApiClient {
     email: string,
     code: string,
     onProgress: (percent: number) => void,
-    meta?: { stationSlug?: string; artistName?: string; genre?: string; country?: string; agendaNotify?: boolean; description?: string },
+    meta?: { stationSlug?: string; artistName?: string; genre?: string; country?: string; description?: string },
   ): Promise<any> {
     const batchId = crypto.randomUUID()
     const fileId = crypto.randomUUID().replace(/-/g, '')
@@ -523,7 +523,6 @@ class DatanestApiService extends ApiClient {
         ...(isLastChunk && meta?.artistName ? { artistName: meta.artistName } : {}),
         ...(isLastChunk && meta?.genre ? { genre: meta.genre } : {}),
         ...(isLastChunk && meta?.country ? { country: meta.country } : {}),
-        ...(isLastChunk && meta?.agendaNotify ? { agendaNotify: 'true' } : {}),
         ...(isLastChunk && meta?.description ? { description: meta.description } : {}),
       })
 

@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NForm, NFormItem, NInput, NPopconfirm, NSelect, NTag, NTreeSelect, useMessage } from 'naive-ui'
+import { NForm, NFormItem, NInput, NPopconfirm, NSelect, NTabs, NTabPane, NTag, NTreeSelect, useMessage } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
 import { useRoute, useRouter } from 'vue-router'
 import FormWrapper from '@/components/FormWrapper.vue'
-import { FRAGMENT_TYPE_VALUES } from '@/stores/soundFragments'
 import { useDictionaryStore } from '@/stores/dictionary'
 import datanestApiService from '@/services/datanestApi'
 import { handleApiError } from '@/utils/notificationService'
@@ -14,13 +13,6 @@ import { normalizeIdList, toGenreTreeOptions } from '@/utils/genreTree'
 const { t } = useI18n()
 const dictionaryStore = useDictionaryStore()
 
-const fragmentTypeOptions = computed(() =>
-  FRAGMENT_TYPE_VALUES.map(v => ({
-    label: t(`fragmentForm.type_${v.toLowerCase()}`),
-    value: v,
-  }))
-)
-
 const route = useRoute()
 const router = useRouter()
 const message = useMessage()
@@ -28,9 +20,9 @@ const message = useMessage()
 const loading = ref(false)
 const isMobile = ref(false)
 const actionBusy = ref(false)
+const activeTab = ref('properties')
 
 const formData = ref({
-  type: 'SONG' as string,
   title: '',
   artist: '',
   album: '',
@@ -115,7 +107,6 @@ async function loadData() {
     if (fragment.status !== 'fulfilled') throw fragment.reason
 
     formData.value = {
-      type: fragment.value?.type || 'SONG',
       title: fragment.value?.title || '',
       artist: fragment.value?.artist || '',
       album: fragment.value?.album || '',
@@ -168,100 +159,91 @@ onBeforeUnmount(() => {
       </div>
     </template>
 
-    <NForm :label-placement="formLabelPlacement" label-width="120" :disabled="loading">
-      <NFormItem :label="t('fragmentForm.type')">
-        <div class="field-stack">
-          <div class="field-shell">
-            <NSelect
-              :value="formData.type"
-              :options="fragmentTypeOptions"
-              disabled
-              style="width: 200px"
-            />
-          </div>
-        </div>
-      </NFormItem>
+    <NTabs v-model:value="activeTab">
+      <NTabPane name="properties" :tab="t('fragmentForm.tab_properties')">
+        <NForm :label-placement="formLabelPlacement" label-width="120" :disabled="loading">
+          <NFormItem :label="t('fragmentForm.title')">
+            <div class="field-stack">
+              <div class="field-shell">
+                <NInput :value="formData.title" readonly style="width: 100%" />
+              </div>
+            </div>
+          </NFormItem>
 
-      <NFormItem :label="t('fragmentForm.title')">
-        <div class="field-stack">
-          <div class="field-shell">
-            <NInput :value="formData.title" readonly style="width: 100%" />
-          </div>
-        </div>
-      </NFormItem>
+          <NFormItem :label="t('fragmentForm.artist')">
+            <div class="field-stack">
+              <div class="field-shell">
+                <NInput :value="formData.artist" readonly style="width: 100%" />
+              </div>
+            </div>
+          </NFormItem>
 
-      <NFormItem :label="t('fragmentForm.artist')">
-        <div class="field-stack">
-          <div class="field-shell">
-            <NInput :value="formData.artist" readonly style="width: 100%" />
-          </div>
-        </div>
-      </NFormItem>
+          <NFormItem :label="t('fragmentForm.album')">
+            <div class="field-stack">
+              <div class="field-shell">
+                <NInput :value="formData.album" readonly style="width: 100%" />
+              </div>
+            </div>
+          </NFormItem>
 
-      <NFormItem :label="t('fragmentForm.album')">
-        <div class="field-stack">
-          <div class="field-shell">
-            <NInput :value="formData.album" readonly style="width: 100%" />
-          </div>
-        </div>
-      </NFormItem>
+          <NFormItem :label="t('playlistView.col_status')">
+            <div class="field-stack">
+              <div class="field-shell">
+                <NTag size="small" :type="statusInfo.type">{{ statusInfo.text }}</NTag>
+              </div>
+            </div>
+          </NFormItem>
 
-      <NFormItem :label="t('playlistView.col_status')">
-        <div class="field-stack">
-          <div class="field-shell">
-            <NTag size="small" :type="statusInfo.type">{{ statusInfo.text }}</NTag>
-          </div>
-        </div>
-      </NFormItem>
+          <NFormItem :label="t('profile.sharer')">
+            <div class="field-stack">
+              <div class="field-shell">
+                <NInput :value="formData.sharerUserName" readonly style="width: 100%" />
+              </div>
+            </div>
+          </NFormItem>
 
-      <NFormItem :label="t('profile.sharer')">
-        <div class="field-stack">
-          <div class="field-shell">
-            <NInput :value="formData.sharerUserName" readonly style="width: 100%" />
-          </div>
-        </div>
-      </NFormItem>
+          <NFormItem :label="t('profile.email')">
+            <div class="field-stack">
+              <div class="field-shell">
+                <NInput :value="formData.sharerUserEmail" readonly style="width: 100%" />
+              </div>
+            </div>
+          </NFormItem>
 
-      <NFormItem :label="t('profile.email')">
-        <div class="field-stack">
-          <div class="field-shell">
-            <NInput :value="formData.sharerUserEmail" readonly style="width: 100%" />
-          </div>
-        </div>
-      </NFormItem>
+          <NFormItem :label="t('fragmentForm.genres')">
+            <div class="field-stack">
+              <div class="field-shell">
+                <NTreeSelect
+                  :value="formData.genres"
+                  :options="genreTreeOptions"
+                  multiple
+                  checkable
+                  disabled
+                  clear-filter-after-select
+                  filterable
+                  style="width: 100%"
+                />
+              </div>
+            </div>
+          </NFormItem>
 
-      <NFormItem :label="t('fragmentForm.genres')">
-        <div class="field-stack">
-          <div class="field-shell">
-            <NTreeSelect
-              :value="formData.genres"
-              :options="genreTreeOptions"
-              multiple
-              checkable
-              disabled
-              clear-filter-after-select
-              filterable
-              style="width: 100%"
-            />
-          </div>
-        </div>
-      </NFormItem>
-
-      <NFormItem :label="t('fragmentForm.labels')">
-        <div class="field-stack">
-          <div class="field-shell">
-            <NSelect
-              :value="formData.labels"
-              :options="labelOptions"
-              multiple
-              disabled
-              filterable
-              style="width: 100%"
-            />
-          </div>
-        </div>
-      </NFormItem>
-    </NForm>
+          <NFormItem :label="t('fragmentForm.labels')">
+            <div class="field-stack">
+              <div class="field-shell">
+                <NSelect
+                  :value="formData.labels"
+                  :options="labelOptions"
+                  multiple
+                  disabled
+                  filterable
+                  style="width: 100%"
+                />
+              </div>
+            </div>
+          </NFormItem>
+        </NForm>
+      </NTabPane>
+    </NTabs>
   </FormWrapper>
 </template>
 

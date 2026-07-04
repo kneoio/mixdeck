@@ -174,7 +174,6 @@
 
             <!-- Checkboxes row -->
             <div class="checks-row">
-              <n-checkbox v-model:checked="agendaNotify">{{ t('submission.agenda_notify') }}</n-checkbox>
               <div class="field-error-shell" :class="{ 'field-error-shell--active': !!fieldErrors.agreement }">
                 <n-collapse :default-expanded-names="['agreement']">
                   <n-collapse-item :title="t('submission.agreement_title')" name="agreement">
@@ -279,7 +278,6 @@ const stationSlug = ref<string | null>(null)
 const artistName = ref('')
 const genre = ref<string | null>(null)
 const country = ref('')
-const agendaNotify = ref(false)
 const description = ref('')
 const agreed = ref(false)
 const selectedFile = ref<File | null>(null)
@@ -370,7 +368,7 @@ async function upload() {
       email.value.trim(),
       code.value.trim(),
       (p) => { uploadProgress.value = p },
-      { stationSlug: stationSlug.value ?? undefined, artistName: artistName.value.trim(), genre: genre.value ?? undefined, country: country.value.trim() || undefined, agendaNotify: agendaNotify.value, description: description.value.trim() || undefined },
+      { stationSlug: stationSlug.value ?? undefined, artistName: artistName.value.trim(), genre: genre.value ?? undefined, country: country.value.trim() || undefined, description: description.value.trim() || undefined },
     )
     submitted.value = true
     step.value = 3
@@ -390,7 +388,6 @@ function submitAnother() {
   genre.value = null
   country.value = ''
   stationSlug.value = null
-  agendaNotify.value = false
   agreed.value = false
   description.value = ''
   uploadProgress.value = 0
