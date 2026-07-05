@@ -173,7 +173,7 @@ onBeforeUnmount(() => {
       <div class="gsap-row">
         <NPopconfirm @positive-click="handleApprove">
           <template #trigger>
-            <GsapButton type="primary" :disabled="actionBusy || loading || isAccepted || isRejected"><span>{{ t('playlistView.approve_btn') }}</span></GsapButton>
+            <GsapButton type="primary" :disabled="actionBusy || loading || isAccepted"><span>{{ t('playlistView.approve_btn') }}</span></GsapButton>
           </template>
           {{ t('playlistView.approve_confirm') }}
         </NPopconfirm>
