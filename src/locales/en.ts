@@ -469,7 +469,7 @@ export default {
   submission: {
     title: 'Submit a Track',
     subtitle: 'Share your music with the Mixpla community',
-    step1_heading: 'Enter your email',
+    step1_heading: 'Step 1',
     step1_body: "We'll send you a one-time verification code.",
     email_placeholder: "your{'@'}email.com",
     send_code: 'Send Code',

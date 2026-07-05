@@ -3,8 +3,8 @@ import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { gsap } from 'gsap'
 import {
-  NSpace, NForm, NFormItem, NInput, NSelect, NTreeSelect,
-  NTabs, NTabPane, NUpload, NProgress, NTag, useMessage,
+  NSpace, NForm, NFormItem, NInput, NSelect, NTreeSelect, NDynamicTags,
+  NTabs, NTabPane, NUpload, NProgress, NTag, NButton, NPopover, NPopselect, NTree, NScrollbar, NEmpty, useMessage,
 } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
 import type { UploadCustomRequestOptions } from 'naive-ui'
@@ -13,6 +13,7 @@ import AudioMiniPlayer from '@/components/AudioMiniPlayer.vue'
 import { useSoundFragmentsStore, FRAGMENT_TYPE_VALUES } from '@/stores/soundFragments'
 import { useBrandsStore } from '@/stores/brands'
 import { useDictionaryStore } from '@/stores/dictionary'
+import type { Label } from '@/stores/labels'
 import datanestApiService from '@/services/datanestApi'
 import { appConfig } from '@/config/appConfig'
 import { useRoute, useRouter } from 'vue-router'
@@ -125,13 +126,110 @@ const sourceOptions = computed(() => [
 ])
 
 const genreTreeOptions = computed(() => toGenreTreeOptions(dictionaryStore.genres))
+const genreSearchQuery = ref('')
 
-const labelOptions = computed(() =>
-  dictionaryStore.soundFragmentLabels.map(l => ({
-    label: l.localizedName?.en || l.identifier || l.id,
-    value: l.id
-  }))
+function findGenreLabel(nodes: { label: string; key: string; children?: any[] }[], id: string): string | undefined {
+  for (const node of nodes) {
+    if (node.key === id) return node.label
+    if (node.children) {
+      const found = findGenreLabel(node.children, id)
+      if (found) return found
+    }
+  }
+  return undefined
+}
+
+function genreLabelById(id: string) {
+  return findGenreLabel(genreTreeOptions.value, id) || id
+}
+
+function removeGenre(id: string) {
+  formData.value.genres = formData.value.genres.filter(x => x !== id)
+}
+
+const LABEL_CATEGORY = 'sound_fragment'
+const labelCatalog = ref<Map<string, Label>>(new Map())
+
+// Free-text tags the user is adding this session — resolved into real personal labels
+// server-side as part of the SoundFragment save call, not created eagerly.
+const customTags = ref<string[]>([])
+
+const existingLabelChips = computed(() =>
+  formData.value.labels
+    .map(id => labelCatalog.value.get(id))
+    .filter((l): l is Label => !!l)
 )
+
+function labelDisplayText(l: Label) {
+  const name = l.localizedName?.en || l.identifier
+  return l.owner === null ? `🔒 ${name}` : name
+}
+
+const labelDisplayTags = computed(() => [
+  ...existingLabelChips.value.map(labelDisplayText),
+  ...customTags.value,
+])
+
+const availableLabelOptions = computed(() =>
+  Array.from(labelCatalog.value.values())
+    .filter(l => !formData.value.labels.includes(l.id))
+    .map(l => ({ label: labelDisplayText(l), value: l.id }))
+)
+
+const labelSearchQuery = ref('')
+const labelPickerShow = ref(false)
+
+const filteredAvailableLabelOptions = computed(() => {
+  const q = labelSearchQuery.value.trim().toLowerCase()
+  if (!q) return availableLabelOptions.value
+  return availableLabelOptions.value.filter(o => o.label.toLowerCase().includes(q))
+})
+
+function addExistingLabel(id: string | null) {
+  if (id && !formData.value.labels.includes(id)) {
+    formData.value.labels.push(id)
+  }
+  labelSearchQuery.value = ''
+  labelPickerShow.value = false
+}
+
+async function loadLabelCatalog() {
+  const result = await datanestApiService.getPagedDictionary<Label>(`/labels/only/category/${LABEL_CATEGORY}`, 1, 500)
+  labelCatalog.value = new Map(result.entries.map(l => [l.id, l]))
+}
+
+function removeExistingLabel(id: string) {
+  formData.value.labels = formData.value.labels.filter(x => x !== id)
+}
+
+function findExistingLabelByDisplayTag(tag: string) {
+  return existingLabelChips.value.find(l => labelDisplayText(l) === tag)
+}
+
+function handleNewLabelInput(tags: string[]) {
+  const trimmed = tags[0]?.trim()
+  if (trimmed) customTags.value.push(trimmed)
+}
+
+function handleLabelTagsChange(newTags: string[]) {
+  const previous = labelDisplayTags.value
+  const removed = previous.filter(tag => !newTags.includes(tag))
+  const added = newTags.filter(tag => !previous.includes(tag))
+
+  for (const tag of removed) {
+    const existing = findExistingLabelByDisplayTag(tag)
+    if (existing) {
+      if (existing.owner !== null) removeExistingLabel(existing.id)
+      continue
+    }
+    customTags.value = customTags.value.filter(t => t !== tag)
+  }
+
+  for (const tag of added) {
+    const trimmed = tag.trim()
+    if (trimmed) customTags.value.push(trimmed)
+  }
+}
 
 const brandOptions = computed(() =>
   brandsStore.brands.map(b => ({
@@ -139,6 +237,24 @@ const brandOptions = computed(() =>
     value: b.id,
   }))
 )
+
+const availableBrandOptions = computed(() =>
+  brandOptions.value.filter(o => !formData.value.representedInBrands.includes(o.value))
+)
+
+function brandLabelById(id: string) {
+  return brandOptions.value.find(o => o.value === id)?.label || id
+}
+
+function removeBrand(id: string) {
+  formData.value.representedInBrands = formData.value.representedInBrands.filter(x => x !== id)
+}
+
+function addBrand(id: string | null) {
+  if (id && !formData.value.representedInBrands.includes(id)) {
+    formData.value.representedInBrands.push(id)
+  }
+}
 
 const returnToRoute = computed(() => {
   const value = route.query.returnTo
@@ -286,9 +402,11 @@ async function handleSave() {
   try {
     loading.value = true
     const id = isEditing.value ? (route.params.fragmentId as string) : null
-    const payload: any = { ...formData.value }
+    const payload: any = { ...formData.value, customTags: customTags.value }
     if (uploadedFileNames.value.length) payload.newlyUploaded = uploadedFileNames.value
-    await store.saveFragment(id, payload)
+    const saved = await store.saveFragment(id, payload)
+    formData.value.labels = saved.labels || []
+    customTags.value = []
     message.success(t('fragmentForm.saved'))
     router.push(backRoute.value)
   } catch (error: any) {
@@ -314,7 +432,7 @@ onMounted(async () => {
 
     await Promise.all([
       dictionaryStore.loadGenres(),
-      dictionaryStore.loadSoundFragmentLabels(),
+      loadLabelCatalog(),
     ])
 
     if (isEditing.value) {
@@ -478,15 +596,31 @@ watch(activeTab, () => {
                 class="field-error-shell"
                 :class="{ 'field-error-shell--active': !!fieldErrors.genres }"
               >
-                <NTreeSelect
-                  v-model:value="formData.genres"
-                  :options="genreTreeOptions"
-                  multiple
-                  checkable
-                  clear-filter-after-select
-                  filterable
-                  style="width: 100%"
-                />
+                <NSpace size="small" align="center" style="width: 100%">
+                  <NTag v-for="id in formData.genres" :key="id" closable @close="removeGenre(id)">
+                    {{ genreLabelById(id) }}
+                  </NTag>
+                  <NPopover trigger="click" placement="bottom-start" style="padding: 8px; width: 240px">
+                    <template #trigger>
+                      <NButton dashed size="small">+</NButton>
+                    </template>
+                    <NInput v-model:value="genreSearchQuery" placeholder="Search genres" size="small"
+                      clearable style="margin-bottom: 8px" />
+                    <NScrollbar style="max-height: 240px">
+                      <NTree
+                        :data="genreTreeOptions"
+                        checkable
+                        :checked-keys="formData.genres"
+                        :pattern="genreSearchQuery"
+                        :show-irrelevant-nodes="false"
+                        key-field="key"
+                        label-field="label"
+                        style="min-width: 220px"
+                        @update:checked-keys="formData.genres = $event"
+                      />
+                    </NScrollbar>
+                  </NPopover>
+                </NSpace>
               </div>
               <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.genres }">
                 {{ fieldErrors.genres || ' ' }}
@@ -497,8 +631,32 @@ watch(activeTab, () => {
           <NFormItem :label="t('fragmentForm.labels')">
             <div class="field-stack">
               <div class="field-error-shell">
-                <NSelect v-model:value="formData.labels" :options="labelOptions"
-                  multiple filterable style="width: 100%" />
+                <NSpace size="small" align="center" style="width: 100%" wrap>
+                  <NTag v-for="(tag, i) in labelDisplayTags" :key="i" :closable="!tag.startsWith('🔒 ')"
+                    @close="handleLabelTagsChange(labelDisplayTags.filter((_, idx) => idx !== i))">
+                    {{ tag }}
+                  </NTag>
+                  <NPopover trigger="click" placement="bottom-start" style="padding: 8px; width: 220px"
+                    :show="labelPickerShow" @update:show="labelPickerShow = $event">
+                    <template #trigger>
+                      <NButton dashed size="small">+</NButton>
+                    </template>
+                    <NInput v-model:value="labelSearchQuery" placeholder="Search labels" size="small"
+                      clearable style="margin-bottom: 8px" />
+                    <NScrollbar style="max-height: 240px">
+                      <div v-for="option in filteredAvailableLabelOptions" :key="option.value"
+                        class="label-option-item" @click="addExistingLabel(option.value)">
+                        {{ option.label }}
+                      </div>
+                      <NEmpty v-if="!filteredAvailableLabelOptions.length" size="small" style="padding: 8px 0" />
+                    </NScrollbar>
+                  </NPopover>
+                  <NDynamicTags :value="[]" @update:value="handleNewLabelInput">
+                    <template #trigger="{ activate, disabled }">
+                      <NButton dashed size="small" :disabled="disabled" @click="activate">New Label</NButton>
+                    </template>
+                  </NDynamicTags>
+                </NSpace>
               </div>
               <div class="field-error-label"></div>
             </div>
@@ -507,8 +665,15 @@ watch(activeTab, () => {
           <NFormItem :label="t('fragmentForm.assign_to')">
             <div class="field-stack">
               <div class="field-error-shell">
-                <NSelect v-model:value="formData.representedInBrands" :options="brandOptions"
-                  multiple filterable style="width: 100%" />
+                <NSpace size="small" align="center" style="width: 100%">
+                  <NTag v-for="id in formData.representedInBrands" :key="id" closable @close="removeBrand(id)">
+                    {{ brandLabelById(id) }}
+                  </NTag>
+                  <NPopselect :options="availableBrandOptions" trigger="click" filterable
+                    @update:value="addBrand">
+                    <NButton dashed size="small">+</NButton>
+                  </NPopselect>
+                </NSpace>
               </div>
               <div class="field-error-label"></div>
             </div>
@@ -667,6 +832,16 @@ watch(activeTab, () => {
   border-left: 2px solid transparent;
   padding-left: 8px;
   transition: border-left-color 0.2s ease;
+}
+
+.label-option-item {
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.label-option-item:hover {
+  background: rgba(128, 128, 128, 0.15);
 }
 
 .field-error-shell--active {

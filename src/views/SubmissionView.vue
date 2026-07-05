@@ -162,17 +162,20 @@
               />
             </div>
 
-            <n-progress
-              type="line"
-              :percentage="uploadProgress"
-              :show-indicator="false"
-              :height="2"
-              :border-radius="1"
-              :fill-border-radius="1"
-              color="#eff605"
-              rail-color="rgba(255,255,255,0.12)"
-              :processing="loading"
-            />
+            <div class="upload-progress-wrap">
+              <n-progress
+                type="line"
+                :percentage="uploadProgress"
+                :show-indicator="false"
+                :height="2"
+                :border-radius="1"
+                :fill-border-radius="1"
+                color="#eff605"
+                rail-color="rgba(255,255,255,0.12)"
+                :processing="loading"
+              />
+              <span v-if="loading" class="upload-progress-dot" />
+            </div>
 
             <!-- Checkboxes row -->
             <div class="checks-row">
@@ -865,5 +868,27 @@ h2 {
 .copyright {
   color: #444;
   font-size: 0.8rem;
+}
+
+.upload-progress-wrap {
+  position: relative;
+}
+
+.upload-progress-dot {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #eff605;
+  box-shadow: 0 0 6px #eff605;
+  transform: translateY(-50%);
+  animation: upload-dot-pingpong 1.2s ease-in-out infinite;
+}
+
+@keyframes upload-dot-pingpong {
+  0%, 100% { left: 0; }
+  50% { left: calc(100% - 6px); }
 }
 </style>

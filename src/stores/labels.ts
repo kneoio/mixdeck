@@ -17,6 +17,7 @@ export interface Label {
   hidden: boolean
   category: string
   parent?: string | null
+  owner: number | null
 }
 
 export const useLabelsStore = defineStore('labels', () => {
@@ -104,10 +105,12 @@ export const useLabelsStore = defineStore('labels', () => {
         regDate: _regDate,
         lastModifier: _lastModifier,
         lastModifiedDate: _lastModifiedDate,
+        owner: _owner,
         ...payload
       } = labelData as Partial<Label>
 
-      const newLabel = await datanestApiService.createDictionaryItem<Label>('/labels', payload)
+      const raw: any = await datanestApiService.createDictionaryItem<any>('/labels', payload)
+      const newLabel = (raw?.payload?.docData ?? raw?.docData ?? raw) as Label
       labels.value.push(newLabel)
       return newLabel
     } catch (error) {
@@ -125,10 +128,12 @@ export const useLabelsStore = defineStore('labels', () => {
         regDate: _regDate,
         lastModifier: _lastModifier,
         lastModifiedDate: _lastModifiedDate,
+        owner: _owner,
         ...payload
       } = labelData as Partial<Label>
 
-      const updatedLabel = await datanestApiService.updateDictionaryItem<Label>('/labels', id, payload)
+      const raw: any = await datanestApiService.updateDictionaryItem<any>('/labels', id, payload)
+      const updatedLabel = (raw?.payload?.docData ?? raw?.docData ?? raw) as Label
       const index = labels.value.findIndex(label => label.id === id)
       if (index !== -1) {
         labels.value[index] = updatedLabel
