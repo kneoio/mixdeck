@@ -271,6 +271,19 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+/* Solid backgrounds for Approve/Reject here only - GsapButton's shared success/warning styles
+   use a near-black background with colored text, which reads as washed-out for these two
+   decision buttons specifically. Scoped + :deep() keeps this local to this form. */
+:deep(.gsap-btn--success) {
+  background: #18A058;
+  color: #fff;
+}
+
+:deep(.gsap-btn--warning) {
+  background: #F0A020;
+  color: #1e1500;
+}
+
 .field-stack {
   width: 100%;
   display: block;
