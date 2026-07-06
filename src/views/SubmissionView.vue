@@ -32,6 +32,11 @@
         <transition name="slide" mode="out-in">
           <div v-if="step === 1" key="auth" class="wizard-body">
 
+            <div class="ai-accept-badge">
+              <img src="/AI_accept_white.png" alt="" class="ai-accept-icon" />
+              <span>{{ t('submission.ai_accepted') }}</span>
+            </div>
+
             <p class="step-intro">
               Thank you for submitting your track to Mixpla.<br><br>
               Mixpla is a facility to keep your files for DJs that create on the platform. It will not use them without your permission. After upload, you can access your files by registering in Mixpla under the same email — and do anything with them, including delete.
@@ -656,6 +661,21 @@ h2 {
   color: #ccc;
   line-height: 1.65;
   margin: 0 0 4px;
+}
+
+.ai-accept-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  color: #ddd;
+}
+
+.ai-accept-icon {
+  height: 20px;
+  width: auto;
 }
 
 /* Wizard body */
