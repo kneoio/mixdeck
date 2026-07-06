@@ -95,9 +95,12 @@
               <div class="field-row">
                 <label class="field-label">{{ t('submission.genre_label') }}</label>
                 <div class="field-error-shell" :class="{ 'field-error-shell--active': !!fieldErrors.genre }">
-                  <n-select
+                  <n-tree-select
                     v-model:value="genre"
-                    :options="GENRES.map(g => ({ label: g, value: g }))"
+                    :options="genreTreeOptions"
+                    key-field="key"
+                    label-field="label"
+                    filterable
                     :placeholder="t('submission.genre_placeholder')"
                     @update:value="fieldErrors.genre = ''"
                   />
@@ -146,9 +149,10 @@
                 >
                   <span v-if="!selectedFile" class="file-hint">{{ t('submission.choose_file') }}</span>
                   <span v-else class="file-name">🎵 {{ selectedFile.name }}</span>
-                  <input ref="fileInputRef" type="file" accept="audio/*" style="display:none" @change="onFileChange" />
+                  <input ref="fileInputRef" type="file" :accept="ACCEPTED_FILE_ACCEPT" style="display:none" @change="onFileChange" />
                 </div>
               </div>
+              <div class="file-formats-note">{{ t('submission.file_formats') }}</div>
               <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.file }">{{ fieldErrors.file || ' ' }}</div>
             </div>
 
@@ -163,6 +167,7 @@
               />
             </div>
 
+            <div v-if="loading" class="upload-progress-text">{{ t('submission.uploading', { percent: Math.round(uploadProgress) }) }}</div>
             <div class="upload-progress-wrap">
               <n-progress
                 type="line"
@@ -228,8 +233,8 @@
             </div>
 
             <div class="success-actions">
-              <GsapButton @click="router.push('/')"><span>{{ t('submission.finish') }}</span></GsapButton>
               <GsapButton type="primary" @click="submitAnother"><span>{{ t('submission.submit_another') }}</span></GsapButton>
+              <GsapButton @click="router.push('/')"><span>{{ t('submission.finish') }}</span></GsapButton>
             </div>
 
           </div>
@@ -250,12 +255,15 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { NConfigProvider, NInput, NProgress, NSelect, NCheckbox, NSkeleton, NCollapse, NCollapseItem, darkTheme, type GlobalThemeOverrides } from 'naive-ui'
+import { NConfigProvider, NInput, NProgress, NSelect, NTreeSelect, NCheckbox, NSkeleton, NCollapse, NCollapseItem, darkTheme, type GlobalThemeOverrides } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
 import datanestApiService from '@/services/datanestApi'
+import { useDictionaryStore } from '@/stores/dictionary'
+import { toGenreTreeOptions } from '@/utils/genreTree'
 
 const { t } = useI18n()
 const router = useRouter()
+const dictionaryStore = useDictionaryStore()
 
 const themeOverrides: GlobalThemeOverrides = {
   common: {
@@ -272,7 +280,18 @@ const themeOverrides: GlobalThemeOverrides = {
   },
 }
 
-const GENRES = ['Electronic','House','Techno','Drum & Bass','Hip-Hop','R&B','Pop','Rock','Jazz','Classical','Latin','Ambient','Country','Other']
+const genreTreeOptions = computed(() => toGenreTreeOptions(dictionaryStore.genres))
+
+function findGenreLabel(nodes: { label: string; key: string; children?: any[] }[], id: string): string | undefined {
+  for (const node of nodes) {
+    if (node.key === id) return node.label
+    if (node.children) {
+      const found = findGenreLabel(node.children, id)
+      if (found) return found
+    }
+  }
+  return undefined
+}
 
 const step = ref(1)
 const email = ref('')
@@ -283,9 +302,18 @@ const submitted = ref(false)
 const stationSlug = ref<string | null>(null)
 const artistName = ref('')
 const genre = ref<string | null>(null)
+const genreLabel = computed(() => (genre.value && findGenreLabel(genreTreeOptions.value, genre.value)) || '')
 const country = ref('')
 const description = ref('')
 const agreed = ref(false)
+const ACCEPTED_FILE_EXTENSIONS = ['.mp3', '.wav', '.flac', '.opus']
+const ACCEPTED_FILE_ACCEPT = 'audio/mpeg,audio/wav,audio/x-wav,audio/flac,audio/x-flac,audio/opus,audio/ogg,.mp3,.wav,.flac,.opus'
+
+function isAcceptedAudioFile(file: File) {
+  const name = file.name.toLowerCase()
+  return ACCEPTED_FILE_EXTENSIONS.some(ext => name.endsWith(ext))
+}
+
 const selectedFile = ref<File | null>(null)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const loading = ref(false)
@@ -298,7 +326,7 @@ const fieldErrors = ref<Record<ValidationField, string>>({ email: '', code: '', 
 
 const lastSubmission = computed(() => ({
   artistName: artistName.value,
-  genre: genre.value || '',
+  genre: genreLabel.value,
   stationLabel: stationOptions.value.find(o => o.value === stationSlug.value)?.label || '',
   fileName: selectedFile.value?.name || '',
   description: description.value,
@@ -307,6 +335,7 @@ const lastSubmission = computed(() => ({
 onMounted(async () => {
   stationOptions.value = await datanestApiService.getPublicBrands()
   stationsLoading.value = false
+  dictionaryStore.loadGenres()
 })
 
 async function sendCode() {
@@ -338,7 +367,13 @@ async function verifyAndNext() {
 
 function onFileChange(e: Event) {
   const input = e.target as HTMLInputElement
-  selectedFile.value = input.files?.[0] ?? null
+  const file = input.files?.[0] ?? null
+  if (file && !isAcceptedAudioFile(file)) {
+    fieldErrors.value.file = t('submission.error_file_format')
+    selectedFile.value = null
+    return
+  }
+  selectedFile.value = file
   if (selectedFile.value) {
     fieldErrors.value.file = ''
   }
@@ -346,10 +381,13 @@ function onFileChange(e: Event) {
 
 function onDrop(e: DragEvent) {
   const file = e.dataTransfer?.files?.[0]
-  if (file && file.type.startsWith('audio/')) {
-    selectedFile.value = file
-    fieldErrors.value.file = ''
+  if (!file) return
+  if (!isAcceptedAudioFile(file)) {
+    fieldErrors.value.file = t('submission.error_file_format')
+    return
   }
+  selectedFile.value = file
+  fieldErrors.value.file = ''
 }
 
 async function upload() {
@@ -374,7 +412,7 @@ async function upload() {
       email.value.trim(),
       code.value.trim(),
       (p) => { uploadProgress.value = p },
-      { stationSlug: stationSlug.value ?? undefined, artistName: artistName.value.trim(), genre: genre.value ?? undefined, country: country.value.trim() || undefined, description: description.value.trim() || undefined },
+      { stationSlug: stationSlug.value ?? undefined, artistName: artistName.value.trim(), genre: genreLabel.value || undefined, country: country.value.trim() || undefined, description: description.value.trim() || undefined },
     )
     submitted.value = true
     step.value = 3
@@ -722,6 +760,12 @@ h2 {
   font-size: 0.85rem;
 }
 
+.file-formats-note {
+  color: #777;
+  font-size: 0.72rem;
+  margin-top: 4px;
+}
+
 .file-name {
   color: #b0b0b0;
   font-size: 0.85rem;
@@ -888,6 +932,12 @@ h2 {
 .copyright {
   color: #444;
   font-size: 0.8rem;
+}
+
+.upload-progress-text {
+  font-size: 0.75rem;
+  color: #eff605;
+  margin-bottom: 6px;
 }
 
 .upload-progress-wrap {
