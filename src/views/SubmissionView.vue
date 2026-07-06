@@ -283,6 +283,14 @@ const themeOverrides: GlobalThemeOverrides = {
     textColorPressedPrimary: '#ffffff',
     textColorFocusPrimary: '#ffffff',
   },
+  Input: {
+    heightMedium: '40px',
+    fontSizeMedium: '15px',
+  },
+  InternalSelection: {
+    heightMedium: '40px',
+    fontSizeMedium: '15px',
+  },
 }
 
 const genreTreeOptions = computed(() => toGenreTreeOptions(dictionaryStore.genres))
@@ -526,6 +534,10 @@ function restart() {
     letter-spacing: 0.25em;
     text-transform: uppercase;
     white-space: nowrap;
+  }
+
+  .two-col {
+    grid-template-columns: 1fr;
   }
 }
 
