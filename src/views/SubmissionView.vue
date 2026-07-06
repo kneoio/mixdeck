@@ -674,7 +674,7 @@ h2 {
 }
 
 .ai-accept-icon {
-  height: 20px;
+  height: 26px;
   width: auto;
 }
 
