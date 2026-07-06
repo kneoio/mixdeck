@@ -5,6 +5,7 @@
 
       <header class="nav">
         <div class="logo" @click="router.push('/')" style="cursor:pointer">MIXPLA</div>
+        <div class="side-label-mobile neon-motto">{{ t('submission.title') }}</div>
       </header>
 
       <div class="page-center">
@@ -438,7 +439,7 @@ function restart() {
 .submission-page {
   min-height: 100vh;
   background: #050505;
-  color: #f5f5f5;
+  color: #ffffff;
   font-family: 'Inter', sans-serif;
   padding: 24px clamp(16px, 4vw, 64px);
   display: flex;
@@ -464,6 +465,25 @@ function restart() {
   text-transform: uppercase;
   white-space: nowrap;
   pointer-events: none;
+}
+
+.side-label-mobile {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .side-label {
+    display: none;
+  }
+
+  .side-label-mobile {
+    display: inline-block;
+    margin-left: 12px;
+    font-size: 0.7rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
 }
 
 .neon-motto {
@@ -595,7 +615,7 @@ h2 {
 
 .step-intro {
   font-size: 0.85rem;
-  color: #777;
+  color: #ccc;
   line-height: 1.65;
   margin: 0 0 4px;
 }
@@ -623,7 +643,7 @@ h2 {
 
 .field-label {
   font-size: 0.78rem;
-  color: #666;
+  color: #bbb;
   display: block;
 }
 
