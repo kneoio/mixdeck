@@ -32,15 +32,15 @@
         <transition name="slide" mode="out-in">
           <div v-if="step === 1" key="auth" class="wizard-body">
 
-            <div class="ai-accept-badge">
-              <img src="/AI_accept_white.png" alt="" class="ai-accept-icon" />
-              <span>{{ t('submission.ai_accepted') }}</span>
-            </div>
-
             <p class="step-intro">
               Thank you for submitting your track to Mixpla.<br><br>
               Mixpla is a facility to keep your files for DJs that create on the platform. It will not use them without your permission. After upload, you can access your files by registering in Mixpla under the same email — and do anything with them, including delete.
             </p>
+
+            <div class="ai-accept-badge">
+              <img src="/AI_accept_color.png" alt="" class="ai-accept-icon" />
+              <span>{{ t('submission.ai_accepted') }}</span>
+            </div>
 
             <div class="field-row">
               <label class="field-label">{{ t('submission.email_placeholder') }}</label>
@@ -715,6 +715,7 @@ h2 {
   font-size: 0.78rem;
   color: #bbb;
   display: block;
+  padding-left: 10px;
 }
 
 .field-error-shell {
