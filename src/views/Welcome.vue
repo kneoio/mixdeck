@@ -8,12 +8,19 @@
       <section class="hero" id="platform">
         <div class="hero-text">
           <p class="eyebrow neon-motto">{{ t('welcome.motto') }}</p>
-          <h1>{{ t('welcome.headline') }}</h1>
-          <p class="subline">{{ t('welcome.subline') }}</p>
           <div class="hero-ctas">
-            <n-button type="primary" size="large" class="cta-button" @click="goToMixpla">{{ t('welcome.cta_mixplay') }}</n-button>
-            <n-button size="large" @click="goToBrands">{{ t('welcome.cta_portal') }}</n-button>
-            <n-button size="large" @click="router.push('/submission')">{{ t('welcome.cta_submit') }}</n-button>
+            <div class="cta-item">
+              <n-button type="primary" size="large" class="cta-button" @click="goToMixpla">{{ t('welcome.cta_mixplay') }}</n-button>
+              <span class="cta-hint">{{ t('welcome.cta_mixplay_hint') }}</span>
+            </div>
+            <div class="cta-item">
+              <n-button size="large" @click="goToBrands">{{ t('welcome.cta_portal') }}</n-button>
+              <span class="cta-hint">{{ t('welcome.cta_portal_hint') }}</span>
+            </div>
+            <div class="cta-item">
+              <n-button size="large" @click="router.push('/submission')">{{ t('welcome.cta_submit') }}</n-button>
+              <span class="cta-hint">{{ t('welcome.cta_submit_hint') }}</span>
+            </div>
           </div>
         </div>
         <div class="waveform" aria-hidden="true">
@@ -176,24 +183,52 @@ h1 {
 
 .hero-ctas {
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 16px;
   margin-top: 24px;
-  flex-wrap: wrap;
+}
+
+.cta-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.cta-hint {
+  color: #888;
+  font-size: 0.85rem;
+  padding-left: 4px;
 }
 
 .cta-button {
   background: linear-gradient(120deg, #ff7a18, #af002d 60%, #319197);
+  background-size: 200% 200%;
   border: none;
   color: #fff !important;
-  box-shadow: 0 15px 40px rgba(255, 122, 24, 0.35);
+  font-weight: 700;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.15), 0 15px 45px rgba(255, 122, 24, 0.55);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  animation: gradient-shift 4s ease infinite, cta-glow 2.4s ease-in-out infinite;
 }
 
 .cta-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 18px 45px rgba(255, 122, 24, 0.45);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25), 0 18px 50px rgba(255, 122, 24, 0.7);
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes cta-glow {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.15), 0 15px 45px rgba(255, 122, 24, 0.55); }
+  50% { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3), 0 20px 60px rgba(255, 122, 24, 0.85); }
 }
 
 .waveform {
