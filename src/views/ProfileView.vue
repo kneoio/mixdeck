@@ -78,7 +78,7 @@ function renderCodecTag(codec: string) {
 
 onMounted(async () => {
   try {
-    await userSubscriptionStore.loadCurrentSubscription()
+    await userSubscriptionStore.refresh()
   } catch {
     // server unavailable
   }
