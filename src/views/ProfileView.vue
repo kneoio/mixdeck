@@ -146,7 +146,6 @@ onMounted(async () => {
             <NDescriptionsItem :label="t('profile.max_songs')">{{ userSubscriptionStore.maxSongs?.toLocaleString() ?? '—' }}</NDescriptionsItem>
             <NDescriptionsItem :label="t('profile.stream_quality')">{{ userSubscriptionStore.streamQualityKbps != null ? `${userSubscriptionStore.streamQualityKbps} kbps (opus)` : '—' }}</NDescriptionsItem>
             <NDescriptionsItem :label="t('profile.stream_duration')">{{ durationLabel(userSubscriptionStore.streamDurationMinutes ?? 0) }}</NDescriptionsItem>
-            <NDescriptionsItem :label="t('profile.ots_allowed')">{{ userSubscriptionStore.otsAllowed ? t('profile.yes') : t('profile.no') }}</NDescriptionsItem>
             <NDescriptionsItem :label="t('profile.custom_script')">{{ userSubscriptionStore.customScriptAllowed ? t('profile.yes') : t('profile.no') }}</NDescriptionsItem>
             <NDescriptionsItem v-if="userSubscriptionStore.codecs.length" :label="t('profile.codecs')">
               <NSpace :size="6">

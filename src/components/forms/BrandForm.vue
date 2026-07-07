@@ -891,7 +891,7 @@ const embedLabel = computed(() => {
 })
 
 const embedSnippet = computed(() =>
-  `<mixpla-player slug="${brandSlug.value || ''}" label="${embedLabel.value}"></mixpla-player>\n<script src="https://widget.mixpla.io/mixpla-widget.iife.js"><\/script>`
+  `<iframe src="https://widget.mixpla.io/embed.html?slug=${encodeURIComponent(brandSlug.value || '')}&label=${encodeURIComponent(embedLabel.value)}"\n        width="280" height="56" frameborder="0" scrolling="no"\n        style="border:0;border-radius:14px"></iframe>`
 )
 
 function copyEmbedSnippet() {
@@ -1409,7 +1409,7 @@ watch(activeTab, async (tab) => {
           <NRadio value="predefined">{{ t('brandForm.card_predefined_script') }}</NRadio>
           <NRadio value="custom">
             {{ t('brandForm.card_your_script') }}
-            <span class="premium-badge" :class="{ 'premium-badge--glow': customScriptGlow }" style="margin-left: 6px;">premium</span>
+            <span class="premium-badge" :class="{ 'premium-badge--glow': customScriptGlow }" style="margin-left: 6px;">pro</span>
           </NRadio>
         </NRadioGroup>
 
