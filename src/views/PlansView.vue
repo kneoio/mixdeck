@@ -2,7 +2,7 @@
   <div>
     <PageHeader :title="t('plans.title')" :subtitle="t('plans.subtitle')">
       <template #actions>
-        <GsapButton @click="router.back()"><span>{{ t('common.close') }}</span></GsapButton>
+        <GsapButton @click="router.push('/profile')"><span>{{ t('common.close') }}</span></GsapButton>
       </template>
     </PageHeader>
 
