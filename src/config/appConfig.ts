@@ -10,6 +10,7 @@ type AppConfig = {
   aivoxServer: string
   jesoosServer: string
   nivaroServer: string
+  stripePublishableKey: string
   keycloak: KeycloakConfig
 }
 
@@ -39,6 +40,7 @@ export const appConfig: AppConfig = {
   aivoxServer: normalizeUrl(readRequiredEnvString('VITE_AIVOX_SERVER')),
   jesoosServer: normalizeUrl(readRequiredEnvString('VITE_JESOOS_SERVER')),
   nivaroServer: normalizeUrl(readEnvString('VITE_NIVARO_SERVER', '')),
+  stripePublishableKey: readEnvString('VITE_STRIPE_PUBLISHABLE_KEY', ''),
   keycloak: {
     url: normalizeUrl(readEnvString('VITE_KEYCLOAK_URL', 'https://auth.semantyca.com')),
     realm: readEnvString('VITE_KEYCLOAK_REALM', 'master'),

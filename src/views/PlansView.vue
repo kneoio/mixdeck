@@ -28,8 +28,13 @@
           <ul style="list-style: none; padding: 0; margin: 0 0 24px; display: flex; flex-direction: column; gap: 10px; font-size: 13px; flex: 1;">
             <li v-for="feature in card.features" :key="feature">✓ {{ feature }}</li>
           </ul>
-          <GsapButton block :disabled="card.subscribed" :type="card.subscribed ? 'default' : 'primary'">
-            <span>{{ card.subscribed ? t('plans.current') : t('plans.coming_soon') }}</span>
+          <GsapButton
+            block
+            :disabled="card.subscribed || subscribing === card.identifier"
+            :type="card.subscribed ? 'default' : 'primary'"
+            @click="subscribe(card.identifier)"
+          >
+            <span>{{ card.subscribed ? t('plans.current') : subscribing === card.identifier ? t('plans.processing') : t('plans.subscribe') }}</span>
           </GsapButton>
         </NCard>
       </div>
@@ -39,13 +44,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { NCard, NDivider, NSpin, NEmpty, NTag } from 'naive-ui'
+import { NCard, NDivider, NSpin, NEmpty, NTag, useMessage } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { useSubscriptionProductsStore } from '@/stores/subscriptionProducts'
+import { useUserSubscriptionStore } from '@/stores/userSubscription'
+import nivaroApiService from '@/services/nivaroApi'
+import { confirmSubscriptionPayment } from '@/services/stripe'
+import { ApiPaymentActionRequiredError, getErrorMessage } from '@/utils/errorHandler'
 
 /** JSON inside each locale string of `localizedDescription` from the API */
 interface PlanDescription {
@@ -75,7 +84,10 @@ interface SubscriptionProductViewEntry {
 
 const { t } = useI18n()
 const router = useRouter()
+const message = useMessage()
 const subscriptionProductsStore = useSubscriptionProductsStore()
+const userSubscriptionStore = useUserSubscriptionStore()
+const subscribing = ref<string | null>(null)
 
 function parseDescription(raw: string | undefined): PlanDescription {
   if (!raw || typeof raw !== 'string') return {}
@@ -133,4 +145,33 @@ onMounted(async () => {
     // server unavailable — empty state shown
   }
 })
+
+async function subscribe(planIdentifier: string) {
+  subscribing.value = planIdentifier
+  try {
+    const result = await nivaroApiService.changePlan(planIdentifier)
+    if (result.checkoutUrl) {
+      window.location.href = result.checkoutUrl
+      return
+    }
+    await userSubscriptionStore.refresh()
+    await subscriptionProductsStore.loadProducts()
+    message.success(t('plans.subscribe_success'))
+  } catch (error) {
+    if (error instanceof ApiPaymentActionRequiredError) {
+      try {
+        await confirmSubscriptionPayment(error.clientSecret)
+        await userSubscriptionStore.refresh()
+        await subscriptionProductsStore.loadProducts()
+        message.success(t('plans.subscribe_success'))
+      } catch (confirmError) {
+        message.error(getErrorMessage(confirmError))
+      }
+    } else {
+      message.error(getErrorMessage(error))
+    }
+  } finally {
+    subscribing.value = null
+  }
+}
 </script>

@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, h } from 'vue'
+import { computed, onMounted, h, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import {
   NAvatar, NTag, NDescriptions, NDescriptionsItem,
-  NCard, NSpace, NFlex, NDivider, NSelect, NSpin
+  NCard, NSpace, NFlex, NDivider, NSelect, NSpin, NPopconfirm, useMessage
 } from 'naive-ui'
 import { useAuthStore } from '@/stores/auth'
 import { useUserSubscriptionStore } from '@/stores/userSubscription'
@@ -12,13 +12,17 @@ import { useThemeStore } from '@/stores/theme'
 import PageHeader from '@/components/PageHeader.vue'
 import GsapButton from '@/components/GsapButton.vue'
 import { LOCALE_LABELS, SUPPORTED_LOCALES, saveLocale, type SupportedLocale } from '@/i18n'
+import nivaroApiService from '@/services/nivaroApi'
+import { getErrorMessage } from '@/utils/errorHandler'
 
 const appVersion = __APP_VERSION__
 const { t, locale } = useI18n()
 const router = useRouter()
+const message = useMessage()
 const authStore = useAuthStore()
 const userSubscriptionStore = useUserSubscriptionStore()
 const themeStore = useThemeStore()
+const cancelling = ref(false)
 
 const profile = computed(() => authStore.userProfile ?? {})
 
@@ -79,6 +83,19 @@ onMounted(async () => {
     // server unavailable
   }
 })
+
+async function cancelSubscription() {
+  cancelling.value = true
+  try {
+    await nivaroApiService.cancelSubscription()
+    await userSubscriptionStore.refresh()
+    message.success(t('profile.cancel_success'))
+  } catch (error) {
+    message.error(getErrorMessage(error))
+  } finally {
+    cancelling.value = false
+  }
+}
 </script>
 
 <template>
@@ -157,9 +174,19 @@ onMounted(async () => {
 
           <NDivider v-if="userSubscriptionStore.subscription" style="margin: 0 0 16px;" />
 
-          <GsapButton type="primary" @click="router.push('/plans')">
-            <span>{{ t('profile.upgrade') }}</span>
-          </GsapButton>
+          <NSpace :size="12">
+            <GsapButton type="primary" @click="router.push('/plans')">
+              <span>{{ t('profile.upgrade') }}</span>
+            </GsapButton>
+            <NPopconfirm v-if="userSubscriptionStore.hasActiveSubscription" @positive-click="cancelSubscription">
+              <template #trigger>
+                <GsapButton :disabled="cancelling">
+                  <span>{{ cancelling ? t('plans.processing') : t('profile.cancel_subscription') }}</span>
+                </GsapButton>
+              </template>
+              {{ t('profile.cancel_confirm') }}
+            </NPopconfirm>
+          </NSpace>
 
         </NSpin>
       </NCard>

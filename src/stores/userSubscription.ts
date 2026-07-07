@@ -25,11 +25,14 @@ export const useUserSubscriptionStore = defineStore('userSubscription', () => {
 
   async function loadCurrentSubscription() {
     if (hasLoaded.value) return
+    await refresh()
+  }
+
+  async function refresh() {
     loading.value = true
     error.value = null
     try {
       subscription.value = await nivaroApiService.getCurrentUserSubscription()
-      console.log('[userSubscription] loaded:', subscription.value)
       hasLoaded.value = true
     } catch (err) {
       error.value = err instanceof Error ? err : new Error(String(err))
@@ -65,6 +68,7 @@ export const useUserSubscriptionStore = defineStore('userSubscription', () => {
     djType,
     maxStations,
     loadCurrentSubscription,
+    refresh,
     reset,
   }
 })

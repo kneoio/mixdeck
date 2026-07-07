@@ -17,6 +17,13 @@ export class ApiNotEnoughSongsError extends Error {
   }
 }
 
+export class ApiPaymentActionRequiredError extends Error {
+  constructor(public readonly clientSecret: string) {
+    super('payment_action_required')
+    this.name = 'ApiPaymentActionRequiredError'
+  }
+}
+
 export class ApiValidationError extends Error {
   constructor(
     public readonly validationError: ValidationError,

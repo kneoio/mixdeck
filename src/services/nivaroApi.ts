@@ -2,6 +2,11 @@ import { ApiClient, type PagedResult } from './base'
 import { appConfig } from '@/config/appConfig'
 import type { SubscriptionProductEntry, UserSubscriptionDTO } from './coreApi'
 
+export interface ChangePlanResult {
+  checkoutUrl?: string
+  changed?: boolean
+}
+
 class NivaroApiService extends ApiClient {
   constructor() {
     super(appConfig.nivaroServer)
@@ -15,13 +20,26 @@ class NivaroApiService extends ApiClient {
 
   async getCurrentUserSubscription(): Promise<UserSubscriptionDTO | null> {
     try {
-      return await this.request<UserSubscriptionDTO>('/user-subscriptions/current')
+      return await this.request<UserSubscriptionDTO>('/subscriptions/current')
     } catch (error) {
       if (error instanceof Error && error.message.includes('404')) {
         return null
       }
       throw error
     }
+  }
+
+  // Free -> Pro returns a checkoutUrl to redirect to; paid -> paid switches directly (may throw
+  // ApiPaymentActionRequiredError if Stripe needs 3-D Secure re-authentication).
+  async changePlan(planIdentifier: string): Promise<ChangePlanResult> {
+    return this.request<ChangePlanResult>('/subscriptions/current', {
+      method: 'PATCH',
+      body: JSON.stringify({ plan: planIdentifier }),
+    })
+  }
+
+  async cancelSubscription(): Promise<void> {
+    await this.request<void>('/subscriptions/current', { method: 'DELETE' })
   }
 }
 
