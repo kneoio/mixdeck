@@ -172,7 +172,12 @@ async function cancelSubscription() {
             <NDescriptionsItem v-if="userSubscriptionStore.djType.length" :label="t('profile.dj_type')">{{ userSubscriptionStore.djType.join(', ') }}</NDescriptionsItem>
           </NDescriptions>
 
-          <NDivider v-if="userSubscriptionStore.subscription" style="margin: 0 0 16px;" />
+          <div v-else style="margin-bottom: 20px;">
+            <NTag type="default" size="small" round>{{ t('profile.free') }}</NTag>
+            <p style="opacity: 0.55; font-size: 13px; margin: 8px 0 0;">{{ t('profile.free_plan_desc') }}</p>
+          </div>
+
+          <NDivider style="margin: 0 0 16px;" />
 
           <NSpace :size="12">
             <GsapButton type="primary" @click="router.push('/plans')">
