@@ -140,6 +140,8 @@ const cards = computed(() =>
 
 onMounted(async () => {
   try {
+    // Stripe redirects here after checkout; force-sync in case the webhook hasn't landed yet.
+    await userSubscriptionStore.refresh(true)
     await subscriptionProductsStore.loadProducts()
   } catch {
     // server unavailable — empty state shown

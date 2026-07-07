@@ -18,9 +18,9 @@ class NivaroApiService extends ApiClient {
     return { entries, count: entries.length, pageNum: page, maxPage: 1, pageSize }
   }
 
-  async getCurrentUserSubscription(): Promise<UserSubscriptionDTO | null> {
+  async getCurrentUserSubscription(sync = false): Promise<UserSubscriptionDTO | null> {
     try {
-      return await this.request<UserSubscriptionDTO>('/subscriptions/current')
+      return await this.request<UserSubscriptionDTO>(`/subscriptions/current${sync ? '?sync=true' : ''}`)
     } catch (error) {
       if (error instanceof Error && error.message.includes('404')) {
         return null
