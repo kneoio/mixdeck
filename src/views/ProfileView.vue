@@ -34,12 +34,6 @@ const initials = computed(() => {
   return (f + l).toUpperCase() || authStore.userName.charAt(0).toUpperCase()
 })
 
-const memberSince = computed(() => {
-  const ts = profile.value.createdTimestamp
-  if (!ts) return '—'
-  return new Date(ts).toLocaleDateString(locale.value, { year: 'numeric', month: 'long', day: 'numeric' })
-})
-
 const localeOptions = SUPPORTED_LOCALES.map(code => ({
   label: LOCALE_LABELS[code],
   value: code,
@@ -110,7 +104,6 @@ onMounted(async () => {
               </NTag>
             </NSpace>
           </NDescriptionsItem>
-          <NDescriptionsItem :label="t('profile.member_since')">{{ memberSince }}</NDescriptionsItem>
         </NDescriptions>
       </NCard>
 
