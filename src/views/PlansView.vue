@@ -11,13 +11,14 @@
         <NCard
           v-for="card in cards"
           :key="card.id"
+          :class="{ 'plan-glow': card.id === justUpgradedId }"
           :style="card.subscribed ? 'flex: 1; min-width: 240px; max-width: 320px; border: 1px solid #7C3AED; display: flex; flex-direction: column;' : 'flex: 1; min-width: 240px; max-width: 320px; display: flex; flex-direction: column;'"
           content-style="display: flex; flex-direction: column; flex: 1;"
         >
           <div style="margin-bottom: 16px;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <div style="font-size: 18px; font-weight: 700;">{{ card.name }}</div>
-              <NTag v-if="card.subscribed" type="success" size="small" round>{{ t('plans.current') }}</NTag>
+              <NTag v-if="card.subscribed" :class="{ 'plan-glow-badge': card.id === justUpgradedId }" type="success" size="small" round>{{ t('plans.current') }}</NTag>
             </div>
             <div style="font-size: 28px; font-weight: 800; margin: 8px 0;">
               €{{ card.price }} <span style="font-size: 14px; font-weight: 400; opacity: 0.5;">/ mo</span>
@@ -46,7 +47,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { NCard, NDivider, NSpin, NEmpty, NTag, useMessage } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
 import PageHeader from '@/components/PageHeader.vue'
@@ -82,11 +83,13 @@ interface SubscriptionProductViewEntry {
 }
 
 const { t } = useI18n()
+const route = useRoute()
 const router = useRouter()
 const message = useMessage()
 const subscriptionProductsStore = useSubscriptionProductsStore()
 const userSubscriptionStore = useUserSubscriptionStore()
 const subscribing = ref<string | null>(null)
+const justUpgradedId = ref<string | null>(null)
 
 function parseDescription(raw: string | undefined): PlanDescription {
   if (!raw || typeof raw !== 'string') return {}
@@ -147,6 +150,15 @@ onMounted(async () => {
     // Stripe redirects here after checkout; force-sync in case the webhook hasn't landed yet.
     await userSubscriptionStore.refresh(true)
     await subscriptionProductsStore.loadProducts()
+
+    if (route.query.upgraded) {
+      const subscribedCard = cards.value.find((c) => c.subscribed)
+      if (subscribedCard) {
+        justUpgradedId.value = subscribedCard.id
+        setTimeout(() => { justUpgradedId.value = null }, 1800)
+      }
+      router.replace({ query: {} })
+    }
   } catch {
     // server unavailable — empty state shown
   }
@@ -186,3 +198,25 @@ async function subscribe(planIdentifier: string, price: number) {
   }
 }
 </script>
+
+<style scoped>
+@keyframes plan-glow-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0); }
+  30% { box-shadow: 0 0 22px 4px rgba(124, 58, 237, 0.55); }
+  100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0); }
+}
+
+.plan-glow {
+  animation: plan-glow-pulse 1.6s ease-out;
+}
+
+@keyframes plan-glow-badge-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+  30% { box-shadow: 0 0 10px 3px rgba(34, 197, 94, 0.7); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+.plan-glow-badge {
+  animation: plan-glow-badge-pulse 1.6s ease-out;
+}
+</style>
