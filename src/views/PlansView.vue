@@ -31,10 +31,10 @@
           <GsapButton
             block
             :disabled="card.subscribed || subscribing === card.identifier"
-            :type="card.subscribed ? 'default' : 'primary'"
-            @click="subscribe(card.identifier)"
+            :type="card.action === 'upgrade' ? 'primary' : 'default'"
+            @click="subscribe(card.identifier, card.price)"
           >
-            <span>{{ card.subscribed ? t('plans.current') : subscribing === card.identifier ? t('plans.processing') : t('plans.subscribe') }}</span>
+            <span>{{ subscribing === card.identifier ? t('plans.processing') : card.subscribed ? t('plans.current') : card.action === 'upgrade' ? t('plans.upgrade') : t('plans.downgrade') }}</span>
           </GsapButton>
         </NCard>
       </div>
@@ -109,8 +109,8 @@ function durationLabel(val: number | string): string {
   return val === 'infinitely' || val === 0 ? t('plans.feat_duration_nonstop') : `${val} ${t('plans.feat_min')}`
 }
 
-const cards = computed(() =>
-  (subscriptionProductsStore.products as SubscriptionProductViewEntry[])
+const cards = computed(() => {
+  const mapped = (subscriptionProductsStore.products as SubscriptionProductViewEntry[])
     .filter((entry) => entry.active !== false)
     .map((entry) => {
       const name = entry.name || entry.identifier
@@ -136,7 +136,14 @@ const cards = computed(() =>
         subscriptionStatus: entry.subscriptionStatus,
       }
     })
-)
+
+  const currentPrice = mapped.find((c) => c.subscribed)?.price ?? 0
+
+  return mapped.map((card) => ({
+    ...card,
+    action: card.price > currentPrice ? 'upgrade' : 'downgrade',
+  }))
+})
 
 onMounted(async () => {
   try {
@@ -148,13 +155,17 @@ onMounted(async () => {
   }
 })
 
-async function subscribe(planIdentifier: string) {
+async function subscribe(planIdentifier: string, price: number) {
   subscribing.value = planIdentifier
   try {
-    const result = await nivaroApiService.changePlan(planIdentifier)
-    if (result.checkoutUrl) {
-      window.location.href = result.checkoutUrl
-      return
+    if (price === 0) {
+      await nivaroApiService.cancelSubscription()
+    } else {
+      const result = await nivaroApiService.changePlan(planIdentifier)
+      if (result.checkoutUrl) {
+        window.location.href = result.checkoutUrl
+        return
+      }
     }
     await userSubscriptionStore.refresh()
     await subscriptionProductsStore.loadProducts()
