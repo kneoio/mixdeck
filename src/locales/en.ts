@@ -167,6 +167,8 @@ export default {
     current: 'Current plan',
     coming_soon: 'Coming soon',
     subscribe: 'Subscribe',
+    upgrade: 'Upgrade',
+    downgrade: 'Downgrade',
     processing: 'Processing…',
     subscribe_success: 'Subscription updated.',
     feat_dj_types: 'DJ Types',
