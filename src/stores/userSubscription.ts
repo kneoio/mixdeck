@@ -42,6 +42,11 @@ export const useUserSubscriptionStore = defineStore('userSubscription', () => {
     }
   }
 
+  function setSubscription(data: UserSubscriptionDTO) {
+    subscription.value = data
+    hasLoaded.value = true
+  }
+
   function reset() {
     subscription.value = null
     loading.value = false
@@ -69,6 +74,7 @@ export const useUserSubscriptionStore = defineStore('userSubscription', () => {
     maxStations,
     loadCurrentSubscription,
     refresh,
+    setSubscription,
     reset,
   }
 })

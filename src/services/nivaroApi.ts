@@ -38,8 +38,8 @@ class NivaroApiService extends ApiClient {
     })
   }
 
-  async cancelSubscription(): Promise<void> {
-    await this.request<void>('/subscriptions/current', { method: 'DELETE' })
+  async cancelSubscription(): Promise<UserSubscriptionDTO> {
+    return this.request<UserSubscriptionDTO>('/subscriptions/current', { method: 'DELETE' })
   }
 }
 

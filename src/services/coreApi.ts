@@ -10,7 +10,6 @@ export interface SubscriptionProductEntry {
   stripeProductId?: string
   active?: boolean
   subscribed?: boolean
-  subscriptionStatus?: string
 }
 
 export interface UserSubscriptionDTO {

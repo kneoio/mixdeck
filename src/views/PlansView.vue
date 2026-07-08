@@ -79,7 +79,6 @@ interface SubscriptionProductViewEntry {
   stripeProductId?: string
   active?: boolean
   subscribed?: boolean
-  subscriptionStatus?: string
 }
 
 const { t } = useI18n()
@@ -111,7 +110,6 @@ function durationLabel(val: number | string): string {
 
 const cards = computed(() => {
   const mapped = (subscriptionProductsStore.products as SubscriptionProductViewEntry[])
-    .filter((entry) => entry.active !== false)
     .map((entry) => {
       const name = entry.name || entry.identifier
       const details = parseDescription(entry.description)
@@ -133,7 +131,6 @@ const cards = computed(() => {
         description: details.name ?? '',
         features,
         subscribed: entry.subscribed ?? false,
-        subscriptionStatus: entry.subscriptionStatus,
       }
     })
 
@@ -159,15 +156,16 @@ async function subscribe(planIdentifier: string, price: number) {
   subscribing.value = planIdentifier
   try {
     if (price === 0) {
-      await nivaroApiService.cancelSubscription()
+      const subscription = await nivaroApiService.cancelSubscription()
+      userSubscriptionStore.setSubscription(subscription)
     } else {
       const result = await nivaroApiService.changePlan(planIdentifier)
       if (result.checkoutUrl) {
         window.location.href = result.checkoutUrl
         return
       }
+      await userSubscriptionStore.refresh()
     }
-    await userSubscriptionStore.refresh()
     await subscriptionProductsStore.loadProducts()
     message.success(t('plans.subscribe_success'))
   } catch (error) {

@@ -66,8 +66,7 @@ export class ApiClient {
     }
 
     if (response.status === 204) return undefined as T
-    const text = await response.text()
-    return text ? JSON.parse(text) : (undefined as T)
+    return response.json()
   }
 
   async getDictionary<T>(endpoint: string): Promise<T[]> {
