@@ -441,6 +441,11 @@ export default {
     body: '아직 방송인 프로필이 없습니다. 첫 번째 브랜드를 만들어 AI 기반 스트림을 시작하세요.',
     cta: '첫 번째 브랜드 만들기',
   },
+  notFound: {
+    heading: '페이지를 찾을 수 없습니다',
+    body: '찾으시는 페이지가 존재하지 않거나 이동되었을 수 있습니다.',
+    cta: 'Mixdeck으로 돌아가기',
+  },
   submission: {
     title: '트랙 제출',
     subtitle: 'Mixpla 커뮤니티와 음악을 공유하세요',

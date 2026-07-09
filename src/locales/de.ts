@@ -441,6 +441,11 @@ export default {
     body: 'Du hast noch keine Sender-Profile. Erstelle deine erste Marke, um mit KI-gesteuerten Streams zu beginnen.',
     cta: 'Erste Marke erstellen',
   },
+  notFound: {
+    heading: 'Seite nicht gefunden',
+    body: 'Die gesuchte Seite existiert nicht oder wurde verschoben.',
+    cta: 'Zurück zu Mixdeck',
+  },
   submission: {
     title: 'Track einreichen',
     subtitle: 'Teile deine Musik mit der Mixpla-Community',
