@@ -33,10 +33,11 @@ export const useScriptsStore = defineStore('scripts', () => {
   const pageNum = ref(1)
   const pageSize = ref(10)
 
-  async function loadScripts(page = pageNum.value, size = pageSize.value) {
+  async function loadScripts(page = pageNum.value, size = pageSize.value, query?: string) {
     loading.value = true
     try {
-      const result = await datanestApiService.getPagedDictionary<Script>('/dictionary/scripts', page, size)
+      const endpoint = query ? `/dictionary/scripts?${query}` : '/dictionary/scripts'
+      const result = await datanestApiService.getPagedDictionary<Script>(endpoint, page, size)
       scripts.value = result.entries
       totalCount.value = result.count
       pageNum.value = result.pageNum

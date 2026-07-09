@@ -3,6 +3,7 @@ it is<template>
     <PageHeader :title="t('overview.title')" :count="brandsStore.brands.length" />
 
     <div class="overview-list">
+      <h3 v-if="brandsStore.brands.length" class="overview-section-title">{{ t('overview.radio_stream') }}</h3>
       <NCard
         v-for="brand in brandsStore.brands"
         :key="brand.id"
@@ -48,16 +49,95 @@ it is<template>
         </NCollapse>
         -->
       </NCard>
+
+      <h3 class="overview-section-title">{{ t('overview.one_time_stream') }}</h3>
+
+      <NCard v-for="wizard in otsWizards" :key="wizard.id" class="ots-card">
+        <template #header>
+          <div class="brand-head">
+            <span class="brand-name">{{ t('overview.one_time_stream') }}</span>
+            <span class="ots-step-indicator">{{ t('overview.ots_step', { step: wizard.step }) }}</span>
+          </div>
+        </template>
+        <template #header-extra>
+          <button class="copy-btn" :title="t('common.close')" @click="closeOtsWizard(wizard.id)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
+        </template>
+
+        <NCard :bordered="true" size="small" class="ots-step-card">
+          <div class="ots-step">
+            <NSelect
+              v-model:value="wizard.scriptId"
+              :options="scriptOptions"
+              :render-label="renderScriptOptionLabel"
+              :loading="scriptsStore.loading"
+              :placeholder="t('overview.ots_pick_script')"
+              filterable
+              @update:value="() => onOtsScriptChange(wizard)"
+            />
+          </div>
+        </NCard>
+
+        <NCard v-if="wizard.step >= 2" :bordered="true" size="small" class="ots-step-card">
+          <div class="ots-step">
+            <NSpin :show="wizard.loadingScriptDetail">
+              <template v-if="wizard.scriptDetail?.requiredVariables?.length">
+                <div v-for="variable in wizard.scriptDetail.requiredVariables" :key="variable.name" class="ots-variable">
+                  <div class="ots-variable__label">
+                    <strong>{{ variable.name }}</strong>
+                    <span v-if="variable.required" class="ots-variable__required">*</span>
+                    <span v-if="variable.description" class="ots-variable__desc">{{ variable.description }}</span>
+                  </div>
+                  <NSwitch v-if="variable.type === 'boolean'" v-model:value="wizard.variables[variable.name]" />
+                  <NInputNumber v-else-if="variable.type === 'number'" v-model:value="wizard.variables[variable.name]" style="width: 100%" />
+                  <NInput v-else v-model:value="wizard.variables[variable.name]" style="width: 100%" />
+                </div>
+              </template>
+              <p v-else-if="!wizard.loadingScriptDetail" class="ots-no-variables">{{ t('overview.ots_no_variables') }}</p>
+            </NSpin>
+          </div>
+        </NCard>
+
+        <NCard v-if="wizard.step >= 3" :bordered="true" size="small" class="ots-step-card">
+          <div class="ots-step">
+            <div class="brand-url">
+              <a :href="wizard.link" target="_blank" rel="noopener noreferrer" class="brand-url-link">{{ wizard.link }}</a>
+              <button class="copy-btn" :class="{ 'copy-btn--done': wizard.linkCopied }" :title="t('dashboard.copy_url')" @click="copyOtsLink(wizard)">
+                <svg v-if="!wizard.linkCopied" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <svg v-else width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>
+            </div>
+          </div>
+        </NCard>
+
+        <div v-if="wizard.step < 3" class="ots-nav">
+          <button
+            class="ots-nav-btn ots-nav-btn--primary"
+            type="button"
+            :disabled="wizard.step === 1 && !wizard.scriptId"
+            @click="advanceOtsStep(wizard)"
+          >
+            {{ t('overview.ots_next') }} →
+          </button>
+        </div>
+      </NCard>
+
+      <button class="ots-add-strip" type="button" :title="t('overview.one_time_stream')" @click="openOtsWizard">
+        <span class="ots-add-strip__plus">+</span>
+      </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, h, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { NCard, NCollapse, NCollapseItem } from 'naive-ui'
+import { NCard, NCollapse, NCollapseItem, NSelect, NSwitch, NInputNumber, NInput, NTag, NSpace, NSpin, type SelectOption } from 'naive-ui'
 import { useBrandsStore, type Brand } from '@/stores/brands'
+import { useScriptsStore, type Script } from '@/stores/scripts'
+import datanestApiService from '@/services/datanestApi'
 import PageHeader from '@/components/PageHeader.vue'
 import AivoxCard from '@/components/AivoxCard.vue'
 import AgendaCard from '@/components/AgendaCard.vue'
@@ -65,6 +145,7 @@ import AgendaCard from '@/components/AgendaCard.vue'
 const { t } = useI18n()
 const router = useRouter()
 const brandsStore = useBrandsStore()
+const scriptsStore = useScriptsStore()
 
 const brandLabel = (brand: Brand) =>
   brand.localizedName?.['en'] || brand.title || brand.slugName || brand.id
@@ -96,6 +177,93 @@ function copyUrl(brand: Brand) {
   copiedId.value = brand.id
   setTimeout(() => { copiedId.value = null }, 2000)
 }
+
+interface OtsWizard {
+  id: string
+  step: number
+  scriptId: string | null
+  scriptDetail: Script | null
+  loadingScriptDetail: boolean
+  variables: Record<string, unknown>
+  link: string
+  linkCopied: boolean
+}
+
+const otsWizards = ref<OtsWizard[]>([])
+
+const scriptOptions = computed(() =>
+  scriptsStore.scripts.map((script) => ({ label: script.name, value: script.id, tags: script.tags || [] }))
+)
+
+function renderScriptOptionLabel(option: SelectOption) {
+  const tags = (option as unknown as { tags?: Array<{ name?: string; identifier?: string; color?: string; fontColor?: string }> }).tags || []
+  return h(
+    NSpace,
+    { align: 'center', size: 8, wrapItem: false },
+    {
+      default: () => [
+        ...tags
+          .filter((tag) => Boolean(tag?.name || tag?.identifier))
+          .map((tag) =>
+            h(
+              NTag,
+              { size: 'small', bordered: false, color: { color: tag.color || '#ececec', textColor: tag.fontColor || '#333333' } },
+              { default: () => tag.name || tag.identifier }
+            )
+          ),
+        h('span', String(option.label ?? option.value ?? '')),
+      ],
+    }
+  )
+}
+
+function openOtsWizard() {
+  otsWizards.value.push({
+    id: crypto.randomUUID(),
+    step: 1,
+    scriptId: null,
+    scriptDetail: null,
+    loadingScriptDetail: false,
+    variables: reactive({}),
+    link: '',
+    linkCopied: false,
+  })
+  if (!scriptsStore.scripts.length) {
+    scriptsStore.loadScripts(1, scriptsStore.pageSize, 'timingMode=RELATIVE_TO_STREAM_START')
+  }
+}
+
+async function onOtsScriptChange(wizard: OtsWizard) {
+  wizard.scriptDetail = null
+  Object.keys(wizard.variables).forEach((key) => delete wizard.variables[key])
+  if (!wizard.scriptId) return
+
+  wizard.loadingScriptDetail = true
+  try {
+    wizard.scriptDetail = await datanestApiService.getScriptDetail(wizard.scriptId)
+  } finally {
+    wizard.loadingScriptDetail = false
+  }
+}
+
+function closeOtsWizard(id: string) {
+  otsWizards.value = otsWizards.value.filter((wizard) => wizard.id !== id)
+}
+
+function advanceOtsStep(wizard: OtsWizard) {
+  if (wizard.step === 2) {
+    // TODO: replace with real one-time-stream creation API call
+    wizard.link = `${window.location.origin}/ots/${crypto.randomUUID()}`
+  }
+  wizard.step++
+}
+
+function copyOtsLink(wizard: OtsWizard) {
+  if (!wizard.link) return
+  navigator.clipboard.writeText(wizard.link)
+  wizard.linkCopied = true
+  setTimeout(() => { wizard.linkCopied = false }, 2000)
+}
 </script>
 
 <style scoped>
@@ -106,6 +274,14 @@ function copyUrl(brand: Brand) {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+.overview-section-title {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  opacity: 0.6;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 .brand-head {
   display: flex;
@@ -184,5 +360,93 @@ function copyUrl(brand: Brand) {
 }
 .brand-card {
   border-color: var(--brand-color);
+}
+.ots-add-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 48px;
+  border: 2px dashed rgba(124, 58, 237, 0.45);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+  transition: opacity 0.2s, border-color 0.2s, background 0.2s;
+}
+.ots-add-strip:hover {
+  opacity: 1;
+  border-color: #7C3AED;
+  background: rgba(124, 58, 237, 0.06);
+}
+.ots-add-strip__plus {
+  font-size: 20px;
+  line-height: 1;
+  font-weight: 300;
+}
+.ots-card {
+  border-color: rgba(128, 128, 128, 0.35);
+}
+.ots-step-card {
+  margin-bottom: 12px;
+}
+.ots-step-card :deep(.n-card__content) {
+  padding: 14px;
+}
+.ots-step-indicator {
+  font-size: 0.75rem;
+  opacity: 0.55;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.ots-step {
+  min-height: 60px;
+}
+.ots-variable {
+  margin-bottom: 12px;
+}
+.ots-variable__label {
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+.ots-variable__required {
+  color: #e74c3c;
+}
+.ots-variable__desc {
+  color: #888;
+  font-size: 12px;
+  margin-left: 8px;
+}
+.ots-no-variables {
+  opacity: 0.55;
+  font-size: 13px;
+}
+.ots-nav {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+.ots-nav-btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(128, 128, 128, 0.3);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 13px;
+}
+.ots-nav-btn:hover {
+  opacity: 0.8;
+}
+.ots-nav-btn--primary {
+  border-color: #7C3AED;
+  background: #7C3AED;
+  color: #fff;
+}
+.ots-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 </style>

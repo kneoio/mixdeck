@@ -76,6 +76,10 @@ class DatanestApiService extends ApiClient {
     return this.getDocument<any>('/public/soundfragments', id)
   }
 
+  async getScriptDetail(id: string): Promise<any> {
+    return this.getDocument<any>('/public/scripts', id)
+  }
+
   /** PATCH body matches backend `SharedSoundFragmentPatchDTO`: `addTargetBrandIds`, `removeTargetBrandIds`, `stayIncognito` (UUID strings). */
   async patchShared(slug: string, fragmentId: string, body: unknown): Promise<void> {
     await this.request<void>(

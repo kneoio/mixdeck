@@ -66,6 +66,12 @@ export default {
     online: 'On air',
     idle: 'Idle',
     offline: 'Offline',
+    radio_stream: 'Radio Stream',
+    one_time_stream: 'One time stream',
+    ots_step: 'Step {step} of 3',
+    ots_pick_script: 'Choose a script',
+    ots_no_variables: 'This script has no variables to set.',
+    ots_next: 'Next',
   },
   dashboard: {
     player_ui: 'Player UI',
