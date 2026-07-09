@@ -391,6 +391,11 @@ export default {
     body: "Vous n'avez pas encore de profil diffuseur. Créez votre première marque pour démarrer avec des streams propulsés par l'IA.",
     cta: 'Créer votre première marque',
   },
+  notFound: {
+    heading: 'Page introuvable',
+    body: "La page que vous recherchez n'existe pas ou a peut-être été déplacée.",
+    cta: 'Retour à Mixdeck',
+  },
   submission: {
     title: 'Soumettre un morceau',
     subtitle: 'Partagez votre musique avec la communauté Mixpla',

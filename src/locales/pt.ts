@@ -391,6 +391,11 @@ export default {
     body: 'Ainda não tens perfis de emissor. Cria a tua primeira marca para começar com streams de IA.',
     cta: 'Criar a tua primeira marca',
   },
+  notFound: {
+    heading: 'Página não encontrada',
+    body: 'A página que procuras não existe ou pode ter sido movida.',
+    cta: 'Voltar ao Mixdeck',
+  },
   submission: {
     title: 'Enviar uma faixa',
     subtitle: 'Compartilhe sua música com a comunidade Mixpla',

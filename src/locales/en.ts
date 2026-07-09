@@ -473,6 +473,11 @@ export default {
     body: "You don't have any broadcaster profiles yet. Create your first brand to get started with AI-powered streams.",
     cta: 'Create Your First Brand',
   },
+  notFound: {
+    heading: 'Page not found',
+    body: "The page you're looking for doesn't exist or may have been moved.",
+    cta: 'Back to Mixdeck',
+  },
   submission: {
     title: 'Submit a Track',
     subtitle: 'Share your music with the Mixpla community',

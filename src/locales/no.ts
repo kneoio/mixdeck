@@ -441,6 +441,11 @@ export default {
     body: 'Du har ingen kringkasterprofiler ennå. Opprett din første merkevare for å komme i gang med AI-drevne strømmer.',
     cta: 'Opprett din første merkevare',
   },
+  notFound: {
+    heading: 'Siden ble ikke funnet',
+    body: 'Siden du leter etter finnes ikke, eller den kan ha blitt flyttet.',
+    cta: 'Tilbake til Mixdeck',
+  },
   submission: {
     title: 'Send inn et spor',
     subtitle: 'Del musikken din med Mixpla-fellesskapet',
