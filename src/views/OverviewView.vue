@@ -1,4 +1,4 @@
-it is<template>
+<template>
   <div class="overview">
     <PageHeader :title="t('overview.title')" :count="brandsStore.brands.length" />
 
@@ -101,6 +101,39 @@ it is<template>
 
         <NCard v-if="wizard.step >= 3" :bordered="true" size="small" class="ots-step-card">
           <div class="ots-step">
+            <NRadioGroup v-model:value="wizard.scope" @update:value="onOtsScopeChange(wizard)">
+              <NSpace>
+                <NRadio value="brand">{{ t('overview.ots_scope_brand') }}</NRadio>
+                <NRadio value="default">{{ t('overview.ots_scope_default') }}</NRadio>
+              </NSpace>
+            </NRadioGroup>
+
+            <NSelect
+              v-if="wizard.scope === 'brand'"
+              v-model:value="wizard.brandId"
+              :options="brandOptions"
+              :placeholder="t('overview.ots_pick_brand')"
+              filterable
+              style="margin-top: 10px;"
+              @update:value="() => onOtsBrandChange(wizard)"
+            />
+
+            <NSelect
+              v-model:value="wizard.agentId"
+              :options="wizard.agentOptions"
+              :loading="wizard.loadingAgents"
+              :clearable="wizard.scope === 'brand'"
+              :placeholder="wizard.scope === 'brand' ? t('overview.ots_pick_dj_override') : t('overview.ots_pick_dj')"
+              filterable
+              style="margin-top: 10px;"
+            />
+
+            <p v-if="wizard.error" class="ots-error">{{ wizard.error }}</p>
+          </div>
+        </NCard>
+
+        <NCard v-if="wizard.step >= 4" :bordered="true" size="small" class="ots-step-card">
+          <div class="ots-step">
             <div class="brand-url">
               <a :href="wizard.link" target="_blank" rel="noopener noreferrer" class="brand-url-link">{{ wizard.link }}</a>
               <button class="copy-btn" :class="{ 'copy-btn--done': wizard.linkCopied }" :title="t('dashboard.copy_url')" @click="copyOtsLink(wizard)">
@@ -111,11 +144,11 @@ it is<template>
           </div>
         </NCard>
 
-        <div v-if="wizard.step < 3" class="ots-nav">
+        <div v-if="wizard.step < 4" class="ots-nav">
           <button
             class="ots-nav-btn ots-nav-btn--primary"
             type="button"
-            :disabled="wizard.step === 1 && !wizard.scriptId"
+            :disabled="(wizard.step === 1 && !wizard.scriptId) || (wizard.step === 3 && !otsScopeValid(wizard)) || wizard.submitting"
             @click="advanceOtsStep(wizard)"
           >
             {{ t('overview.ots_next') }} →
@@ -134,9 +167,10 @@ it is<template>
 import { computed, h, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { NCard, NCollapse, NCollapseItem, NSelect, NSwitch, NInputNumber, NInput, NTag, NSpace, NSpin, type SelectOption } from 'naive-ui'
+import { NCard, NCollapse, NCollapseItem, NSelect, NSwitch, NInputNumber, NInput, NTag, NSpace, NSpin, NRadioGroup, NRadio, type SelectOption } from 'naive-ui'
 import { useBrandsStore, type Brand } from '@/stores/brands'
 import { useScriptsStore, type Script } from '@/stores/scripts'
+import { useOtsDefinitionsStore } from '@/stores/otsDefinitions'
 import datanestApiService from '@/services/datanestApi'
 import PageHeader from '@/components/PageHeader.vue'
 import AivoxCard from '@/components/AivoxCard.vue'
@@ -146,6 +180,7 @@ const { t } = useI18n()
 const router = useRouter()
 const brandsStore = useBrandsStore()
 const scriptsStore = useScriptsStore()
+const otsDefinitionsStore = useOtsDefinitionsStore()
 
 const brandLabel = (brand: Brand) =>
   brand.localizedName?.['en'] || brand.title || brand.slugName || brand.id
@@ -185,6 +220,13 @@ interface OtsWizard {
   scriptDetail: Script | null
   loadingScriptDetail: boolean
   variables: Record<string, unknown>
+  scope: 'brand' | 'default'
+  brandId: string | null
+  agentId: string | null
+  agentOptions: SelectOption[]
+  loadingAgents: boolean
+  submitting: boolean
+  error: string | null
   link: string
   linkCopied: boolean
 }
@@ -194,6 +236,14 @@ const otsWizards = ref<OtsWizard[]>([])
 const scriptOptions = computed(() =>
   scriptsStore.scripts.map((script) => ({ label: script.name, value: script.id, tags: script.tags || [] }))
 )
+
+const brandOptions = computed(() =>
+  brandsStore.brands.map((brand) => ({ label: brandLabel(brand), value: brand.id }))
+)
+
+function otsScopeValid(wizard: OtsWizard): boolean {
+  return wizard.scope === 'brand' ? !!wizard.brandId : !!wizard.agentId
+}
 
 function renderScriptOptionLabel(option: SelectOption) {
   const tags = (option as unknown as { tags?: Array<{ name?: string; identifier?: string; color?: string; fontColor?: string }> }).tags || []
@@ -225,6 +275,13 @@ function openOtsWizard() {
     scriptDetail: null,
     loadingScriptDetail: false,
     variables: reactive({}),
+    scope: 'default',
+    brandId: null,
+    agentId: null,
+    agentOptions: [],
+    loadingAgents: false,
+    submitting: false,
+    error: null,
     link: '',
     linkCopied: false,
   })
@@ -250,11 +307,65 @@ function closeOtsWizard(id: string) {
   otsWizards.value = otsWizards.value.filter((wizard) => wizard.id !== id)
 }
 
-function advanceOtsStep(wizard: OtsWizard) {
-  if (wizard.step === 2) {
-    // TODO: replace with real one-time-stream creation API call
-    wizard.link = `${window.location.origin}/ots/${crypto.randomUUID()}`
+async function loadOtsAgents(wizard: OtsWizard) {
+  wizard.loadingAgents = true
+  try {
+    let endpoint = '/dictionary/agents'
+    if (wizard.scope === 'brand' && wizard.brandId) {
+      const brand = brandsStore.brands.find((b) => b.id === wizard.brandId)
+      endpoint = `/dictionary/agents?brand=${encodeURIComponent(brand?.slugName ?? '')}`
+    }
+    const result = await datanestApiService.getPagedDictionary<any>(endpoint, 1, 100)
+    wizard.agentOptions = result.entries.map((a: any) => ({ label: a.name || a.id, value: a.id }))
+  } finally {
+    wizard.loadingAgents = false
   }
+}
+
+function onOtsScopeChange(wizard: OtsWizard) {
+  wizard.brandId = null
+  wizard.agentId = null
+  wizard.agentOptions = []
+  wizard.error = null
+  if (wizard.scope === 'default') {
+    loadOtsAgents(wizard)
+  }
+}
+
+function onOtsBrandChange(wizard: OtsWizard) {
+  wizard.agentId = null
+  wizard.agentOptions = []
+  if (wizard.brandId) loadOtsAgents(wizard)
+}
+
+async function advanceOtsStep(wizard: OtsWizard) {
+  if (wizard.step === 2 && wizard.scope === 'default' && !wizard.agentOptions.length) {
+    await loadOtsAgents(wizard)
+  }
+
+  if (wizard.step === 3) {
+    if (!otsScopeValid(wizard)) {
+      wizard.error = t('overview.ots_agent_required')
+      return
+    }
+    wizard.error = null
+    wizard.submitting = true
+    try {
+      const created = await otsDefinitionsStore.createOtsDefinition({
+        scriptId: wizard.scriptId!,
+        userVariables: { ...wizard.variables },
+        brandId: wizard.scope === 'brand' ? wizard.brandId : null,
+        agentId: wizard.agentId || null,
+      })
+      wizard.link = `https://mixpla.online/${created.slugName}`
+    } catch (err) {
+      wizard.error = err instanceof Error ? err.message : t('overview.ots_create_failed')
+      return
+    } finally {
+      wizard.submitting = false
+    }
+  }
+
   wizard.step++
 }
 
@@ -420,6 +531,11 @@ function copyOtsLink(wizard: OtsWizard) {
 }
 .ots-no-variables {
   opacity: 0.55;
+  font-size: 13px;
+}
+.ots-error {
+  margin-top: 10px;
+  color: #e74c3c;
   font-size: 13px;
 }
 .ots-nav {

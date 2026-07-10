@@ -80,6 +80,30 @@ class DatanestApiService extends ApiClient {
     return this.getDocument<any>('/public/scripts', id)
   }
 
+  async getOtsDefinitions(
+    page = 1,
+    pageSize = 10,
+    filter?: { brandId?: string; searchTerm?: string; activated?: boolean }
+  ): Promise<PagedResult<any>> {
+    return this.getPagedDictionary<any>('/ots-definitions', page, pageSize, filter)
+  }
+
+  async getOtsDefinition(id: string): Promise<any> {
+    return this.getDocument<any>('/ots-definitions', id)
+  }
+
+  async createOtsDefinition(data: Record<string, any>): Promise<any> {
+    return this.createDictionaryItem<any>('/ots-definitions', data)
+  }
+
+  async updateOtsDefinition(id: string, data: Record<string, any>): Promise<any> {
+    return this.updateDictionaryItem<any>('/ots-definitions', id, data)
+  }
+
+  async deleteOtsDefinition(id: string): Promise<void> {
+    return this.deleteDictionaryItem('/ots-definitions', id)
+  }
+
   /** PATCH body matches backend `SharedSoundFragmentPatchDTO`: `addTargetBrandIds`, `removeTargetBrandIds`, `stayIncognito` (UUID strings). */
   async patchShared(slug: string, fragmentId: string, body: unknown): Promise<void> {
     await this.request<void>(
