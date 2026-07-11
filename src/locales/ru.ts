@@ -285,6 +285,7 @@ export default {
     title: 'Название',
     artist: 'Исполнитель',
     album: 'Альбом',
+    target_brand: 'Целевой бренд',
     genres: 'Жанры',
     labels: 'Метки',
     assign_to: 'Назначить',

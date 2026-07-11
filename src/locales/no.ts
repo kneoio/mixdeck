@@ -324,6 +324,7 @@ export default {
     title: 'Tittel',
     artist: 'Artist',
     album: 'Album',
+    target_brand: 'Målmerke',
     genres: 'Sjangre',
     labels: 'Etiketter',
     assign_to: 'Tilordne til',

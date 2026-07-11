@@ -285,6 +285,7 @@ export default {
     title: 'タイトル',
     artist: 'アーティスト',
     album: 'アルバム',
+    target_brand: '対象ブランド',
     genres: 'ジャンル',
     labels: 'ラベル',
     assign_to: '割り当て先',

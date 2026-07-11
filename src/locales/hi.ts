@@ -285,6 +285,7 @@ export default {
     title: 'शीर्षक',
     artist: 'कलाकार',
     album: 'एल्बम',
+    target_brand: 'लक्षित ब्रांड',
     genres: 'शैलियां',
     labels: 'लेबल',
     assign_to: 'असाइन करें',

@@ -285,6 +285,7 @@ export default {
     title: 'Назва',
     artist: 'Виконавець',
     album: 'Альбом',
+    target_brand: 'Цільовий бренд',
     genres: 'Жанри',
     labels: 'Мітки',
     assign_to: 'Призначити',

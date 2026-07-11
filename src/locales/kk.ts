@@ -285,6 +285,7 @@ export default {
     title: 'Атауы',
     artist: 'Орындаушы',
     album: 'Альбом',
+    target_brand: 'Мақсатты бренд',
     genres: 'Жанрлар',
     labels: 'Белгілер',
     assign_to: 'Тағайындау',

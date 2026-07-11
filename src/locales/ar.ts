@@ -285,6 +285,7 @@ export default {
     title: 'العنوان',
     artist: 'الفنان',
     album: 'الألبوم',
+    target_brand: 'العلامة التجارية المستهدفة',
     genres: 'الأنواع',
     labels: 'التصنيفات',
     assign_to: 'تعيين إلى',

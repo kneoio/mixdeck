@@ -285,6 +285,7 @@ export default {
     title: 'Título',
     artist: 'Artista',
     album: 'Álbum',
+    target_brand: 'Marca objetivo',
     genres: 'Géneros',
     labels: 'Etiquetas',
     assign_to: 'Asignar a',

@@ -325,6 +325,7 @@ export default {
     title: 'Titel',
     artist: 'Künstler',
     album: 'Album',
+    target_brand: 'Ziel-Marke',
     genres: 'Genres',
     labels: 'Labels',
     assign_to: 'Zuweisen zu',

@@ -324,6 +324,7 @@ export default {
     title: '제목',
     artist: '아티스트',
     album: '앨범',
+    target_brand: '대상 브랜드',
     genres: '장르',
     labels: '레이블',
     assign_to: '할당 대상',

@@ -285,6 +285,7 @@ export default {
     title: 'სათაური',
     artist: 'შემსრულებელი',
     album: 'ალბომი',
+    target_brand: 'სამიზნე ბრენდი',
     genres: 'ჟანრები',
     labels: 'ლეიბლები',
     assign_to: 'მინიჭება',
