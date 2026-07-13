@@ -97,6 +97,10 @@ export default {
   theme: {
     to_dark: 'Bytt til mørk modus',
     to_light: 'Bytt til lys modus',
+    accent: 'Aksentfarge',
+    presets: 'Forhåndsinnstillinger',
+    generate: 'Overrask meg',
+    reset: 'Tilbakestill til standard',
   },
   profile: {
     title: 'Profil',

@@ -124,6 +124,10 @@ export default {
   theme: {
     to_dark: 'Switch to dark mode',
     to_light: 'Switch to light mode',
+    accent: 'Accent color',
+    presets: 'Presets',
+    generate: 'Surprise me',
+    reset: 'Reset to default',
   },
   profile: {
     title: 'Profile',

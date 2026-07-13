@@ -55,12 +55,16 @@ const authStore = useAuthStore()
 const userSubscriptionStore = useUserSubscriptionStore()
 const { locale } = useI18n()
 
-const themeOverrides = computed<GlobalThemeOverrides>(() => ({
+const themeOverrides = computed<GlobalThemeOverrides>(() => {
+  const accent = themeStore.accentPalette
+  // In dark mode use the lighter derived shade as the primary so it stays legible.
+  const primary = themeStore.isDark ? accent.light : accent.base
+  return {
   common: {
-    primaryColor: '#7C3AED',
-    primaryColorHover: '#9d5bf4',
-    primaryColorPressed: '#6d31d4',
-    primaryColorSuppl: '#7C3AED',
+    primaryColor: primary,
+    primaryColorHover: accent.hover,
+    primaryColorPressed: accent.pressed,
+    primaryColorSuppl: primary,
     errorColor: '#FF2D95',
     errorColorHover: '#ff5aaa',
     errorColorPressed: '#e0207f',
@@ -68,7 +72,7 @@ const themeOverrides = computed<GlobalThemeOverrides>(() => ({
     ...(themeStore.isDark ? {textColorDisabled: 'rgba(255,255,255,0.38)'} : {}),
   },
   Input: {
-    caretColor: themeStore.isDark ? '#eff605' : '#7C3AED',
+    caretColor: themeStore.isDark ? '#eff605' : accent.base,
   },
   Button: {
     textColorPrimary: '#ffffff',
@@ -83,14 +87,15 @@ const themeOverrides = computed<GlobalThemeOverrides>(() => ({
   ...(themeStore.isDark ? {
     Select: {
       optionTextColorActive: '#ffffff',
-      optionCheckColor: '#9d5bf4',
+      optionCheckColor: accent.hover,
     },
     InternalSelectMenu: {
       optionTextColorActive: '#ffffff',
-      optionCheckColor: '#9d5bf4',
+      optionCheckColor: accent.hover,
     },
   } : {}),
-}))
+  }
+})
 
 const naiveTheme = computed(() => themeStore.isDark ? darkTheme : null)
 

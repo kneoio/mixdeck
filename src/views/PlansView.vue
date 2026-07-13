@@ -12,7 +12,7 @@
           v-for="card in cards"
           :key="card.id"
           :class="{ 'plan-glow': card.id === justUpgradedId }"
-          :style="card.subscribed ? 'flex: 1; min-width: 240px; max-width: 320px; border: 1px solid #7C3AED; display: flex; flex-direction: column;' : 'flex: 1; min-width: 240px; max-width: 320px; display: flex; flex-direction: column;'"
+          :style="card.subscribed ? 'flex: 1; min-width: 240px; max-width: 320px; border: 1px solid var(--vt-c-primary); display: flex; flex-direction: column;' : 'flex: 1; min-width: 240px; max-width: 320px; display: flex; flex-direction: column;'"
           content-style="display: flex; flex-direction: column; flex: 1;"
         >
           <div style="margin-bottom: 16px;">

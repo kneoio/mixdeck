@@ -93,7 +93,7 @@ const classes = computed(() => [
 
 /* types */
 .gsap-btn--default { background: #1f1f23; color: rgba(255,255,255,0.82); }
-.gsap-btn--primary { background: #7C3AED; color: #fff; }
+.gsap-btn--primary { background: var(--vt-c-primary); color: #fff; }
 .gsap-btn--info    { background: #2080F0; color: #fff; }
 .gsap-btn--error   { background: #FF2D95; color: #fff; }
 .gsap-btn--warning { background: #1e1500; color: #F0A020; }

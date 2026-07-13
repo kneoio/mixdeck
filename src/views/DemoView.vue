@@ -101,8 +101,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useThemeStore } from '@/stores/theme'
 import { NConfigProvider, NButton, NIcon, NProgress, darkTheme, type GlobalThemeOverrides } from 'naive-ui'
 import { PlayOutline, PauseOutline } from '@vicons/ionicons5'
 import manchine1 from '../assets/audio/ENG-DJ_Manchine_1.mp3'
@@ -128,17 +129,18 @@ import weatherBlock from '../assets/audio/ENG_weather_block.mp3'
 import jingle1 from '../assets/audio/Jingle_1.mp3'
 
 const router = useRouter()
+const themeStore = useThemeStore()
 const mounted = ref(false)
 onMounted(() => { setTimeout(() => { mounted.value = true }, 300) })
 
-const themeOverrides: GlobalThemeOverrides = {
+const themeOverrides = computed<GlobalThemeOverrides>(() => ({
   common: {
-    primaryColor: '#7C3AED',
-    primaryColorHover: '#9d5bf4',
-    primaryColorPressed: '#6d31d4',
-    primaryColorSuppl: '#7C3AED',
+    primaryColor: themeStore.accentPalette.base,
+    primaryColorHover: themeStore.accentPalette.hover,
+    primaryColorPressed: themeStore.accentPalette.pressed,
+    primaryColorSuppl: themeStore.accentPalette.base,
   },
-}
+}))
 
 const tracks = [
   { title: 'DJ Manchine (ENG)', src: manchine1 },

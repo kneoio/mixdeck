@@ -97,6 +97,10 @@ export default {
   theme: {
     to_dark: 'الوضع الداكن',
     to_light: 'الوضع الفاتح',
+    accent: 'لون التمييز',
+    presets: 'الإعدادات المسبقة',
+    generate: 'فاجئني',
+    reset: 'إعادة التعيين إلى الافتراضي',
   },
   profile: {
     title: 'الملف الشخصي',

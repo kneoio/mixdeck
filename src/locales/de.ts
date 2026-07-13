@@ -97,6 +97,10 @@ export default {
   theme: {
     to_dark: 'Dunkelmodus',
     to_light: 'Hellmodus',
+    accent: 'Akzentfarbe',
+    presets: 'Voreinstellungen',
+    generate: 'Überrasch mich',
+    reset: 'Auf Standard zurücksetzen',
   },
   profile: {
     title: 'Profil',

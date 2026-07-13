@@ -97,6 +97,10 @@ export default {
   theme: {
     to_dark: 'डार्क मोड',
     to_light: 'लाइट मोड',
+    accent: 'एक्सेंट रंग',
+    presets: 'प्रीसेट',
+    generate: 'मुझे चौंका दें',
+    reset: 'डिफ़ॉल्ट पर रीसेट करें',
   },
   profile: {
     title: 'प्रोफ़ाइल',

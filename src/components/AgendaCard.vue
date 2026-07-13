@@ -272,7 +272,7 @@ onUnmounted(() => stopRefresh())
   color: inherit;
   transition: border-color 0.15s, color 0.15s;
 }
-.refresh-btn:hover:not(:disabled) { border-color: #7C3AED; color: #7C3AED; }
+.refresh-btn:hover:not(:disabled) { border-color: var(--vt-c-primary); color: var(--vt-c-primary); }
 .refresh-btn:disabled { opacity: 0.4; cursor: default; }
 
 .refresh-spinner {
@@ -311,7 +311,7 @@ onUnmounted(() => stopRefresh())
   font-weight: 600;
   letter-spacing: 0.5px;
   white-space: nowrap;
-  color: #7C3AED;
+  color: var(--vt-c-primary);
 }
 .scene-title {
   font-size: 0.85rem;
@@ -351,7 +351,7 @@ onUnmounted(() => stopRefresh())
   padding: 2px 0;
 }
 .block-seq { font-family: monospace; font-size: 0.65rem; opacity: 0.5; min-width: 24px; }
-.block-time { font-family: monospace; font-size: 0.7rem; font-weight: 600; color: #7C3AED; }
+.block-time { font-family: monospace; font-size: 0.7rem; font-weight: 600; color: var(--vt-c-primary); }
 .block-dur { font-family: monospace; font-size: 0.65rem; opacity: 0.55; margin-left: auto; }
 
 .flag {
@@ -433,7 +433,7 @@ onUnmounted(() => stopRefresh())
   padding: 1px 7px;
   font-size: 0.65rem;
   font-weight: 600;
-  color: #7C3AED;
+  color: var(--vt-c-primary);
   background: rgba(124, 58, 237, 0.18);
   border: 1px solid rgba(124, 58, 237, 0.4);
   border-radius: 4px;

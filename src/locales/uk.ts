@@ -97,6 +97,10 @@ export default {
   theme: {
     to_dark: 'Перейти до темного режиму',
     to_light: 'Перейти до світлого режиму',
+    accent: 'Акцентний колір',
+    presets: 'Пресети',
+    generate: 'Здивуй мене',
+    reset: 'Скинути до типового',
   },
   profile: {
     title: 'Профіль',

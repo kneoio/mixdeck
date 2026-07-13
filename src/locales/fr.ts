@@ -97,6 +97,10 @@ export default {
   theme: {
     to_dark: 'Mode sombre',
     to_light: 'Mode clair',
+    accent: 'Couleur d’accent',
+    presets: 'Préréglages',
+    generate: 'Surprends-moi',
+    reset: 'Réinitialiser par défaut',
   },
   profile: {
     title: 'Profil',

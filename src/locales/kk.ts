@@ -97,6 +97,10 @@ export default {
   theme: {
     to_dark: 'Қараңғы режимге ауысу',
     to_light: 'Жарық режимге ауысу',
+    accent: 'Акцент түсі',
+    presets: 'Дайын үлгілер',
+    generate: 'Таңғалдыр',
+    reset: 'Әдепкіге қайтару',
   },
   profile: {
     title: 'Профиль',

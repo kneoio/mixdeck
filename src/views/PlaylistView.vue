@@ -241,7 +241,7 @@ const columns = computed<DataTableColumns<any>>(() => {
             h('span', { class: 'mob-meta-item' }, `${t('playlistView.col_played')}: ${played}`),
             h('span', { class: 'mob-meta-item' }, [t('playlistView.col_rating') + ': ', dislikesBadge, ' ', likesBadge]),
           ]
-          if (row.shared) metaItems.push(h('span', { class: 'mob-meta-item' }, [h(NIcon, { size: 14, color: '#7C3AED' }, { default: () => h(ShareSocialOutline) })]))
+          if (row.shared) metaItems.push(h('span', { class: 'mob-meta-item' }, [h(NIcon, { size: 14, color: 'var(--vt-c-primary)' }, { default: () => h(ShareSocialOutline) })]))
           if (row.description) metaItems.push(h('span', { class: 'mob-meta-item mob-desc' }, row.description))
           const row3 = h('div', { class: 'mob-r3' }, metaItems)
 
@@ -371,7 +371,7 @@ const columns = computed<DataTableColumns<any>>(() => {
     width: sharedW,
     align: 'center',
     render: (row) => row.shared
-      ? h(NIcon, { size: 18, color: '#7C3AED' }, { default: () => h(ShareSocialOutline) })
+      ? h(NIcon, { size: 18, color: 'var(--vt-c-primary)' }, { default: () => h(ShareSocialOutline) })
       : null,
   },
   { title: t('playlistView.col_description'), key: 'description', width: nw ? 100 : undefined, minWidth: descMin, ellipsis: { tooltip: true } },

@@ -483,7 +483,7 @@ function copyOtsLink(wizard: OtsWizard) {
   cursor: pointer;
 }
 .brand-name:hover {
-  color: #7C3AED;
+  color: var(--vt-c-primary);
 }
 .brand-status {
   font-size: 0.75rem;
@@ -567,7 +567,7 @@ function copyOtsLink(wizard: OtsWizard) {
 }
 .ots-add-strip:hover {
   opacity: 1;
-  border-color: #7C3AED;
+  border-color: var(--vt-c-primary);
   background: rgba(124, 58, 237, 0.06);
 }
 .ots-add-strip__plus {
@@ -662,8 +662,8 @@ function copyOtsLink(wizard: OtsWizard) {
   opacity: 0.8;
 }
 .ots-nav-btn--primary {
-  border-color: #7C3AED;
-  background: #7C3AED;
+  border-color: var(--vt-c-primary);
+  background: var(--vt-c-primary);
   color: #fff;
 }
 .ots-nav-btn:disabled {

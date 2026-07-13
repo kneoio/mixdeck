@@ -6,6 +6,7 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import { useBrandsStore } from '@/stores/brands'
+import ThemeAccentPicker from '@/components/ThemeAccentPicker.vue'
 import {
   NLayout, NLayoutSider, NLayoutHeader, NLayoutContent,
   NMenu, NButton, NDropdown, NAvatar, NSpace, NFlex, NIcon,
@@ -35,8 +36,8 @@ const route = useRoute()
 const menuThemeOverrides = computed(() => {
   const normalText = themeStore.isDark ? 'rgba(255,255,255,0.82)' : 'rgba(0,0,0,0.85)'
   return {
-    itemColorActive: '#7C3AED',
-    itemColorActiveHover: '#6d31d4',
+    itemColorActive: themeStore.accentPalette.base,
+    itemColorActiveHover: themeStore.accentPalette.pressed,
     itemTextColorActive: '#ffffff',
     itemIconColorActive: '#ffffff',
     itemTextColorActiveHover: '#ffffff',
@@ -52,7 +53,8 @@ const windowWidth = ref(window.innerWidth)
 const isMobile = computed(() => windowWidth.value < 768)
 const mobileDrawerOpen = ref(false)
 
-const HEADER_STRIPE_PURPLE = '#7C3AED'
+/** The header stripe's "purple" follows the user's chosen accent color. */
+const headerStripePurple = computed(() => themeStore.accentPalette.base)
 /** Pairs of (purple, accent) vertical lines; accent is black in dark theme, white in light. */
 const HEADER_LINE_PAIRS_DESKTOP = 110
 const HEADER_LINE_PAIRS_MOBILE = 36
@@ -72,7 +74,7 @@ const headerVerticalLines = computed(() => {
     const blueShare = 0.06 + 0.79 * (1 - t) ** 1.2
     const blackShare = 1 - blueShare
     const pairPct = 100 / n
-    out.push({ widthPct: pairPct * blueShare, color: HEADER_STRIPE_PURPLE })
+    out.push({ widthPct: pairPct * blueShare, color: headerStripePurple.value })
     out.push({ widthPct: pairPct * blackShare, color: accent })
   }
   return out
@@ -138,9 +140,16 @@ onMounted(async () => {
     router.push('/')
     return
   }
-  await brandsStore.loadBrands(1, 10)
-  if (brandsStore.brands.length === 0 && route.path !== '/broadcaster-welcome') {
-    await router.replace('/broadcaster-welcome')
+  try {
+    await brandsStore.loadBrands(1, 10)
+    if (brandsStore.brands.length === 0 && route.path !== '/broadcaster-welcome') {
+      await router.replace('/broadcaster-welcome')
+    }
+  } catch (err) {
+    // Don't let a failed brands fetch (e.g. backend unreachable) surface as an
+    // unhandled error in the mounted hook; the brand-count watcher still handles
+    // the empty-state redirect if data arrives later.
+    console.error('Failed to load brands on dashboard mount:', err)
   }
 })
 
@@ -209,7 +218,7 @@ const menuOptions = computed<MenuOption[]>(() => [
   {
     label: () => h('span', { style: 'font-weight: 700;' }, t('menu.overview')),
     key: 'overview',
-    icon: () => h(NIcon, { color: '#7C3AED' }, { default: () => h(OverviewIcon) }),
+    icon: () => h(NIcon, { color: 'var(--vt-c-primary)' }, { default: () => h(OverviewIcon) }),
   },
   {
     label: () => h('span', { style: 'font-weight: 700;' }, t('menu.my_brands')),
@@ -237,9 +246,9 @@ const menuOptions = computed<MenuOption[]>(() => [
         ],
       })),
       {
-        label: () => h('span', { style: 'color: #7C3AED; font-weight: 600;' }, t('menu.add_new')),
+        label: () => h('span', { style: 'color: var(--vt-c-primary); font-weight: 600;' }, t('menu.add_new')),
         key: 'brands-new',
-        icon: () => h(NIcon, { color: '#7C3AED' }, { default: () => h(AddIcon) }),
+        icon: () => h(NIcon, { color: 'var(--vt-c-primary)' }, { default: () => h(AddIcon) }),
       },
     ],
   },
@@ -331,7 +340,7 @@ const handleUserMenuSelect = async (key: string) => {
 .dashboard-layout-header {
   position: relative;
   overflow: hidden;
-  background-color: #7C3AED !important;
+  background-color: var(--vt-c-primary) !important;
   border: none !important;
   box-shadow: none !important;
 }
@@ -476,6 +485,7 @@ const handleUserMenuSelect = async (key: string) => {
               <h1 style="color: white; margin: 0; font-size: 14px; font-weight: 100; font-family: 'Goldman', 'Inter', sans-serif; letter-spacing: 0.24em; cursor: pointer;" @click="router.push('/')">M I X D E C K</h1>
             </NFlex>
             <NSpace class="dashboard-header-actions">
+              <ThemeAccentPicker />
               <NButton
                 circle quaternary
                 @click="themeStore.toggleTheme"

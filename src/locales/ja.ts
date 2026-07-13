@@ -97,6 +97,10 @@ export default {
   theme: {
     to_dark: 'ダークモード',
     to_light: 'ライトモード',
+    accent: 'アクセントカラー',
+    presets: 'プリセット',
+    generate: 'おまかせ',
+    reset: 'デフォルトに戻す',
   },
   profile: {
     title: 'プロフィール',

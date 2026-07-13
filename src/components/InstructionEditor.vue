@@ -77,7 +77,7 @@ const extensions = computed(() => [
     '.cm-scroller': { background: 'transparent' },
     '.cm-content': { background: 'transparent' },
     '.cm-activeLine': { background: 'transparent' },
-    '.cm-cursor': { borderLeftWidth: '2px', borderLeftColor: props.dark ? '#eff605' : '#7C3AED', boxShadow: props.dark ? '0 0 6px #eff605' : 'none' },
+    '.cm-cursor': { borderLeftWidth: '2px', borderLeftColor: props.dark ? '#eff605' : 'var(--vt-c-primary)', boxShadow: props.dark ? '0 0 6px #eff605' : 'none' },
     '.cm-jesoos-helper': { color: props.dark ? '#5dac30' : '#284e03' },
   }),
 ])

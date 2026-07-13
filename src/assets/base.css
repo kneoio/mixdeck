@@ -10,10 +10,14 @@
 
   --vt-c-indigo: #2c3e50;
 
+  /* Accent shades. These defaults are overwritten at runtime by the theme
+     store (applyAccentCssVars) from the user's chosen accent color. */
   --vt-c-primary: #7C3AED;
-  --vt-c-primary-soft: #c20010;
-  --vt-c-primary-dark: #820009;
-  --vt-c-primary-light: #d63340;
+  --vt-c-primary-hover: #9d5bf4;
+  --vt-c-primary-pressed: #6d31d4;
+  --vt-c-primary-soft: #6d31d4;
+  --vt-c-primary-dark: #560cd4;
+  --vt-c-primary-light: #a980ef;
 
   --vt-c-divider-light-1: rgba(60, 60, 60, 0.29);
   --vt-c-divider-light-2: rgba(60, 60, 60, 0.12);

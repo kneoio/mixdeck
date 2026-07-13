@@ -97,6 +97,10 @@ export default {
   theme: {
     to_dark: 'მუქ რეჟიმზე გადასვლა',
     to_light: 'ღია რეჟიმზე გადასვლა',
+    accent: 'აქცენტის ფერი',
+    presets: 'პრესეტები',
+    generate: 'გამაკვირვე',
+    reset: 'ნაგულისხმევზე დაბრუნება',
   },
   profile: {
     title: 'პროფილი',

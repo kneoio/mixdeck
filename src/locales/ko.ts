@@ -97,6 +97,10 @@ export default {
   theme: {
     to_dark: '다크 모드로 전환',
     to_light: '라이트 모드로 전환',
+    accent: '강조 색상',
+    presets: '프리셋',
+    generate: '랜덤 추천',
+    reset: '기본값으로 재설정',
   },
   profile: {
     title: '프로필',

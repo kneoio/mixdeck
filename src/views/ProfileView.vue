@@ -85,7 +85,7 @@ onMounted(async () => {
       <!-- Identity -->
       <NCard>
         <NFlex align="center" :size="20" style="margin-bottom: 20px;">
-          <NAvatar :size="72" round style="font-size: 28px; background: #7C3AED; color: #fff; flex-shrink: 0;">
+          <NAvatar :size="72" round style="font-size: 28px; background: var(--vt-c-primary); color: #fff; flex-shrink: 0;">
             {{ initials }}
           </NAvatar>
           <div>

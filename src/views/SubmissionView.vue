@@ -264,18 +264,20 @@ import { NConfigProvider, NInput, NProgress, NSelect, NTreeSelect, NCheckbox, NS
 import GsapButton from '@/components/GsapButton.vue'
 import datanestApiService from '@/services/datanestApi'
 import { useDictionaryStore } from '@/stores/dictionary'
+import { useThemeStore } from '@/stores/theme'
 import { toGenreTreeOptions } from '@/utils/genreTree'
 
 const { t } = useI18n()
 const router = useRouter()
 const dictionaryStore = useDictionaryStore()
+const themeStore = useThemeStore()
 
-const themeOverrides: GlobalThemeOverrides = {
+const themeOverrides = computed<GlobalThemeOverrides>(() => ({
   common: {
-    primaryColor: '#7C3AED',
-    primaryColorHover: '#9d5bf4',
-    primaryColorPressed: '#6d31d4',
-    primaryColorSuppl: '#7C3AED',
+    primaryColor: themeStore.accentPalette.base,
+    primaryColorHover: themeStore.accentPalette.hover,
+    primaryColorPressed: themeStore.accentPalette.pressed,
+    primaryColorSuppl: themeStore.accentPalette.base,
   },
   Button: {
     textColorPrimary: '#ffffff',
@@ -291,7 +293,7 @@ const themeOverrides: GlobalThemeOverrides = {
     heightMedium: '40px',
     fontSizeMedium: '15px',
   },
-}
+}))
 
 const genreTreeOptions = computed(() => toGenreTreeOptions(dictionaryStore.genres))
 
@@ -665,7 +667,7 @@ h2 {
 }
 
 .wizard-connector.done {
-  background: #7C3AED;
+  background: var(--vt-c-primary);
 }
 
 .step-intro {
@@ -779,12 +781,12 @@ h2 {
 }
 
 .file-area:hover {
-  border-color: #7C3AED;
+  border-color: var(--vt-c-primary);
   background: rgba(124, 58, 237, 0.04);
 }
 
 .file-area--has-file {
-  border-color: #7C3AED;
+  border-color: var(--vt-c-primary);
   background: rgba(124, 58, 237, 0.06);
 }
 

@@ -388,7 +388,7 @@ function renderSceneActionTag(scene: Scene) {
 function renderActionGroupLabel(option: SelectOption) {
   if ((option as any).type === 'group') {
     return h('span', {
-      style: 'font-size:0.62rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#7C3AED;opacity:0.9;',
+      style: 'font-size:0.62rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--vt-c-primary);opacity:0.9;',
     }, String(option.label ?? ''))
   }
   return h('span', String(option.label ?? ''))
@@ -2085,7 +2085,7 @@ watch(activeTab, async (tab) => {
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #7C3AED;
+  color: var(--vt-c-primary);
 }
 
 .custom-action-form__row {
@@ -2173,7 +2173,7 @@ watch(activeTab, async (tab) => {
   height: 28px;
   border-radius: 4px;
   border: none;
-  background: #7C3AED;
+  background: var(--vt-c-primary);
   color: #fff;
   font-size: 0.78rem;
   font-weight: 500;
@@ -2301,7 +2301,7 @@ watch(activeTab, async (tab) => {
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #7C3AED;
+  color: var(--vt-c-primary);
   cursor: pointer;
   border-bottom: 1px dashed transparent;
   transition: border-color 0.15s;
