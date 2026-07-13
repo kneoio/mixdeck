@@ -14,6 +14,8 @@ export interface OtsDefinition {
   userVariables: Record<string, any>
   brandId: string | null
   agentId: string | null
+  status?: string
+  type?: string
 }
 
 export const useOtsDefinitionsStore = defineStore('otsDefinitions', () => {

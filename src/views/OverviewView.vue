@@ -52,11 +52,46 @@
 
       <h3 class="overview-section-title">{{ t('overview.one_time_stream') }}</h3>
 
+      <NCard v-for="def in otsDefinitionsStore.otsDefinitions" :key="def.id" class="ots-card">
+        <template #header>
+          <div class="brand-head">
+            <span class="brand-name">{{ def.name || def.slugName || def.id }}</span>
+            <span v-if="def.type" class="type-pill">{{ def.type }}</span>
+            <span class="brand-status">{{ def.status }}</span>
+          </div>
+        </template>
+        <template v-if="def.slugName" #header-extra>
+          <div class="brand-url">
+            <a :href="`https://mixpla.online/live/${def.slugName}`" target="_blank" rel="noopener noreferrer" class="brand-url-link">{{ `https://mixpla.online/live/${def.slugName}` }}</a>
+            <button
+              class="copy-btn"
+              :class="{ 'copy-btn--done': copiedOtsId === def.id }"
+              :title="t('dashboard.copy_url')"
+              @click="copyOtsDefinitionLink(def)"
+            >
+              <svg v-if="copiedOtsId !== def.id" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <svg v-else width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+          </div>
+        </template>
+        <div class="ots-scope-line">
+          <span v-if="def.brandId">{{ brandLabel(brandsStore.brands.find(b => b.id === def.brandId) || {} as Brand) }}</span>
+          <span v-else>{{ t('overview.ots_scope_default') }}</span>
+        </div>
+        <table v-if="def.userVariables && Object.keys(def.userVariables).length" class="ots-vars-table">
+          <tbody>
+            <tr v-for="(value, key) in def.userVariables" :key="key">
+              <td class="ots-vars-table__key">{{ key }}</td>
+              <td class="ots-vars-table__value">{{ value }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </NCard>
+
       <NCard v-for="wizard in otsWizards" :key="wizard.id" class="ots-card">
         <template #header>
           <div class="brand-head">
             <span class="brand-name">{{ t('overview.one_time_stream') }}</span>
-            <span class="ots-step-indicator">{{ t('overview.ots_step', { step: wizard.step }) }}</span>
           </div>
         </template>
         <template #header-extra>
@@ -79,7 +114,7 @@
           </div>
         </NCard>
 
-        <NCard v-if="wizard.step >= 2" :bordered="true" size="small" class="ots-step-card">
+        <NCard :bordered="true" size="small" class="ots-step-card">
           <div class="ots-step">
             <NSpin :show="wizard.loadingScriptDetail">
               <template v-if="wizard.scriptDetail?.requiredVariables?.length">
@@ -94,12 +129,12 @@
                   <NInput v-else v-model:value="wizard.variables[variable.name]" style="width: 100%" />
                 </div>
               </template>
-              <p v-else-if="!wizard.loadingScriptDetail" class="ots-no-variables">{{ t('overview.ots_no_variables') }}</p>
+              <p v-else-if="!wizard.loadingScriptDetail" class="ots-no-variables">{{ wizard.scriptId ? t('overview.ots_no_variables') : t('overview.ots_pick_script_first') }}</p>
             </NSpin>
           </div>
         </NCard>
 
-        <NCard v-if="wizard.step >= 3" :bordered="true" size="small" class="ots-step-card">
+        <NCard :bordered="true" size="small" class="ots-step-card">
           <div class="ots-step">
             <NRadioGroup v-model:value="wizard.scope" @update:value="onOtsScopeChange(wizard)">
               <NSpace>
@@ -127,12 +162,10 @@
               filterable
               style="margin-top: 10px;"
             />
-
-            <p v-if="wizard.error" class="ots-error">{{ wizard.error }}</p>
           </div>
         </NCard>
 
-        <NCard v-if="wizard.step >= 4" :bordered="true" size="small" class="ots-step-card">
+        <NCard v-if="wizard.link" :bordered="true" size="small" class="ots-step-card">
           <div class="ots-step">
             <div class="brand-url">
               <a :href="wizard.link" target="_blank" rel="noopener noreferrer" class="brand-url-link">{{ wizard.link }}</a>
@@ -144,14 +177,16 @@
           </div>
         </NCard>
 
-        <div v-if="wizard.step < 4" class="ots-nav">
+        <p v-if="wizard.error" class="ots-error">{{ wizard.error }}</p>
+
+        <div class="ots-nav">
           <button
             class="ots-nav-btn ots-nav-btn--primary"
             type="button"
-            :disabled="(wizard.step === 1 && !wizard.scriptId) || (wizard.step === 3 && !otsScopeValid(wizard)) || wizard.submitting"
-            @click="advanceOtsStep(wizard)"
+            :disabled="!wizard.scriptId || !otsScopeValid(wizard) || wizard.submitting || wizard.updating"
+            @click="wizard.createdId ? updateOtsStream(wizard) : createOtsStream(wizard)"
           >
-            {{ t('overview.ots_next') }} →
+            {{ otsSubmitLabel(wizard) }}
           </button>
         </div>
       </NCard>
@@ -164,7 +199,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, h, reactive, ref } from 'vue'
+import { computed, h, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { NCard, NCollapse, NCollapseItem, NSelect, NSwitch, NInputNumber, NInput, NTag, NSpace, NSpin, NRadioGroup, NRadio, type SelectOption } from 'naive-ui'
@@ -213,9 +248,20 @@ function copyUrl(brand: Brand) {
   setTimeout(() => { copiedId.value = null }, 2000)
 }
 
+const copiedOtsId = ref<string | null>(null)
+function copyOtsDefinitionLink(def: { id: string; slugName?: string }) {
+  if (!def.slugName) return
+  navigator.clipboard.writeText(`https://mixpla.online/live/${def.slugName}`)
+  copiedOtsId.value = def.id
+  setTimeout(() => { copiedOtsId.value = null }, 2000)
+}
+
+onMounted(() => {
+  otsDefinitionsStore.loadOtsDefinitions(1, 50)
+})
+
 interface OtsWizard {
   id: string
-  step: number
   scriptId: string | null
   scriptDetail: Script | null
   loadingScriptDetail: boolean
@@ -229,6 +275,9 @@ interface OtsWizard {
   error: string | null
   link: string
   linkCopied: boolean
+  createdId: string | null
+  updating: boolean
+  updated: boolean
 }
 
 const otsWizards = ref<OtsWizard[]>([])
@@ -243,6 +292,14 @@ const brandOptions = computed(() =>
 
 function otsScopeValid(wizard: OtsWizard): boolean {
   return wizard.scope === 'brand' ? !!wizard.brandId : !!wizard.agentId
+}
+
+function otsSubmitLabel(wizard: OtsWizard): string {
+  if (wizard.submitting) return t('overview.ots_creating')
+  if (wizard.updating) return t('overview.ots_updating')
+  if (wizard.updated) return t('overview.ots_updated')
+  if (wizard.createdId) return t('overview.ots_update')
+  return t('overview.ots_create')
 }
 
 function renderScriptOptionLabel(option: SelectOption) {
@@ -268,9 +325,8 @@ function renderScriptOptionLabel(option: SelectOption) {
 }
 
 function openOtsWizard() {
-  otsWizards.value.push({
+  const wizard: OtsWizard = reactive({
     id: crypto.randomUUID(),
-    step: 1,
     scriptId: null,
     scriptDetail: null,
     loadingScriptDetail: false,
@@ -284,10 +340,15 @@ function openOtsWizard() {
     error: null,
     link: '',
     linkCopied: false,
+    createdId: null,
+    updating: false,
+    updated: false,
   })
+  otsWizards.value.push(wizard)
   if (!scriptsStore.scripts.length) {
     scriptsStore.loadScripts(1, scriptsStore.pageSize, 'timingMode=RELATIVE_TO_STREAM_START')
   }
+  loadOtsAgents(wizard)
 }
 
 async function onOtsScriptChange(wizard: OtsWizard) {
@@ -338,35 +399,53 @@ function onOtsBrandChange(wizard: OtsWizard) {
   if (wizard.brandId) loadOtsAgents(wizard)
 }
 
-async function advanceOtsStep(wizard: OtsWizard) {
-  if (wizard.step === 2 && wizard.scope === 'default' && !wizard.agentOptions.length) {
-    await loadOtsAgents(wizard)
+async function createOtsStream(wizard: OtsWizard) {
+  if (!wizard.scriptId || !otsScopeValid(wizard)) {
+    wizard.error = t('overview.ots_agent_required')
+    return
   }
-
-  if (wizard.step === 3) {
-    if (!otsScopeValid(wizard)) {
-      wizard.error = t('overview.ots_agent_required')
-      return
-    }
-    wizard.error = null
-    wizard.submitting = true
-    try {
-      const created = await otsDefinitionsStore.createOtsDefinition({
-        scriptId: wizard.scriptId!,
-        userVariables: { ...wizard.variables },
-        brandId: wizard.scope === 'brand' ? wizard.brandId : null,
-        agentId: wizard.agentId || null,
-      })
-      wizard.link = `https://mixpla.online/${created.slugName}`
-    } catch (err) {
-      wizard.error = err instanceof Error ? err.message : t('overview.ots_create_failed')
-      return
-    } finally {
-      wizard.submitting = false
-    }
+  wizard.error = null
+  wizard.submitting = true
+  try {
+    const created = await otsDefinitionsStore.createOtsDefinition({
+      scriptId: wizard.scriptId,
+      userVariables: { ...wizard.variables },
+      brandId: wizard.scope === 'brand' ? wizard.brandId : null,
+      agentId: wizard.agentId || null,
+    })
+    wizard.createdId = created.id
+    wizard.link = `https://mixpla.online/live/${created.slugName}`
+  } catch (err) {
+    wizard.error = err instanceof Error ? err.message : t('overview.ots_create_failed')
+  } finally {
+    wizard.submitting = false
   }
+}
 
-  wizard.step++
+async function updateOtsStream(wizard: OtsWizard) {
+  if (!wizard.createdId) return
+  if (!otsScopeValid(wizard)) {
+    wizard.error = t('overview.ots_agent_required')
+    return
+  }
+  wizard.error = null
+  wizard.updating = true
+  wizard.updated = false
+  try {
+    const updated = await otsDefinitionsStore.updateOtsDefinition(wizard.createdId, {
+      scriptId: wizard.scriptId!,
+      userVariables: { ...wizard.variables },
+      brandId: wizard.scope === 'brand' ? wizard.brandId : null,
+      agentId: wizard.agentId || null,
+    })
+    wizard.link = `https://mixpla.online/live/${updated.slugName}`
+    wizard.updated = true
+    setTimeout(() => { wizard.updated = false }, 2000)
+  } catch (err) {
+    wizard.error = err instanceof Error ? err.message : t('overview.ots_create_failed')
+  } finally {
+    wizard.updating = false
+  }
 }
 
 function copyOtsLink(wizard: OtsWizard) {
@@ -499,17 +578,43 @@ function copyOtsLink(wizard: OtsWizard) {
 .ots-card {
   border-color: rgba(128, 128, 128, 0.35);
 }
+.type-pill {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(124, 58, 237, 0.9);
+  border: 1px solid rgba(124, 58, 237, 0.5);
+  border-radius: 3px;
+  padding: 0px 4px;
+}
+.ots-scope-line {
+  font-size: 13px;
+}
+.ots-vars-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 2px;
+}
+.ots-vars-table td {
+  border: none;
+  padding: 1px 8px 1px 0;
+  font-size: 13px;
+  line-height: 1.3;
+}
+.ots-vars-table__key {
+  color: #888;
+  white-space: nowrap;
+}
+.ots-vars-table__value {
+  width: 100%;
+}
 .ots-step-card {
   margin-bottom: 12px;
 }
 .ots-step-card :deep(.n-card__content) {
   padding: 14px;
-}
-.ots-step-indicator {
-  font-size: 0.75rem;
-  opacity: 0.55;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 .ots-step {
   min-height: 60px;

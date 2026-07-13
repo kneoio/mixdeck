@@ -1099,6 +1099,8 @@ function applyBrandToForm(brand: any) {
 onMounted(async () => {
   updateIsMobile()
   window.addEventListener('resize', updateIsMobile)
+  dictionaryStore.loadGenres()
+  dictionaryStore.loadSoundFragmentLabels()
   try {
     loading.value = true
     if (isEditing.value) {
@@ -1210,17 +1212,14 @@ watch(activeTab, async (tab) => {
       if (!isFree(a.tags ?? []) && isFree(b.tags ?? [])) return 1
       return 0
     })
-    console.log('[BrandForm] scriptOptions loaded:', scriptOptions.value.length, '| current scriptId:', formData.value.scriptId, '| match:', scriptOptions.value.find(o => o.value === formData.value.scriptId))
     scriptsLoaded.value = true
   }
   if (tab === 'audience' && !audienceLoaded.value) {
-    const [profiles] = await Promise.allSettled([
-      datanestApiService.getPagedDictionary<any>('/profiles', 1, 100),
-      dictionaryStore.loadGenres(),
-      dictionaryStore.loadSoundFragmentLabels(),
-    ])
-    if (profiles.status === 'fulfilled') {
-      profileOptions.value = profiles.value.entries.map((p: any) => ({ label: p.name || p.id, value: p.id }))
+    try {
+      const profiles = await datanestApiService.getPagedDictionary<any>('/profiles', 1, 100)
+      profileOptions.value = profiles.entries.map((p: any) => ({ label: p.name || p.id, value: p.id }))
+    } catch (error: any) {
+      message.error(error?.message || t('brandForm.load_failed'))
     }
     audienceLoaded.value = true
   }
