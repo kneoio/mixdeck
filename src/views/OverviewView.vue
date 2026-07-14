@@ -78,6 +78,14 @@
               <svg v-if="!wizard.linkCopied" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
               <svg v-else width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
             </button>
+            <button
+              v-if="wizard.scope === 'brand' && wizard.brandId"
+              class="copy-btn"
+              title="Go to station"
+              @click="router.push({ name: 'brand-settings', params: { id: wizard.brandId } })"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6"/><path d="M10 14L21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+            </button>
             <NPopconfirm v-if="wizard.createdId" @positive-click="() => deleteOtsWizard(wizard)">
               <template #trigger>
                 <button class="copy-btn" :title="t('common.close')">
