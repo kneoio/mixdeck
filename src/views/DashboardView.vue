@@ -332,38 +332,40 @@ const handleUserMenuSelect = async (key: string) => {
 
 <style scoped>
 .update-pill {
-  position: absolute;
-  left: 8px;
-  right: 8px;
+  position: fixed;
+  left: 12px;
   bottom: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--vt-c-primary);
-  background: transparent;
-  color: var(--vt-c-primary);
-  font-size: 12px;
-  cursor: pointer;
-  transition: background 0.2s, opacity 0.2s;
+  z-index: 100;
 }
-.update-pill:hover {
-  background: rgba(124, 58, 237, 0.1);
+
+.premium-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+  padding: 0px 4px;
+  transition: color 0.3s, border-color 0.3s, box-shadow 0.3s;
 }
-.update-pill--collapsed {
-  left: 8px;
-  right: 8px;
-  padding: 6px;
+
+html.dark .premium-badge {
+  color: rgba(255, 255, 255, 0.35);
+  border-color: rgba(255, 255, 255, 0.15);
 }
-.update-pill__dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--vt-c-primary);
-  box-shadow: 0 0 4px 1px var(--vt-c-primary);
-  flex-shrink: 0;
+
+.premium-badge--glow {
+  color: #f0a500;
+  border-color: rgba(240, 165, 0, 0.5);
+  box-shadow: 0 0 7px 2px rgba(240, 165, 0, 0.4);
+}
+
+.update-pill--glow {
+  color: #3b9dff;
+  border-color: rgba(59, 157, 255, 0.5);
+  box-shadow: 0 0 7px 2px rgba(59, 157, 255, 0.4);
 }
 
 @font-face {
@@ -438,7 +440,7 @@ const handleUserMenuSelect = async (key: string) => {
       :width="240"
       :collapsed="collapsed"
       show-trigger
-      style="min-height: 100vh; position: relative;"
+      style="min-height: 100vh;"
       @collapse="collapsed = true"
       @expand="collapsed = false"
     >
@@ -454,17 +456,17 @@ const handleUserMenuSelect = async (key: string) => {
         @update:expanded-keys="handleUpdateExpandedKeys"
         @update:value="handleMenuSelect"
       />
-      <button
-        v-if="needRefresh"
-        class="update-pill"
-        :class="{ 'update-pill--collapsed': collapsed }"
-        :title="t('app.update_available')"
-        @click="applyUpdate"
-      >
-        <span class="update-pill__dot" />
-        <span v-if="!collapsed">{{ t('app.update_available') }}</span>
-      </button>
     </NLayoutSider>
+
+    <span
+      v-if="!isMobile"
+      class="update-pill premium-badge"
+      :class="{ 'update-pill--glow': needRefresh }"
+      :style="{ cursor: needRefresh ? 'pointer' : 'default' }"
+      @click="needRefresh && applyUpdate()"
+    >
+      {{ needRefresh ? t('app.update_available') : t('app.latest_version') }}
+    </span>
 
     <!-- Mobile drawer -->
     <NDrawer
@@ -486,11 +488,15 @@ const handleUserMenuSelect = async (key: string) => {
           @update:expanded-keys="handleUpdateExpandedKeys"
           @update:value="handleMenuSelect"
         />
-        <template v-if="needRefresh" #footer>
-          <button class="update-pill" style="width: 100%;" @click="applyUpdate">
-            <span class="update-pill__dot" />
-            <span>{{ t('app.update_available') }}</span>
-          </button>
+        <template #footer>
+          <span
+            class="premium-badge"
+            :class="{ 'update-pill--glow': needRefresh }"
+            :style="{ cursor: needRefresh ? 'pointer' : 'default' }"
+            @click="needRefresh && applyUpdate()"
+          >
+            {{ needRefresh ? t('app.update_available') : t('app.latest_version') }}
+          </span>
         </template>
       </NDrawerContent>
     </NDrawer>

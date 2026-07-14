@@ -1,6 +1,7 @@
 export default {
   app: {
     update_available: 'Update available',
+    latest_version: 'Latest version',
   },
   nav: {
     platform: 'Platform',
