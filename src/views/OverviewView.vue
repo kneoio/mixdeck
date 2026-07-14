@@ -13,7 +13,7 @@
         <template #header>
           <div class="brand-head">
             <span class="brand-name" @click="goPlaylist(brand)">{{ brandLabel(brand) }}</span>
-            <StatusOrbitBadge class="brand-status" :live="ledState(brand).label === t('overview.online')">{{ ledState(brand).label }}</StatusOrbitBadge>
+            <span class="brand-status">{{ ledState(brand).label }}</span>
           </div>
         </template>
 
