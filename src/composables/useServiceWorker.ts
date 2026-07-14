@@ -1,6 +1,8 @@
 import { useRegisterSW } from 'virtual:pwa-register/vue'
 
-export function useServiceWorker() {
+let singleton: ReturnType<typeof createServiceWorkerState> | null = null
+
+function createServiceWorkerState() {
   const { needRefresh, updateServiceWorker } = useRegisterSW({
     onRegistered(r) {
       // Poll for updates every 60 minutes
@@ -15,4 +17,10 @@ export function useServiceWorker() {
   }
 
   return { needRefresh, applyUpdate }
+}
+
+/** Registers the service worker once and shares the same reactive state across every caller. */
+export function useServiceWorker() {
+  if (!singleton) singleton = createServiceWorkerState()
+  return singleton
 }

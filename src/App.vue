@@ -15,16 +15,6 @@
           <NSpin size="large"/>
         </div>
         <RouterView/>
-        <NModal
-          v-model:show="needRefresh"
-          preset="dialog"
-          title="Update available"
-          :content="`Mixdeck v${appVersion} is ready. Reload now to get the latest features and fixes.`"
-          positive-text="Update"
-          negative-text="Later"
-          :mask-closable="false"
-          @positive-click="applyUpdate"
-        />
       </NMessageProvider>
     </NLoadingBarProvider>
   </NConfigProvider>
@@ -32,7 +22,7 @@
 
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
-import { NMessageProvider, NLoadingBarProvider, NGlobalStyle, NConfigProvider, NModal, NSpin } from 'naive-ui'
+import { NMessageProvider, NLoadingBarProvider, NGlobalStyle, NConfigProvider, NSpin } from 'naive-ui'
 import { darkTheme, type GlobalThemeOverrides } from 'naive-ui'
 import {
   enUS, deDE, esAR, frFR, jaJP, ptBR, ruRU, ukUA, arDZ,
@@ -48,8 +38,7 @@ import { onMounted, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { applyDirection, type SupportedLocale } from '@/i18n'
 
-const { needRefresh, applyUpdate } = useServiceWorker()
-const appVersion = __APP_VERSION__
+useServiceWorker()
 const themeStore = useThemeStore()
 const authStore = useAuthStore()
 const userSubscriptionStore = useUserSubscriptionStore()

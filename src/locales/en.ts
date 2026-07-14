@@ -1,4 +1,7 @@
 export default {
+  app: {
+    update_available: 'Update available',
+  },
   nav: {
     platform: 'Platform',
     broadcasters: 'Broadcasters',

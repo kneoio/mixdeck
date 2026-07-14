@@ -6,6 +6,7 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import { useBrandsStore } from '@/stores/brands'
+import { useServiceWorker } from '@/composables/useServiceWorker'
 import ThemeAccentPicker from '@/components/ThemeAccentPicker.vue'
 import {
   NLayout, NLayoutSider, NLayoutHeader, NLayoutContent,
@@ -32,6 +33,7 @@ const themeStore = useThemeStore()
 const brandsStore = useBrandsStore()
 const router = useRouter()
 const route = useRoute()
+const { needRefresh, applyUpdate } = useServiceWorker()
 
 const menuThemeOverrides = computed(() => {
   const normalText = themeStore.isDark ? 'rgba(255,255,255,0.82)' : 'rgba(0,0,0,0.85)'
@@ -329,6 +331,41 @@ const handleUserMenuSelect = async (key: string) => {
 </script>
 
 <style scoped>
+.update-pill {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--vt-c-primary);
+  background: transparent;
+  color: var(--vt-c-primary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+.update-pill:hover {
+  background: rgba(124, 58, 237, 0.1);
+}
+.update-pill--collapsed {
+  left: 8px;
+  right: 8px;
+  padding: 6px;
+}
+.update-pill__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--vt-c-primary);
+  box-shadow: 0 0 4px 1px var(--vt-c-primary);
+  flex-shrink: 0;
+}
+
 @font-face {
   font-family: 'Goldman';
   src: url('/src/assets/fonts/Goldman-Bold.ttf') format('truetype');
@@ -401,7 +438,7 @@ const handleUserMenuSelect = async (key: string) => {
       :width="240"
       :collapsed="collapsed"
       show-trigger
-      style="min-height: 100vh;"
+      style="min-height: 100vh; position: relative;"
       @collapse="collapsed = true"
       @expand="collapsed = false"
     >
@@ -417,6 +454,16 @@ const handleUserMenuSelect = async (key: string) => {
         @update:expanded-keys="handleUpdateExpandedKeys"
         @update:value="handleMenuSelect"
       />
+      <button
+        v-if="needRefresh"
+        class="update-pill"
+        :class="{ 'update-pill--collapsed': collapsed }"
+        :title="t('app.update_available')"
+        @click="applyUpdate"
+      >
+        <span class="update-pill__dot" />
+        <span v-if="!collapsed">{{ t('app.update_available') }}</span>
+      </button>
     </NLayoutSider>
 
     <!-- Mobile drawer -->
@@ -439,6 +486,12 @@ const handleUserMenuSelect = async (key: string) => {
           @update:expanded-keys="handleUpdateExpandedKeys"
           @update:value="handleMenuSelect"
         />
+        <template v-if="needRefresh" #footer>
+          <button class="update-pill" style="width: 100%;" @click="applyUpdate">
+            <span class="update-pill__dot" />
+            <span>{{ t('app.update_available') }}</span>
+          </button>
+        </template>
       </NDrawerContent>
     </NDrawer>
 
