@@ -81,7 +81,7 @@
         <table v-if="def.userVariables && Object.keys(def.userVariables).length" class="ots-vars-table">
           <tbody>
             <tr v-for="(value, key) in def.userVariables" :key="key">
-              <td class="ots-vars-table__key">{{ key }}</td>
+              <td class="ots-vars-table__key">{{ formatVariableName(key) }}</td>
               <td class="ots-vars-table__value">{{ value }}</td>
             </tr>
           </tbody>
@@ -219,6 +219,10 @@ const otsDefinitionsStore = useOtsDefinitionsStore()
 
 const brandLabel = (brand: Brand) =>
   brand.localizedName?.['en'] || brand.title || brand.slugName || brand.id
+
+function formatVariableName(name: string) {
+  return name.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase())
+}
 
 function isAlive(brand: Brand): boolean {
   return brandsStore.streamingStates[brand.slugName ?? ''] ?? false
