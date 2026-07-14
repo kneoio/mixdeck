@@ -113,11 +113,7 @@
                 @update:value="() => onOtsScriptChange(wizard)"
               />
             </div>
-            <div class="ots-step__desc">
-              <NAnchor v-if="wizard.scriptDetail?.description">
-                <NAnchorLink :title="wizard.scriptDetail.description" />
-              </NAnchor>
-            </div>
+            <div class="ots-step__desc script-description" v-html="wizard.scriptDetail?.description ? renderScriptDescription(wizard.scriptDetail.description) : ''" />
           </div>
         </NCard>
 
@@ -128,9 +124,8 @@
                 <div class="ots-variable-grid">
                 <div v-for="variable in wizard.scriptDetail.requiredVariables" :key="variable.name" class="ots-variable">
                   <div class="ots-variable__label">
-                    <strong>{{ variable.name }}</strong>
+                    <span>{{ variable.description }}</span>
                     <span v-if="variable.required" class="ots-variable__required">*</span>
-                    <span v-if="variable.description" class="ots-variable__desc">{{ variable.description }}</span>
                   </div>
                   <NSwitch v-if="variable.type === 'boolean'" v-model:value="wizard.variables[variable.name]" />
                   <NInputNumber v-else-if="variable.type === 'number'" v-model:value="wizard.variables[variable.name]" style="width: 100%" />
@@ -146,10 +141,8 @@
         <NCard :bordered="true" size="small" class="ots-step-card">
           <div class="ots-step">
             <NRadioGroup v-model:value="wizard.scope" @update:value="onOtsScopeChange(wizard)">
-              <NSpace>
-                <NRadio value="brand">{{ t('overview.ots_scope_brand') }}</NRadio>
-                <NRadio value="default">{{ t('overview.ots_scope_default') }}</NRadio>
-              </NSpace>
+              <NRadioButton value="brand">{{ t('overview.ots_scope_brand') }}</NRadioButton>
+              <NRadioButton value="default">{{ t('overview.ots_scope_default') }}</NRadioButton>
             </NRadioGroup>
 
             <div v-if="wizard.scope === 'brand'" class="ots-variable-grid" style="margin-top: 10px;">
@@ -183,7 +176,7 @@
         <div class="ots-nav">
           <GsapButton
             type="primary"
-            :disabled="!wizard.scriptId || !otsScopeValid(wizard) || wizard.submitting || wizard.updating || wizard.status === 'STREAMING' || wizard.status === 'DONE'"
+            :disabled="!wizard.scriptId || !otsScopeValid(wizard) || wizard.submitting || wizard.updating || wizard.status === 'STREAMING' || wizard.status === 'DONE' || wizard.status === 'ON_LINE'"
             @click="wizard.createdId ? updateOtsStream(wizard) : createOtsStream(wizard)"
           >
             <span>{{ otsSubmitLabel(wizard) }}</span>
@@ -202,7 +195,8 @@
 import { computed, h, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { NCard, NCollapse, NCollapseItem, NSelect, NSwitch, NInputNumber, NInput, NTag, NSpace, NSpin, NRadioGroup, NRadio, NPopconfirm, NAnchor, NAnchorLink, useMessage, type SelectOption } from 'naive-ui'
+import { NCard, NCollapse, NCollapseItem, NSelect, NSwitch, NInputNumber, NInput, NTag, NSpace, NSpin, NRadioGroup, NRadioButton, NPopconfirm, useMessage, type SelectOption } from 'naive-ui'
+import MarkdownIt from 'markdown-it'
 import { useBrandsStore, type Brand } from '@/stores/brands'
 import { useScriptsStore, type Script } from '@/stores/scripts'
 import { useOtsDefinitionsStore, type OtsDefinition } from '@/stores/otsDefinitions'
@@ -223,6 +217,11 @@ const otsDefinitionsStore = useOtsDefinitionsStore()
 
 const brandLabel = (brand: Brand) =>
   brand.localizedName?.['en'] || brand.title || brand.slugName || brand.id
+
+const md = new MarkdownIt()
+function renderScriptDescription(description: string) {
+  return md.render(description)
+}
 
 function isAlive(brand: Brand): boolean {
   return brandsStore.streamingStates[brand.slugName ?? ''] ?? false
@@ -730,9 +729,27 @@ function copyOtsLink(wizard: OtsWizard) {
 .ots-step__desc {
   flex: 1;
   min-width: 0;
-  font-size: 13px;
-  color: #888;
 }
+.script-description {
+  font-size: 13px;
+  color: #aaa;
+  line-height: 1.6;
+}
+.script-description :deep(h1),
+.script-description :deep(h2),
+.script-description :deep(h3) {
+  color: #ddd;
+  margin: 8px 0 4px;
+}
+.script-description :deep(p) { margin: 4px 0; }
+.script-description :deep(code) {
+  background: #2a2a2a;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+.script-description :deep(ul),
+.script-description :deep(ol) { padding-left: 20px; margin: 4px 0; }
 .ots-variable-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
