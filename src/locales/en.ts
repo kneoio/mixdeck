@@ -83,6 +83,8 @@ export default {
     ots_update: 'Update',
     ots_updating: 'Updating…',
     ots_updated: 'Updated',
+    ots_delete_confirm: 'Delete this one-time stream?',
+    ots_delete_failed: 'Could not delete the one-time stream. Please try again.',
   },
   dashboard: {
     player_ui: 'Player UI',

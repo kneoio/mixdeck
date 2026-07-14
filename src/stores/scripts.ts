@@ -10,6 +10,7 @@ export interface Script {
   lastModifiedDate?: string
   name: string
   description: string
+  color?: string
   defaultProfileId?: string
   labels?: string[]
   tags?: Array<{
