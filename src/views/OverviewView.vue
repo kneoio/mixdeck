@@ -39,7 +39,7 @@
           </div>
         </template>
 
-        <AivoxCard v-if="brand.slugName" :brand-slug="brand.slugName" :timezone="brand.timeZone" />
+        <AivoxCard v-if="brand.slugName" :brand-slug="brand.slugName" :timezone="brand.timeZone" :status="brand.status" />
 
         <!--
         <NCollapse v-if="brand.slugName" class="agenda-collapse">
@@ -62,7 +62,7 @@
           <div class="brand-head">
             <span class="brand-name">{{ wizard.name || t('overview.one_time_stream') }}</span>
             <span v-if="wizard.type" class="type-pill">{{ wizard.type }}</span>
-            <StatusOrbitBadge v-if="wizard.status" class="brand-status" :live="wizard.status === 'STREAMING'">{{ wizard.status }}</StatusOrbitBadge>
+            <StatusOrbitBadge v-if="wizard.status" class="brand-status" :live="wizard.status === 'STREAMING' || wizard.heartbeatAlive">{{ wizard.status }}</StatusOrbitBadge>
           </div>
         </template>
         <template #header-extra>
@@ -200,7 +200,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, h, onMounted, reactive, ref } from 'vue'
+import { computed, h, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { NCard, NCollapse, NCollapseItem, NSelect, NSwitch, NInputNumber, NInput, NTag, NSpace, NSpin, NRadioGroup, NRadio, NPopconfirm, NAnchor, NAnchorLink, useMessage, type SelectOption } from 'naive-ui'
@@ -208,6 +208,7 @@ import { useBrandsStore, type Brand } from '@/stores/brands'
 import { useScriptsStore, type Script } from '@/stores/scripts'
 import { useOtsDefinitionsStore, type OtsDefinition } from '@/stores/otsDefinitions'
 import datanestApiService from '@/services/datanestApi'
+import aivoxApiService from '@/services/aivoxApi'
 import PageHeader from '@/components/PageHeader.vue'
 import AivoxCard from '@/components/AivoxCard.vue'
 import GsapButton from '@/components/GsapButton.vue'
@@ -267,6 +268,11 @@ onMounted(async () => {
   otsDefinitionsStore.otsDefinitions.forEach((def) => hydrateOtsWizard(def))
 })
 
+onBeforeUnmount(() => {
+  otsHeartbeatTimers.forEach((timer) => clearInterval(timer))
+  otsHeartbeatTimers.clear()
+})
+
 interface OtsWizard {
   id: string
   scriptId: string | null
@@ -288,6 +294,8 @@ interface OtsWizard {
   name?: string
   status?: string
   type?: string
+  slugName?: string
+  heartbeatAlive: boolean
 }
 
 const otsWizards = ref<OtsWizard[]>([])
@@ -353,6 +361,8 @@ function openOtsWizard() {
     createdId: null,
     updating: false,
     updated: false,
+    slugName: undefined,
+    heartbeatAlive: false,
   })
   otsWizards.value.push(wizard)
   if (!scriptsStore.scripts.length) {
@@ -383,6 +393,8 @@ function hydrateOtsWizard(def: OtsDefinition) {
     name: def.name,
     status: def.status,
     type: def.type,
+    slugName: def.slugName,
+    heartbeatAlive: false,
   })
   otsWizards.value.push(wizard)
   if (!scriptsStore.scripts.length) {
@@ -390,6 +402,34 @@ function hydrateOtsWizard(def: OtsDefinition) {
   }
   loadOtsScriptDetail(wizard)
   loadOtsAgents(wizard)
+  startOtsHeartbeat(wizard)
+}
+
+const otsHeartbeatTimers = new Map<string, ReturnType<typeof setInterval>>()
+
+async function pollOtsHeartbeat(wizard: OtsWizard) {
+  if (!wizard.slugName) return
+  try {
+    const { alive } = await aivoxApiService.heartbeat(wizard.slugName)
+    wizard.heartbeatAlive = alive
+  } catch {
+    wizard.heartbeatAlive = false
+  }
+}
+
+function startOtsHeartbeat(wizard: OtsWizard) {
+  stopOtsHeartbeat(wizard.id)
+  if (!wizard.slugName || wizard.status === 'DONE') return
+  pollOtsHeartbeat(wizard)
+  otsHeartbeatTimers.set(wizard.id, setInterval(() => pollOtsHeartbeat(wizard), 5000))
+}
+
+function stopOtsHeartbeat(id: string) {
+  const timer = otsHeartbeatTimers.get(id)
+  if (timer) {
+    clearInterval(timer)
+    otsHeartbeatTimers.delete(id)
+  }
 }
 
 async function loadOtsScriptDetail(wizard: OtsWizard) {
@@ -410,6 +450,7 @@ async function onOtsScriptChange(wizard: OtsWizard) {
 }
 
 function closeOtsWizard(id: string) {
+  stopOtsHeartbeat(id)
   otsWizards.value = otsWizards.value.filter((wizard) => wizard.id !== id)
 }
 
@@ -463,6 +504,8 @@ async function createOtsStream(wizard: OtsWizard) {
     wizard.name = created.name
     wizard.status = created.status
     wizard.type = created.type
+    wizard.slugName = created.slugName
+    startOtsHeartbeat(wizard)
   } catch (err) {
     wizard.error = err instanceof Error ? err.message : t('overview.ots_create_failed')
   } finally {
@@ -490,6 +533,8 @@ async function updateOtsStream(wizard: OtsWizard) {
     wizard.name = updated.name
     wizard.status = updated.status
     wizard.type = updated.type
+    wizard.slugName = updated.slugName
+    startOtsHeartbeat(wizard)
     wizard.updated = true
     setTimeout(() => { wizard.updated = false }, 2000)
   } catch (err) {

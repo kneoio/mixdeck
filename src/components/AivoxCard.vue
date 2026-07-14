@@ -10,10 +10,10 @@ import LedYellow from '@/components/LedYellow.vue'
 import LedGreen from '@/components/LedGreen.vue'
 import LedIndicator from '@/components/LedIndicator.vue'
 import LoaderProgress from '@/components/LoaderProgress.vue'
-import { useBrandsStore } from '@/stores/brands'
+import { useBrandsStore, type BrandStatus } from '@/stores/brands'
 import { useUserSubscriptionStore } from '@/stores/userSubscription'
 
-const props = defineProps<{ brandSlug: string; timezone?: string }>()
+const props = defineProps<{ brandSlug: string; timezone?: string; status?: BrandStatus }>()
 const { t, te } = useI18n()
 const brandsStore = useBrandsStore()
 const userSubscriptionStore = useUserSubscriptionStore()
@@ -220,11 +220,21 @@ function stopTimeUpdate() {
   if (timeTimer) { clearInterval(timeTimer); timeTimer = null }
 }
 
+const isOffline = computed(() => props.status === 'OFF_LINE')
+
 watch(() => props.brandSlug, (val) => {
   stopQueuePolling()
   stopHeartbeatPolling()
-  if (val) startHeartbeatPolling()
+  if (val && !isOffline.value) startHeartbeatPolling()
   if (val && alive.value) startQueuePolling()
+})
+
+watch(isOffline, (offline) => {
+  if (offline) {
+    stopHeartbeatPolling()
+  } else if (props.brandSlug) {
+    startHeartbeatPolling()
+  }
 })
 
 watch(alive, (val) => {
@@ -242,7 +252,7 @@ watch(() => props.timezone, (val) => {
 })
 
 onMounted(() => {
-  if (props.brandSlug) startHeartbeatPolling()
+  if (props.brandSlug && !isOffline.value) startHeartbeatPolling()
   if (props.brandSlug && alive.value) startQueuePolling()
   if (props.timezone) startTimeUpdate()
 })
