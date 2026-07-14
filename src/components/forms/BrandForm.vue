@@ -720,10 +720,6 @@ function buildLocalizedName(): Record<string, string> {
   return result
 }
 
-function formatVariableName(name: string) {
-  return name.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase())
-}
-
 function renderAgentOptionLabel(option: SelectOption) {
   const typedOption = option as AgentOption
   const tags = typedOption.labels || []
@@ -1444,9 +1440,8 @@ watch(activeTab, async (tab) => {
                       <div v-for="variable in selectedScript.requiredVariables" :key="variable.name"
                         style="margin-bottom: 12px">
                         <div style="margin-bottom: 4px; font-size: 13px">
-                          <strong>{{ formatVariableName(variable.name) }}</strong>
+                          <span>{{ variable.description }}</span>
                           <span v-if="variable.required" style="color: #e74c3c">*</span>
-                          <span style="color: #888; font-size: 12px; margin-left: 8px">{{ variable.description }}</span>
                         </div>
                         <NSwitch v-if="variable.type === 'boolean'" v-model:value="userVariables[variable.name]" />
                         <NInputNumber v-else-if="variable.type === 'number'"
