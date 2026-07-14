@@ -29,6 +29,8 @@ export interface AivoxQueueResponse {
 export interface AivoxHeartbeatResult {
   alive: boolean
   remainingMinutes: number
+  /** Entity status as reported by the payload (e.g. OFF_LINE, STREAMING, DONE), if present. */
+  entityStatus?: string
   /** Response status, or 0 if the request failed before a response (e.g. network). */
   status: number
 }
@@ -37,6 +39,7 @@ export interface AivoxHeartbeatBatchRow {
   brand: string
   status?: string
   heartbeat?: boolean
+  error?: string | null
   remainingMinutes?: number
 }
 
@@ -44,6 +47,8 @@ export interface AivoxHeartbeatBatchResult {
   /** Live flag keyed by brand slug as returned by the API. */
   byBrand: Record<string, boolean>
   remainingByBrand: Record<string, number>
+  /** Entity status keyed by brand slug, as reported by the payload. */
+  statusByBrand: Record<string, string | undefined>
   /** Response status, or 0 if the request failed before a response (e.g. network). */
   status: number
 }
@@ -56,7 +61,7 @@ class AivoxApiService extends ApiClient {
   async heartbeatBatch(brandSlugs: string[]): Promise<AivoxHeartbeatBatchResult> {
     const unique = [...new Set(brandSlugs.filter(Boolean))]
     if (unique.length === 0) {
-      return { byBrand: {}, remainingByBrand: {}, status: 0 }
+      return { byBrand: {}, remainingByBrand: {}, statusByBrand: {}, status: 0 }
     }
     const path = unique.map(s => encodeURIComponent(s)).join(',')
     try {
@@ -64,6 +69,7 @@ class AivoxApiService extends ApiClient {
       const dead = (): AivoxHeartbeatBatchResult => ({
         byBrand: Object.fromEntries(unique.map(s => [s, false])),
         remainingByBrand: Object.fromEntries(unique.map(s => [s, -1])),
+        statusByBrand: Object.fromEntries(unique.map(s => [s, undefined])),
         status: response.status,
       })
       if (!response.ok) {
@@ -72,24 +78,32 @@ class AivoxApiService extends ApiClient {
       const data = (await response.json()) as { brands?: AivoxHeartbeatBatchRow[] }
       const byBrand: Record<string, boolean> = Object.fromEntries(unique.map(s => [s, false]))
       const remainingByBrand: Record<string, number> = Object.fromEntries(unique.map(s => [s, -2]))
+      const statusByBrand: Record<string, string | undefined> = Object.fromEntries(unique.map(s => [s, undefined]))
       for (const row of data.brands ?? []) {
         if (row?.brand == null) continue
         byBrand[row.brand] = row.heartbeat ?? row.status === 'ON_LINE'
         remainingByBrand[row.brand] = row.remainingMinutes ?? -2
+        statusByBrand[row.brand] = row.status
       }
-      return { byBrand, remainingByBrand, status: response.status }
+      return { byBrand, remainingByBrand, statusByBrand, status: response.status }
     } catch {
       return {
         byBrand: Object.fromEntries(unique.map(s => [s, false])),
         remainingByBrand: Object.fromEntries(unique.map(s => [s, -2])),
+        statusByBrand: Object.fromEntries(unique.map(s => [s, undefined])),
         status: 0,
       }
     }
   }
 
   async heartbeat(brandSlug: string): Promise<AivoxHeartbeatResult> {
-    const { byBrand, remainingByBrand, status } = await this.heartbeatBatch([brandSlug])
-    return { alive: byBrand[brandSlug] ?? false, remainingMinutes: remainingByBrand[brandSlug] ?? -2, status }
+    const { byBrand, remainingByBrand, statusByBrand, status } = await this.heartbeatBatch([brandSlug])
+    return {
+      alive: byBrand[brandSlug] ?? false,
+      remainingMinutes: remainingByBrand[brandSlug] ?? -2,
+      entityStatus: statusByBrand[brandSlug],
+      status,
+    }
   }
 
   heartbeatStream(brandSlug: string, waitFor = true, timeoutMs = 120_000): Promise<boolean> {

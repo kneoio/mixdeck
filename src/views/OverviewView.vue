@@ -295,6 +295,7 @@ interface OtsWizard {
   type?: string
   slugName?: string
   heartbeatAlive: boolean
+  remainingMinutes: number
 }
 
 const otsWizards = ref<OtsWizard[]>([])
@@ -362,6 +363,7 @@ function openOtsWizard() {
     updated: false,
     slugName: undefined,
     heartbeatAlive: false,
+    remainingMinutes: -2,
   })
   otsWizards.value.push(wizard)
   if (!scriptsStore.scripts.length) {
@@ -394,6 +396,7 @@ function hydrateOtsWizard(def: OtsDefinition) {
     type: def.type,
     slugName: def.slugName,
     heartbeatAlive: false,
+    remainingMinutes: -2,
   })
   otsWizards.value.push(wizard)
   if (!scriptsStore.scripts.length) {
@@ -409,8 +412,11 @@ const otsHeartbeatTimers = new Map<string, ReturnType<typeof setInterval>>()
 async function pollOtsHeartbeat(wizard: OtsWizard) {
   if (!wizard.slugName) return
   try {
-    const { alive } = await aivoxApiService.heartbeat(wizard.slugName)
+    const { alive, entityStatus, remainingMinutes } = await aivoxApiService.heartbeat(wizard.slugName)
     wizard.heartbeatAlive = alive
+    wizard.remainingMinutes = remainingMinutes
+    if (entityStatus) wizard.status = entityStatus
+    if (wizard.status === 'DONE') stopOtsHeartbeat(wizard.id)
   } catch {
     wizard.heartbeatAlive = false
   }
