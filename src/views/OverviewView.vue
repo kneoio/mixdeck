@@ -164,14 +164,13 @@
               </div>
             </div>
 
-            <div class="ots-variable-grid" :style="{ marginTop: '10px' }">
+            <div v-if="wizard.scope !== 'brand'" class="ots-variable-grid" :style="{ marginTop: '10px' }">
               <div>
                 <NSelect
                   v-model:value="wizard.agentId"
                   :options="wizard.agentOptions"
                   :loading="wizard.loadingAgents"
-                  :clearable="wizard.scope === 'brand'"
-                  :placeholder="wizard.scope === 'brand' ? t('overview.ots_pick_dj_override') : t('overview.ots_pick_dj')"
+                  :placeholder="t('overview.ots_pick_dj')"
                   filterable
                 />
               </div>
@@ -401,7 +400,7 @@ function hydrateOtsWizard(def: OtsDefinition) {
     scriptsStore.loadScripts(1, scriptsStore.pageSize, 'timingMode=RELATIVE_TO_STREAM_START')
   }
   loadOtsScriptDetail(wizard)
-  loadOtsAgents(wizard)
+  if (wizard.scope !== 'brand') loadOtsAgents(wizard)
   startOtsHeartbeat(wizard)
 }
 
@@ -482,7 +481,6 @@ function onOtsScopeChange(wizard: OtsWizard) {
 function onOtsBrandChange(wizard: OtsWizard) {
   wizard.agentId = null
   wizard.agentOptions = []
-  if (wizard.brandId) loadOtsAgents(wizard)
 }
 
 async function createOtsStream(wizard: OtsWizard) {
