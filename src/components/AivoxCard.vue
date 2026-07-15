@@ -153,7 +153,7 @@ async function pollHeartbeat() {
 
 function startHeartbeatPolling() {
   pollHeartbeat()
-  heartbeatTimer = setInterval(pollHeartbeat, 5000)
+  heartbeatTimer = setInterval(pollHeartbeat, 7000)
 }
 
 function stopHeartbeatPolling() {
@@ -220,7 +220,7 @@ function stopTimeUpdate() {
   if (timeTimer) { clearInterval(timeTimer); timeTimer = null }
 }
 
-const isOffline = computed(() => props.status === 'OFF_LINE')
+const isOffline = computed(() => props.status !== 'ON_LINE' && props.status !== 'IDLE')
 
 watch(() => props.brandSlug, (val) => {
   stopQueuePolling()

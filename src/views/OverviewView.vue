@@ -63,6 +63,7 @@
             <span class="brand-name">{{ wizard.name || t('overview.one_time_stream') }}</span>
             <span v-if="wizard.type" class="type-pill">{{ wizard.type }}</span>
             <StatusOrbitBadge v-if="wizard.status" class="brand-status" :live="wizard.status === 'STREAMING' || wizard.heartbeatAlive">{{ wizard.status }}</StatusOrbitBadge>
+            <span v-if="wizard.remainingMinutes > 0" class="remaining-pill" :class="{ 'remaining-pill--warning': wizard.remainingMinutes < 10 }">{{ wizard.remainingMinutes }}m</span>
           </div>
         </template>
         <template #header-extra>
@@ -425,7 +426,7 @@ function startOtsHeartbeat(wizard: OtsWizard) {
   stopOtsHeartbeat(wizard.id)
   if (!wizard.slugName || wizard.status === 'DONE') return
   pollOtsHeartbeat(wizard)
-  otsHeartbeatTimers.set(wizard.id, setInterval(() => pollOtsHeartbeat(wizard), 5000))
+  otsHeartbeatTimers.set(wizard.id, setInterval(() => pollOtsHeartbeat(wizard), 7000))
 }
 
 function stopOtsHeartbeat(id: string) {
@@ -687,6 +688,23 @@ function copyOtsLink(wizard: OtsWizard) {
   border: 1px solid rgba(124, 58, 237, 0.5);
   border-radius: 3px;
   padding: 0px 4px;
+}
+.remaining-pill {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(24, 160, 88, 0.9);
+  border: 1px solid rgba(24, 160, 88, 0.5);
+  border-radius: 3px;
+  padding: 0px 4px;
+  box-shadow: 0 0 7px 2px rgba(24, 160, 88, 0.25);
+}
+.remaining-pill--warning {
+  color: #FFA000;
+  border-color: rgba(255, 160, 0, 0.5);
+  box-shadow: 0 0 7px 2px rgba(255, 160, 0, 0.4);
 }
 .ots-scope-line {
   font-size: 13px;
