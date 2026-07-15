@@ -386,6 +386,14 @@ function openOtsWizard() {
   loadOtsAgents(wizard)
 }
 
+const OTS_PLAYER_THEMES = ['hitachi', 'akai', '']
+function otsPlayerLink(slugName?: string | null): string {
+  if (!slugName) return ''
+  const base = `https://mixpla.online/${slugName}`
+  const theme = OTS_PLAYER_THEMES[Math.floor(Math.random() * OTS_PLAYER_THEMES.length)]
+  return theme ? `${base}?theme=${theme}` : base
+}
+
 function hydrateOtsWizard(def: OtsDefinition) {
   const wizard: OtsWizard = reactive({
     id: def.id,
@@ -400,7 +408,7 @@ function hydrateOtsWizard(def: OtsDefinition) {
     loadingAgents: false,
     submitting: false,
     error: null,
-    link: def.slugName ? `https://mixpla.online/${def.slugName}` : '',
+    link: otsPlayerLink(def.slugName),
     linkCopied: false,
     qrDataUrl: null,
     createdId: def.id,
@@ -519,7 +527,7 @@ async function createOtsStream(wizard: OtsWizard) {
       agentId: wizard.agentId || null,
     })
     wizard.createdId = created.id
-    wizard.link = `https://mixpla.online/${created.slugName}`
+    wizard.link = otsPlayerLink(created.slugName)
     wizard.qrDataUrl = null
     wizard.name = created.name
     wizard.status = created.status
@@ -549,7 +557,7 @@ async function updateOtsStream(wizard: OtsWizard) {
       brandId: wizard.scope === 'brand' ? wizard.brandId : null,
       agentId: wizard.agentId || null,
     })
-    wizard.link = `https://mixpla.online/${updated.slugName}`
+    wizard.link = otsPlayerLink(updated.slugName)
     wizard.qrDataUrl = null
     wizard.name = updated.name
     wizard.status = updated.status
