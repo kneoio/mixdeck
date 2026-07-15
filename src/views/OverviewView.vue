@@ -141,8 +141,8 @@
                   </div>
                   <div class="field-error-shell" :class="{ 'field-error-shell--active': !!wizard.varErrors[variable.name] }">
                     <NSwitch v-if="variable.type === 'boolean'" v-model:value="wizard.variables[variable.name]" />
-                    <NInputNumber v-else-if="variable.type === 'number'" v-model:value="wizard.variables[variable.name]" style="width: 100%" @update:value="clearVarError(wizard, variable.name)" />
-                    <NInput v-else v-model:value="wizard.variables[variable.name]" style="width: 100%" @update:value="clearVarError(wizard, variable.name)" />
+                    <NInputNumber v-else-if="variable.type === 'number'" v-model:value="wizard.variables[variable.name]" style="width: 100%; max-width: 400px" @update:value="clearVarError(wizard, variable.name)" />
+                    <NInput v-else v-model:value="wizard.variables[variable.name]" style="width: 100%; max-width: 400px" @update:value="clearVarError(wizard, variable.name)" />
                   </div>
                   <div class="field-error-label" :class="{ 'field-error-label--visible': !!wizard.varErrors[variable.name] }">
                     {{ wizard.varErrors[variable.name] || ' ' }}
