@@ -25,6 +25,10 @@ export default defineConfig({
         globPatterns: [],
         navigateFallback: null,
         cleanupOutdatedCaches: true,
+        // Stamp the SW with the app version so its bytes change every release.
+        // Without this the generated sw.js is byte-identical across deploys and
+        // the browser never detects an update, so needRefresh never fires.
+        additionalManifestEntries: [{ url: 'index.html', revision: pkg.version }],
       },
       manifest: {
         name: 'Mixdeck',
