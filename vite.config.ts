@@ -25,7 +25,7 @@ export default defineConfig({
         // Precache the built assets so the generated sw.js changes automatically
         // whenever any asset hash changes (i.e. every deploy with new code).
         // This is what makes the browser detect updates without a manual version bump.
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest,woff,woff2}'],
+        globPatterns: ['**/*.{js,css,svg,png,ico,webmanifest,woff,woff2}'],
         navigateFallback: null,
         cleanupOutdatedCaches: true,
         // After skip-waiting the new SW must claim this tab, otherwise
