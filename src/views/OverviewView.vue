@@ -87,6 +87,17 @@
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6"/><path d="M10 14L21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
             </button>
+            <NPopover v-if="wizard.link" trigger="click" @update:show="(show: boolean) => show && loadOtsQrCode(wizard)">
+              <template #trigger>
+                <button class="copy-btn" :title="t('overview.ots_qr_code')">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3z"/><path d="M20 14v3"/><path d="M17 20h4"/></svg>
+                </button>
+              </template>
+              <div class="ots-qr-popover">
+                <img v-if="wizard.qrDataUrl" :src="wizard.qrDataUrl" :alt="wizard.link" width="180" height="180" />
+                <NSpin v-else :show="true" style="width: 180px; height: 180px; display: flex; align-items: center; justify-content: center;" />
+              </div>
+            </NPopover>
             <NPopconfirm v-if="wizard.createdId" @positive-click="() => deleteOtsWizard(wizard)">
               <template #trigger>
                 <button class="copy-btn" :title="t('common.close')">
@@ -196,8 +207,9 @@
 import { computed, h, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { NCard, NCollapse, NCollapseItem, NSelect, NSwitch, NInputNumber, NInput, NTag, NSpace, NSpin, NRadioGroup, NRadioButton, NPopconfirm, useMessage, type SelectOption } from 'naive-ui'
+import { NCard, NCollapse, NCollapseItem, NSelect, NSwitch, NInputNumber, NInput, NTag, NSpace, NSpin, NRadioGroup, NRadioButton, NPopconfirm, NPopover, useMessage, type SelectOption } from 'naive-ui'
 import MarkdownIt from 'markdown-it'
+import QRCode from 'qrcode'
 import { useBrandsStore, type Brand } from '@/stores/brands'
 import { useScriptsStore, type Script } from '@/stores/scripts'
 import { useOtsDefinitionsStore, type OtsDefinition } from '@/stores/otsDefinitions'
@@ -287,6 +299,7 @@ interface OtsWizard {
   error: string | null
   link: string
   linkCopied: boolean
+  qrDataUrl: string | null
   createdId: string | null
   updating: boolean
   updated: boolean
@@ -358,6 +371,7 @@ function openOtsWizard() {
     error: null,
     link: '',
     linkCopied: false,
+    qrDataUrl: null,
     createdId: null,
     updating: false,
     updated: false,
@@ -388,6 +402,7 @@ function hydrateOtsWizard(def: OtsDefinition) {
     error: null,
     link: def.slugName ? `https://mixpla.online/${def.slugName}` : '',
     linkCopied: false,
+    qrDataUrl: null,
     createdId: def.id,
     updating: false,
     updated: false,
@@ -505,6 +520,7 @@ async function createOtsStream(wizard: OtsWizard) {
     })
     wizard.createdId = created.id
     wizard.link = `https://mixpla.online/${created.slugName}`
+    wizard.qrDataUrl = null
     wizard.name = created.name
     wizard.status = created.status
     wizard.type = created.type
@@ -534,6 +550,7 @@ async function updateOtsStream(wizard: OtsWizard) {
       agentId: wizard.agentId || null,
     })
     wizard.link = `https://mixpla.online/${updated.slugName}`
+    wizard.qrDataUrl = null
     wizard.name = updated.name
     wizard.status = updated.status
     wizard.type = updated.type
@@ -553,6 +570,17 @@ function copyOtsLink(wizard: OtsWizard) {
   navigator.clipboard.writeText(wizard.link)
   wizard.linkCopied = true
   setTimeout(() => { wizard.linkCopied = false }, 2000)
+}
+
+async function loadOtsQrCode(wizard: OtsWizard) {
+  if (!wizard.link || wizard.qrDataUrl) return
+  const link = wizard.link
+  try {
+    const dataUrl = await QRCode.toDataURL(link, { width: 180, margin: 1 })
+    if (wizard.link === link) wizard.qrDataUrl = dataUrl
+  } catch {
+    /* leave qrDataUrl null; popover keeps showing the spinner */
+  }
 }
 </script>
 
@@ -705,6 +733,15 @@ function copyOtsLink(wizard: OtsWizard) {
   color: #FFA000;
   border-color: rgba(255, 160, 0, 0.5);
   box-shadow: 0 0 7px 2px rgba(255, 160, 0, 0.4);
+}
+.ots-qr-popover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ots-qr-popover img {
+  display: block;
+  border-radius: 4px;
 }
 .ots-scope-line {
   font-size: 13px;

@@ -89,6 +89,7 @@ export default {
     ots_updated: 'Updated',
     ots_delete_confirm: 'Delete this one-time stream?',
     ots_delete_failed: 'Could not delete the one-time stream. Please try again.',
+    ots_qr_code: 'Show QR code',
   },
   dashboard: {
     player_ui: 'Player UI',
