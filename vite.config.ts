@@ -25,6 +25,9 @@ export default defineConfig({
         globPatterns: [],
         navigateFallback: null,
         cleanupOutdatedCaches: true,
+        // After skip-waiting the new SW must claim this tab, otherwise
+        // controllerchange never fires and the update click can't reload.
+        clientsClaim: true,
         // Stamp the SW with the app version so its bytes change every release.
         // Without this the generated sw.js is byte-identical across deploys and
         // the browser never detects an update, so needRefresh never fires.
