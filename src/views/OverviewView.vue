@@ -687,6 +687,9 @@ function otsStatusLabel(status?: string): string {
     word-break: keep-all;
     white-space: nowrap;
   }
+  .ots-variable-grid {
+    grid-template-columns: 1fr;
+  }
 }
 .agenda-collapse {
   margin-top: 12px;
