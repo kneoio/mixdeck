@@ -619,10 +619,10 @@ function otsStatusLabel(status?: string): string {
   color: var(--vt-c-primary);
 }
 .brand-status {
-  font-size: 0.75rem;
+  font-size: 9px;
   opacity: 0.55;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.07em;
 }
 .brand-status--live {
   opacity: 1;
@@ -632,6 +632,10 @@ function otsStatusLabel(status?: string): string {
   border-radius: 3px;
   box-shadow: 0 0 7px 2px rgba(0, 255, 60, 0.3);
   animation: brand-status-glow 1.6s ease-in-out infinite;
+}
+.brand-status--live :deep(.orbit-badge--live),
+.brand-status--live.orbit-badge--live {
+  padding: 0 4px;
 }
 @keyframes brand-status-glow {
   0%, 100% { box-shadow: 0 0 7px 2px rgba(0, 255, 60, 0.25); }
