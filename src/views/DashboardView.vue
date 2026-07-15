@@ -363,9 +363,9 @@ html.dark .premium-badge {
 }
 
 .update-pill--glow {
-  color: #3b9dff;
-  border-color: rgba(59, 157, 255, 0.5);
-  box-shadow: 0 0 7px 2px rgba(59, 157, 255, 0.4);
+  color: #f0a500;
+  border-color: rgba(240, 165, 0, 0.5);
+  box-shadow: 0 0 7px 2px rgba(240, 165, 0, 0.4);
 }
 
 @font-face {
