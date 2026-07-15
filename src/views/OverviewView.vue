@@ -62,7 +62,7 @@
           <div class="brand-head">
             <span class="brand-name">{{ wizard.name || t('overview.one_time_stream') }}</span>
             <span v-if="wizard.type" class="type-pill">{{ wizard.type }}</span>
-            <StatusOrbitBadge v-if="wizard.status" class="brand-status" :live="wizard.status === 'STREAMING' || wizard.heartbeatAlive">{{ wizard.status }}</StatusOrbitBadge>
+            <StatusOrbitBadge v-if="wizard.status" class="brand-status" :class="{ 'brand-status--live': wizard.status === 'ON_LINE' }" :live="wizard.status === 'STREAMING' || wizard.status === 'ON_LINE' || wizard.heartbeatAlive">{{ otsStatusLabel(wizard.status) }}</StatusOrbitBadge>
             <span v-if="wizard.remainingMinutes > 0" class="remaining-pill" :class="{ 'remaining-pill--warning': wizard.remainingMinutes < 10 }">{{ wizard.remainingMinutes }}m</span>
           </div>
         </template>
@@ -582,6 +582,11 @@ async function loadOtsQrCode(wizard: OtsWizard) {
     /* leave qrDataUrl null; popover keeps showing the spinner */
   }
 }
+
+function otsStatusLabel(status?: string): string {
+  if (status === 'ON_LINE') return t('overview.ots_live')
+  return status ?? ''
+}
 </script>
 
 <style scoped>
@@ -618,6 +623,19 @@ async function loadOtsQrCode(wizard: OtsWizard) {
   opacity: 0.55;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+.brand-status--live {
+  opacity: 1;
+  font-weight: 600;
+  color: rgba(0, 255, 60, 0.95);
+  border: 1px solid rgba(0, 255, 60, 0.5);
+  border-radius: 3px;
+  box-shadow: 0 0 7px 2px rgba(0, 255, 60, 0.3);
+  animation: brand-status-glow 1.6s ease-in-out infinite;
+}
+@keyframes brand-status-glow {
+  0%, 100% { box-shadow: 0 0 7px 2px rgba(0, 255, 60, 0.25); }
+  50% { box-shadow: 0 0 10px 3px rgba(0, 255, 60, 0.45); }
 }
 .brand-url {
   display: flex;
