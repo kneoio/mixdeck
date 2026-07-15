@@ -75,6 +75,7 @@ export default {
     ots_pick_script: 'Choose a script',
     ots_pick_script_first: 'Pick a script to see its variables.',
     ots_no_variables: 'This script has no variables to set.',
+    ots_scope_label: 'Music source',
     ots_scope_brand: "Use a brand's catalog",
     ots_scope_default: 'Default (my own songs)',
     ots_pick_brand: 'Choose a brand',

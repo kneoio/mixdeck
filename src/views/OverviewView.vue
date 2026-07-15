@@ -115,15 +115,25 @@
         <NCard :bordered="true" size="small" class="ots-step-card">
           <div class="ots-step ots-step--split">
             <div class="ots-step__select">
-              <NSelect
-                v-model:value="wizard.scriptId"
-                :options="scriptOptions"
-                :render-label="renderScriptOptionLabel"
-                :loading="scriptsStore.loading"
-                :placeholder="t('overview.ots_pick_script')"
-                filterable
-                @update:value="() => onOtsScriptChange(wizard)"
-              />
+              <NForm :label-placement="formLabelPlacement" label-width="140">
+                <NFormItem :label="t('overview.ots_pick_script')" :show-feedback="false">
+                  <div class="field-stack">
+                    <div class="field-error-shell">
+                      <NSelect
+                        v-model:value="wizard.scriptId"
+                        :options="scriptOptions"
+                        :render-label="renderScriptOptionLabel"
+                        :loading="scriptsStore.loading"
+                        :placeholder="t('overview.ots_pick_script')"
+                        filterable
+                        style="width: 100%; max-width: 400px"
+                        @update:value="() => onOtsScriptChange(wizard)"
+                      />
+                    </div>
+                    <div class="field-error-label"></div>
+                  </div>
+                </NFormItem>
+              </NForm>
             </div>
             <div class="ots-step__desc script-description" v-html="wizard.scriptDetail?.description ? renderScriptDescription(wizard.scriptDetail.description) : ''" />
           </div>
@@ -133,22 +143,23 @@
           <div class="ots-step">
             <NSpin :show="wizard.loadingScriptDetail">
               <template v-if="wizard.scriptDetail?.requiredVariables?.length">
-                <div class="ots-variable-stack">
-                <div v-for="variable in wizard.scriptDetail.requiredVariables" :key="variable.name" class="ots-variable">
-                  <div class="ots-variable__label">
-                    <span>{{ variable.description }}</span>
-                    <span v-if="variable.required" class="ots-variable__required">*</span>
-                  </div>
-                  <div class="field-error-shell" :class="{ 'field-error-shell--active': !!wizard.varErrors[variable.name] }">
-                    <NSwitch v-if="variable.type === 'boolean'" v-model:value="wizard.variables[variable.name]" />
-                    <NInputNumber v-else-if="variable.type === 'number'" v-model:value="wizard.variables[variable.name]" style="width: 100%; max-width: 400px" @update:value="clearVarError(wizard, variable.name)" />
-                    <NInput v-else v-model:value="wizard.variables[variable.name]" style="width: 100%; max-width: 400px" @update:value="clearVarError(wizard, variable.name)" />
-                  </div>
-                  <div class="field-error-label" :class="{ 'field-error-label--visible': !!wizard.varErrors[variable.name] }">
-                    {{ wizard.varErrors[variable.name] || ' ' }}
-                  </div>
-                </div>
-                </div>
+                <NForm :label-placement="formLabelPlacement" label-width="140">
+                  <NFormItem v-for="variable in wizard.scriptDetail.requiredVariables" :key="variable.name" :show-feedback="false">
+                    <template #label>
+                      <span>{{ variable.description }}<span v-if="variable.required" class="ots-variable__required">*</span></span>
+                    </template>
+                    <div class="field-stack">
+                      <div class="field-error-shell" :class="{ 'field-error-shell--active': !!wizard.varErrors[variable.name] }">
+                        <NSwitch v-if="variable.type === 'boolean'" v-model:value="wizard.variables[variable.name]" />
+                        <NInputNumber v-else-if="variable.type === 'number'" v-model:value="wizard.variables[variable.name]" style="width: 100%; max-width: 400px" @update:value="clearVarError(wizard, variable.name)" />
+                        <NInput v-else v-model:value="wizard.variables[variable.name]" style="width: 100%; max-width: 400px" @update:value="clearVarError(wizard, variable.name)" />
+                      </div>
+                      <div class="field-error-label" :class="{ 'field-error-label--visible': !!wizard.varErrors[variable.name] }">
+                        {{ wizard.varErrors[variable.name] || ' ' }}
+                      </div>
+                    </div>
+                  </NFormItem>
+                </NForm>
               </template>
               <p v-else-if="!wizard.loadingScriptDetail" class="ots-no-variables">{{ wizard.scriptId ? t('overview.ots_no_variables') : t('overview.ots_pick_script_first') }}</p>
             </NSpin>
@@ -157,34 +168,51 @@
 
         <NCard :bordered="true" size="small" class="ots-step-card">
           <div class="ots-step">
-            <NRadioGroup v-model:value="wizard.scope" @update:value="onOtsScopeChange(wizard)">
-              <NRadioButton value="brand">{{ t('overview.ots_scope_brand') }}</NRadioButton>
-              <NRadioButton value="default">{{ t('overview.ots_scope_default') }}</NRadioButton>
-            </NRadioGroup>
+            <NForm :label-placement="formLabelPlacement" label-width="140">
+              <NFormItem :label="t('overview.ots_scope_label')" :show-feedback="false">
+                <div class="field-stack">
+                  <div class="field-error-shell">
+                    <NRadioGroup v-model:value="wizard.scope" @update:value="onOtsScopeChange(wizard)">
+                      <NRadioButton value="brand">{{ t('overview.ots_scope_brand') }}</NRadioButton>
+                      <NRadioButton value="default">{{ t('overview.ots_scope_default') }}</NRadioButton>
+                    </NRadioGroup>
+                  </div>
+                  <div class="field-error-label"></div>
+                </div>
+              </NFormItem>
 
-            <div v-if="wizard.scope === 'brand'" class="ots-variable-grid" style="margin-top: 10px;">
-              <div>
-                <NSelect
-                  v-model:value="wizard.brandId"
-                  :options="brandOptions"
-                  :placeholder="t('overview.ots_pick_brand')"
-                  filterable
-                  @update:value="() => onOtsBrandChange(wizard)"
-                />
-              </div>
-            </div>
+              <NFormItem v-if="wizard.scope === 'brand'" :label="t('overview.ots_pick_brand')" :show-feedback="false">
+                <div class="field-stack">
+                  <div class="field-error-shell">
+                    <NSelect
+                      v-model:value="wizard.brandId"
+                      :options="brandOptions"
+                      :placeholder="t('overview.ots_pick_brand')"
+                      filterable
+                      style="width: 100%; max-width: 400px"
+                      @update:value="() => onOtsBrandChange(wizard)"
+                    />
+                  </div>
+                  <div class="field-error-label"></div>
+                </div>
+              </NFormItem>
 
-            <div v-if="wizard.scope !== 'brand'" class="ots-variable-grid" :style="{ marginTop: '10px' }">
-              <div>
-                <NSelect
-                  v-model:value="wizard.agentId"
-                  :options="wizard.agentOptions"
-                  :loading="wizard.loadingAgents"
-                  :placeholder="t('overview.ots_pick_dj')"
-                  filterable
-                />
-              </div>
-            </div>
+              <NFormItem v-if="wizard.scope !== 'brand'" :label="t('overview.ots_pick_dj')" :show-feedback="false">
+                <div class="field-stack">
+                  <div class="field-error-shell">
+                    <NSelect
+                      v-model:value="wizard.agentId"
+                      :options="wizard.agentOptions"
+                      :loading="wizard.loadingAgents"
+                      :placeholder="t('overview.ots_pick_dj')"
+                      filterable
+                      style="width: 100%; max-width: 400px"
+                    />
+                  </div>
+                  <div class="field-error-label"></div>
+                </div>
+              </NFormItem>
+            </NForm>
           </div>
         </NCard>
 
@@ -212,7 +240,7 @@
 import { computed, h, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { NCard, NCollapse, NCollapseItem, NSelect, NSwitch, NInputNumber, NInput, NTag, NSpace, NSpin, NRadioGroup, NRadioButton, NPopconfirm, NPopover, useMessage, type SelectOption } from 'naive-ui'
+import { NCard, NCollapse, NCollapseItem, NSelect, NSwitch, NInputNumber, NInput, NTag, NSpace, NSpin, NRadioGroup, NRadioButton, NPopconfirm, NPopover, NForm, NFormItem, useMessage, type SelectOption } from 'naive-ui'
 import MarkdownIt from 'markdown-it'
 import QRCode from 'qrcode'
 import { useBrandsStore, type Brand } from '@/stores/brands'
@@ -279,12 +307,23 @@ async function deleteOtsWizard(wizard: OtsWizard) {
   }
 }
 
+const isMobile = ref(false)
+const formLabelPlacement = computed(() => (isMobile.value ? 'top' : 'left'))
+
+function updateIsMobile() {
+  if (typeof window === 'undefined') return
+  isMobile.value = window.innerWidth <= 768
+}
+
 onMounted(async () => {
+  updateIsMobile()
+  window.addEventListener('resize', updateIsMobile)
   await otsDefinitionsStore.loadOtsDefinitions(1, 50)
   otsDefinitionsStore.otsDefinitions.forEach((def) => hydrateOtsWizard(def))
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateIsMobile)
   otsHeartbeatTimers.forEach((timer) => clearInterval(timer))
   otsHeartbeatTimers.clear()
 })
@@ -725,9 +764,6 @@ function otsStatusLabel(status?: string): string {
     word-break: keep-all;
     white-space: nowrap;
   }
-  .ots-variable-grid {
-    grid-template-columns: 1fr;
-  }
 }
 .agenda-collapse {
   margin-top: 12px;
@@ -832,6 +868,12 @@ function otsStatusLabel(status?: string): string {
 .ots-step {
   min-height: 60px;
 }
+.ots-step :deep(.n-form-item) {
+  margin-bottom: 20px;
+}
+.ots-step :deep(.n-form-item:last-child) {
+  margin-bottom: 0;
+}
 .ots-step--split {
   display: flex;
   gap: 16px;
@@ -864,17 +906,9 @@ function otsStatusLabel(status?: string): string {
 }
 .script-description :deep(ul),
 .script-description :deep(ol) { padding-left: 20px; margin: 4px 0; }
-.ots-variable-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0 16px;
-}
-.ots-variable-stack {
-  display: flex;
-  flex-direction: column;
-}
-.ots-variable {
-  margin-bottom: 12px;
+.field-stack {
+  width: 100%;
+  display: block;
 }
 .field-error-shell {
   width: 100%;
@@ -887,22 +921,18 @@ function otsStatusLabel(status?: string): string {
 }
 .field-error-label {
   margin-top: 3px;
-  min-height: 12px;
   padding-left: 10px;
   color: #ff4d4f;
   font-size: 11px;
   line-height: 1.3;
-  visibility: hidden;
+  display: none;
 }
 .field-error-label--visible {
-  visibility: visible;
-}
-.ots-variable__label {
-  margin-bottom: 4px;
-  font-size: 13px;
+  display: block;
 }
 .ots-variable__required {
   color: #e74c3c;
+  margin-left: 2px;
 }
 .ots-variable__desc {
   color: #888;
