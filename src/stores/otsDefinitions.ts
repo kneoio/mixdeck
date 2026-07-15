@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import datanestApiService from '@/services/datanestApi'
+import aivoxApiService from '@/services/aivoxApi'
 
 export interface OtsDefinition {
   id: string
@@ -58,7 +59,7 @@ export const useOtsDefinitionsStore = defineStore('otsDefinitions', () => {
   }
 
   async function deleteOtsDefinition(id: string) {
-    return datanestApiService.deleteOtsDefinition(id)
+    return aivoxApiService.deleteOtsDefinition(id)
   }
 
   return {

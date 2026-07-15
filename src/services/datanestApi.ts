@@ -100,10 +100,6 @@ class DatanestApiService extends ApiClient {
     return this.updateDictionaryItem<any>('/ots-definitions', id, data)
   }
 
-  async deleteOtsDefinition(id: string): Promise<void> {
-    return this.deleteDictionaryItem('/ots-definitions', id)
-  }
-
   /** PATCH body matches backend `SharedSoundFragmentPatchDTO`: `addTargetBrandIds`, `removeTargetBrandIds`, `stayIncognito` (UUID strings). */
   async patchShared(slug: string, fragmentId: string, body: unknown): Promise<void> {
     await this.request<void>(

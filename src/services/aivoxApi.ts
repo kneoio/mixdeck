@@ -134,6 +134,28 @@ class AivoxApiService extends ApiClient {
       headers: { 'X-Client-ID': 'mixpla-web' },
     })
   }
+
+  /**
+   * Soft-deletes an OTS definition and tears down its live stream in aivox.
+   * Gated by validateAccess via X-Client-ID (no bearer/session token).
+   * 200 -> resolved; 404 (OTS not found) -> treated as already-gone and resolved;
+   * 400 (Invalid id) / 500 -> throws with the server error message.
+   */
+  async deleteOtsDefinition(id: string): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/ots-definitions/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: { 'X-Client-ID': 'mixpla-web' },
+    })
+    if (response.status === 404) return
+    if (!response.ok) {
+      let message = `HTTP error! status: ${response.status}`
+      try {
+        const data = await response.json()
+        if (data && typeof (data as any).error === 'string') message = (data as any).error
+      } catch { /* ignore */ }
+      throw new Error(message)
+    }
+  }
 }
 
 export const aivoxApiService = new AivoxApiService()
