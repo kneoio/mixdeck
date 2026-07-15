@@ -22,16 +22,15 @@ export default defineConfig({
         suppressWarnings: true,
       },
       workbox: {
-        globPatterns: [],
+        // Precache the built assets so the generated sw.js changes automatically
+        // whenever any asset hash changes (i.e. every deploy with new code).
+        // This is what makes the browser detect updates without a manual version bump.
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest,woff,woff2}'],
         navigateFallback: null,
         cleanupOutdatedCaches: true,
         // After skip-waiting the new SW must claim this tab, otherwise
         // controllerchange never fires and the update click can't reload.
         clientsClaim: true,
-        // Stamp the SW with the app version so its bytes change every release.
-        // Without this the generated sw.js is byte-identical across deploys and
-        // the browser never detects an update, so needRefresh never fires.
-        additionalManifestEntries: [{ url: 'index.html', revision: pkg.version }],
       },
       manifest: {
         name: 'Mixdeck',
