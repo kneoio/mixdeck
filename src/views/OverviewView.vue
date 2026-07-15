@@ -133,15 +133,20 @@
           <div class="ots-step">
             <NSpin :show="wizard.loadingScriptDetail">
               <template v-if="wizard.scriptDetail?.requiredVariables?.length">
-                <div class="ots-variable-grid">
+                <div class="ots-variable-stack">
                 <div v-for="variable in wizard.scriptDetail.requiredVariables" :key="variable.name" class="ots-variable">
                   <div class="ots-variable__label">
                     <span>{{ variable.description }}</span>
                     <span v-if="variable.required" class="ots-variable__required">*</span>
                   </div>
-                  <NSwitch v-if="variable.type === 'boolean'" v-model:value="wizard.variables[variable.name]" />
-                  <NInputNumber v-else-if="variable.type === 'number'" v-model:value="wizard.variables[variable.name]" style="width: 100%" />
-                  <NInput v-else v-model:value="wizard.variables[variable.name]" style="width: 100%" />
+                  <div class="field-error-shell" :class="{ 'field-error-shell--active': !!wizard.varErrors[variable.name] }">
+                    <NSwitch v-if="variable.type === 'boolean'" v-model:value="wizard.variables[variable.name]" />
+                    <NInputNumber v-else-if="variable.type === 'number'" v-model:value="wizard.variables[variable.name]" style="width: 100%" @update:value="clearVarError(wizard, variable.name)" />
+                    <NInput v-else v-model:value="wizard.variables[variable.name]" style="width: 100%" @update:value="clearVarError(wizard, variable.name)" />
+                  </div>
+                  <div class="field-error-label" :class="{ 'field-error-label--visible': !!wizard.varErrors[variable.name] }">
+                    {{ wizard.varErrors[variable.name] || ' ' }}
+                  </div>
                 </div>
                 </div>
               </template>
@@ -290,6 +295,7 @@ interface OtsWizard {
   scriptDetail: Script | null
   loadingScriptDetail: boolean
   variables: Record<string, unknown>
+  varErrors: Record<string, string>
   scope: 'brand' | 'default'
   brandId: string | null
   agentId: string | null
@@ -323,6 +329,22 @@ const brandOptions = computed(() =>
 
 function otsScopeValid(wizard: OtsWizard): boolean {
   return wizard.scope === 'brand' ? !!wizard.brandId : !!wizard.agentId
+}
+
+function validateOtsVariables(wizard: OtsWizard): boolean {
+  const vars = wizard.scriptDetail?.requiredVariables ?? []
+  Object.keys(wizard.varErrors).forEach((key) => delete wizard.varErrors[key])
+  for (const v of vars) {
+    if (!v.required) continue
+    const val = wizard.variables[v.name]
+    const empty = val === undefined || val === null || (typeof val === 'string' && val.trim() === '')
+    if (empty) wizard.varErrors[v.name] = t('common.required_field', { field: v.description || v.name })
+  }
+  return Object.keys(wizard.varErrors).length === 0
+}
+
+function clearVarError(wizard: OtsWizard, name: string) {
+  if (wizard.varErrors[name]) delete wizard.varErrors[name]
 }
 
 function otsSubmitLabel(wizard: OtsWizard): string {
@@ -362,6 +384,7 @@ function openOtsWizard() {
     scriptDetail: null,
     loadingScriptDetail: false,
     variables: reactive({}),
+    varErrors: reactive({}),
     scope: 'default',
     brandId: null,
     agentId: null,
@@ -401,6 +424,7 @@ function hydrateOtsWizard(def: OtsDefinition) {
     scriptDetail: null,
     loadingScriptDetail: false,
     variables: reactive({ ...def.userVariables }),
+    varErrors: reactive({}),
     scope: def.brandId ? 'brand' : 'default',
     brandId: def.brandId,
     agentId: def.agentId,
@@ -517,6 +541,7 @@ async function createOtsStream(wizard: OtsWizard) {
     wizard.error = t('overview.ots_agent_required')
     return
   }
+  if (!validateOtsVariables(wizard)) return
   wizard.error = null
   wizard.submitting = true
   try {
@@ -547,6 +572,7 @@ async function updateOtsStream(wizard: OtsWizard) {
     wizard.error = t('overview.ots_agent_required')
     return
   }
+  if (!validateOtsVariables(wizard)) return
   wizard.error = null
   wizard.updating = true
   wizard.updated = false
@@ -843,8 +869,33 @@ function otsStatusLabel(status?: string): string {
   grid-template-columns: 1fr 1fr;
   gap: 0 16px;
 }
+.ots-variable-stack {
+  display: flex;
+  flex-direction: column;
+}
 .ots-variable {
   margin-bottom: 12px;
+}
+.field-error-shell {
+  width: 100%;
+  border-left: 2px solid transparent;
+  padding-left: 8px;
+  transition: border-left-color 0.2s ease;
+}
+.field-error-shell--active {
+  border-left-color: rgba(255, 77, 79, 0.95);
+}
+.field-error-label {
+  margin-top: 3px;
+  min-height: 12px;
+  padding-left: 10px;
+  color: #ff4d4f;
+  font-size: 11px;
+  line-height: 1.3;
+  visibility: hidden;
+}
+.field-error-label--visible {
+  visibility: visible;
 }
 .ots-variable__label {
   margin-bottom: 4px;
