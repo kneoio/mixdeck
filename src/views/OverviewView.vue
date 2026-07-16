@@ -112,7 +112,7 @@
 
         <NCard class="ots-status-card">
           <div class="ots-status-row">
-            <GsapButton type="error" :disabled="wizard.stopping || wizard.status === 'OFF_LINE'" @click="stopOtsWizard(wizard)">
+            <GsapButton type="error" :disabled="wizard.stopping || wizard.status === 'OFF_LINE' || wizard.status === 'DONE'" @click="stopOtsWizard(wizard)">
               <span>{{ t('dashboard.broadcast_stop') }}</span>
             </GsapButton>
           </div>
@@ -253,7 +253,7 @@ function stopOtsHeartbeat(id: string) {
 }
 
 async function stopOtsWizard(wizard: OtsStatusEntry) {
-  if (wizard.stopping || !wizard.slugName || wizard.status === 'OFF_LINE') return
+  if (wizard.stopping || !wizard.slugName || wizard.status === 'OFF_LINE' || wizard.status === 'DONE') return
   wizard.stopping = true
   try {
     await aivoxApiService.stop(wizard.slugName)
