@@ -101,7 +101,7 @@
             </NPopover>
             <button
               class="copy-btn ots-remove-btn"
-              :disabled="wizard.status !== 'OFF_LINE'"
+              :disabled="wizard.status !== 'OFF_LINE' && wizard.status !== 'DONE'"
               :title="t('overview.ots_remove_card')"
               @click="removeOtsWizard(wizard)"
             >
@@ -275,7 +275,7 @@ function openOtsPlayer(wizard: OtsStatusEntry) {
 }
 
 function removeOtsWizard(wizard: OtsStatusEntry) {
-  if (wizard.status !== 'OFF_LINE') return
+  if (wizard.status !== 'OFF_LINE' && wizard.status !== 'DONE') return
   stopOtsHeartbeat(wizard.id)
   const idx = otsWizards.value.indexOf(wizard)
   if (idx !== -1) otsWizards.value.splice(idx, 1)
