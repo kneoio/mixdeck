@@ -289,6 +289,7 @@ export default {
     load_failed: 'Fehler beim Laden',
   },
   overview: {
+    ots_remove_card: 'Karte entfernen',
     ots_none_running: 'Derzeit läuft kein Stream',
     ots_status_off_line: 'Offline',
     ots_status_warming_up: 'Wird aufgewärmt…',

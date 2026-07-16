@@ -250,6 +250,7 @@ export default {
     load_failed: 'लोड करने में विफल',
   },
   overview: {
+    ots_remove_card: 'कार्ड हटाएँ',
     ots_none_running: 'अभी कोई स्ट्रीम नहीं चल रही है',
     ots_status_off_line: 'ऑफ़लाइन',
     ots_status_warming_up: 'वार्मिंग अप हो रहा है…',

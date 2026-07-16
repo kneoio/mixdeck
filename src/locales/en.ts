@@ -92,6 +92,7 @@ export default {
     ots_delete_confirm: 'Delete this one-time stream?',
     ots_delete_failed: 'Could not delete the one-time stream. Please try again.',
     ots_qr_code: 'Show QR code',
+    ots_remove_card: 'Remove card',
     ots_live: 'Live now',
     ots_none_running: 'No stream running right now',
     ots_status_off_line: 'Offline',

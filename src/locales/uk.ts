@@ -250,6 +250,7 @@ export default {
     load_failed: 'Не вдалося завантажити',
   },
   overview: {
+    ots_remove_card: 'Видалити картку',
     ots_none_running: 'Зараз немає активних трансляцій',
     ots_status_off_line: 'Офлайн',
     ots_status_warming_up: 'Розігрів…',

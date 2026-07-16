@@ -251,6 +251,7 @@ export default {
     load_failed: 'Falha ao carregar',
   },
   overview: {
+    ots_remove_card: 'Remover cartão',
     ots_none_running: 'Nenhuma transmissão em andamento agora',
     ots_status_off_line: 'Offline',
     ots_status_warming_up: 'Aquecendo…',

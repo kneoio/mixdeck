@@ -250,6 +250,7 @@ export default {
     load_failed: 'Жүктеу сәтсіз аяқталды',
   },
   overview: {
+    ots_remove_card: 'Картаны жою',
     ots_none_running: 'Қазір белсенді трансляция жоқ',
     ots_status_off_line: 'Желіден тыс',
     ots_status_warming_up: 'Қыздырылуда…',

@@ -250,6 +250,7 @@ export default {
     load_failed: 'Ошибка загрузки',
   },
   overview: {
+    ots_remove_card: 'Удалить карточку',
     ots_none_running: 'Сейчас нет активных трансляций',
     ots_status_off_line: 'Офлайн',
     ots_status_warming_up: 'Прогрев…',

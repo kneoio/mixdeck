@@ -251,6 +251,7 @@ export default {
     load_failed: 'Échec du chargement',
   },
   overview: {
+    ots_remove_card: 'Supprimer la carte',
     ots_none_running: 'Aucune diffusion en cours',
     ots_status_off_line: 'Hors ligne',
     ots_status_warming_up: 'Préchauffage…',

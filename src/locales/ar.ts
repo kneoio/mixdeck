@@ -250,6 +250,7 @@ export default {
     load_failed: 'فشل التحميل',
   },
   overview: {
+    ots_remove_card: 'إزالة البطاقة',
     ots_none_running: 'لا يوجد بث نشط الآن',
     ots_status_off_line: 'غير متصل',
     ots_status_warming_up: 'جارٍ التجهيز…',

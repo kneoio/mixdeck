@@ -250,6 +250,7 @@ export default {
     load_failed: '読み込み失敗',
   },
   overview: {
+    ots_remove_card: 'カードを削除',
     ots_none_running: '現在配信中のストリームはありません',
     ots_status_off_line: 'オフライン',
     ots_status_warming_up: 'ウォームアップ中…',

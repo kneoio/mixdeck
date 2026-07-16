@@ -250,6 +250,7 @@ export default {
     load_failed: 'ჩატვირთვა ვერ მოხერხდა',
   },
   overview: {
+    ots_remove_card: 'ბარათის წაშლა',
     ots_none_running: 'ამჟამად აქტიური სტრიმი არ არის',
     ots_status_off_line: 'ოფლაინში',
     ots_status_warming_up: 'თბება…',

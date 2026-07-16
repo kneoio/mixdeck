@@ -288,6 +288,7 @@ export default {
     load_failed: 'Innlasting mislyktes',
   },
   overview: {
+    ots_remove_card: 'Fjern kort',
     ots_none_running: 'Ingen strøm kjører akkurat nå',
     ots_status_off_line: 'Offline',
     ots_status_warming_up: 'Varmer opp…',

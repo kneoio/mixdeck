@@ -105,6 +105,14 @@
             <GsapButton type="error" :disabled="wizard.stopping || wizard.status === 'OFF_LINE'" @click="stopOtsWizard(wizard)">
               <span>{{ t('dashboard.broadcast_stop') }}</span>
             </GsapButton>
+            <button
+              class="copy-btn ots-remove-btn"
+              :disabled="wizard.status !== 'OFF_LINE'"
+              :title="t('overview.ots_remove_card')"
+              @click="removeOtsWizard(wizard)"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
           </div>
         </NCard>
       </NCard>
@@ -247,10 +255,18 @@ async function stopOtsWizard(wizard: OtsStatusEntry) {
   wizard.stopping = true
   try {
     await aivoxApiService.stop(wizard.slugName)
+    stopOtsHeartbeat(wizard.id)
     await pollOtsHeartbeat(wizard)
   } finally {
     wizard.stopping = false
   }
+}
+
+function removeOtsWizard(wizard: OtsStatusEntry) {
+  if (wizard.status !== 'OFF_LINE') return
+  stopOtsHeartbeat(wizard.id)
+  const idx = otsWizards.value.indexOf(wizard)
+  if (idx !== -1) otsWizards.value.splice(idx, 1)
 }
 
 function copyOtsLink(wizard: OtsStatusEntry) {
@@ -398,6 +414,13 @@ onBeforeUnmount(() => {
   color: #4caf50;
   border-color: rgba(76, 175, 80, 0.4);
   opacity: 1;
+}
+.ots-remove-btn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+.ots-remove-btn:disabled:hover {
+  opacity: 0.25;
 }
 @media (max-width: 768px) {
   .brand-url-link {

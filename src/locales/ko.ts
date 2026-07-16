@@ -288,6 +288,7 @@ export default {
     load_failed: '불러오기 실패',
   },
   overview: {
+    ots_remove_card: '카드 삭제',
     ots_none_running: '현재 실행 중인 스트림이 없습니다',
     ots_status_off_line: '오프라인',
     ots_status_warming_up: '준비 중…',
