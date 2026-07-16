@@ -290,6 +290,7 @@ export default {
   overview: {
     ots_remove_card: 'Fjern kort',
     ots_none_running: 'Ingen strøm kjører akkurat nå',
+    radio_none_running: 'Ingen radiostrøm kjører akkurat nå',
     ots_status_off_line: 'Offline',
     ots_status_warming_up: 'Varmer opp…',
     ots_status_streaming: 'Strømmer',

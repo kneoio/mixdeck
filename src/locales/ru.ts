@@ -252,6 +252,7 @@ export default {
   overview: {
     ots_remove_card: 'Удалить карточку',
     ots_none_running: 'Сейчас нет активных трансляций',
+    radio_none_running: 'Сейчас нет активных радиотрансляций',
     ots_status_off_line: 'Офлайн',
     ots_status_warming_up: 'Прогрев…',
     ots_status_streaming: 'Трансляция',

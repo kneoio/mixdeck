@@ -290,6 +290,7 @@ export default {
   overview: {
     ots_remove_card: '카드 삭제',
     ots_none_running: '현재 실행 중인 스트림이 없습니다',
+    radio_none_running: '현재 실행 중인 라디오 스트림이 없습니다',
     ots_status_off_line: '오프라인',
     ots_status_warming_up: '준비 중…',
     ots_status_streaming: '스트리밍 중',

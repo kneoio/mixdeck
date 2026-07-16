@@ -253,6 +253,7 @@ export default {
   overview: {
     ots_remove_card: 'Remover cartão',
     ots_none_running: 'Nenhuma transmissão em andamento agora',
+    radio_none_running: 'Nenhuma transmissão de rádio em andamento agora',
     ots_status_off_line: 'Offline',
     ots_status_warming_up: 'Aquecendo…',
     ots_status_streaming: 'Transmitindo',

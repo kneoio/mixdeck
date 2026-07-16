@@ -253,6 +253,7 @@ export default {
   overview: {
     ots_remove_card: 'Supprimer la carte',
     ots_none_running: 'Aucune diffusion en cours',
+    radio_none_running: 'Aucune diffusion radio en cours',
     ots_status_off_line: 'Hors ligne',
     ots_status_warming_up: 'Préchauffage…',
     ots_status_streaming: 'Diffusion en cours',

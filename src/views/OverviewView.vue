@@ -3,7 +3,7 @@
     <PageHeader :title="t('overview.title')" :count="brandsStore.brands.length" />
 
     <div class="overview-list">
-      <h3 v-if="brandsStore.brands.length" class="overview-section-title">{{ t('overview.radio_stream') }}</h3>
+      <h3 class="overview-section-title">{{ t('overview.radio_stream') }}</h3>
       <NCard
         v-for="brand in brandsStore.brands"
         :key="brand.id"
@@ -50,7 +50,9 @@
         -->
       </NCard>
 
-      <h3 v-if="otsWizards.length" class="overview-section-title">{{ t('overview.one_time_stream') }}</h3>
+      <p v-if="!brandsStore.brands.length" class="ots-empty">{{ t('overview.radio_none_running') }}</p>
+
+      <h3 class="overview-section-title">{{ t('overview.one_time_stream') }}</h3>
 
       <NCard
         v-for="wizard in otsWizards"
@@ -86,14 +88,6 @@
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6"/><path d="M10 14L21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
             </button>
-            <button
-              class="copy-btn ots-remove-btn"
-              :disabled="wizard.status !== 'OFF_LINE'"
-              :title="t('overview.ots_remove_card')"
-              @click="removeOtsWizard(wizard)"
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
             <NPopover v-if="wizard.link && wizard.status === 'ON_LINE'" trigger="click" placement="bottom-end" @update:show="(show: boolean) => show && loadOtsQrCode(wizard)">
               <template #trigger>
                 <button class="copy-btn" :title="t('overview.ots_qr_code')">
@@ -105,6 +99,14 @@
                 <NSpin v-else :show="true" style="width: 180px; height: 180px; display: flex; align-items: center; justify-content: center;" />
               </div>
             </NPopover>
+            <button
+              class="copy-btn ots-remove-btn"
+              :disabled="wizard.status !== 'OFF_LINE'"
+              :title="t('overview.ots_remove_card')"
+              @click="removeOtsWizard(wizard)"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
           </div>
         </template>
 

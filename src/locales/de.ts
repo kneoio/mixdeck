@@ -291,6 +291,7 @@ export default {
   overview: {
     ots_remove_card: 'Karte entfernen',
     ots_none_running: 'Derzeit läuft kein Stream',
+    radio_none_running: 'Derzeit läuft kein Radiostream',
     ots_status_off_line: 'Offline',
     ots_status_warming_up: 'Wird aufgewärmt…',
     ots_status_streaming: 'Streamt',

@@ -252,6 +252,7 @@ export default {
   overview: {
     ots_remove_card: 'ბარათის წაშლა',
     ots_none_running: 'ამჟამად აქტიური სტრიმი არ არის',
+    radio_none_running: 'ამჟამად აქტიური რადიო სტრიმი არ არის',
     ots_status_off_line: 'ოფლაინში',
     ots_status_warming_up: 'თბება…',
     ots_status_streaming: 'მიმდინარეობს',

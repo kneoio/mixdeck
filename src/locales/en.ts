@@ -95,6 +95,7 @@ export default {
     ots_remove_card: 'Remove card',
     ots_live: 'Live now',
     ots_none_running: 'No stream running right now',
+    radio_none_running: 'No radio stream running right now',
     ots_status_off_line: 'Offline',
     ots_status_warming_up: 'Warming up…',
     ots_status_streaming: 'Streaming',

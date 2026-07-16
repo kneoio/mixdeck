@@ -252,6 +252,7 @@ export default {
   overview: {
     ots_remove_card: 'カードを削除',
     ots_none_running: '現在配信中のストリームはありません',
+    radio_none_running: '現在配信中のラジオストリームはありません',
     ots_status_off_line: 'オフライン',
     ots_status_warming_up: 'ウォームアップ中…',
     ots_status_streaming: '配信中',
