@@ -364,7 +364,7 @@ onUnmounted(() => {
 }
 .free-badge {
   font-size: 0.65rem;
-  font-weight: 700;
+  font-weight: 400;
   letter-spacing: 0.05em;
   padding: 2px 7px;
   border-radius: 3px;

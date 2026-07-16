@@ -32,7 +32,7 @@
             <button
               class="copy-btn"
               title="Go to station"
-              @click="router.push({ name: 'brand-settings', params: { id: brand.id } })"
+              @click="openBrandUrl(brand)"
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6"/><path d="M10 14L21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
             </button>
@@ -79,12 +79,20 @@
               <svg v-else width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
             </button>
             <button
-              v-if="wizard.scope === 'brand' && wizard.brandId"
+              v-if="wizard.link"
               class="copy-btn"
               title="Go to station"
-              @click="router.push({ name: 'brand-settings', params: { id: wizard.brandId } })"
+              @click="openOtsPlayer(wizard)"
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6"/><path d="M10 14L21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+            </button>
+            <button
+              class="copy-btn ots-remove-btn"
+              :disabled="wizard.status !== 'OFF_LINE'"
+              :title="t('overview.ots_remove_card')"
+              @click="removeOtsWizard(wizard)"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
             <NPopover v-if="wizard.link && wizard.status === 'ON_LINE'" trigger="click" placement="bottom-end" @update:show="(show: boolean) => show && loadOtsQrCode(wizard)">
               <template #trigger>
@@ -105,14 +113,6 @@
             <GsapButton type="error" :disabled="wizard.stopping || wizard.status === 'OFF_LINE'" @click="stopOtsWizard(wizard)">
               <span>{{ t('dashboard.broadcast_stop') }}</span>
             </GsapButton>
-            <button
-              class="copy-btn ots-remove-btn"
-              :disabled="wizard.status !== 'OFF_LINE'"
-              :title="t('overview.ots_remove_card')"
-              @click="removeOtsWizard(wizard)"
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
           </div>
         </NCard>
       </NCard>
@@ -260,6 +260,16 @@ async function stopOtsWizard(wizard: OtsStatusEntry) {
   } finally {
     wizard.stopping = false
   }
+}
+
+function openBrandUrl(brand: Brand) {
+  if (!brand.mixplaUrl) return
+  window.open(brand.mixplaUrl, '_blank', 'noopener,noreferrer')
+}
+
+function openOtsPlayer(wizard: OtsStatusEntry) {
+  if (!wizard.link) return
+  window.open(wizard.link, '_blank', 'noopener,noreferrer')
 }
 
 function removeOtsWizard(wizard: OtsStatusEntry) {
