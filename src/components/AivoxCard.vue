@@ -367,7 +367,7 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: 0.05em;
   padding: 2px 7px;
-  border-radius: 10px;
+  border-radius: 3px;
   background: rgba(255, 214, 0, 0.15);
   border: 1px solid rgba(255, 214, 0, 0.5);
   color: #FFD600;

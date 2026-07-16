@@ -53,15 +53,15 @@
       <h3 v-if="otsWizards.length" class="overview-section-title">{{ t('overview.one_time_stream') }}</h3>
 
       <NCard
-        v-for="wizard in visibleOtsWizards"
+        v-for="wizard in otsWizards"
         :key="wizard.id"
         class="ots-card"
       >
         <template #header>
           <div class="brand-head">
             <span class="brand-name">{{ wizard.name || t('overview.one_time_stream') }}</span>
-            <span v-if="wizard.type" class="type-pill">{{ wizard.type }}</span>
-            <StatusOrbitBadge v-if="wizard.status" class="brand-status" :class="{ 'brand-status--live': wizard.status === 'ON_LINE' }" :live="wizard.status === 'STREAMING' || wizard.status === 'ON_LINE' || wizard.heartbeatAlive">{{ otsStatusLabel(wizard.status) }}</StatusOrbitBadge>
+            <span v-if="wizard.type" class="type-pill">{{ otsTypeLabel(wizard.type) }}</span>
+            <StatusOrbitBadge v-if="wizard.status" class="brand-status" :class="{ 'brand-status--live': wizard.status === 'ON_LINE', 'brand-status--pill': wizard.status === 'OFF_LINE' || wizard.status === 'WARMING_UP' }" :live="wizard.status === 'STREAMING' || wizard.status === 'ON_LINE' || wizard.heartbeatAlive">{{ otsStatusLabel(wizard.status) }}</StatusOrbitBadge>
             <span v-if="wizard.remainingMinutes > 0" class="remaining-pill" :class="{ 'remaining-pill--warning': wizard.remainingMinutes < 10 }">{{ wizard.remainingMinutes }}m</span>
           </div>
         </template>
@@ -97,27 +97,19 @@
                 <NSpin v-else :show="true" style="width: 180px; height: 180px; display: flex; align-items: center; justify-content: center;" />
               </div>
             </NPopover>
-            <NPopconfirm @positive-click="() => deleteOtsWizard(wizard)">
-              <template #trigger>
-                <button class="copy-btn" :title="t('common.close')">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-                </button>
-              </template>
-              {{ t('overview.ots_delete_confirm') }}
-            </NPopconfirm>
           </div>
         </template>
 
         <NCard class="ots-status-card">
           <div class="ots-status-row">
-            <GsapButton type="error" :disabled="wizard.stopping" @click="stopOtsWizard(wizard)">
+            <GsapButton type="error" :disabled="wizard.stopping || wizard.status === 'OFF_LINE'" @click="stopOtsWizard(wizard)">
               <span>{{ t('dashboard.broadcast_stop') }}</span>
             </GsapButton>
           </div>
         </NCard>
       </NCard>
 
-      <p v-if="!visibleOtsWizards.length" class="ots-empty">{{ t('overview.ots_none_running') }}</p>
+      <p v-if="!otsWizards.length" class="ots-empty">{{ t('overview.ots_none_running') }}</p>
 
     </div>
   </div>
@@ -127,7 +119,7 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { NCard, NCollapse, NCollapseItem, NSpin, NPopconfirm, NPopover, useMessage } from 'naive-ui'
+import { NCard, NCollapse, NCollapseItem, NSpin, NPopover } from 'naive-ui'
 import QRCode from 'qrcode'
 import { useBrandsStore, type Brand } from '@/stores/brands'
 import { useOtsDefinitionsStore, type OtsDefinition } from '@/stores/otsDefinitions'
@@ -140,7 +132,6 @@ import AgendaCard from '@/components/AgendaCard.vue'
 
 const { t } = useI18n()
 const router = useRouter()
-const message = useMessage()
 const brandsStore = useBrandsStore()
 const otsDefinitionsStore = useOtsDefinitionsStore()
 
@@ -192,10 +183,6 @@ interface OtsStatusEntry {
 }
 
 const otsWizards = ref<OtsStatusEntry[]>([])
-
-const visibleOtsWizards = computed(() =>
-  otsWizards.value.filter((w) => w.status === 'ON_LINE' || w.status === 'STREAMING' || w.heartbeatAlive)
-)
 
 const OTS_PLAYER_THEMES = ['hitachi', 'akai', '']
 function otsPlayerLink(slugName?: string | null): string {
@@ -256,23 +243,13 @@ function stopOtsHeartbeat(id: string) {
 }
 
 async function stopOtsWizard(wizard: OtsStatusEntry) {
-  if (wizard.stopping || !wizard.slugName) return
+  if (wizard.stopping || !wizard.slugName || wizard.status === 'OFF_LINE') return
   wizard.stopping = true
   try {
     await aivoxApiService.stop(wizard.slugName)
     await pollOtsHeartbeat(wizard)
   } finally {
     wizard.stopping = false
-  }
-}
-
-async function deleteOtsWizard(wizard: OtsStatusEntry) {
-  try {
-    await otsDefinitionsStore.deleteOtsDefinition(wizard.id)
-    stopOtsHeartbeat(wizard.id)
-    otsWizards.value = otsWizards.value.filter((w) => w.id !== wizard.id)
-  } catch {
-    message.error(t('overview.ots_delete_failed'))
   }
 }
 
@@ -296,7 +273,16 @@ async function loadOtsQrCode(wizard: OtsStatusEntry) {
 
 function otsStatusLabel(status?: string): string {
   if (status === 'ON_LINE') return t('overview.ots_live')
+  if (status === 'OFF_LINE') return t('overview.ots_status_off_line')
+  if (status === 'WARMING_UP') return t('overview.ots_status_warming_up')
+  if (status === 'STREAMING') return t('overview.ots_status_streaming')
+  if (status === 'DONE') return t('overview.ots_status_done')
   return status ?? ''
+}
+
+function otsTypeLabel(type?: string): string {
+  if (type === 'ONE_SHOT') return t('overview.ots_type_one_shot')
+  return type ?? ''
 }
 
 onMounted(async () => {
@@ -357,6 +343,15 @@ onBeforeUnmount(() => {
 .brand-status--live :deep(.orbit-badge--live),
 .brand-status--live.orbit-badge--live {
   padding: 0 4px;
+}
+.brand-status--pill {
+  display: inline-block;
+  opacity: 1;
+  font-weight: 600;
+  color: rgba(160, 160, 160, 0.9);
+  border: 1px solid rgba(128, 128, 128, 0.5);
+  border-radius: 3px;
+  padding: 0px 4px;
 }
 @keyframes brand-status-glow {
   0%, 100% { box-shadow: 0 0 7px 2px rgba(0, 255, 60, 0.25); }

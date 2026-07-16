@@ -94,6 +94,11 @@ export default {
     ots_qr_code: 'Show QR code',
     ots_live: 'Live now',
     ots_none_running: 'No stream running right now',
+    ots_status_off_line: 'Offline',
+    ots_status_warming_up: 'Warming up…',
+    ots_status_streaming: 'Streaming',
+    ots_status_done: 'Done',
+    ots_type_one_shot: 'One-Shot',
   },
   dashboard: {
     player_ui: 'Player UI',
