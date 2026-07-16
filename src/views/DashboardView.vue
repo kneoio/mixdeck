@@ -172,6 +172,7 @@ const activeKey = computed(() => {
   if (path === '/sound-library/received') return 'sound-library-received'
   if (path === '/sound-library/archived') return 'sound-library-archived'
   if (path === '/sound-library/sound-assets') return 'sound-library-assets'
+  if (path === '/one-time-streams') return 'sound-library-ots'
   const m = path.match(/^\/brands\/([^/]+)\/(\w+)$/)
   if (m) return `brand-${m[1]}-${m[2]}`
   if (path === '/brands/new') return 'brands-manage'
@@ -274,6 +275,10 @@ const menuOptions = computed<MenuOption[]>(() => [
         label: t('menu.sound_assets'),
         key: 'sound-library-assets',
       },
+      {
+        label: t('menu.one_time_stream'),
+        key: 'sound-library-ots',
+      },
     ],
   },
 ])
@@ -297,6 +302,8 @@ const handleMenuSelect = async (key: string) => {
     router.push('/sound-library/archived')
   } else if (key === 'sound-library-assets') {
     router.push('/sound-library/sound-assets')
+  } else if (key === 'sound-library-ots') {
+    router.push('/one-time-streams')
   } else if (key === 'brands-new') {
     router.push('/brands/new')
   } else if (key.startsWith('brand-') && key.endsWith('-listeners')) {

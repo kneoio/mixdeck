@@ -173,6 +173,24 @@ const router = createRouter({
           component: () => import('../views/OverviewView.vue'),
           meta: { requiresAuth: true }
         },
+        {
+          path: '/one-time-streams',
+          name: 'ots-list',
+          component: () => import('../views/OtsDefinitionsView.vue'),
+          meta: { requiresAuth: true }
+        },
+        {
+          path: '/one-time-streams/new',
+          name: 'ots-new',
+          component: () => import('../components/forms/OtsForm.vue'),
+          meta: { requiresAuth: true }
+        },
+        {
+          path: '/one-time-streams/:otsId',
+          name: 'ots-edit',
+          component: () => import('../components/forms/OtsForm.vue'),
+          meta: { requiresAuth: true }
+        },
       ]
     },
     {

@@ -50,13 +50,12 @@
         -->
       </NCard>
 
-      <h3 class="overview-section-title">{{ t('overview.one_time_stream') }}</h3>
+      <h3 v-if="otsWizards.length" class="overview-section-title">{{ t('overview.one_time_stream') }}</h3>
 
       <NCard
-        v-for="wizard in otsWizards"
+        v-for="wizard in visibleOtsWizards"
         :key="wizard.id"
         class="ots-card"
-        :style="wizard.scriptDetail?.color ? { '--brand-color': wizard.scriptDetail.color } : undefined"
       >
         <template #header>
           <div class="brand-head">
@@ -98,7 +97,7 @@
                 <NSpin v-else :show="true" style="width: 180px; height: 180px; display: flex; align-items: center; justify-content: center;" />
               </div>
             </NPopover>
-            <NPopconfirm v-if="wizard.createdId" @positive-click="() => deleteOtsWizard(wizard)">
+            <NPopconfirm @positive-click="() => deleteOtsWizard(wizard)">
               <template #trigger>
                 <button class="copy-btn" :title="t('common.close')">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
@@ -106,147 +105,32 @@
               </template>
               {{ t('overview.ots_delete_confirm') }}
             </NPopconfirm>
-            <button v-else class="copy-btn" :title="t('common.close')" @click="closeOtsWizard(wizard.id)">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-            </button>
           </div>
         </template>
 
-        <NCard :bordered="true" size="small" class="ots-step-card">
-          <div class="ots-step ots-step--split">
-            <div class="ots-step__select">
-              <NForm :label-placement="formLabelPlacement" label-width="140">
-                <NFormItem :label="t('overview.ots_pick_script')" :show-feedback="false">
-                  <div class="field-stack">
-                    <div class="field-error-shell">
-                      <NSelect
-                        v-model:value="wizard.scriptId"
-                        :options="scriptOptions"
-                        :render-label="renderScriptOptionLabel"
-                        :loading="scriptsStore.loading"
-                        :placeholder="t('overview.ots_pick_script')"
-                        filterable
-                        style="width: 100%; max-width: 400px"
-                        @update:value="() => onOtsScriptChange(wizard)"
-                      />
-                    </div>
-                    <div class="field-error-label"></div>
-                  </div>
-                </NFormItem>
-              </NForm>
-            </div>
-            <div class="ots-step__desc script-description" v-html="wizard.scriptDetail?.description ? renderScriptDescription(wizard.scriptDetail.description) : ''" />
+        <NCard class="ots-status-card">
+          <div class="ots-status-row">
+            <GsapButton type="error" :disabled="wizard.stopping" @click="stopOtsWizard(wizard)">
+              <span>{{ t('dashboard.broadcast_stop') }}</span>
+            </GsapButton>
           </div>
         </NCard>
-
-        <NCard :bordered="true" size="small" class="ots-step-card">
-          <div class="ots-step">
-            <NSpin :show="wizard.loadingScriptDetail">
-              <template v-if="wizard.scriptDetail?.requiredVariables?.length">
-                <NForm :label-placement="formLabelPlacement" label-width="140">
-                  <NFormItem v-for="variable in wizard.scriptDetail.requiredVariables" :key="variable.name" :show-feedback="false">
-                    <template #label>
-                      <span>{{ variable.description }}<span v-if="variable.required" class="ots-variable__required">*</span></span>
-                    </template>
-                    <div class="field-stack">
-                      <div class="field-error-shell" :class="{ 'field-error-shell--active': !!wizard.varErrors[variable.name] }">
-                        <NSwitch v-if="variable.type === 'boolean'" v-model:value="wizard.variables[variable.name]" />
-                        <NInputNumber v-else-if="variable.type === 'number'" v-model:value="wizard.variables[variable.name]" style="width: 100%; max-width: 400px" @update:value="clearVarError(wizard, variable.name)" />
-                        <NInput v-else v-model:value="wizard.variables[variable.name]" style="width: 100%; max-width: 400px" @update:value="clearVarError(wizard, variable.name)" />
-                      </div>
-                      <div class="field-error-label" :class="{ 'field-error-label--visible': !!wizard.varErrors[variable.name] }">
-                        {{ wizard.varErrors[variable.name] || ' ' }}
-                      </div>
-                    </div>
-                  </NFormItem>
-                </NForm>
-              </template>
-              <p v-else-if="!wizard.loadingScriptDetail" class="ots-no-variables">{{ wizard.scriptId ? t('overview.ots_no_variables') : t('overview.ots_pick_script_first') }}</p>
-            </NSpin>
-          </div>
-        </NCard>
-
-        <NCard :bordered="true" size="small" class="ots-step-card">
-          <div class="ots-step">
-            <NForm :label-placement="formLabelPlacement" label-width="140">
-              <NFormItem :label="t('overview.ots_scope_label')" :show-feedback="false">
-                <div class="field-stack">
-                  <div class="field-error-shell">
-                    <NRadioGroup v-model:value="wizard.scope" @update:value="onOtsScopeChange(wizard)">
-                      <NRadioButton value="brand">{{ t('overview.ots_scope_brand') }}</NRadioButton>
-                      <NRadioButton value="default">{{ t('overview.ots_scope_default') }}</NRadioButton>
-                    </NRadioGroup>
-                  </div>
-                  <div class="field-error-label"></div>
-                </div>
-              </NFormItem>
-
-              <NFormItem v-if="wizard.scope === 'brand'" :label="t('overview.ots_pick_brand')" :show-feedback="false">
-                <div class="field-stack">
-                  <div class="field-error-shell">
-                    <NSelect
-                      v-model:value="wizard.brandId"
-                      :options="brandOptions"
-                      :placeholder="t('overview.ots_pick_brand')"
-                      filterable
-                      style="width: 100%; max-width: 400px"
-                      @update:value="() => onOtsBrandChange(wizard)"
-                    />
-                  </div>
-                  <div class="field-error-label"></div>
-                </div>
-              </NFormItem>
-
-              <NFormItem v-if="wizard.scope !== 'brand'" :label="t('overview.ots_pick_dj')" :show-feedback="false">
-                <div class="field-stack">
-                  <div class="field-error-shell">
-                    <NSelect
-                      v-model:value="wizard.agentId"
-                      :options="wizard.agentOptions"
-                      :loading="wizard.loadingAgents"
-                      :placeholder="t('overview.ots_pick_dj')"
-                      filterable
-                      style="width: 100%; max-width: 400px"
-                    />
-                  </div>
-                  <div class="field-error-label"></div>
-                </div>
-              </NFormItem>
-            </NForm>
-          </div>
-        </NCard>
-
-        <p v-if="wizard.error" class="ots-error">{{ wizard.error }}</p>
-
-        <div class="ots-nav">
-          <GsapButton
-            type="primary"
-            :disabled="!wizard.scriptId || !otsScopeValid(wizard) || wizard.submitting || wizard.updating || wizard.status === 'STREAMING' || wizard.status === 'DONE' || wizard.status === 'ON_LINE'"
-            @click="wizard.createdId ? updateOtsStream(wizard) : createOtsStream(wizard)"
-          >
-            <span>{{ otsSubmitLabel(wizard) }}</span>
-          </GsapButton>
-        </div>
       </NCard>
 
-      <button class="ots-add-strip" type="button" :title="t('overview.one_time_stream')" @click="openOtsWizard">
-        <span class="ots-add-strip__plus">+</span>
-      </button>
+      <p v-if="!visibleOtsWizards.length" class="ots-empty">{{ t('overview.ots_none_running') }}</p>
+
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, h, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { NCard, NCollapse, NCollapseItem, NSelect, NSwitch, NInputNumber, NInput, NTag, NSpace, NSpin, NRadioGroup, NRadioButton, NPopconfirm, NPopover, NForm, NFormItem, useMessage, type SelectOption } from 'naive-ui'
-import MarkdownIt from 'markdown-it'
+import { NCard, NCollapse, NCollapseItem, NSpin, NPopconfirm, NPopover, useMessage } from 'naive-ui'
 import QRCode from 'qrcode'
 import { useBrandsStore, type Brand } from '@/stores/brands'
-import { useScriptsStore, type Script } from '@/stores/scripts'
 import { useOtsDefinitionsStore, type OtsDefinition } from '@/stores/otsDefinitions'
-import datanestApiService from '@/services/datanestApi'
 import aivoxApiService from '@/services/aivoxApi'
 import PageHeader from '@/components/PageHeader.vue'
 import AivoxCard from '@/components/AivoxCard.vue'
@@ -258,16 +142,10 @@ const { t } = useI18n()
 const router = useRouter()
 const message = useMessage()
 const brandsStore = useBrandsStore()
-const scriptsStore = useScriptsStore()
 const otsDefinitionsStore = useOtsDefinitionsStore()
 
 const brandLabel = (brand: Brand) =>
   brand.localizedName?.['en'] || brand.title || brand.slugName || brand.id
-
-const md = new MarkdownIt()
-function renderScriptDescription(description: string) {
-  return md.render(description)
-}
 
 function isAlive(brand: Brand): boolean {
   return brandsStore.streamingStates[brand.slugName ?? ''] ?? false
@@ -297,156 +175,27 @@ function copyUrl(brand: Brand) {
   setTimeout(() => { copiedId.value = null }, 2000)
 }
 
-async function deleteOtsWizard(wizard: OtsWizard) {
-  if (!wizard.createdId) return
-  try {
-    await otsDefinitionsStore.deleteOtsDefinition(wizard.createdId)
-    closeOtsWizard(wizard.id)
-  } catch {
-    message.error(t('overview.ots_delete_failed'))
-  }
-}
-
-const isMobile = ref(false)
-const formLabelPlacement = computed(() => (isMobile.value ? 'top' : 'left'))
-
-function updateIsMobile() {
-  if (typeof window === 'undefined') return
-  isMobile.value = window.innerWidth <= 768
-}
-
-onMounted(async () => {
-  updateIsMobile()
-  window.addEventListener('resize', updateIsMobile)
-  await otsDefinitionsStore.loadOtsDefinitions(1, 50)
-  otsDefinitionsStore.otsDefinitions.forEach((def) => hydrateOtsWizard(def))
-})
-
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', updateIsMobile)
-  otsHeartbeatTimers.forEach((timer) => clearInterval(timer))
-  otsHeartbeatTimers.clear()
-})
-
-interface OtsWizard {
+interface OtsStatusEntry {
   id: string
-  scriptId: string | null
-  scriptDetail: Script | null
-  loadingScriptDetail: boolean
-  variables: Record<string, unknown>
-  varErrors: Record<string, string>
   scope: 'brand' | 'default'
   brandId: string | null
-  agentId: string | null
-  agentOptions: SelectOption[]
-  loadingAgents: boolean
-  submitting: boolean
-  error: string | null
   link: string
   linkCopied: boolean
   qrDataUrl: string | null
-  createdId: string | null
-  updating: boolean
-  updated: boolean
   name?: string
   status?: string
   type?: string
   slugName?: string
   heartbeatAlive: boolean
   remainingMinutes: number
+  stopping: boolean
 }
 
-const otsWizards = ref<OtsWizard[]>([])
+const otsWizards = ref<OtsStatusEntry[]>([])
 
-const scriptOptions = computed(() =>
-  scriptsStore.scripts.map((script) => ({ label: script.name, value: script.id, tags: script.tags || [] }))
+const visibleOtsWizards = computed(() =>
+  otsWizards.value.filter((w) => w.status === 'ON_LINE' || w.status === 'STREAMING' || w.heartbeatAlive)
 )
-
-const brandOptions = computed(() =>
-  brandsStore.brands.map((brand) => ({ label: brandLabel(brand), value: brand.id }))
-)
-
-function otsScopeValid(wizard: OtsWizard): boolean {
-  return wizard.scope === 'brand' ? !!wizard.brandId : !!wizard.agentId
-}
-
-function validateOtsVariables(wizard: OtsWizard): boolean {
-  const vars = wizard.scriptDetail?.requiredVariables ?? []
-  Object.keys(wizard.varErrors).forEach((key) => delete wizard.varErrors[key])
-  for (const v of vars) {
-    if (!v.required) continue
-    const val = wizard.variables[v.name]
-    const empty = val === undefined || val === null || (typeof val === 'string' && val.trim() === '')
-    if (empty) wizard.varErrors[v.name] = t('common.required_field', { field: v.description || v.name })
-  }
-  return Object.keys(wizard.varErrors).length === 0
-}
-
-function clearVarError(wizard: OtsWizard, name: string) {
-  if (wizard.varErrors[name]) delete wizard.varErrors[name]
-}
-
-function otsSubmitLabel(wizard: OtsWizard): string {
-  if (wizard.submitting) return t('overview.ots_creating')
-  if (wizard.updating) return t('overview.ots_updating')
-  if (wizard.updated) return t('overview.ots_updated')
-  if (wizard.createdId) return t('overview.ots_update')
-  return t('overview.ots_create')
-}
-
-function renderScriptOptionLabel(option: SelectOption) {
-  const tags = (option as unknown as { tags?: Array<{ name?: string; identifier?: string; color?: string; fontColor?: string }> }).tags || []
-  return h(
-    NSpace,
-    { align: 'center', size: 8, wrapItem: false },
-    {
-      default: () => [
-        ...tags
-          .filter((tag) => Boolean(tag?.name || tag?.identifier))
-          .map((tag) =>
-            h(
-              NTag,
-              { size: 'small', bordered: false, color: { color: tag.color || '#ececec', textColor: tag.fontColor || '#333333' } },
-              { default: () => tag.name || tag.identifier }
-            )
-          ),
-        h('span', String(option.label ?? option.value ?? '')),
-      ],
-    }
-  )
-}
-
-function openOtsWizard() {
-  const wizard: OtsWizard = reactive({
-    id: crypto.randomUUID(),
-    scriptId: null,
-    scriptDetail: null,
-    loadingScriptDetail: false,
-    variables: reactive({}),
-    varErrors: reactive({}),
-    scope: 'default',
-    brandId: null,
-    agentId: null,
-    agentOptions: [],
-    loadingAgents: false,
-    submitting: false,
-    error: null,
-    link: '',
-    linkCopied: false,
-    qrDataUrl: null,
-    createdId: null,
-    updating: false,
-    updated: false,
-    slugName: undefined,
-    heartbeatAlive: false,
-    remainingMinutes: -2,
-  })
-  otsWizards.value.push(wizard)
-  if (!scriptsStore.scripts.length) {
-    scriptsStore.loadScripts(1, scriptsStore.pageSize, 'timingMode=RELATIVE_TO_STREAM_START')
-  }
-  loadOtsAgents(wizard)
-}
 
 const OTS_PLAYER_THEMES = ['hitachi', 'akai', '']
 function otsPlayerLink(slugName?: string | null): string {
@@ -457,45 +206,28 @@ function otsPlayerLink(slugName?: string | null): string {
 }
 
 function hydrateOtsWizard(def: OtsDefinition) {
-  const wizard: OtsWizard = reactive({
+  const wizard: OtsStatusEntry = reactive({
     id: def.id,
-    scriptId: def.scriptId,
-    scriptDetail: null,
-    loadingScriptDetail: false,
-    variables: reactive({ ...def.userVariables }),
-    varErrors: reactive({}),
     scope: def.brandId ? 'brand' : 'default',
     brandId: def.brandId,
-    agentId: def.agentId,
-    agentOptions: [],
-    loadingAgents: false,
-    submitting: false,
-    error: null,
     link: otsPlayerLink(def.slugName),
     linkCopied: false,
     qrDataUrl: null,
-    createdId: def.id,
-    updating: false,
-    updated: false,
     name: def.name,
     status: def.status,
     type: def.type,
     slugName: def.slugName,
     heartbeatAlive: false,
     remainingMinutes: -2,
+    stopping: false,
   })
   otsWizards.value.push(wizard)
-  if (!scriptsStore.scripts.length) {
-    scriptsStore.loadScripts(1, scriptsStore.pageSize, 'timingMode=RELATIVE_TO_STREAM_START')
-  }
-  loadOtsScriptDetail(wizard)
-  if (wizard.scope !== 'brand') loadOtsAgents(wizard)
   startOtsHeartbeat(wizard)
 }
 
 const otsHeartbeatTimers = new Map<string, ReturnType<typeof setInterval>>()
 
-async function pollOtsHeartbeat(wizard: OtsWizard) {
+async function pollOtsHeartbeat(wizard: OtsStatusEntry) {
   if (!wizard.slugName) return
   try {
     const { alive, entityStatus, remainingMinutes } = await aivoxApiService.heartbeat(wizard.slugName)
@@ -508,7 +240,7 @@ async function pollOtsHeartbeat(wizard: OtsWizard) {
   }
 }
 
-function startOtsHeartbeat(wizard: OtsWizard) {
+function startOtsHeartbeat(wizard: OtsStatusEntry) {
   stopOtsHeartbeat(wizard.id)
   if (!wizard.slugName || wizard.status === 'DONE') return
   pollOtsHeartbeat(wizard)
@@ -523,129 +255,35 @@ function stopOtsHeartbeat(id: string) {
   }
 }
 
-async function loadOtsScriptDetail(wizard: OtsWizard) {
-  if (!wizard.scriptId) return
-  wizard.loadingScriptDetail = true
+async function stopOtsWizard(wizard: OtsStatusEntry) {
+  if (wizard.stopping || !wizard.slugName) return
+  wizard.stopping = true
   try {
-    wizard.scriptDetail = await datanestApiService.getScriptDetail(wizard.scriptId)
+    await aivoxApiService.stop(wizard.slugName)
+    await pollOtsHeartbeat(wizard)
   } finally {
-    wizard.loadingScriptDetail = false
+    wizard.stopping = false
   }
 }
 
-async function onOtsScriptChange(wizard: OtsWizard) {
-  wizard.scriptDetail = null
-  Object.keys(wizard.variables).forEach((key) => delete wizard.variables[key])
-  if (!wizard.scriptId) return
-  await loadOtsScriptDetail(wizard)
-}
-
-function closeOtsWizard(id: string) {
-  stopOtsHeartbeat(id)
-  otsWizards.value = otsWizards.value.filter((wizard) => wizard.id !== id)
-}
-
-async function loadOtsAgents(wizard: OtsWizard) {
-  wizard.loadingAgents = true
+async function deleteOtsWizard(wizard: OtsStatusEntry) {
   try {
-    let endpoint = '/dictionary/agents'
-    if (wizard.scope === 'brand' && wizard.brandId) {
-      const brand = brandsStore.brands.find((b) => b.id === wizard.brandId)
-      endpoint = `/dictionary/agents?brand=${encodeURIComponent(brand?.slugName ?? '')}`
-    }
-    const result = await datanestApiService.getPagedDictionary<any>(endpoint, 1, 100)
-    wizard.agentOptions = result.entries.map((a: any) => ({ label: a.name || a.id, value: a.id }))
-  } finally {
-    wizard.loadingAgents = false
+    await otsDefinitionsStore.deleteOtsDefinition(wizard.id)
+    stopOtsHeartbeat(wizard.id)
+    otsWizards.value = otsWizards.value.filter((w) => w.id !== wizard.id)
+  } catch {
+    message.error(t('overview.ots_delete_failed'))
   }
 }
 
-function onOtsScopeChange(wizard: OtsWizard) {
-  wizard.brandId = null
-  wizard.agentId = null
-  wizard.agentOptions = []
-  wizard.error = null
-  if (wizard.scope === 'default') {
-    loadOtsAgents(wizard)
-  }
-}
-
-function onOtsBrandChange(wizard: OtsWizard) {
-  wizard.agentId = null
-  wizard.agentOptions = []
-}
-
-async function createOtsStream(wizard: OtsWizard) {
-  if (!wizard.scriptId || !otsScopeValid(wizard)) {
-    wizard.error = t('overview.ots_agent_required')
-    return
-  }
-  if (!validateOtsVariables(wizard)) return
-  wizard.error = null
-  wizard.submitting = true
-  try {
-    const created = await otsDefinitionsStore.createOtsDefinition({
-      scriptId: wizard.scriptId,
-      userVariables: { ...wizard.variables },
-      brandId: wizard.scope === 'brand' ? wizard.brandId : null,
-      agentId: wizard.agentId || null,
-    })
-    wizard.createdId = created.id
-    wizard.link = otsPlayerLink(created.slugName)
-    wizard.qrDataUrl = null
-    wizard.name = created.name
-    wizard.status = created.status
-    wizard.type = created.type
-    wizard.slugName = created.slugName
-    startOtsHeartbeat(wizard)
-  } catch (err) {
-    wizard.error = err instanceof Error ? err.message : t('overview.ots_create_failed')
-  } finally {
-    wizard.submitting = false
-  }
-}
-
-async function updateOtsStream(wizard: OtsWizard) {
-  if (!wizard.createdId) return
-  if (!otsScopeValid(wizard)) {
-    wizard.error = t('overview.ots_agent_required')
-    return
-  }
-  if (!validateOtsVariables(wizard)) return
-  wizard.error = null
-  wizard.updating = true
-  wizard.updated = false
-  try {
-    const updated = await otsDefinitionsStore.updateOtsDefinition(wizard.createdId, {
-      scriptId: wizard.scriptId!,
-      userVariables: { ...wizard.variables },
-      brandId: wizard.scope === 'brand' ? wizard.brandId : null,
-      agentId: wizard.agentId || null,
-    })
-    wizard.link = otsPlayerLink(updated.slugName)
-    wizard.qrDataUrl = null
-    wizard.name = updated.name
-    wizard.status = updated.status
-    wizard.type = updated.type
-    wizard.slugName = updated.slugName
-    startOtsHeartbeat(wizard)
-    wizard.updated = true
-    setTimeout(() => { wizard.updated = false }, 2000)
-  } catch (err) {
-    wizard.error = err instanceof Error ? err.message : t('overview.ots_create_failed')
-  } finally {
-    wizard.updating = false
-  }
-}
-
-function copyOtsLink(wizard: OtsWizard) {
+function copyOtsLink(wizard: OtsStatusEntry) {
   if (!wizard.link) return
   navigator.clipboard.writeText(wizard.link)
   wizard.linkCopied = true
   setTimeout(() => { wizard.linkCopied = false }, 2000)
 }
 
-async function loadOtsQrCode(wizard: OtsWizard) {
+async function loadOtsQrCode(wizard: OtsStatusEntry) {
   if (!wizard.link || wizard.qrDataUrl) return
   const link = wizard.link
   try {
@@ -660,6 +298,16 @@ function otsStatusLabel(status?: string): string {
   if (status === 'ON_LINE') return t('overview.ots_live')
   return status ?? ''
 }
+
+onMounted(async () => {
+  await otsDefinitionsStore.loadOtsDefinitions(1, 50)
+  otsDefinitionsStore.otsDefinitions.forEach((def) => hydrateOtsWizard(def))
+})
+
+onBeforeUnmount(() => {
+  otsHeartbeatTimers.forEach((timer) => clearInterval(timer))
+  otsHeartbeatTimers.clear()
+})
 </script>
 
 <style scoped>
@@ -800,6 +448,24 @@ function otsStatusLabel(status?: string): string {
 }
 .ots-card {
   border-color: var(--brand-color, rgba(128, 128, 128, 0.35));
+}
+.ots-card :deep(.n-card__content) {
+  padding-top: 8px;
+}
+.ots-status-card {
+  margin-top: 0px;
+}
+.ots-status-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+.ots-empty {
+  text-align: center;
+  opacity: 0.5;
+  font-size: 13px;
+  padding: 20px 0;
 }
 .type-pill {
   display: inline-block;
