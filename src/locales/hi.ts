@@ -265,6 +265,7 @@ export default {
     col_name: 'नाम',
     col_script: 'स्क्रिप्ट',
     col_scope: 'संगीत स्रोत',
+    col_flags: 'लेबल',
     col_link: 'लिंक',
     delete_btn: 'हटाएं ({count})',
     delete_confirm: '{count} एक बार की स्ट्रीम हटाएं?',
@@ -280,7 +281,10 @@ export default {
     saved: 'एक बार की स्ट्रीम सहेजी गई',
     tab_properties: 'गुण',
     tab_source: 'सेटअप',
+    tab_variables: 'वेरिएबल्स',
     tab_description: 'विवरण',
+    status_label: 'स्थिति',
+    type_label: 'प्रकार',
   },
   fragmentForm: {
     create_title: 'ट्रैक',

@@ -303,6 +303,7 @@ export default {
     col_name: 'Navn',
     col_script: 'Skript',
     col_scope: 'Musikkilde',
+    col_flags: 'Etiketter',
     col_link: 'Lenke',
     delete_btn: 'Slett ({count})',
     delete_confirm: 'Slette {count} engangsstrøm(mer)?',
@@ -318,7 +319,10 @@ export default {
     saved: 'Engangsstrøm lagret',
     tab_properties: 'Egenskaper',
     tab_source: 'Oppsett',
+    tab_variables: 'Variabler',
     tab_description: 'Beskrivelse',
+    status_label: 'Status',
+    type_label: 'Type',
   },
   fragmentForm: {
     create_title: 'Spor',

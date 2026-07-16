@@ -132,10 +132,20 @@ function renderLinkCell(row: OtsDefinition) {
   ])
 }
 
+function renderFlagsCell(row: OtsDefinition) {
+  return h(NSpace, { size: 4 }, {
+    default: () => [
+      row.status ? h(NTag, { size: 'small', bordered: false }, { default: () => row.status }) : null,
+      row.type ? h(NTag, { size: 'small', bordered: false }, { default: () => row.type }) : null,
+    ],
+  })
+}
+
 const columns = computed<DataTableColumns<OtsDefinition>>(() => [
   { type: 'selection', multiple: true },
   { title: t('otsListView.col_name'), key: 'name', minWidth: 200, render: (row) => row.name || scriptName(row.scriptId) },
   { title: t('otsListView.col_script'), key: 'script', minWidth: 160, render: (row) => scriptName(row.scriptId) },
+  { title: t('otsListView.col_flags'), key: 'flags', minWidth: 140, render: renderFlagsCell },
   { title: t('otsListView.col_link'), key: 'link', minWidth: 220, render: renderLinkCell },
 ])
 

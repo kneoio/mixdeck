@@ -265,6 +265,7 @@ export default {
     col_name: '名前',
     col_script: 'スクリプト',
     col_scope: '音楽ソース',
+    col_flags: 'ラベル',
     col_link: 'リンク',
     delete_btn: '削除 ({count})',
     delete_confirm: '{count}件のワンタイムストリームを削除しますか?',
@@ -280,7 +281,10 @@ export default {
     saved: 'ワンタイムストリームを保存しました',
     tab_properties: 'プロパティ',
     tab_source: 'セットアップ',
+    tab_variables: '変数',
     tab_description: '説明',
+    status_label: 'ステータス',
+    type_label: 'タイプ',
   },
   fragmentForm: {
     create_title: 'トラック',

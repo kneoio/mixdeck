@@ -303,6 +303,7 @@ export default {
     col_name: '이름',
     col_script: '스크립트',
     col_scope: '음악 소스',
+    col_flags: '레이블',
     col_link: '링크',
     delete_btn: '삭제 ({count})',
     delete_confirm: '{count}개의 원타임 스트림을 삭제하시겠습니까?',
@@ -318,7 +319,10 @@ export default {
     saved: '원타임 스트림이 저장되었습니다',
     tab_properties: '속성',
     tab_source: '설정',
+    tab_variables: '변수',
     tab_description: '설명',
+    status_label: '상태',
+    type_label: '유형',
   },
   fragmentForm: {
     create_title: '트랙',

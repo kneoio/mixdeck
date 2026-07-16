@@ -304,6 +304,7 @@ export default {
     col_name: 'Name',
     col_script: 'Skript',
     col_scope: 'Musikquelle',
+    col_flags: 'Labels',
     col_link: 'Link',
     delete_btn: 'Löschen ({count})',
     delete_confirm: '{count} Einmal-Stream(s) löschen?',
@@ -319,7 +320,10 @@ export default {
     saved: 'Einmal-Stream gespeichert',
     tab_properties: 'Eigenschaften',
     tab_source: 'Einrichtung',
+    tab_variables: 'Variablen',
     tab_description: 'Beschreibung',
+    status_label: 'Status',
+    type_label: 'Typ',
   },
   fragmentForm: {
     create_title: 'Track',

@@ -265,6 +265,7 @@ export default {
     col_name: 'Назва',
     col_script: 'Сценарій',
     col_scope: 'Джерело музики',
+    col_flags: 'Мітки',
     col_link: 'Посилання',
     delete_btn: 'Видалити ({count})',
     delete_confirm: 'Видалити {count} трансляцію(ї)?',
@@ -280,7 +281,10 @@ export default {
     saved: 'Одноразовий ефір збережено',
     tab_properties: 'Властивості',
     tab_source: 'Налаштування',
+    tab_variables: 'Змінні',
     tab_description: 'Опис',
+    status_label: 'Статус',
+    type_label: 'Тип',
   },
   fragmentForm: {
     create_title: 'Трек',

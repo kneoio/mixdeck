@@ -266,6 +266,7 @@ export default {
     col_name: 'Nom',
     col_script: 'Script',
     col_scope: 'Source musicale',
+    col_flags: 'Étiquettes',
     col_link: 'Lien',
     delete_btn: 'Supprimer ({count})',
     delete_confirm: 'Supprimer {count} diffusion(s) ponctuelle(s) ?',
@@ -281,7 +282,10 @@ export default {
     saved: 'Diffusion ponctuelle enregistrée',
     tab_properties: 'Propriétés',
     tab_source: 'Configuration',
+    tab_variables: 'Variables',
     tab_description: 'Description',
+    status_label: 'Statut',
+    type_label: 'Type',
   },
   fragmentForm: {
     create_title: 'Piste',

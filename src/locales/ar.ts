@@ -265,6 +265,7 @@ export default {
     col_name: 'الاسم',
     col_script: 'النص البرمجي',
     col_scope: 'مصدر الموسيقى',
+    col_flags: 'تسميات',
     col_link: 'الرابط',
     delete_btn: 'حذف ({count})',
     delete_confirm: 'هل تريد حذف {count} بث لمرة واحدة؟',
@@ -280,7 +281,10 @@ export default {
     saved: 'تم حفظ البث لمرة واحدة',
     tab_properties: 'الخصائص',
     tab_source: 'الإعداد',
+    tab_variables: 'المتغيرات',
     tab_description: 'الوصف',
+    status_label: 'الحالة',
+    type_label: 'النوع',
   },
   fragmentForm: {
     create_title: 'مقطوعة',

@@ -265,6 +265,7 @@ export default {
     col_name: 'Nombre',
     col_script: 'Guion',
     col_scope: 'Fuente de música',
+    col_flags: 'Etiquetas',
     col_link: 'Enlace',
     delete_btn: 'Eliminar ({count})',
     delete_confirm: '¿Eliminar {count} transmisión(es) única(s)?',
@@ -280,7 +281,10 @@ export default {
     saved: 'Transmisión única guardada',
     tab_properties: 'Propiedades',
     tab_source: 'Configuración',
+    tab_variables: 'Variables',
     tab_description: 'Descripción',
+    status_label: 'Estado',
+    type_label: 'Tipo',
   },
   fragmentForm: {
     create_title: 'Pista',

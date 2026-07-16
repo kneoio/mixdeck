@@ -46,6 +46,8 @@ const formData = ref({
   agentId: null as string | null,
 })
 const scriptDetail = ref<Script | null>(null)
+const otsStatus = ref<string | null>(null)
+const otsType = ref<string | null>(null)
 const variables = reactive<Record<string, unknown>>({})
 const varErrors = reactive<Record<string, string>>({})
 const agentOptions = ref<SelectOption[]>([])
@@ -162,7 +164,7 @@ async function validateBeforeSave(): Promise<boolean> {
   if (!invalidFields.length && variablesValid) return true
 
   isTabChangeFromValidation.value = true
-  activeTab.value = invalidFields.length ? 'source' : 'properties'
+  activeTab.value = invalidFields.length ? 'properties' : 'variables'
   await nextTick()
   isTabChangeFromValidation.value = false
   await Promise.all(invalidFields.map((field) => showFieldError(field, t('overview.ots_agent_required'))))
@@ -217,6 +219,8 @@ onMounted(async () => {
       formData.value.scope = def.brandId ? 'brand' : 'default'
       formData.value.brandId = def.brandId
       formData.value.agentId = def.agentId
+      otsStatus.value = def.status ?? null
+      otsType.value = def.type ?? null
       await loadScriptDetail()
       await loadAgents()
     } else {
@@ -250,29 +254,13 @@ onMounted(async () => {
     <NTabs v-model:value="activeTab">
       <NTabPane name="properties" :tab="t('otsForm.tab_properties')">
         <NForm :label-placement="formLabelPlacement" label-width="140" :disabled="loading">
-          <template v-if="scriptDetail?.requiredVariables?.length">
-            <NFormItem v-for="variable in scriptDetail.requiredVariables" :key="variable.name" :show-feedback="false">
-              <template #label>
-                <span>{{ variable.description }}<span v-if="variable.required" class="ots-variable__required">*</span></span>
-              </template>
-              <div class="field-stack">
-                <div class="field-error-shell" :class="{ 'field-error-shell--active': !!varErrors[variable.name] }">
-                  <NSwitch v-if="variable.type === 'boolean'" v-model:value="variables[variable.name]" />
-                  <NInputNumber v-else-if="variable.type === 'number'" v-model:value="variables[variable.name]" style="width: 100%" @update:value="clearVarError(variable.name)" />
-                  <NInput v-else v-model:value="variables[variable.name]" style="width: 100%" @update:value="clearVarError(variable.name)" />
-                </div>
-                <div class="field-error-label" :class="{ 'field-error-label--visible': !!varErrors[variable.name] }">
-                  {{ varErrors[variable.name] || ' ' }}
-                </div>
-              </div>
-            </NFormItem>
-          </template>
-          <p v-else class="ots-no-variables">{{ formData.scriptId ? t('overview.ots_no_variables') : t('overview.ots_pick_script_first') }}</p>
-        </NForm>
-      </NTabPane>
+          <NFormItem v-if="isEditing" :label="t('otsForm.status_label')" :show-feedback="false">
+            <span>{{ otsStatus }}</span>
+          </NFormItem>
+          <NFormItem v-if="isEditing" :label="t('otsForm.type_label')" :show-feedback="false">
+            <span>{{ otsType }}</span>
+          </NFormItem>
 
-      <NTabPane name="source" :tab="t('otsForm.tab_source')">
-        <NForm :label-placement="formLabelPlacement" label-width="140" :disabled="loading">
           <NFormItem :label="t('overview.ots_scope_label')" :show-feedback="false">
             <div class="field-stack">
               <div class="field-error-shell">
@@ -320,6 +308,29 @@ onMounted(async () => {
               </div>
             </div>
           </NFormItem>
+        </NForm>
+      </NTabPane>
+
+      <NTabPane name="variables" :tab="t('otsForm.tab_variables')">
+        <NForm :label-placement="formLabelPlacement" label-width="140" :disabled="loading">
+          <template v-if="scriptDetail?.requiredVariables?.length">
+            <NFormItem v-for="variable in scriptDetail.requiredVariables" :key="variable.name" :show-feedback="false">
+              <template #label>
+                <span>{{ variable.description }}<span v-if="variable.required" class="ots-variable__required">*</span></span>
+              </template>
+              <div class="field-stack">
+                <div class="field-error-shell" :class="{ 'field-error-shell--active': !!varErrors[variable.name] }">
+                  <NSwitch v-if="variable.type === 'boolean'" v-model:value="variables[variable.name]" />
+                  <NInputNumber v-else-if="variable.type === 'number'" v-model:value="variables[variable.name]" style="width: 100%" @update:value="clearVarError(variable.name)" />
+                  <NInput v-else v-model:value="variables[variable.name]" style="width: 100%" @update:value="clearVarError(variable.name)" />
+                </div>
+                <div class="field-error-label" :class="{ 'field-error-label--visible': !!varErrors[variable.name] }">
+                  {{ varErrors[variable.name] || ' ' }}
+                </div>
+              </div>
+            </NFormItem>
+          </template>
+          <p v-else class="ots-no-variables">{{ formData.scriptId ? t('overview.ots_no_variables') : t('overview.ots_pick_script_first') }}</p>
         </NForm>
       </NTabPane>
 

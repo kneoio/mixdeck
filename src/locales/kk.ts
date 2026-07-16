@@ -265,6 +265,7 @@ export default {
     col_name: 'Атауы',
     col_script: 'Сценарий',
     col_scope: 'Музыка көзі',
+    col_flags: 'Белгілер',
     col_link: 'Сілтеме',
     delete_btn: 'Жою ({count})',
     delete_confirm: '{count} трансляцияны жою керек пе?',
@@ -280,7 +281,10 @@ export default {
     saved: 'Бір реттік трансляция сақталды',
     tab_properties: 'Қасиеттер',
     tab_source: 'Баптау',
+    tab_variables: 'Айнымалылар',
     tab_description: 'Сипаттама',
+    status_label: 'Күй',
+    type_label: 'Түрі',
   },
   fragmentForm: {
     create_title: 'Трек',

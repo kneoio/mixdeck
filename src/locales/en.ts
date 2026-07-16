@@ -343,6 +343,7 @@ export default {
     col_name: 'Name',
     col_script: 'Script',
     col_scope: 'Music Source',
+    col_flags: 'Labels',
     col_link: 'Link',
     delete_btn: 'Delete ({count})',
     delete_confirm: 'Delete {count} one-time stream(s)?',
@@ -358,7 +359,10 @@ export default {
     saved: 'One-time stream saved',
     tab_properties: 'Properties',
     tab_source: 'Setup',
+    tab_variables: 'Variables',
     tab_description: 'Description',
+    status_label: 'Status',
+    type_label: 'Type',
   },
   fragmentForm: {
     create_title: 'Track',

@@ -266,6 +266,7 @@ export default {
     col_name: 'Nome',
     col_script: 'Roteiro',
     col_scope: 'Fonte de música',
+    col_flags: 'Rótulos',
     col_link: 'Link',
     delete_btn: 'Excluir ({count})',
     delete_confirm: 'Excluir {count} transmissão(ões) única(s)?',
@@ -281,7 +282,10 @@ export default {
     saved: 'Transmissão única salva',
     tab_properties: 'Propriedades',
     tab_source: 'Configuração',
+    tab_variables: 'Variáveis',
     tab_description: 'Descrição',
+    status_label: 'Status',
+    type_label: 'Tipo',
   },
   fragmentForm: {
     create_title: 'Faixa',

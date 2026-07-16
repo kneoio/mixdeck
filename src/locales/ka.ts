@@ -265,6 +265,7 @@ export default {
     col_name: 'სახელი',
     col_script: 'სკრიპტი',
     col_scope: 'მუსიკის წყარო',
+    col_flags: 'ლეიბლები',
     col_link: 'ბმული',
     delete_btn: 'წაშლა ({count})',
     delete_confirm: 'წავშალო {count} ერთჯერადი სტრიმი?',
@@ -280,7 +281,10 @@ export default {
     saved: 'ერთჯერადი სტრიმი შენახულია',
     tab_properties: 'თვისებები',
     tab_source: 'გამართვა',
+    tab_variables: 'ცვლადები',
     tab_description: 'აღწერა',
+    status_label: 'სტატუსი',
+    type_label: 'ტიპი',
   },
   fragmentForm: {
     create_title: 'ტრეკი',
