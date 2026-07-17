@@ -102,7 +102,9 @@
               </template>
               <div class="ots-qr-popover">
                 <img v-if="wizard.qrDataUrl" :src="wizard.qrDataUrl" :alt="wizard.link" width="180" height="180" />
-                <NSpin v-else :show="true" style="width: 180px; height: 180px; display: flex; align-items: center; justify-content: center;" />
+                <div v-else style="width: 180px; height: 180px; display: flex; align-items: center; justify-content: center;">
+                  <GsapLoader :size="40" />
+                </div>
               </div>
             </NPopover>
             <button
@@ -140,7 +142,7 @@
 import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { NCard, NCollapse, NCollapseItem, NSpin, NPopover } from 'naive-ui'
+import { NCard, NCollapse, NCollapseItem, NPopover } from 'naive-ui'
 import QRCode from 'qrcode'
 import { useBrandsStore, type Brand, type BrandStatus } from '@/stores/brands'
 import { useOtsDefinitionsStore, type OtsDefinition } from '@/stores/otsDefinitions'

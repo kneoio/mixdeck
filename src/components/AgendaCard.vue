@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, watch, onUnmounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NCard, NSpin, NAlert, NCollapse, NCollapseItem, NTag, NEmpty } from 'naive-ui'
+import { NCard, NAlert, NCollapse, NCollapseItem, NTag, NEmpty } from 'naive-ui'
 import jesoosApiService, { type Agenda, type AgendaScene } from '@/services/jesoosApi'
+import GsapSpin from '@/components/GsapSpin.vue'
 
 const { t } = useI18n()
 
@@ -153,7 +154,7 @@ onUnmounted(() => stopRefresh())
       </button>
     </template>
 
-    <NSpin :show="loading">
+    <GsapSpin :show="loading">
       <NAlert v-if="error" type="error" :title="error" style="margin-bottom: 16px" />
 
       <template v-if="!loading && !error && agenda">
@@ -250,7 +251,7 @@ onUnmounted(() => stopRefresh())
       </template>
 
       <NEmpty v-else-if="!loading && !error" :description="t('agenda.no_data')" />
-    </NSpin>
+    </GsapSpin>
   </NCard>
 </template>
 

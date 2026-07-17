@@ -4,13 +4,14 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import {
   NAvatar, NTag, NDescriptions, NDescriptionsItem,
-  NCard, NSpace, NFlex, NDivider, NSelect, NSpin
+  NCard, NSpace, NFlex, NDivider, NSelect
 } from 'naive-ui'
 import { useAuthStore } from '@/stores/auth'
 import { useUserSubscriptionStore } from '@/stores/userSubscription'
 import { useThemeStore } from '@/stores/theme'
 import PageHeader from '@/components/PageHeader.vue'
 import GsapButton from '@/components/GsapButton.vue'
+import GsapSpin from '@/components/GsapSpin.vue'
 import { LOCALE_LABELS, SUPPORTED_LOCALES, saveLocale, type SupportedLocale } from '@/i18n'
 
 const appVersion = __APP_VERSION__
@@ -120,7 +121,7 @@ onMounted(async () => {
 
       <!-- Subscription -->
       <NCard :title="t('profile.subscription')">
-        <NSpin :show="userSubscriptionStore.loading">
+        <GsapSpin :show="userSubscriptionStore.loading">
 
           <NDescriptions
             v-if="userSubscriptionStore.subscription"
@@ -162,7 +163,7 @@ onMounted(async () => {
             </GsapButton>
           </NSpace>
 
-        </NSpin>
+        </GsapSpin>
       </NCard>
 
       <!-- About -->

@@ -2,7 +2,7 @@
 import { ref, reactive, computed, h, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { NDataTable, NDropdown, NPopconfirm, NPopover, NSpin, NButton, NIcon, NSpace, NTag, type DataTableColumns, type DropdownOption, type SelectOption, useMessage } from 'naive-ui'
+import { NDataTable, NDropdown, NPopconfirm, NPopover, NButton, NIcon, NSpace, NTag, type DataTableColumns, type DropdownOption, type SelectOption, useMessage } from 'naive-ui'
 import { RefreshOutline } from '@vicons/ionicons5'
 import QRCode from 'qrcode'
 import { useOtsDefinitionsStore, type OtsDefinition } from '@/stores/otsDefinitions'
@@ -10,6 +10,8 @@ import { useScriptsStore } from '@/stores/scripts'
 import PageHeader from '@/components/PageHeader.vue'
 import ActionBar from '@/components/ActionBar.vue'
 import GsapButton from '@/components/GsapButton.vue'
+import GsapLoader from '@/components/GsapLoader.vue'
+import GsapSpin from '@/components/GsapSpin.vue'
 import { handleApiError } from '@/utils/notificationService'
 
 const { t } = useI18n()
@@ -127,7 +129,7 @@ function renderLinkCell(row: OtsDefinition) {
         ]),
         default: () => h('div', { class: 'ots-qr-popover' }, qrDataUrls[row.id]
           ? h('img', { src: qrDataUrls[row.id], alt: link, width: 160, height: 160 })
-          : h(NSpin, { show: true, style: 'width: 160px; height: 160px; display: flex; align-items: center; justify-content: center;' })
+          : h('div', { style: 'width: 160px; height: 160px; display: flex; align-items: center; justify-content: center;' }, [h(GsapLoader, { size: 36 })])
         ),
       }),
     ]),
@@ -205,25 +207,26 @@ onMounted(async () => {
         </NButton>
       </div>
     </ActionBar>
-    <NDataTable
-      :columns="columns"
-      :data="otsDefinitionsStore.otsDefinitions"
-      :loading="loading"
-      :row-key="(row: OtsDefinition) => row.id"
-      v-model:checked-row-keys="selectedIds"
-      :pagination="pagination"
-      remote
-      :row-props="(row: OtsDefinition) => ({
-        style: 'cursor:pointer',
-        onClick: (e: MouseEvent) => {
-          if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return
-          if ((e.target as HTMLElement).closest('.ots-link-cell')) return
-          router.push(`/one-time-streams/${row.id}`)
-        }
-      })"
-      @update:page="(p) => fetchData(p)"
-      @update:page-size="(s) => fetchData(1, s)"
-    />
+    <GsapSpin :show="loading">
+      <NDataTable
+        :columns="columns"
+        :data="otsDefinitionsStore.otsDefinitions"
+        :row-key="(row: OtsDefinition) => row.id"
+        v-model:checked-row-keys="selectedIds"
+        :pagination="pagination"
+        remote
+        :row-props="(row: OtsDefinition) => ({
+          style: 'cursor:pointer',
+          onClick: (e: MouseEvent) => {
+            if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return
+            if ((e.target as HTMLElement).closest('.ots-link-cell')) return
+            router.push(`/one-time-streams/${row.id}`)
+          }
+        })"
+        @update:page="(p) => fetchData(p)"
+        @update:page-size="(s) => fetchData(1, s)"
+      />
+    </GsapSpin>
   </div>
 </template>
 

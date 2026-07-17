@@ -55,7 +55,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NModal, NSpace, NCheckbox, NCheckboxGroup, NSpin, NPagination, useMessage } from 'naive-ui'
+import { NModal, NSpace, NCheckbox, NCheckboxGroup, NPagination, useMessage } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
 import datanestApiService from '@/services/datanestApi'
 import { handleApiError } from '@/utils/notificationService'

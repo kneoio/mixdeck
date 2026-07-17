@@ -6,7 +6,7 @@
       </template>
     </PageHeader>
 
-    <NSpin :show="subscriptionProductsStore.loading">
+    <GsapSpin :show="subscriptionProductsStore.loading">
       <div v-if="cards.length" style="display: flex; gap: 24px; flex-wrap: wrap; align-items: stretch;">
         <NCard
           v-for="card in cards"
@@ -40,7 +40,7 @@
         </NCard>
       </div>
       <NEmpty v-else :description="t('common.no_data')" />
-    </NSpin>
+    </GsapSpin>
   </div>
 </template>
 
@@ -48,8 +48,9 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { NCard, NDivider, NSpin, NEmpty, NTag, useMessage } from 'naive-ui'
+import { NCard, NDivider, NEmpty, NTag, useMessage } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
+import GsapSpin from '@/components/GsapSpin.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { useSubscriptionProductsStore } from '@/stores/subscriptionProducts'
 import { useUserSubscriptionStore } from '@/stores/userSubscription'

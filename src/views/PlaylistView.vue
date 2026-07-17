@@ -17,6 +17,7 @@ import ActionBar from '@/components/ActionBar.vue'
 import GsapButton from '@/components/GsapButton.vue'
 import BulkUploadDialog from '@/components/forms/BulkUploadDialog.vue'
 import ShareToBrandsDialog from '@/components/forms/ShareToBrandsDialog.vue'
+import GsapSpin from '@/components/GsapSpin.vue'
 import { handleApiError } from '@/utils/notificationService'
 
 const { t } = useI18n()
@@ -554,18 +555,19 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
         <div ref="seekBarRef" class="playlist-seek-hit" @mousedown="onSeekMouseDown" />
       </div>
     </div>
-    <NDataTable
-      :columns="columns"
-      :data="entries"
-      :loading="loading"
-      :row-key="(row: any) => row.id || row.slugName"
-      v-model:checked-row-keys="selectedIds"
-      :pagination="pagination"
-      remote
-      :row-props="(row: any) => ({ style: 'cursor:pointer;height:48px', onClick: (e: MouseEvent) => { if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return; router.push({ path: `/brands/${route.params.id}/playlist/${row.id}`, query: { returnTo: route.fullPath } }) } })"
-      @update:page="(p) => { pageNum = p; fetchData(p) }"
-      @update:page-size="(s) => { pageSize = s; fetchData(1, s) }"
-    />
+    <GsapSpin :show="loading">
+      <NDataTable
+        :columns="columns"
+        :data="entries"
+        :row-key="(row: any) => row.id || row.slugName"
+        v-model:checked-row-keys="selectedIds"
+        :pagination="pagination"
+        remote
+        :row-props="(row: any) => ({ style: 'cursor:pointer;height:48px', onClick: (e: MouseEvent) => { if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return; router.push({ path: `/brands/${route.params.id}/playlist/${row.id}`, query: { returnTo: route.fullPath } }) } })"
+        @update:page="(p) => { pageNum = p; fetchData(p) }"
+        @update:page-size="(s) => { pageSize = s; fetchData(1, s) }"
+      />
+    </GsapSpin>
   </div>
 </template>
 

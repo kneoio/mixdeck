@@ -12,7 +12,7 @@
       <NMessageProvider>
         <NGlobalStyle/>
         <div v-if="showBootOverlay" class="app-boot-overlay" :class="{ 'app-boot-overlay--dark': themeStore.isDark }">
-          <NSpin size="large"/>
+          <GsapLoader :size="48"/>
         </div>
         <RouterView/>
       </NMessageProvider>
@@ -22,7 +22,8 @@
 
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
-import { NMessageProvider, NLoadingBarProvider, NGlobalStyle, NConfigProvider, NSpin } from 'naive-ui'
+import { NMessageProvider, NLoadingBarProvider, NGlobalStyle, NConfigProvider } from 'naive-ui'
+import GsapLoader from '@/components/GsapLoader.vue'
 import { darkTheme, type GlobalThemeOverrides } from 'naive-ui'
 import {
   enUS, deDE, esAR, frFR, jaJP, ptBR, ruRU, ukUA, arDZ,
