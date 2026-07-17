@@ -25,7 +25,7 @@ const loading = ref(false)
 const isMobile = ref(false)
 const activeTab = ref('properties')
 const isTabChangeFromValidation = ref(false)
-const backRoute = '/mixdeck'
+const backRoute = '/one-time-streams'
 
 type ValidationField = 'source'
 const sourceFieldRef = ref<HTMLElement | null>(null)
@@ -66,6 +66,26 @@ function renderScriptDescription(description: string) {
 async function loadScriptDetail() {
   if (!formData.value.scriptId) return
   scriptDetail.value = await datanestApiService.getScriptDetail(formData.value.scriptId)
+}
+
+/**
+ * Prefill name/scriptId/requiredVariables/color from the datanest "new" doc endpoint (derived
+ * server-side from the script), then fall back to getScriptDetail only for the description text,
+ * which the template endpoint doesn't return.
+ */
+async function loadOtsTemplate(scriptId: string) {
+  const template = await datanestApiService.getOtsDefinitionTemplate(scriptId)
+  formData.value.name = template?.name ?? ''
+  formData.value.scriptId = template?.scriptId ?? scriptId
+  await loadScriptDetail()
+  if (scriptDetail.value) {
+    scriptDetail.value = {
+      ...scriptDetail.value,
+      name: template?.name ?? scriptDetail.value.name,
+      color: template?.color ?? scriptDetail.value.color,
+      requiredVariables: template?.requiredVariables ?? scriptDetail.value.requiredVariables,
+    }
+  }
 }
 
 function clearVarError(name: string) {
@@ -233,7 +253,7 @@ onMounted(async () => {
         return
       }
       formData.value.scriptId = queryScriptId
-      await loadScriptDetail()
+      await loadOtsTemplate(queryScriptId)
       await loadAgents()
     }
   } catch (error: any) {

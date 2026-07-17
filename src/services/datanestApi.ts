@@ -92,6 +92,12 @@ class DatanestApiService extends ApiClient {
     return this.getDocument<any>('/ots-definitions', id)
   }
 
+  /** Prefilled OtsDefinitionDTO (name/color/requiredVariables/scriptId) derived server-side from the chosen script, for the create flow. */
+  async getOtsDefinitionTemplate(scriptId: string): Promise<any> {
+    const response = await this.request<any>(`/ots-definitions/new?scriptId=${encodeURIComponent(scriptId)}`)
+    return response?.payload?.docData ?? response?.docData ?? response
+  }
+
   async createOtsDefinition(data: Record<string, any>): Promise<any> {
     return this.createDictionaryItem<any>('/ots-definitions', data)
   }

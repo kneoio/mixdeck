@@ -125,7 +125,12 @@
         </NCard>
       </NCard>
 
-      <p v-if="!otsWizards.length" class="ots-empty">{{ t('overview.ots_none_running') }}</p>
+      <Transition name="ots-fade" mode="out-in">
+        <div v-if="!dashboardSnapshotReceived" key="loading" class="ots-loading">
+          <GsapLoader />
+        </div>
+        <p v-else-if="!otsWizards.length" key="empty" class="ots-empty">{{ t('overview.ots_none_running') }}</p>
+      </Transition>
 
     </div>
   </div>
@@ -146,6 +151,7 @@ import AivoxCard from '@/components/AivoxCard.vue'
 import GsapButton from '@/components/GsapButton.vue'
 import StatusOrbitBadge from '@/components/StatusOrbitBadge.vue'
 import AgendaCard from '@/components/AgendaCard.vue'
+import GsapLoader from '@/components/GsapLoader.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -203,6 +209,7 @@ interface OtsStatusEntry {
 }
 
 const otsWizards = ref<OtsStatusEntry[]>([])
+const dashboardSnapshotReceived = ref(false)
 const radioRemainingMinutes = reactive<Record<string, number>>({})
 const radioStatuses = reactive<Record<string, BrandStatus>>({})
 
@@ -320,6 +327,7 @@ function connectDashboardSocket() {
     try {
       const entries = JSON.parse(event.data as string) as AivoxDashboardStreamEntry[]
       if (Array.isArray(entries)) applyDashboardSnapshot(entries)
+      dashboardSnapshotReceived.value = true
     } catch { /* ignore malformed frame */ }
   }
   socket.onerror = () => { socket.close() }
@@ -598,6 +606,19 @@ onBeforeUnmount(() => {
   opacity: 0.5;
   font-size: 13px;
   padding: 20px 0;
+}
+.ots-loading {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
+}
+.ots-fade-enter-active,
+.ots-fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+.ots-fade-enter-from,
+.ots-fade-leave-to {
+  opacity: 0;
 }
 .type-pill {
   display: inline-block;
