@@ -276,6 +276,7 @@ export default {
     create_subtitle: 'Crear una transmisión única',
     edit_title: 'Editar transmisión única',
     edit_subtitle: 'Actualizar transmisión única',
+    name_label: 'Nombre',
     script_required: 'Elige un guion para continuar.',
     load_failed: 'No se pudo cargar la transmisión única.',
     saved: 'Transmisión única guardada',

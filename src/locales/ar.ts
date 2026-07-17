@@ -276,6 +276,7 @@ export default {
     create_subtitle: 'إنشاء بث لمرة واحدة',
     edit_title: 'تعديل بث لمرة واحدة',
     edit_subtitle: 'تحديث بث لمرة واحدة',
+    name_label: 'الاسم',
     script_required: 'اختر نصًا برمجيًا للمتابعة.',
     load_failed: 'تعذر تحميل البث لمرة واحدة.',
     saved: 'تم حفظ البث لمرة واحدة',

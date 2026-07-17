@@ -314,6 +314,7 @@ export default {
     create_subtitle: 'Opprett en engangsstrøm',
     edit_title: 'Rediger engangsstrøm',
     edit_subtitle: 'Oppdater engangsstrøm',
+    name_label: 'Navn',
     script_required: 'Velg et skript for å fortsette.',
     load_failed: 'Kunne ikke laste engangsstrømmen.',
     saved: 'Engangsstrøm lagret',

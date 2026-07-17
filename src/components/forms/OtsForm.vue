@@ -40,6 +40,7 @@ const formTitle = computed(() => (isEditing.value ? t('otsForm.edit_title') : t(
 const formSubtitle = computed(() => (isEditing.value ? t('otsForm.edit_subtitle') : t('otsForm.create_subtitle')))
 
 const formData = ref({
+  name: '',
   scriptId: null as string | null,
   scope: 'default' as 'brand' | 'default',
   brandId: null as string | null,
@@ -177,6 +178,7 @@ async function handleSave() {
   loading.value = true
   try {
     const payload = {
+      name: formData.value.name || null,
       scriptId: formData.value.scriptId!,
       userVariables: { ...variables },
       brandId: formData.value.scope === 'brand' ? formData.value.brandId : null,
@@ -214,6 +216,7 @@ onMounted(async () => {
   try {
     if (isEditing.value) {
       const def = await otsDefinitionsStore.fetchOtsDefinition(route.params.otsId as string)
+      formData.value.name = def.name ?? ''
       formData.value.scriptId = def.scriptId
       Object.assign(variables, def.userVariables || {})
       formData.value.scope = def.brandId ? 'brand' : 'default'
@@ -254,6 +257,9 @@ onMounted(async () => {
     <NTabs v-model:value="activeTab">
       <NTabPane name="properties" :tab="t('otsForm.tab_properties')">
         <NForm :label-placement="formLabelPlacement" label-width="140" :disabled="loading">
+          <NFormItem :label="t('otsForm.name_label')" :show-feedback="false">
+            <NInput v-model:value="formData.name" :placeholder="t('otsForm.name_label')" />
+          </NFormItem>
           <NFormItem v-if="isEditing" :label="t('otsForm.status_label')" :show-feedback="false">
             <span>{{ otsStatus }}</span>
           </NFormItem>

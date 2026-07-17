@@ -314,6 +314,7 @@ export default {
     create_subtitle: '원타임 스트림 생성',
     edit_title: '원타임 스트림 편집',
     edit_subtitle: '원타임 스트림 업데이트',
+    name_label: '이름',
     script_required: '계속하려면 스크립트를 선택하세요.',
     load_failed: '원타임 스트림을 불러오지 못했습니다.',
     saved: '원타임 스트림이 저장되었습니다',

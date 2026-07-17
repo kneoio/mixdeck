@@ -315,6 +315,7 @@ export default {
     create_subtitle: 'Einmal-Stream erstellen',
     edit_title: 'Einmal-Stream bearbeiten',
     edit_subtitle: 'Einmal-Stream aktualisieren',
+    name_label: 'Name',
     script_required: 'Wähle ein Skript, um fortzufahren.',
     load_failed: 'Der Einmal-Stream konnte nicht geladen werden.',
     saved: 'Einmal-Stream gespeichert',

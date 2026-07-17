@@ -49,12 +49,12 @@ export const useOtsDefinitionsStore = defineStore('otsDefinitions', () => {
     return datanestApiService.getOtsDefinition(id)
   }
 
-  async function createOtsDefinition(data: Pick<OtsDefinition, 'scriptId' | 'userVariables' | 'brandId' | 'agentId'>) {
+  async function createOtsDefinition(data: Pick<OtsDefinition, 'name' | 'scriptId' | 'userVariables' | 'brandId' | 'agentId'>) {
     return datanestApiService.createOtsDefinition(data)
   }
 
   async function updateOtsDefinition(id: string, data: Partial<OtsDefinition>) {
-    const { id: _id, author: _a, regDate: _r, lastModifier: _lm, lastModifiedDate: _lmd, name: _n, slugName: _s, ...payload } = data as OtsDefinition
+    const { id: _id, author: _a, regDate: _r, lastModifier: _lm, lastModifiedDate: _lmd, slugName: _s, ...payload } = data as OtsDefinition
     return datanestApiService.updateOtsDefinition(id, payload)
   }
 

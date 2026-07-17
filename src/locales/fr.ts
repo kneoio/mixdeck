@@ -277,6 +277,7 @@ export default {
     create_subtitle: 'Créer une diffusion ponctuelle',
     edit_title: 'Modifier la diffusion ponctuelle',
     edit_subtitle: 'Mettre à jour la diffusion ponctuelle',
+    name_label: 'Nom',
     script_required: 'Choisissez un script pour continuer.',
     load_failed: 'Échec du chargement de la diffusion ponctuelle.',
     saved: 'Diffusion ponctuelle enregistrée',

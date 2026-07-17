@@ -354,6 +354,7 @@ export default {
     create_subtitle: 'Create a one-time stream',
     edit_title: 'Edit One-Time Stream',
     edit_subtitle: 'Update one-time stream',
+    name_label: 'Name',
     script_required: 'Choose a script to continue.',
     load_failed: 'Failed to load the one-time stream.',
     saved: 'One-time stream saved',
