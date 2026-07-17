@@ -258,7 +258,12 @@ onMounted(async () => {
       <NTabPane name="properties" :tab="t('otsForm.tab_properties')">
         <NForm :label-placement="formLabelPlacement" label-width="140" :disabled="loading">
           <NFormItem :label="t('otsForm.name_label')" :show-feedback="false">
-            <NInput v-model:value="formData.name" :placeholder="t('otsForm.name_label')" />
+            <div class="field-stack">
+              <div class="field-error-shell">
+                <NInput v-model:value="formData.name" :placeholder="t('otsForm.name_label')" />
+              </div>
+              <div class="field-error-label"></div>
+            </div>
           </NFormItem>
           <NFormItem v-if="isEditing" :label="t('otsForm.status_label')" :show-feedback="false">
             <span>{{ otsStatus }}</span>

@@ -490,6 +490,7 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
 }
 .brand-url-link {
   font-size: 0.78rem;
@@ -498,9 +499,9 @@ onBeforeUnmount(() => {
   text-decoration: none;
   border-bottom: 1px dashed currentColor;
   white-space: nowrap;
-  max-width: 280px;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
 }
 .brand-url-link:hover {
   opacity: 1;
