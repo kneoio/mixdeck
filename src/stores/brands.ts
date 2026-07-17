@@ -60,6 +60,7 @@ export const useBrandsStore = defineStore('brands', () => {
   const pageSize = ref(10)
   const maxPage = ref(1)
   const streamingStates = ref<Record<string, boolean>>({})
+  const heartbeatPulses = ref<Record<string, number>>({})
 
   async function loadBrands(page = pageNum.value, size = pageSize.value) {
     loading.value = true
@@ -97,6 +98,10 @@ export const useBrandsStore = defineStore('brands', () => {
     streamingStates.value[slug] = alive
   }
 
+  function pulseHeartbeat(slug: string) {
+    heartbeatPulses.value[slug] = (heartbeatPulses.value[slug] ?? 0) + 1
+  }
+
   return {
     brands,
     loading,
@@ -105,11 +110,13 @@ export const useBrandsStore = defineStore('brands', () => {
     pageSize,
     maxPage,
     streamingStates,
+    heartbeatPulses,
     loadBrands,
     fetchBrand,
     saveBrand,
     deleteBrand,
     closeBrand,
-    setStreamingState
+    setStreamingState,
+    pulseHeartbeat
   }
 })

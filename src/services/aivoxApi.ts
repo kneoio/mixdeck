@@ -1,5 +1,6 @@
 import { ApiClient } from './base'
 import { appConfig } from '@/config/appConfig'
+import { authService } from './auth'
 
 export type AivoxQueueType = 'played' | 'playing' | 'prioritized' | 'regular'
 
@@ -42,9 +43,11 @@ class AivoxApiService extends ApiClient {
     super(appConfig.aivoxServer)
   }
 
-  dashboardStreamUrl(): string {
+  dashboardStreamUrl(): string | null {
+    const token = authService.getToken()
+    if (!token) return null
     const wsBase = this.baseUrl.replace(/^http/, 'ws')
-    return `${wsBase}/info/dashboard/stream`
+    return `${wsBase}/info/dashboard/stream?token=${encodeURIComponent(token)}`
   }
 
   async start(brandSlug: string): Promise<{ status: string }> {

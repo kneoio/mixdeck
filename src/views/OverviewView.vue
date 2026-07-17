@@ -137,9 +137,10 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { NCard, NCollapse, NCollapseItem, NSpin, NPopover } from 'naive-ui'
 import QRCode from 'qrcode'
-import { useBrandsStore, type Brand } from '@/stores/brands'
+import { useBrandsStore, type Brand, type BrandStatus } from '@/stores/brands'
 import { useOtsDefinitionsStore, type OtsDefinition } from '@/stores/otsDefinitions'
 import aivoxApiService, { type AivoxDashboardStreamEntry } from '@/services/aivoxApi'
+import { authService } from '@/services/auth'
 import PageHeader from '@/components/PageHeader.vue'
 import AivoxCard from '@/components/AivoxCard.vue'
 import GsapButton from '@/components/GsapButton.vue'
@@ -161,11 +162,14 @@ function isAlive(brand: Brand): boolean {
 function ledState(brand: Brand): { active: boolean; color: string; label: string } {
   const slug = brand.slugName ?? ''
   const liveState = brandsStore.streamingStates[slug]
-  const isOnline = liveState === true || (liveState === undefined && brand.status === 'ON_LINE')
+  const status = radioStatuses[slug] ?? brand.status
+  const isOnline = liveState === true || (liveState === undefined && status === 'ON_LINE')
+  const isWarmingUp = status === 'WARMING_UP'
   const isIdle = liveState === false
-    ? brand.status === 'IDLE'
-    : (liveState === undefined && brand.status === 'IDLE')
+    ? status === 'IDLE'
+    : (liveState === undefined && status === 'IDLE')
   if (isOnline) return { active: true, color: '#00FF3C', label: t('overview.online') }
+  if (isWarmingUp) return { active: true, color: '#FFD600', label: t('overview.ots_status_warming_up') }
   if (isIdle) return { active: true, color: '#FFD600', label: t('overview.idle') }
   return { active: false, color: '#00FF3C', label: t('overview.offline') }
 }
@@ -200,6 +204,7 @@ interface OtsStatusEntry {
 
 const otsWizards = ref<OtsStatusEntry[]>([])
 const radioRemainingMinutes = reactive<Record<string, number>>({})
+const radioStatuses = reactive<Record<string, BrandStatus>>({})
 
 const OTS_PLAYER_THEMES = ['hitachi', 'akai', '']
 function otsPlayerLink(slugName?: string | null): string {
@@ -232,6 +237,8 @@ function applyDashboardEntry(entry: AivoxDashboardStreamEntry) {
   if (entry.type === 'RADIO') {
     brandsStore.setStreamingState(entry.brand, entry.heartbeat)
     radioRemainingMinutes[entry.brand] = entry.remainingMinutes
+    if (entry.status) radioStatuses[entry.brand] = entry.status as BrandStatus
+    if (entry.heartbeat) brandsStore.pulseHeartbeat(entry.brand)
     return
   }
   let wizard = otsWizards.value.find(w => w.slugName === entry.brand)
@@ -257,6 +264,7 @@ function applyDashboardSnapshot(entries: AivoxDashboardStreamEntry[]) {
     if (brand.slugName && !present.has(brand.slugName)) {
       brandsStore.setStreamingState(brand.slugName, false)
       delete radioRemainingMinutes[brand.slugName]
+      delete radioStatuses[brand.slugName]
     }
   }
   for (let i = otsWizards.value.length - 1; i >= 0; i--) {
@@ -297,9 +305,15 @@ function connectDashboardSocket() {
   teardownDashboardSocket(dashboardSocket)
   dashboardSocket = null
   if (dashboardReconnectTimer) { clearTimeout(dashboardReconnectTimer); dashboardReconnectTimer = null }
-  const socket = new WebSocket(aivoxApiService.dashboardStreamUrl())
+  const url = aivoxApiService.dashboardStreamUrl()
+  if (!url) {
+    scheduleDashboardReconnect()
+    return
+  }
+  const socket = new WebSocket(url)
   dashboardSocket = socket
-  dashboardLastMessageAt = Date.now()
+  const openedAt = Date.now()
+  dashboardLastMessageAt = openedAt
   socket.onopen = () => { dashboardReconnectAttempts = 0; dashboardLastMessageAt = Date.now() }
   socket.onmessage = (event) => {
     dashboardLastMessageAt = Date.now()
@@ -312,7 +326,12 @@ function connectDashboardSocket() {
   socket.onclose = () => {
     if (dashboardSocket !== socket) return
     dashboardSocket = null
-    scheduleDashboardReconnect()
+    const likelyAuthRejection = Date.now() - openedAt < 1000
+    if (likelyAuthRejection) {
+      authService.refreshToken().finally(() => scheduleDashboardReconnect())
+    } else {
+      scheduleDashboardReconnect()
+    }
   }
 }
 

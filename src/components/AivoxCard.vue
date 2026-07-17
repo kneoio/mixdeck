@@ -209,12 +209,15 @@ watch(() => props.brandSlug, (val) => {
 
 watch(alive, (val) => {
   if (val) {
-    flashGreenOnce()
     startQueuePolling()
   } else {
     stopQueuePolling()
     queueEntries.value = []
   }
+})
+
+watch(() => brandsStore.heartbeatPulses[props.brandSlug], (val, oldVal) => {
+  if (val !== undefined && val !== oldVal) flashGreenOnce()
 })
 
 watch(() => props.timezone, (val) => {
