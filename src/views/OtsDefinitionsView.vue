@@ -105,30 +105,32 @@ function renderLinkCell(row: OtsDefinition) {
   const copied = copiedLinkId.value === row.id
   return h('div', { class: 'ots-link-cell', onClick: (e: MouseEvent) => e.stopPropagation() }, [
     h('a', { href: link, target: '_blank', rel: 'noopener noreferrer', class: 'ots-link-cell__link' }, link),
-    h('button', { class: ['copy-btn', copied && 'copy-btn--done'], title: t('dashboard.copy_url'), onClick: () => copyLink(row) }, [
-      copied
-        ? h('svg', { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 2.5 }, [h('polyline', { points: '20 6 9 17 4 12' })])
-        : h('svg', { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 2 }, [
-            h('rect', { x: 9, y: 9, width: 13, height: 13, rx: 2 }),
-            h('path', { d: 'M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1' }),
-          ]),
-    ]),
-    h(NPopover, { trigger: 'click', placement: 'bottom-end', 'onUpdate:show': (show: boolean) => show && loadQr(row) }, {
-      trigger: () => h('button', { class: 'copy-btn', title: t('overview.ots_qr_code') }, [
-        h('svg', { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 2 }, [
-          h('rect', { x: 3, y: 3, width: 7, height: 7 }),
-          h('rect', { x: 14, y: 3, width: 7, height: 7 }),
-          h('rect', { x: 3, y: 14, width: 7, height: 7 }),
-          h('path', { d: 'M14 14h3v3h-3z' }),
-          h('path', { d: 'M20 14v3' }),
-          h('path', { d: 'M17 20h4' }),
-        ]),
+    h('div', { class: 'ots-link-cell__actions' }, [
+      h('button', { class: ['copy-btn', copied && 'copy-btn--done'], title: t('dashboard.copy_url'), onClick: () => copyLink(row) }, [
+        copied
+          ? h('svg', { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 2.5 }, [h('polyline', { points: '20 6 9 17 4 12' })])
+          : h('svg', { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 2 }, [
+              h('rect', { x: 9, y: 9, width: 13, height: 13, rx: 2 }),
+              h('path', { d: 'M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1' }),
+            ]),
       ]),
-      default: () => h('div', { class: 'ots-qr-popover' }, qrDataUrls[row.id]
-        ? h('img', { src: qrDataUrls[row.id], alt: link, width: 160, height: 160 })
-        : h(NSpin, { show: true, style: 'width: 160px; height: 160px; display: flex; align-items: center; justify-content: center;' })
-      ),
-    }),
+      h(NPopover, { trigger: 'click', placement: 'bottom-end', 'onUpdate:show': (show: boolean) => show && loadQr(row) }, {
+        trigger: () => h('button', { class: 'copy-btn', title: t('overview.ots_qr_code') }, [
+          h('svg', { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 2 }, [
+            h('rect', { x: 3, y: 3, width: 7, height: 7 }),
+            h('rect', { x: 14, y: 3, width: 7, height: 7 }),
+            h('rect', { x: 3, y: 14, width: 7, height: 7 }),
+            h('path', { d: 'M14 14h3v3h-3z' }),
+            h('path', { d: 'M20 14v3' }),
+            h('path', { d: 'M17 20h4' }),
+          ]),
+        ]),
+        default: () => h('div', { class: 'ots-qr-popover' }, qrDataUrls[row.id]
+          ? h('img', { src: qrDataUrls[row.id], alt: link, width: 160, height: 160 })
+          : h(NSpin, { show: true, style: 'width: 160px; height: 160px; display: flex; align-items: center; justify-content: center;' })
+        ),
+      }),
+    ]),
   ])
 }
 
@@ -145,8 +147,8 @@ const columns = computed<DataTableColumns<OtsDefinition>>(() => [
   { type: 'selection', multiple: true },
   { title: t('otsListView.col_name'), key: 'name', minWidth: 200, render: (row) => row.name || scriptName(row.scriptId) },
   { title: t('otsListView.col_script'), key: 'script', minWidth: 160, render: (row) => scriptName(row.scriptId) },
-  { title: t('otsListView.col_flags'), key: 'flags', minWidth: 140, render: renderFlagsCell },
-  { title: t('otsListView.col_link'), key: 'link', minWidth: 220, render: renderLinkCell },
+  { title: t('otsListView.col_flags'), key: 'flags', width: 110, render: renderFlagsCell },
+  { title: t('otsListView.col_link'), key: 'link', minWidth: 320, render: renderLinkCell },
 ])
 
 async function fetchData(page = otsDefinitionsStore.pageNum, size = otsDefinitionsStore.pageSize) {
@@ -228,8 +230,9 @@ onMounted(async () => {
 <style>
 .ots-link-cell {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
 }
 .ots-link-cell__link {
   font-size: 0.78rem;
@@ -237,13 +240,16 @@ onMounted(async () => {
   color: inherit;
   text-decoration: none;
   border-bottom: 1px dashed currentColor;
-  white-space: nowrap;
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-all;
 }
 .ots-link-cell__link:hover {
   opacity: 1;
+}
+.ots-link-cell__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 .ots-link-cell .copy-btn {
   display: inline-flex;
