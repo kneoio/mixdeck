@@ -22,7 +22,7 @@ const router = useRouter()
 const dictionaryStore = useDictionaryStore()
 
 const entries = ref<any[]>([])
-const loading = ref(false)
+const loading = ref(true)
 const totalCount = ref(0)
 const pageNum = ref(1)
 const pageSize = ref(10)

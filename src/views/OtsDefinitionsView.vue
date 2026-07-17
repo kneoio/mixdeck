@@ -21,7 +21,7 @@ const router = useRouter()
 const otsDefinitionsStore = useOtsDefinitionsStore()
 const scriptsStore = useScriptsStore()
 
-const loading = ref(false)
+const loading = ref(true)
 const selectedIds = ref<string[]>([])
 
 const pagination = computed(() => ({
