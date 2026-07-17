@@ -42,11 +42,9 @@ class AivoxApiService extends ApiClient {
     super(appConfig.aivoxServer)
   }
 
-  dashboardStreamUrl(brandSlugs: string[]): string {
-    const unique = [...new Set(brandSlugs.filter(Boolean))]
+  dashboardStreamUrl(): string {
     const wsBase = this.baseUrl.replace(/^http/, 'ws')
-    const query = unique.map(s => encodeURIComponent(s)).join(',')
-    return `${wsBase}/info/dashboard/stream?brands=${query}`
+    return `${wsBase}/info/dashboard/stream`
   }
 
   async start(brandSlug: string): Promise<{ status: string }> {

@@ -132,7 +132,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { NCard, NCollapse, NCollapseItem, NSpin, NPopover } from 'naive-ui'
@@ -227,41 +227,44 @@ function buildOtsWizard(def: OtsDefinition): OtsStatusEntry {
   })
 }
 
-/** OTS definitions are permanent records; a card only exists while the dashboard stream confirms the stream is actually in the pool (not OFF_LINE/DONE). */
+/** Entry is present, meaning aivox reports this slug as currently in the pool. */
 function applyDashboardEntry(entry: AivoxDashboardStreamEntry) {
   if (entry.type === 'RADIO') {
     brandsStore.setStreamingState(entry.brand, entry.heartbeat)
     radioRemainingMinutes[entry.brand] = entry.remainingMinutes
     return
   }
-  const isPooled = entry.heartbeat || (!!entry.status && entry.status !== 'OFF_LINE' && entry.status !== 'DONE')
-  const idx = otsWizards.value.findIndex(w => w.slugName === entry.brand)
-  if (idx === -1) {
-    if (!isPooled) return
+  let wizard = otsWizards.value.find(w => w.slugName === entry.brand)
+  if (!wizard) {
     const def = otsDefinitionsStore.otsDefinitions.find(d => d.slugName === entry.brand)
     if (!def) return
-    const wizard = buildOtsWizard(def)
-    wizard.heartbeatAlive = entry.heartbeat
-    wizard.remainingMinutes = entry.remainingMinutes
-    if (entry.status) wizard.status = entry.status
+    wizard = buildOtsWizard(def)
     otsWizards.value.push(wizard)
-    return
   }
-  if (!isPooled) {
-    otsWizards.value.splice(idx, 1)
-    return
-  }
-  const wizard = otsWizards.value[idx]
   wizard.heartbeatAlive = entry.heartbeat
   wizard.remainingMinutes = entry.remainingMinutes
   if (entry.status) wizard.status = entry.status
 }
 
-const dashboardSlugs = computed<string[]>(() => {
-  const radioSlugs = brandsStore.brands.map(b => b.slugName).filter((s): s is string => !!s)
-  const otsSlugs = otsDefinitionsStore.otsDefinitions.map(d => d.slugName).filter((s): s is string => !!s)
-  return [...new Set([...radioSlugs, ...otsSlugs])]
-})
+/**
+ * The stream pushes the full set of what's currently in the pool, not a per-slug diff.
+ * Anything known to us but absent from this tick is no longer pooled: RADIO brands
+ * fall back to offline, OTS cards (permanent records, only shown while pooled) are dropped.
+ */
+function applyDashboardSnapshot(entries: AivoxDashboardStreamEntry[]) {
+  const present = new Set(entries.map(e => e.brand))
+  for (const brand of brandsStore.brands) {
+    if (brand.slugName && !present.has(brand.slugName)) {
+      brandsStore.setStreamingState(brand.slugName, false)
+      delete radioRemainingMinutes[brand.slugName]
+    }
+  }
+  for (let i = otsWizards.value.length - 1; i >= 0; i--) {
+    const slug = otsWizards.value[i].slugName
+    if (slug && !present.has(slug)) otsWizards.value.splice(i, 1)
+  }
+  entries.forEach(applyDashboardEntry)
+}
 
 const DASHBOARD_STALE_MS = 15000
 
@@ -294,9 +297,7 @@ function connectDashboardSocket() {
   teardownDashboardSocket(dashboardSocket)
   dashboardSocket = null
   if (dashboardReconnectTimer) { clearTimeout(dashboardReconnectTimer); dashboardReconnectTimer = null }
-  const slugs = dashboardSlugs.value
-  if (!slugs.length) return
-  const socket = new WebSocket(aivoxApiService.dashboardStreamUrl(slugs))
+  const socket = new WebSocket(aivoxApiService.dashboardStreamUrl())
   dashboardSocket = socket
   dashboardLastMessageAt = Date.now()
   socket.onopen = () => { dashboardReconnectAttempts = 0; dashboardLastMessageAt = Date.now() }
@@ -304,7 +305,7 @@ function connectDashboardSocket() {
     dashboardLastMessageAt = Date.now()
     try {
       const entries = JSON.parse(event.data as string) as AivoxDashboardStreamEntry[]
-      if (Array.isArray(entries)) entries.forEach(applyDashboardEntry)
+      if (Array.isArray(entries)) applyDashboardSnapshot(entries)
     } catch { /* ignore malformed frame */ }
   }
   socket.onerror = () => { socket.close() }
@@ -335,19 +336,6 @@ function stopDashboardSocket() {
   teardownDashboardSocket(dashboardSocket)
   dashboardSocket = null
 }
-
-let lastDashboardSlugsKey: string | null = null
-watch(dashboardSlugs, (slugs) => {
-  const key = [...slugs].sort().join(',')
-  if (key === lastDashboardSlugsKey) return
-  lastDashboardSlugsKey = key
-  if (slugs.length) {
-    connectDashboardSocket()
-    startDashboardWatchdog()
-  } else {
-    stopDashboardSocket()
-  }
-}, { immediate: true })
 
 async function stopOtsWizard(wizard: OtsStatusEntry) {
   if (wizard.stopping || !wizard.slugName || wizard.status === 'OFF_LINE' || wizard.status === 'DONE') return
@@ -408,6 +396,8 @@ function otsTypeLabel(type?: string): string {
 }
 
 onMounted(async () => {
+  connectDashboardSocket()
+  startDashboardWatchdog()
   await otsDefinitionsStore.loadOtsDefinitions(1, 50)
 })
 
