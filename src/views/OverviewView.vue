@@ -39,7 +39,13 @@
           </div>
         </template>
 
-        <AivoxCard v-if="brand.slugName" :brand-slug="brand.slugName" :timezone="brand.timeZone" :status="brand.status" />
+        <AivoxCard
+          v-if="brand.slugName"
+          :brand-slug="brand.slugName"
+          :timezone="brand.timeZone"
+          :status="brand.status"
+          :remaining-minutes="radioRemainingMinutes[brand.slugName]"
+        />
 
         <!--
         <NCollapse v-if="brand.slugName" class="agenda-collapse">
@@ -126,14 +132,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { NCard, NCollapse, NCollapseItem, NSpin, NPopover } from 'naive-ui'
 import QRCode from 'qrcode'
 import { useBrandsStore, type Brand } from '@/stores/brands'
 import { useOtsDefinitionsStore, type OtsDefinition } from '@/stores/otsDefinitions'
-import aivoxApiService from '@/services/aivoxApi'
+import aivoxApiService, { type AivoxDashboardStreamEntry } from '@/services/aivoxApi'
 import PageHeader from '@/components/PageHeader.vue'
 import AivoxCard from '@/components/AivoxCard.vue'
 import GsapButton from '@/components/GsapButton.vue'
@@ -193,6 +199,7 @@ interface OtsStatusEntry {
 }
 
 const otsWizards = ref<OtsStatusEntry[]>([])
+const radioRemainingMinutes = reactive<Record<string, number>>({})
 
 const OTS_PLAYER_THEMES = ['hitachi', 'akai', '']
 function otsPlayerLink(slugName?: string | null): string {
@@ -202,8 +209,8 @@ function otsPlayerLink(slugName?: string | null): string {
   return theme ? `${base}?theme=${theme}` : base
 }
 
-function hydrateOtsWizard(def: OtsDefinition) {
-  const wizard: OtsStatusEntry = reactive({
+function buildOtsWizard(def: OtsDefinition): OtsStatusEntry {
+  return reactive({
     id: def.id,
     scope: def.brandId ? 'brand' : 'default',
     brandId: def.brandId,
@@ -218,47 +225,126 @@ function hydrateOtsWizard(def: OtsDefinition) {
     remainingMinutes: -2,
     stopping: false,
   })
-  otsWizards.value.push(wizard)
-  startOtsHeartbeat(wizard)
 }
 
-const otsHeartbeatTimers = new Map<string, ReturnType<typeof setInterval>>()
+/** OTS definitions are permanent records; a card only appears once the dashboard stream confirms the stream is actually in the pool (not OFF_LINE). */
+function applyDashboardEntry(entry: AivoxDashboardStreamEntry) {
+  if (entry.type === 'RADIO') {
+    brandsStore.setStreamingState(entry.brand, entry.heartbeat)
+    radioRemainingMinutes[entry.brand] = entry.remainingMinutes
+    return
+  }
+  let wizard = otsWizards.value.find(w => w.slugName === entry.brand)
+  if (!wizard) {
+    const isPooled = entry.heartbeat || (!!entry.status && entry.status !== 'OFF_LINE')
+    if (!isPooled) return
+    const def = otsDefinitionsStore.otsDefinitions.find(d => d.slugName === entry.brand)
+    if (!def) return
+    wizard = buildOtsWizard(def)
+    otsWizards.value.push(wizard)
+  }
+  wizard.heartbeatAlive = entry.heartbeat
+  wizard.remainingMinutes = entry.remainingMinutes
+  if (entry.status) wizard.status = entry.status
+}
 
-async function pollOtsHeartbeat(wizard: OtsStatusEntry) {
-  if (!wizard.slugName) return
-  try {
-    const { alive, entityStatus, remainingMinutes } = await aivoxApiService.heartbeat(wizard.slugName)
-    wizard.heartbeatAlive = alive
-    wizard.remainingMinutes = remainingMinutes
-    if (entityStatus) wizard.status = entityStatus
-    if (wizard.status === 'DONE') stopOtsHeartbeat(wizard.id)
-  } catch {
-    wizard.heartbeatAlive = false
+const dashboardSlugs = computed<string[]>(() => {
+  const radioSlugs = brandsStore.brands.map(b => b.slugName).filter((s): s is string => !!s)
+  const otsSlugs = otsDefinitionsStore.otsDefinitions.map(d => d.slugName).filter((s): s is string => !!s)
+  return [...new Set([...radioSlugs, ...otsSlugs])]
+})
+
+const DASHBOARD_STALE_MS = 15000
+
+let dashboardSocket: WebSocket | null = null
+let dashboardReconnectTimer: ReturnType<typeof setTimeout> | null = null
+let dashboardReconnectAttempts = 0
+let dashboardWatchdogTimer: ReturnType<typeof setInterval> | null = null
+let dashboardLastMessageAt = 0
+
+function teardownDashboardSocket(socket: WebSocket | null) {
+  if (!socket) return
+  socket.onopen = null
+  socket.onmessage = null
+  socket.onerror = null
+  socket.onclose = null
+  socket.close()
+}
+
+function scheduleDashboardReconnect() {
+  if (dashboardReconnectTimer) return
+  dashboardReconnectAttempts++
+  const delay = Math.min(1000 * 2 ** dashboardReconnectAttempts, 15000)
+  dashboardReconnectTimer = setTimeout(() => {
+    dashboardReconnectTimer = null
+    connectDashboardSocket()
+  }, delay)
+}
+
+function connectDashboardSocket() {
+  teardownDashboardSocket(dashboardSocket)
+  dashboardSocket = null
+  if (dashboardReconnectTimer) { clearTimeout(dashboardReconnectTimer); dashboardReconnectTimer = null }
+  const slugs = dashboardSlugs.value
+  if (!slugs.length) return
+  const socket = new WebSocket(aivoxApiService.dashboardStreamUrl(slugs))
+  dashboardSocket = socket
+  dashboardLastMessageAt = Date.now()
+  socket.onopen = () => { dashboardReconnectAttempts = 0; dashboardLastMessageAt = Date.now() }
+  socket.onmessage = (event) => {
+    dashboardLastMessageAt = Date.now()
+    try {
+      const entries = JSON.parse(event.data as string) as AivoxDashboardStreamEntry[]
+      if (Array.isArray(entries)) entries.forEach(applyDashboardEntry)
+    } catch { /* ignore malformed frame */ }
+  }
+  socket.onerror = () => { socket.close() }
+  socket.onclose = () => {
+    if (dashboardSocket !== socket) return
+    dashboardSocket = null
+    scheduleDashboardReconnect()
   }
 }
 
-function startOtsHeartbeat(wizard: OtsStatusEntry) {
-  stopOtsHeartbeat(wizard.id)
-  if (!wizard.slugName || wizard.status === 'DONE') return
-  pollOtsHeartbeat(wizard)
-  otsHeartbeatTimers.set(wizard.id, setInterval(() => pollOtsHeartbeat(wizard), 7000))
+/** A backend restart doesn't always deliver a clean close/error frame to an open socket, so watch for silence and force a reconnect. */
+function startDashboardWatchdog() {
+  stopDashboardWatchdog()
+  dashboardWatchdogTimer = setInterval(() => {
+    if (dashboardSocket && Date.now() - dashboardLastMessageAt > DASHBOARD_STALE_MS) {
+      connectDashboardSocket()
+    }
+  }, 5000)
 }
 
-function stopOtsHeartbeat(id: string) {
-  const timer = otsHeartbeatTimers.get(id)
-  if (timer) {
-    clearInterval(timer)
-    otsHeartbeatTimers.delete(id)
-  }
+function stopDashboardWatchdog() {
+  if (dashboardWatchdogTimer) { clearInterval(dashboardWatchdogTimer); dashboardWatchdogTimer = null }
 }
+
+function stopDashboardSocket() {
+  stopDashboardWatchdog()
+  if (dashboardReconnectTimer) { clearTimeout(dashboardReconnectTimer); dashboardReconnectTimer = null }
+  teardownDashboardSocket(dashboardSocket)
+  dashboardSocket = null
+}
+
+let lastDashboardSlugsKey: string | null = null
+watch(dashboardSlugs, (slugs) => {
+  const key = [...slugs].sort().join(',')
+  if (key === lastDashboardSlugsKey) return
+  lastDashboardSlugsKey = key
+  if (slugs.length) {
+    connectDashboardSocket()
+    startDashboardWatchdog()
+  } else {
+    stopDashboardSocket()
+  }
+}, { immediate: true })
 
 async function stopOtsWizard(wizard: OtsStatusEntry) {
   if (wizard.stopping || !wizard.slugName || wizard.status === 'OFF_LINE' || wizard.status === 'DONE') return
   wizard.stopping = true
   try {
     await aivoxApiService.stop(wizard.slugName)
-    stopOtsHeartbeat(wizard.id)
-    await pollOtsHeartbeat(wizard)
   } finally {
     wizard.stopping = false
   }
@@ -276,7 +362,6 @@ function openOtsPlayer(wizard: OtsStatusEntry) {
 
 function removeOtsWizard(wizard: OtsStatusEntry) {
   if (wizard.status !== 'OFF_LINE' && wizard.status !== 'DONE') return
-  stopOtsHeartbeat(wizard.id)
   const idx = otsWizards.value.indexOf(wizard)
   if (idx !== -1) otsWizards.value.splice(idx, 1)
 }
@@ -315,12 +400,10 @@ function otsTypeLabel(type?: string): string {
 
 onMounted(async () => {
   await otsDefinitionsStore.loadOtsDefinitions(1, 50)
-  otsDefinitionsStore.otsDefinitions.forEach((def) => hydrateOtsWizard(def))
 })
 
 onBeforeUnmount(() => {
-  otsHeartbeatTimers.forEach((timer) => clearInterval(timer))
-  otsHeartbeatTimers.clear()
+  stopDashboardSocket()
 })
 </script>
 

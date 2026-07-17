@@ -13,7 +13,7 @@ import LoaderProgress from '@/components/LoaderProgress.vue'
 import { useBrandsStore, type BrandStatus } from '@/stores/brands'
 import { useUserSubscriptionStore } from '@/stores/userSubscription'
 
-const props = defineProps<{ brandSlug: string; timezone?: string; status?: BrandStatus }>()
+const props = defineProps<{ brandSlug: string; timezone?: string; status?: BrandStatus; remainingMinutes?: number }>()
 const { t, te } = useI18n()
 const brandsStore = useBrandsStore()
 const userSubscriptionStore = useUserSubscriptionStore()
@@ -21,7 +21,7 @@ const message = useMessage()
 
 const alive = computed(() => brandsStore.streamingStates[props.brandSlug] ?? false)
 const showFreeBadge = computed(() => !alive.value && userSubscriptionStore.isFreePlan)
-const remainingMinutes = ref<number>(-2)
+const remainingMinutes = computed(() => props.remainingMinutes ?? -2)
 const showRemainingPill = computed(() => remainingMinutes.value > 0)
 const remainingPillWarning = computed(() => remainingMinutes.value > 0 && remainingMinutes.value < 10)
 const loading = ref(false)
@@ -36,7 +36,6 @@ const queueEntries = ref<AivoxQueueEntry[]>([])
 let flashTimer: ReturnType<typeof setTimeout> | null = null
 let timeTimer: ReturnType<typeof setInterval> | null = null
 let queueTimer: ReturnType<typeof setInterval> | null = null
-let heartbeatTimer: ReturnType<typeof setInterval> | null = null
 
 function triggerFlash() {
   if (flashTimer) clearTimeout(flashTimer)
@@ -56,14 +55,19 @@ const sortedQueueEntries = computed(() =>
   [...queueEntries.value].sort((a, b) => a.tech.pos - b.tech.pos)
 )
 
-async function fetchHeartbeatAlive(): Promise<boolean> {
-  if (!props.brandSlug) return false
-  const slug = props.brandSlug
-  const { alive, remainingMinutes: rm } = await aivoxApiService.heartbeat(slug)
-  if (props.brandSlug !== slug) return alive
-  brandsStore.setStreamingState(slug, alive)
-  remainingMinutes.value = rm
-  return alive
+/** Resolves once the WS-driven `alive` state matches `expected`, or on timeout. */
+function waitForAlive(expected: boolean, timeoutMs = 120_000): Promise<boolean> {
+  if (alive.value === expected) return Promise.resolve(expected)
+  return new Promise((resolve) => {
+    const stop = watch(alive, (val) => {
+      if (val === expected) {
+        stop()
+        clearTimeout(timer)
+        resolve(expected)
+      }
+    })
+    const timer = setTimeout(() => { stop(); resolve(!expected) }, timeoutMs)
+  })
 }
 
 async function handleStart() {
@@ -75,18 +79,15 @@ async function handleStart() {
   try {
     await aivoxApiService.start(slug)
     waiting.value = true
-    const isAlive = await aivoxApiService.heartbeatStream(slug, true)
+    await waitForAlive(true)
     flashTurn = true
     waiting.value = false
-    if (props.brandSlug === slug) brandsStore.setStreamingState(slug, isAlive)
   } catch (e) {
     flashTurn = true
     waiting.value = false
     hasError.value = true
     if (e instanceof ApiNotEnoughSongsError) {
       message.error(t('dashboard.not_enough_songs', { current: e.current, required: e.required }))
-    } else if (props.brandSlug === slug) {
-      await fetchHeartbeatAlive()
     }
   } finally {
     loading.value = false
@@ -102,13 +103,11 @@ async function handleStop() {
   try {
     await aivoxApiService.stop(slug)
     waiting.value = true
-    const isAlive = await aivoxApiService.heartbeatStream(slug, false)
+    await waitForAlive(false)
     waiting.value = false
-    if (props.brandSlug === slug) brandsStore.setStreamingState(slug, isAlive)
   } catch {
     waiting.value = false
     hasError.value = true
-    if (props.brandSlug === slug) await fetchHeartbeatAlive()
   } finally {
     loading.value = false
   }
@@ -141,23 +140,6 @@ function flashGreenOnce() {
   if (flashTimer) clearTimeout(flashTimer)
   flashGreen.value = true
   flashTimer = setTimeout(() => { flashGreen.value = false }, 600)
-}
-
-async function pollHeartbeat() {
-  const slug = props.brandSlug
-  if (!slug) return
-  const isAlive = await fetchHeartbeatAlive()
-  if (props.brandSlug !== slug) return
-  if (isAlive) flashGreenOnce()
-}
-
-function startHeartbeatPolling() {
-  pollHeartbeat()
-  heartbeatTimer = setInterval(pollHeartbeat, 7000)
-}
-
-function stopHeartbeatPolling() {
-  if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null }
 }
 
 function queueTypeLabel(item: AivoxQueueEntry): string {
@@ -220,25 +202,14 @@ function stopTimeUpdate() {
   if (timeTimer) { clearInterval(timeTimer); timeTimer = null }
 }
 
-const isOffline = computed(() => props.status !== 'ON_LINE' && props.status !== 'IDLE')
-
 watch(() => props.brandSlug, (val) => {
   stopQueuePolling()
-  stopHeartbeatPolling()
-  if (val && !isOffline.value) startHeartbeatPolling()
   if (val && alive.value) startQueuePolling()
-})
-
-watch(isOffline, (offline) => {
-  if (offline) {
-    stopHeartbeatPolling()
-  } else if (props.brandSlug) {
-    startHeartbeatPolling()
-  }
 })
 
 watch(alive, (val) => {
   if (val) {
+    flashGreenOnce()
     startQueuePolling()
   } else {
     stopQueuePolling()
@@ -252,14 +223,12 @@ watch(() => props.timezone, (val) => {
 })
 
 onMounted(() => {
-  if (props.brandSlug && !isOffline.value) startHeartbeatPolling()
   if (props.brandSlug && alive.value) startQueuePolling()
   if (props.timezone) startTimeUpdate()
 })
 
 onUnmounted(() => {
   stopQueuePolling()
-  stopHeartbeatPolling()
   stopTimeUpdate()
   if (flashTimer) clearTimeout(flashTimer)
 })

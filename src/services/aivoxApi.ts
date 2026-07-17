@@ -26,31 +26,15 @@ export interface AivoxQueueResponse {
   fullQueue: AivoxQueueEntry[]
 }
 
-export interface AivoxHeartbeatResult {
-  alive: boolean
-  remainingMinutes: number
-  /** Entity status as reported by the payload (e.g. OFF_LINE, STREAMING, DONE), if present. */
-  entityStatus?: string
-  /** Response status, or 0 if the request failed before a response (e.g. network). */
-  status: number
-}
+export type AivoxDashboardStreamType = 'RADIO' | 'OTS'
 
-export interface AivoxHeartbeatBatchRow {
+export interface AivoxDashboardStreamEntry {
   brand: string
-  status?: string
-  heartbeat?: boolean
-  error?: string | null
-  remainingMinutes?: number
-}
-
-export interface AivoxHeartbeatBatchResult {
-  /** Live flag keyed by brand slug as returned by the API. */
-  byBrand: Record<string, boolean>
-  remainingByBrand: Record<string, number>
-  /** Entity status keyed by brand slug, as reported by the payload. */
-  statusByBrand: Record<string, string | undefined>
-  /** Response status, or 0 if the request failed before a response (e.g. network). */
-  status: number
+  type: AivoxDashboardStreamType
+  status: string
+  heartbeat: boolean
+  error: string | null
+  remainingMinutes: number
 }
 
 class AivoxApiService extends ApiClient {
@@ -58,67 +42,11 @@ class AivoxApiService extends ApiClient {
     super(appConfig.aivoxServer)
   }
 
-  async heartbeatBatch(brandSlugs: string[]): Promise<AivoxHeartbeatBatchResult> {
+  dashboardStreamUrl(brandSlugs: string[]): string {
     const unique = [...new Set(brandSlugs.filter(Boolean))]
-    if (unique.length === 0) {
-      return { byBrand: {}, remainingByBrand: {}, statusByBrand: {}, status: 0 }
-    }
-    const path = unique.map(s => encodeURIComponent(s)).join(',')
-    try {
-      const response = await fetch(`${this.baseUrl}/info/heartbeat/${path}`)
-      const dead = (): AivoxHeartbeatBatchResult => ({
-        byBrand: Object.fromEntries(unique.map(s => [s, false])),
-        remainingByBrand: Object.fromEntries(unique.map(s => [s, -1])),
-        statusByBrand: Object.fromEntries(unique.map(s => [s, undefined])),
-        status: response.status,
-      })
-      if (!response.ok) {
-        return dead()
-      }
-      const data = (await response.json()) as { brands?: AivoxHeartbeatBatchRow[] }
-      const byBrand: Record<string, boolean> = Object.fromEntries(unique.map(s => [s, false]))
-      const remainingByBrand: Record<string, number> = Object.fromEntries(unique.map(s => [s, -2]))
-      const statusByBrand: Record<string, string | undefined> = Object.fromEntries(unique.map(s => [s, undefined]))
-      for (const row of data.brands ?? []) {
-        if (row?.brand == null) continue
-        byBrand[row.brand] = row.heartbeat ?? row.status === 'ON_LINE'
-        remainingByBrand[row.brand] = row.remainingMinutes ?? -2
-        statusByBrand[row.brand] = row.status
-      }
-      return { byBrand, remainingByBrand, statusByBrand, status: response.status }
-    } catch {
-      return {
-        byBrand: Object.fromEntries(unique.map(s => [s, false])),
-        remainingByBrand: Object.fromEntries(unique.map(s => [s, -2])),
-        statusByBrand: Object.fromEntries(unique.map(s => [s, undefined])),
-        status: 0,
-      }
-    }
-  }
-
-  async heartbeat(brandSlug: string): Promise<AivoxHeartbeatResult> {
-    const { byBrand, remainingByBrand, statusByBrand, status } = await this.heartbeatBatch([brandSlug])
-    return {
-      alive: byBrand[brandSlug] ?? false,
-      remainingMinutes: remainingByBrand[brandSlug] ?? -2,
-      entityStatus: statusByBrand[brandSlug],
-      status,
-    }
-  }
-
-  heartbeatStream(brandSlug: string, waitFor = true, timeoutMs = 120_000): Promise<boolean> {
-    return new Promise((resolve) => {
-      const url = `${this.baseUrl}/info/heartbeat/${encodeURIComponent(brandSlug)}/stream?waitFor=${waitFor}`
-      const es = new EventSource(url)
-      const timer = setTimeout(() => { es.close(); resolve(!waitFor) }, timeoutMs)
-      es.onmessage = (e) => {
-        try {
-          const data = JSON.parse(e.data as string) as { heartbeat: boolean }
-          if (data.heartbeat === waitFor) { clearTimeout(timer); es.close(); resolve(waitFor) }
-        } catch { /* ignore */ }
-      }
-      es.onerror = () => { clearTimeout(timer); es.close(); resolve(!waitFor) }
-    })
+    const wsBase = this.baseUrl.replace(/^http/, 'ws')
+    const query = unique.map(s => encodeURIComponent(s)).join(',')
+    return `${wsBase}/info/dashboard/stream?brands=${query}`
   }
 
   async start(brandSlug: string): Promise<{ status: string }> {
