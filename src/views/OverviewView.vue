@@ -227,22 +227,31 @@ function buildOtsWizard(def: OtsDefinition): OtsStatusEntry {
   })
 }
 
-/** OTS definitions are permanent records; a card only appears once the dashboard stream confirms the stream is actually in the pool (not OFF_LINE). */
+/** OTS definitions are permanent records; a card only exists while the dashboard stream confirms the stream is actually in the pool (not OFF_LINE/DONE). */
 function applyDashboardEntry(entry: AivoxDashboardStreamEntry) {
   if (entry.type === 'RADIO') {
     brandsStore.setStreamingState(entry.brand, entry.heartbeat)
     radioRemainingMinutes[entry.brand] = entry.remainingMinutes
     return
   }
-  let wizard = otsWizards.value.find(w => w.slugName === entry.brand)
-  if (!wizard) {
-    const isPooled = entry.heartbeat || (!!entry.status && entry.status !== 'OFF_LINE')
+  const isPooled = entry.heartbeat || (!!entry.status && entry.status !== 'OFF_LINE' && entry.status !== 'DONE')
+  const idx = otsWizards.value.findIndex(w => w.slugName === entry.brand)
+  if (idx === -1) {
     if (!isPooled) return
     const def = otsDefinitionsStore.otsDefinitions.find(d => d.slugName === entry.brand)
     if (!def) return
-    wizard = buildOtsWizard(def)
+    const wizard = buildOtsWizard(def)
+    wizard.heartbeatAlive = entry.heartbeat
+    wizard.remainingMinutes = entry.remainingMinutes
+    if (entry.status) wizard.status = entry.status
     otsWizards.value.push(wizard)
+    return
   }
+  if (!isPooled) {
+    otsWizards.value.splice(idx, 1)
+    return
+  }
+  const wizard = otsWizards.value[idx]
   wizard.heartbeatAlive = entry.heartbeat
   wizard.remainingMinutes = entry.remainingMinutes
   if (entry.status) wizard.status = entry.status
