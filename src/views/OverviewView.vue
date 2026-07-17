@@ -125,6 +125,7 @@
             </GsapButton>
           </div>
         </NCard>
+        <AivoxQueue v-if="wizard.queue.length" :entries="wizard.queue" />
       </NCard>
 
       <Transition name="ots-fade" mode="out-in">
@@ -146,7 +147,7 @@ import { NCard, NCollapse, NCollapseItem, NPopover } from 'naive-ui'
 import QRCode from 'qrcode'
 import { useBrandsStore, type Brand, type BrandStatus } from '@/stores/brands'
 import { useOtsDefinitionsStore, type OtsDefinition } from '@/stores/otsDefinitions'
-import aivoxApiService, { type AivoxDashboardStreamEntry } from '@/services/aivoxApi'
+import aivoxApiService, { type AivoxDashboardStreamEntry, type AivoxQueueEntry } from '@/services/aivoxApi'
 import { authService } from '@/services/auth'
 import PageHeader from '@/components/PageHeader.vue'
 import AivoxCard from '@/components/AivoxCard.vue'
@@ -154,6 +155,7 @@ import GsapButton from '@/components/GsapButton.vue'
 import StatusOrbitBadge from '@/components/StatusOrbitBadge.vue'
 import AgendaCard from '@/components/AgendaCard.vue'
 import GsapLoader from '@/components/GsapLoader.vue'
+import AivoxQueue from '@/components/AivoxQueue.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -208,6 +210,7 @@ interface OtsStatusEntry {
   heartbeatAlive: boolean
   remainingMinutes: number
   stopping: boolean
+  queue: AivoxQueueEntry[]
 }
 
 const otsWizards = ref<OtsStatusEntry[]>([])
@@ -238,7 +241,45 @@ function buildOtsWizard(def: OtsDefinition): OtsStatusEntry {
     heartbeatAlive: false,
     remainingMinutes: -2,
     stopping: false,
+    queue: [],
   })
+}
+
+const OTS_QUEUE_POLL_MS = 10000
+let otsQueueTimer: ReturnType<typeof setInterval> | null = null
+
+function isOtsLive(w: OtsStatusEntry): boolean {
+  return w.status === 'ON_LINE' || w.status === 'STREAMING' || w.heartbeatAlive
+}
+
+/** Fetch one OTS stream's queue from aivox (same REST endpoint the radio cards poll). */
+async function pollOtsQueue(w: OtsStatusEntry) {
+  if (!w.slugName) return
+  const slug = w.slugName
+  try {
+    const res = await aivoxApiService.queue(slug)
+    if (w.slugName !== slug) return
+    w.queue = Array.isArray(res.fullQueue) ? res.fullQueue : []
+  } catch {
+    if (w.slugName !== slug) return
+    w.queue = []
+  }
+}
+
+function pollOtsQueues() {
+  for (const w of otsWizards.value) {
+    if (isOtsLive(w)) pollOtsQueue(w)
+    else if (w.queue.length) w.queue = []
+  }
+}
+
+function startOtsQueuePolling() {
+  if (otsQueueTimer) return
+  otsQueueTimer = setInterval(pollOtsQueues, OTS_QUEUE_POLL_MS)
+}
+
+function stopOtsQueuePolling() {
+  if (otsQueueTimer) { clearInterval(otsQueueTimer); otsQueueTimer = null }
 }
 
 /** Entry is present, meaning aivox reports this slug as currently in the pool. */
@@ -257,9 +298,12 @@ function applyDashboardEntry(entry: AivoxDashboardStreamEntry) {
     wizard = buildOtsWizard(def)
     otsWizards.value.push(wizard)
   }
+  const wasLive = isOtsLive(wizard)
   wizard.heartbeatAlive = entry.heartbeat
   wizard.remainingMinutes = entry.remainingMinutes
   if (entry.status) wizard.status = entry.status
+  if (!wasLive && isOtsLive(wizard)) pollOtsQueue(wizard)
+  else if (wasLive && !isOtsLive(wizard)) wizard.queue = []
 }
 
 /**
@@ -427,11 +471,13 @@ function otsTypeLabel(type?: string): string {
 onMounted(async () => {
   connectDashboardSocket()
   startDashboardWatchdog()
+  startOtsQueuePolling()
   await otsDefinitionsStore.loadOtsDefinitions(1, 50)
 })
 
 onBeforeUnmount(() => {
   stopDashboardSocket()
+  stopOtsQueuePolling()
 })
 </script>
 
