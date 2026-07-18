@@ -11,7 +11,6 @@ import PageHeader from '@/components/PageHeader.vue'
 import ActionBar from '@/components/ActionBar.vue'
 import GsapButton from '@/components/GsapButton.vue'
 import GsapLoader from '@/components/GsapLoader.vue'
-import GsapSpin from '@/components/GsapSpin.vue'
 import { handleApiError } from '@/utils/notificationService'
 
 const { t } = useI18n()
@@ -207,27 +206,25 @@ onMounted(async () => {
         </NButton>
       </div>
     </ActionBar>
-    <GsapSpin :show="loading && otsDefinitionsStore.otsDefinitions.length === 0">
-      <NDataTable
-        :columns="columns"
-        :data="otsDefinitionsStore.otsDefinitions"
-        :loading="loading"
-        :row-key="(row: OtsDefinition) => row.id"
-        v-model:checked-row-keys="selectedIds"
-        :pagination="pagination"
-        remote
-        :row-props="(row: OtsDefinition) => ({
-          style: 'cursor:pointer',
-          onClick: (e: MouseEvent) => {
-            if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return
-            if ((e.target as HTMLElement).closest('.ots-link-cell')) return
-            router.push(`/one-time-streams/${row.id}`)
-          }
-        })"
-        @update:page="(p) => fetchData(p)"
-        @update:page-size="(s) => fetchData(1, s)"
-      />
-    </GsapSpin>
+    <NDataTable
+      :columns="columns"
+      :data="otsDefinitionsStore.otsDefinitions"
+      :loading="loading"
+      :row-key="(row: OtsDefinition) => row.id"
+      v-model:checked-row-keys="selectedIds"
+      :pagination="pagination"
+      remote
+      :row-props="(row: OtsDefinition) => ({
+        style: 'cursor:pointer',
+        onClick: (e: MouseEvent) => {
+          if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return
+          if ((e.target as HTMLElement).closest('.ots-link-cell')) return
+          router.push(`/one-time-streams/${row.id}`)
+        }
+      })"
+      @update:page="(p) => fetchData(p)"
+      @update:page-size="(s) => fetchData(1, s)"
+    />
   </div>
 </template>
 

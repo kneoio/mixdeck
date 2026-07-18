@@ -13,7 +13,6 @@ import { useDictionaryStore, type GenreEntry } from '@/stores/dictionary'
 import PageHeader from '@/components/PageHeader.vue'
 import ActionBar from '@/components/ActionBar.vue'
 import GsapButton from '@/components/GsapButton.vue'
-import GsapSpin from '@/components/GsapSpin.vue'
 import { handleApiError } from '@/utils/notificationService'
 
 const { t } = useI18n()
@@ -282,25 +281,23 @@ onUnmounted(() => {
         </NButton>
       </NSpace>
     </ActionBar>
-    <GsapSpin :show="loading && entries.length === 0">
-      <NDataTable
-        :columns="columns"
-        :data="entries"
-        :loading="loading"
-        :row-key="(row: any) => row.id || row.slugName"
-        v-model:checked-row-keys="selectedIds"
-        :pagination="pagination"
-        remote
-        :row-props="(row: any) => ({
-          style: isRejectedRow(row) ? 'cursor:pointer;opacity:0.45' : 'cursor:pointer',
-          onClick: (e: MouseEvent) => {
-            if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return
-            router.push(`/sound-library/received/${row.id}`)
-          }
-        })"
-        @update:page="(p) => { pageNum = p; fetchData(p) }"
-        @update:page-size="(s) => { pageSize = s; fetchData(1, s) }"
-      />
-    </GsapSpin>
+    <NDataTable
+      :columns="columns"
+      :data="entries"
+      :loading="loading"
+      :row-key="(row: any) => row.id || row.slugName"
+      v-model:checked-row-keys="selectedIds"
+      :pagination="pagination"
+      remote
+      :row-props="(row: any) => ({
+        style: isRejectedRow(row) ? 'cursor:pointer;opacity:0.45' : 'cursor:pointer',
+        onClick: (e: MouseEvent) => {
+          if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return
+          router.push(`/sound-library/received/${row.id}`)
+        }
+      })"
+      @update:page="(p) => { pageNum = p; fetchData(p) }"
+      @update:page-size="(s) => { pageSize = s; fetchData(1, s) }"
+    />
   </div>
 </template>
