@@ -199,10 +199,11 @@ onUnmounted(() => {
         </NButton>
       </div>
     </ActionBar>
-    <GsapSpin :show="loading">
+    <GsapSpin :show="loading && entries.length === 0">
       <NDataTable
         :columns="columns"
         :data="entries"
+        :loading="loading"
         :row-key="(row: any) => row.id || row.slugName"
         v-model:checked-row-keys="selectedIds"
         :pagination="pagination"

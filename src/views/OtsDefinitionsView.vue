@@ -207,10 +207,11 @@ onMounted(async () => {
         </NButton>
       </div>
     </ActionBar>
-    <GsapSpin :show="loading">
+    <GsapSpin :show="loading && otsDefinitionsStore.otsDefinitions.length === 0">
       <NDataTable
         :columns="columns"
         :data="otsDefinitionsStore.otsDefinitions"
+        :loading="loading"
         :row-key="(row: OtsDefinition) => row.id"
         v-model:checked-row-keys="selectedIds"
         :pagination="pagination"
