@@ -12,6 +12,7 @@ import { useDictionaryStore } from '@/stores/dictionary'
 import PageHeader from '@/components/PageHeader.vue'
 import ActionBar from '@/components/ActionBar.vue'
 import GsapButton from '@/components/GsapButton.vue'
+import GsapLoader from '@/components/GsapLoader.vue'
 import { handleApiError } from '@/utils/notificationService'
 import { useBrandsStore } from '@/stores/brands'
 
@@ -229,6 +230,8 @@ onMounted(async () => {
       :row-props="rowProps"
       @update:page="(p) => { pageNum = p; fetchData(p) }"
       @update:page-size="(s) => { pageSize = s; fetchData(1, s) }"
-    />
+    >
+      <template #loading><GsapLoader :size="32" /></template>
+    </NDataTable>
   </div>
 </template>

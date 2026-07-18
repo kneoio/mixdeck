@@ -224,7 +224,9 @@ onMounted(async () => {
       })"
       @update:page="(p) => fetchData(p)"
       @update:page-size="(s) => fetchData(1, s)"
-    />
+    >
+      <template #loading><GsapLoader :size="32" /></template>
+    </NDataTable>
   </div>
 </template>
 

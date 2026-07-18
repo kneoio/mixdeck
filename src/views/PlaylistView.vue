@@ -15,6 +15,7 @@ import { useDictionaryStore } from '@/stores/dictionary'
 import PageHeader from '@/components/PageHeader.vue'
 import ActionBar from '@/components/ActionBar.vue'
 import GsapButton from '@/components/GsapButton.vue'
+import GsapLoader from '@/components/GsapLoader.vue'
 import BulkUploadDialog from '@/components/forms/BulkUploadDialog.vue'
 import ShareToBrandsDialog from '@/components/forms/ShareToBrandsDialog.vue'
 import { handleApiError } from '@/utils/notificationService'
@@ -565,7 +566,9 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
       :row-props="(row: any) => ({ style: 'cursor:pointer;height:48px', onClick: (e: MouseEvent) => { if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return; router.push({ path: `/brands/${route.params.id}/playlist/${row.id}`, query: { returnTo: route.fullPath } }) } })"
       @update:page="(p) => { pageNum = p; fetchData(p) }"
       @update:page-size="(s) => { pageSize = s; fetchData(1, s) }"
-    />
+    >
+      <template #loading><GsapLoader :size="32" /></template>
+    </NDataTable>
   </div>
 </template>
 
