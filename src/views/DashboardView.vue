@@ -363,16 +363,17 @@ html.dark .premium-badge {
   border-color: rgba(255, 255, 255, 0.15);
 }
 
-.premium-badge--glow {
+.premium-badge--glow,
+.update-pill--glow {
   color: #f0a500;
   border-color: rgba(240, 165, 0, 0.5);
   box-shadow: 0 0 7px 2px rgba(240, 165, 0, 0.4);
 }
 
-.update-pill--glow {
+html.dark .premium-badge--glow,
+html.dark .update-pill--glow {
   color: #f0a500;
   border-color: rgba(240, 165, 0, 0.5);
-  box-shadow: 0 0 7px 2px rgba(240, 165, 0, 0.4);
 }
 
 @font-face {
