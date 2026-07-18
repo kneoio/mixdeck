@@ -118,13 +118,11 @@
           </div>
         </template>
 
-        <NCard class="ots-status-card">
-          <div class="ots-status-row">
-            <GsapButton type="error" :disabled="wizard.stopping || wizard.status === 'OFF_LINE' || wizard.status === 'DONE'" @click="stopOtsWizard(wizard)">
-              <span>{{ t('dashboard.broadcast_stop') }}</span>
-            </GsapButton>
-          </div>
-        </NCard>
+        <div class="ots-status-row">
+          <GsapButton type="error" :disabled="wizard.stopping || wizard.status === 'OFF_LINE' || wizard.status === 'DONE'" @click="stopOtsWizard(wizard)">
+            <span>{{ t('dashboard.broadcast_stop') }}</span>
+          </GsapButton>
+        </div>
         <AivoxQueue v-if="wizard.queue.length" :entries="wizard.queue" />
       </NCard>
 
