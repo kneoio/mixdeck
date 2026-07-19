@@ -2,7 +2,7 @@
 import { ref, reactive, computed, h, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { NDataTable, NDropdown, NPopconfirm, NPopover, NButton, NIcon, NSpace, NTag, type DataTableColumns, type DropdownOption, type SelectOption, useMessage } from 'naive-ui'
+import { NDataTable, NDropdown, NPopconfirm, NPopover, NButton, NIcon, NInput, NSpace, NTag, type DataTableColumns, type DropdownOption, type SelectOption, useMessage } from 'naive-ui'
 import { RefreshOutline } from '@vicons/ionicons5'
 import QRCode from 'qrcode'
 import { useOtsDefinitionsStore, type OtsDefinition } from '@/stores/otsDefinitions'
@@ -22,6 +22,7 @@ const scriptsStore = useScriptsStore()
 
 const loading = ref(true)
 const selectedIds = ref<string[]>([])
+const searchTerm = ref('')
 
 const pagination = computed(() => ({
   page: otsDefinitionsStore.pageNum,
@@ -152,10 +153,16 @@ const columns = computed<DataTableColumns<OtsDefinition>>(() => [
   { title: t('otsListView.col_link'), key: 'link', minWidth: 320, render: renderLinkCell },
 ])
 
+let searchTimer: ReturnType<typeof setTimeout> | null = null
+function onSearchChange() {
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => fetchData(1), 400)
+}
+
 async function fetchData(page = otsDefinitionsStore.pageNum, size = otsDefinitionsStore.pageSize) {
   loading.value = true
   try {
-    await otsDefinitionsStore.loadOtsDefinitions(page, size)
+    await otsDefinitionsStore.loadOtsDefinitions(page, size, searchTerm.value ? { searchTerm: searchTerm.value } : {})
   } catch (e: any) {
     handleApiError(e, message)
   } finally {
@@ -187,23 +194,32 @@ onMounted(async () => {
   <div>
     <PageHeader :title="pageTitle" :subtitle="t('otsListView.subtitle')" :count="otsDefinitionsStore.totalCount" />
     <ActionBar>
-      <div class="gsap-row" style="padding-left:0">
-        <NDropdown trigger="click" :options="newStreamOptions" :disabled="scriptsStore.loading" @select="onNewStreamScriptSelect">
-          <GsapButton type="primary">
-            <span>{{ t('otsListView.new_btn') }}</span>
-          </GsapButton>
-        </NDropdown>
-        <NPopconfirm @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
-          <template #trigger>
-            <GsapButton type="error" :disabled="selectedIds.length === 0">
-              <span>{{ t('otsListView.delete_btn', { count: selectedIds.length }) }}</span>
+      <div class="playlist-action-row">
+        <div class="gsap-row" style="padding-left:0">
+          <NDropdown trigger="click" :options="newStreamOptions" :disabled="scriptsStore.loading" @select="onNewStreamScriptSelect">
+            <GsapButton type="primary">
+              <span>{{ t('otsListView.new_btn') }}</span>
             </GsapButton>
-          </template>
-          {{ t('otsListView.delete_confirm', { count: selectedIds.length }) }}
-        </NPopconfirm>
-        <NButton quaternary circle size="small" style="opacity:0.5" @click="fetchData()">
-          <template #icon><NIcon :component="RefreshOutline" /></template>
-        </NButton>
+          </NDropdown>
+          <NPopconfirm @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
+            <template #trigger>
+              <GsapButton type="error" :disabled="selectedIds.length === 0">
+                <span>{{ t('otsListView.delete_btn', { count: selectedIds.length }) }}</span>
+              </GsapButton>
+            </template>
+            {{ t('otsListView.delete_confirm', { count: selectedIds.length }) }}
+          </NPopconfirm>
+          <NButton quaternary circle size="small" style="opacity:0.5" @click="fetchData()">
+            <template #icon><NIcon :component="RefreshOutline" /></template>
+          </NButton>
+        </div>
+        <NInput
+          v-model:value="searchTerm"
+          :placeholder="t('playlistView.search')"
+          clearable
+          style="width: 220px"
+          @update:value="onSearchChange"
+        />
       </div>
     </ActionBar>
     <NDataTable
@@ -285,5 +301,20 @@ onMounted(async () => {
 .ots-qr-popover img {
   display: block;
   border-radius: 4px;
+}
+.playlist-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+@media (max-width: 600px) {
+  .playlist-action-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .playlist-action-row .n-input {
+    width: 100% !important;
+  }
 }
 </style>

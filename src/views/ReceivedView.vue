@@ -3,7 +3,7 @@ import { ref, computed, h, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import {
-  NDataTable, NSpace, NPopconfirm, NTag, NButton, NIcon,
+  NDataTable, NSpace, NPopconfirm, NTag, NButton, NIcon, NInput,
   type DataTableColumns, useMessage
 } from 'naive-ui'
 import { RefreshOutline, ArrowUpOutline, ArrowDownOutline } from '@vicons/ionicons5'
@@ -28,6 +28,7 @@ const pageNum = ref(1)
 const pageSize = ref(10)
 const selectedIds = ref<string[]>([])
 const boostingId = ref<string | null>(null)
+const searchTerm = ref('')
 
 async function changeBoost(row: any, delta: number, e: MouseEvent) {
   e.stopPropagation()
@@ -214,10 +215,16 @@ const columns = computed<DataTableColumns<any>>(() => {
   ]
 })
 
+let searchTimer: ReturnType<typeof setTimeout> | null = null
+function onSearchChange() {
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => fetchData(1), 400)
+}
+
 async function fetchData(page = pageNum.value, size = pageSize.value) {
   loading.value = true
   try {
-    const result = await datanestApiService.getReceived(page, size)
+    const result = await datanestApiService.getReceived(page, size, searchTerm.value)
     entries.value = result.entries
     totalCount.value = result.count
     pageNum.value = result.pageNum
@@ -268,19 +275,28 @@ onUnmounted(() => {
   <div>
     <PageHeader :title="pageTitle" :subtitle="t('playlistView.subtitle')" :count="totalCount" />
     <ActionBar>
-      <NSpace>
-        <NPopconfirm @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
-          <template #trigger>
-            <GsapButton type="error" :disabled="selectedIds.length === 0">
-              <span>{{ t('playlistView.received_remove_btn', { count: selectedIds.length }) }}</span>
-            </GsapButton>
-          </template>
-          {{ t('playlistView.received_remove_confirm', { count: selectedIds.length }) }}
-        </NPopconfirm>
-        <NButton quaternary circle size="small" style="opacity:0.5" @click="fetchData()">
-          <template #icon><NIcon :component="RefreshOutline" /></template>
-        </NButton>
-      </NSpace>
+      <div class="playlist-action-row">
+        <NSpace>
+          <NPopconfirm @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
+            <template #trigger>
+              <GsapButton type="error" :disabled="selectedIds.length === 0">
+                <span>{{ t('playlistView.received_remove_btn', { count: selectedIds.length }) }}</span>
+              </GsapButton>
+            </template>
+            {{ t('playlistView.received_remove_confirm', { count: selectedIds.length }) }}
+          </NPopconfirm>
+          <NButton quaternary circle size="small" style="opacity:0.5" @click="fetchData()">
+            <template #icon><NIcon :component="RefreshOutline" /></template>
+          </NButton>
+        </NSpace>
+        <NInput
+          v-model:value="searchTerm"
+          :placeholder="t('playlistView.search')"
+          clearable
+          style="width: 220px"
+          @update:value="onSearchChange"
+        />
+      </div>
     </ActionBar>
     <NDataTable
       :columns="columns"
@@ -304,3 +320,21 @@ onUnmounted(() => {
     </NDataTable>
   </div>
 </template>
+
+<style>
+.playlist-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+@media (max-width: 600px) {
+  .playlist-action-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .playlist-action-row .n-input {
+    width: 100% !important;
+  }
+}
+</style>

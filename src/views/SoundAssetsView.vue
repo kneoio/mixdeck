@@ -3,7 +3,7 @@ import { ref, computed, h, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import {
-  NDataTable, NSpace, NPopconfirm, NTag, NButton, NIcon,
+  NDataTable, NSpace, NPopconfirm, NTag, NButton, NIcon, NInput,
   type DataTableColumns, useMessage
 } from 'naive-ui'
 import { RefreshOutline } from '@vicons/ionicons5'
@@ -27,6 +27,7 @@ const totalCount = ref(0)
 const pageNum = ref(1)
 const pageSize = ref(10)
 const selectedIds = ref<string[]>([])
+const searchTerm = ref('')
 
 const isMobile = ref(false)
 let mobileMql: MediaQueryList | null = null
@@ -135,10 +136,16 @@ const columns = computed<DataTableColumns<any>>(() => {
   ]
 })
 
+let searchTimer: ReturnType<typeof setTimeout> | null = null
+function onSearchChange() {
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => fetchData(1), 400)
+}
+
 async function fetchData(page = pageNum.value, size = pageSize.value) {
   loading.value = true
   try {
-    const result = await datanestApiService.getSoundAssets(page, size)
+    const result = await datanestApiService.getSoundAssets(page, size, searchTerm.value)
     entries.value = result.entries
     totalCount.value = result.count
     pageNum.value = result.pageNum
@@ -182,21 +189,30 @@ onUnmounted(() => {
   <div>
     <PageHeader :title="pageTitle" :subtitle="t('playlistView.subtitle')" :count="totalCount" />
     <ActionBar>
-      <div class="gsap-row" style="padding-left:0">
-        <GsapButton type="primary" @click="router.push('/sound-library/sound-assets/new')">
-          <span>{{ t('menu.sound_assets_new') }}</span>
-        </GsapButton>
-        <NPopconfirm @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
-          <template #trigger>
-            <GsapButton type="error" :disabled="selectedIds.length === 0">
-              <span>{{ t('playlistView.delete_btn', { count: selectedIds.length }) }}</span>
-            </GsapButton>
-          </template>
-          {{ t('playlistView.delete_confirm', { count: selectedIds.length }) }}
-        </NPopconfirm>
-        <NButton quaternary circle size="small" style="opacity:0.5" @click="fetchData()">
-          <template #icon><NIcon :component="RefreshOutline" /></template>
-        </NButton>
+      <div class="playlist-action-row">
+        <div class="gsap-row" style="padding-left:0">
+          <GsapButton type="primary" @click="router.push('/sound-library/sound-assets/new')">
+            <span>{{ t('menu.sound_assets_new') }}</span>
+          </GsapButton>
+          <NPopconfirm @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
+            <template #trigger>
+              <GsapButton type="error" :disabled="selectedIds.length === 0">
+                <span>{{ t('playlistView.delete_btn', { count: selectedIds.length }) }}</span>
+              </GsapButton>
+            </template>
+            {{ t('playlistView.delete_confirm', { count: selectedIds.length }) }}
+          </NPopconfirm>
+          <NButton quaternary circle size="small" style="opacity:0.5" @click="fetchData()">
+            <template #icon><NIcon :component="RefreshOutline" /></template>
+          </NButton>
+        </div>
+        <NInput
+          v-model:value="searchTerm"
+          :placeholder="t('playlistView.search')"
+          clearable
+          style="width: 220px"
+          @update:value="onSearchChange"
+        />
       </div>
     </ActionBar>
     <NDataTable
@@ -221,3 +237,21 @@ onUnmounted(() => {
     </NDataTable>
   </div>
 </template>
+
+<style>
+.playlist-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+@media (max-width: 600px) {
+  .playlist-action-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .playlist-action-row .n-input {
+    width: 100% !important;
+  }
+}
+</style>

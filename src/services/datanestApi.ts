@@ -56,10 +56,11 @@ class DatanestApiService extends ApiClient {
     }
   }
 
-  async getShared(page = 1, pageSize = 10): Promise<PagedResult<any>> {
+  async getShared(page = 1, pageSize = 10, searchTerm = ''): Promise<PagedResult<any>> {
     const params = new URLSearchParams()
     params.set('page', String(page))
     params.set('size', String(pageSize))
+    if (searchTerm) params.set('filter', JSON.stringify({ searchTerm }))
     const response = await this.request<any>(`/public/soundfragments/shared?${params}`)
     const viewData = response?.payload?.viewData ?? response?.viewData
     if (!viewData) throw new Error('Unexpected response format')
@@ -185,8 +186,9 @@ class DatanestApiService extends ApiClient {
     )
   }
 
-  async getReceived(page = 1, pageSize = 10): Promise<PagedResult<any>> {
+  async getReceived(page = 1, pageSize = 10, searchTerm = ''): Promise<PagedResult<any>> {
     const params = new URLSearchParams({ page: String(page), size: String(pageSize) })
+    if (searchTerm) params.set('search', searchTerm)
     const response = await this.request<any>(`/shared-sound-fragments/received?${params}`)
     const viewData = response?.payload?.viewData ?? response?.viewData
     if (!viewData) throw new Error('Unexpected response format')
@@ -203,8 +205,9 @@ class DatanestApiService extends ApiClient {
     return this.getDocument<any>('/shared-sound-fragments/received', id)
   }
 
-  async getSoundAssets(page = 1, pageSize = 10): Promise<PagedResult<any>> {
+  async getSoundAssets(page = 1, pageSize = 10, searchTerm = ''): Promise<PagedResult<any>> {
     const params = new URLSearchParams({ page: String(page), size: String(pageSize) })
+    if (searchTerm) params.set('filter', JSON.stringify({ searchTerm }))
     const response = await this.request<any>(`/public/soundfragments/sound-assets?${params}`)
     const viewData = response?.payload?.viewData ?? response?.viewData
     if (!viewData) throw new Error('Unexpected response format')
@@ -217,8 +220,9 @@ class DatanestApiService extends ApiClient {
     }
   }
 
-  async getUnassignedBrands(page = 1, pageSize = 10): Promise<PagedResult<any>> {
+  async getUnassignedBrands(page = 1, pageSize = 10, searchTerm = ''): Promise<PagedResult<any>> {
     const params = new URLSearchParams({ page: String(page), size: String(pageSize) })
+    if (searchTerm) params.set('filter', JSON.stringify({ searchTerm }))
     const response = await this.request<any>(`/public/soundfragments/unassigned-brands?${params}`)
     const viewData = response?.payload?.viewData ?? response?.viewData
     if (!viewData) throw new Error('Unexpected response format')

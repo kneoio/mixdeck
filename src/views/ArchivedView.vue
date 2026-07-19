@@ -3,7 +3,7 @@ import { ref, computed, h, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import {
-  NDataTable, NSpace, NPopconfirm, NTag, NButton, NIcon,
+  NDataTable, NSpace, NPopconfirm, NTag, NButton, NIcon, NInput,
   type DataTableColumns, useMessage
 } from 'naive-ui'
 import { RefreshOutline } from '@vicons/ionicons5'
@@ -30,6 +30,7 @@ const pageSize = ref(10)
 const selectedIds = ref<string[]>([])
 const showShareDialog = ref(false)
 const shareFragmentIds = ref<string[]>([])
+const searchTerm = ref('')
 
 function openShareBulk() {
   if (selectedIds.value.length === 0) return
@@ -119,10 +120,16 @@ const columns = computed<DataTableColumns<any>>(() => [
   { title: t('playlistView.col_description'), key: 'description', minWidth: 160, ellipsis: { tooltip: true } },
 ])
 
+let searchTimer: ReturnType<typeof setTimeout> | null = null
+function onSearchChange() {
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => fetchData(1), 400)
+}
+
 async function fetchData(page = pageNum.value, size = pageSize.value) {
   loading.value = true
   try {
-    const result = await datanestApiService.getUnassignedBrands(page, size)
+    const result = await datanestApiService.getUnassignedBrands(page, size, searchTerm.value)
     entries.value = result.entries
     totalCount.value = result.count
     pageNum.value = result.pageNum
@@ -158,25 +165,34 @@ onMounted(async () => {
   <div>
     <PageHeader :title="pageTitle" :subtitle="t('playlistView.subtitle')" :count="totalCount" />
     <ActionBar>
-      <NSpace>
-        <GsapButton type="primary" @click="router.push({ path: '/sound-library/archived/new', query: { returnTo: route.fullPath } })">
-          <span>{{ t('playlistView.new_track') }}</span>
-        </GsapButton>
-        <GsapButton :disabled="selectedIds.length === 0" @click="openShareBulk">
-          <span>{{ t('playlistView.share_btn', { count: selectedIds.length }) }}</span>
-        </GsapButton>
-        <NPopconfirm @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
-          <template #trigger>
-            <GsapButton type="error" :disabled="selectedIds.length === 0">
-              <span>{{ t('playlistView.delete_btn', { count: selectedIds.length }) }}</span>
-            </GsapButton>
-          </template>
-          {{ t('playlistView.delete_confirm', { count: selectedIds.length }) }}
-        </NPopconfirm>
-        <NButton quaternary circle size="small" style="opacity:0.5" @click="fetchData()">
-          <template #icon><NIcon :component="RefreshOutline" /></template>
-        </NButton>
-      </NSpace>
+      <div class="playlist-action-row">
+        <NSpace>
+          <GsapButton type="primary" @click="router.push({ path: '/sound-library/archived/new', query: { returnTo: route.fullPath } })">
+            <span>{{ t('playlistView.new_track') }}</span>
+          </GsapButton>
+          <GsapButton :disabled="selectedIds.length === 0" @click="openShareBulk">
+            <span>{{ t('playlistView.share_btn', { count: selectedIds.length }) }}</span>
+          </GsapButton>
+          <NPopconfirm @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
+            <template #trigger>
+              <GsapButton type="error" :disabled="selectedIds.length === 0">
+                <span>{{ t('playlistView.delete_btn', { count: selectedIds.length }) }}</span>
+              </GsapButton>
+            </template>
+            {{ t('playlistView.delete_confirm', { count: selectedIds.length }) }}
+          </NPopconfirm>
+          <NButton quaternary circle size="small" style="opacity:0.5" @click="fetchData()">
+            <template #icon><NIcon :component="RefreshOutline" /></template>
+          </NButton>
+        </NSpace>
+        <NInput
+          v-model:value="searchTerm"
+          :placeholder="t('playlistView.search')"
+          clearable
+          style="width: 220px"
+          @update:value="onSearchChange"
+        />
+      </div>
     </ActionBar>
     <NDataTable
       :columns="columns"
@@ -205,3 +221,21 @@ onMounted(async () => {
     />
   </div>
 </template>
+
+<style>
+.playlist-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+@media (max-width: 600px) {
+  .playlist-action-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .playlist-action-row .n-input {
+    width: 100% !important;
+  }
+}
+</style>
