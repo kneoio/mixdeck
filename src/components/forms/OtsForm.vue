@@ -23,7 +23,7 @@ const otsDefinitionsStore = useOtsDefinitionsStore()
 const isEditing = computed(() => !!route.params.otsId && route.params.otsId !== 'new')
 const loading = ref(false)
 const isMobile = ref(false)
-const activeTab = ref('properties')
+const activeTab = ref('variables')
 const isTabChangeFromValidation = ref(false)
 const backRoute = '/one-time-streams'
 
