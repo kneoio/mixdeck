@@ -1,10 +1,10 @@
 <template>
   <div>
-    <PageHeader :title="t('plans.title')" :subtitle="t('plans.subtitle')">
-      <template #actions>
-        <GsapButton @click="router.push('/profile')"><span>{{ t('common.close') }}</span></GsapButton>
-      </template>
-    </PageHeader>
+    <PageHeader :title="t('plans.title')" :subtitle="t('plans.subtitle')" />
+
+    <ActionBar>
+      <GsapButton @click="router.push('/profile')"><span>{{ t('common.close') }}</span></GsapButton>
+    </ActionBar>
 
     <GsapSpin :show="subscriptionProductsStore.loading">
       <div v-if="cards.length" style="display: flex; gap: 24px; flex-wrap: wrap; align-items: stretch;">
@@ -52,6 +52,7 @@ import { NCard, NDivider, NEmpty, NTag, useMessage } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
 import GsapSpin from '@/components/GsapSpin.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import ActionBar from '@/components/ActionBar.vue'
 import { useSubscriptionProductsStore } from '@/stores/subscriptionProducts'
 import { useUserSubscriptionStore } from '@/stores/userSubscription'
 import nivaroApiService from '@/services/nivaroApi'
