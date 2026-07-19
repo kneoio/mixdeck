@@ -14,7 +14,7 @@ import AivoxQueue from '@/components/AivoxQueue.vue'
 import { useBrandsStore, type BrandStatus } from '@/stores/brands'
 import { useUserSubscriptionStore } from '@/stores/userSubscription'
 
-const props = defineProps<{ brandSlug: string; timezone?: string; status?: BrandStatus; remainingMinutes?: number }>()
+const props = defineProps<{ brandSlug: string; timezone?: string; status?: BrandStatus }>()
 const { t } = useI18n()
 const brandsStore = useBrandsStore()
 const userSubscriptionStore = useUserSubscriptionStore()
@@ -22,9 +22,6 @@ const message = useMessage()
 
 const alive = computed(() => brandsStore.streamingStates[props.brandSlug] ?? false)
 const showFreeBadge = computed(() => !alive.value && userSubscriptionStore.isFreePlan)
-const remainingMinutes = computed(() => props.remainingMinutes ?? -2)
-const showRemainingPill = computed(() => remainingMinutes.value > 0)
-const remainingPillWarning = computed(() => remainingMinutes.value > 0 && remainingMinutes.value < 10)
 const loading = ref(false)
 const waiting = ref(false)
 const hasError = ref(false)
@@ -229,7 +226,6 @@ onUnmounted(() => {
           <span class="aivox-label">{{ t('dashboard.onAir') }}</span>
         </div>
         <span class="free-badge" :class="{ 'free-badge--hidden': !showFreeBadge }">{{ t('dashboard.free_streaming_limit') }}</span>
-        <span v-if="showRemainingPill" class="remaining-pill" :class="{ 'remaining-pill--warning': remainingPillWarning }">{{ remainingMinutes }}m</span>
       </div>
       <div v-if="timezone" class="time-right">
         <span class="label tz-caption">{{ t('dashboard.stationTime') }}:</span>
@@ -291,25 +287,6 @@ onUnmounted(() => {
 }
 .free-badge--hidden {
   opacity: 0;
-}
-.remaining-pill {
-  display: inline-block;
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: rgba(24, 160, 88, 0.9);
-  border: 1px solid rgba(24, 160, 88, 0.5);
-  border-radius: 3px;
-  padding: 0px 4px;
-  opacity: 1;
-  box-shadow: 0 0 7px 2px rgba(24, 160, 88, 0.25);
-  transition: color 0.3s, border-color 0.3s, box-shadow 0.3s;
-}
-.remaining-pill--warning {
-  color: #FFA000;
-  border-color: rgba(255, 160, 0, 0.5);
-  box-shadow: 0 0 7px 2px rgba(255, 160, 0, 0.4);
 }
 .time-right {
   display: flex;

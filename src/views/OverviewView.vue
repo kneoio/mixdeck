@@ -44,7 +44,6 @@
           :brand-slug="brand.slugName"
           :timezone="brand.timeZone"
           :status="brand.status"
-          :remaining-minutes="radioRemainingMinutes[brand.slugName]"
         />
 
         <!--
@@ -70,7 +69,6 @@
             <span class="brand-name">{{ wizard.name || t('overview.one_time_stream') }}</span>
             <span v-if="wizard.type" class="type-pill">{{ otsTypeLabel(wizard.type) }}</span>
             <StatusOrbitBadge v-if="wizard.status" class="brand-status" :class="{ 'brand-status--live': wizard.status === 'ON_LINE', 'brand-status--pill': wizard.status === 'OFF_LINE' || wizard.status === 'WARMING_UP' }" :live="wizard.status === 'STREAMING' || wizard.status === 'ON_LINE' || wizard.heartbeatAlive">{{ otsStatusLabel(wizard.status) }}</StatusOrbitBadge>
-            <span v-if="wizard.remainingMinutes > 0" class="remaining-pill" :class="{ 'remaining-pill--warning': wizard.remainingMinutes < 10 }">{{ wizard.remainingMinutes }}m</span>
           </div>
         </template>
         <template #header-extra>
@@ -206,14 +204,12 @@ interface OtsStatusEntry {
   type?: string
   slugName?: string
   heartbeatAlive: boolean
-  remainingMinutes: number
   stopping: boolean
   queue: AivoxQueueEntry[]
 }
 
 const otsWizards = ref<OtsStatusEntry[]>([])
 const dashboardSnapshotReceived = ref(false)
-const radioRemainingMinutes = reactive<Record<string, number>>({})
 const radioStatuses = reactive<Record<string, BrandStatus>>({})
 
 const OTS_PLAYER_THEMES = ['hitachi', 'akai', '']
@@ -237,7 +233,6 @@ function buildOtsWizard(def: OtsDefinition): OtsStatusEntry {
     type: def.type,
     slugName: def.slugName,
     heartbeatAlive: false,
-    remainingMinutes: -2,
     stopping: false,
     queue: [],
   })
@@ -284,7 +279,6 @@ function stopOtsQueuePolling() {
 function applyDashboardEntry(entry: AivoxDashboardStreamEntry) {
   if (entry.type === 'RADIO') {
     brandsStore.setStreamingState(entry.brand, entry.heartbeat)
-    radioRemainingMinutes[entry.brand] = entry.remainingMinutes
     if (entry.status) radioStatuses[entry.brand] = entry.status as BrandStatus
     if (entry.heartbeat) brandsStore.pulseHeartbeat(entry.brand)
     return
@@ -298,7 +292,6 @@ function applyDashboardEntry(entry: AivoxDashboardStreamEntry) {
   }
   const wasLive = isOtsLive(wizard)
   wizard.heartbeatAlive = entry.heartbeat
-  wizard.remainingMinutes = entry.remainingMinutes
   if (entry.status) wizard.status = entry.status
   if (!wasLive && isOtsLive(wizard)) pollOtsQueue(wizard)
   else if (wasLive && !isOtsLive(wizard)) wizard.queue = []
@@ -314,7 +307,6 @@ function applyDashboardSnapshot(entries: AivoxDashboardStreamEntry[]) {
   for (const brand of brandsStore.brands) {
     if (brand.slugName && !present.has(brand.slugName)) {
       brandsStore.setStreamingState(brand.slugName, false)
-      delete radioRemainingMinutes[brand.slugName]
       delete radioStatuses[brand.slugName]
     }
   }
@@ -676,23 +668,6 @@ onBeforeUnmount(() => {
   border: 1px solid rgba(124, 58, 237, 0.5);
   border-radius: 3px;
   padding: 0px 4px;
-}
-.remaining-pill {
-  display: inline-block;
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: rgba(24, 160, 88, 0.9);
-  border: 1px solid rgba(24, 160, 88, 0.5);
-  border-radius: 3px;
-  padding: 0px 4px;
-  box-shadow: 0 0 7px 2px rgba(24, 160, 88, 0.25);
-}
-.remaining-pill--warning {
-  color: #FFA000;
-  border-color: rgba(255, 160, 0, 0.5);
-  box-shadow: 0 0 7px 2px rgba(255, 160, 0, 0.4);
 }
 .ots-qr-popover {
   display: flex;
