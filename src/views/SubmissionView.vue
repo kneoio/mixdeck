@@ -130,9 +130,10 @@
                 <n-skeleton v-if="stationsLoading" height="34px" :sharp="false" />
                 <div v-else class="field-error-shell" :class="{ 'field-error-shell--active': !!fieldErrors.station }">
                   <n-select
-                    v-model:value="stationSlug"
+                    v-model:value="stationSlugs"
                     :options="stationOptions"
                     :placeholder="t('submission.station_placeholder')"
+                    multiple
                     clearable
                     @update:value="fieldErrors.station = ''"
                   />
@@ -317,7 +318,7 @@ const code = ref('')
 const codeSent = ref(false)
 const verified = ref(false)
 const submitted = ref(false)
-const stationSlug = ref<string | null>(null)
+const stationSlugs = ref<string[]>([])
 const artistName = ref('')
 const genre = ref<string | null>(null)
 const genreLabel = computed(() => (genre.value && findGenreLabel(genreTreeOptions.value, genre.value)) || '')
@@ -346,7 +347,7 @@ const fieldErrors = ref<Record<ValidationField, string>>({ email: '', code: '', 
 const lastSubmission = computed(() => ({
   artistName: artistName.value,
   genre: genreLabel.value,
-  stationLabel: stationOptions.value.find(o => o.value === stationSlug.value)?.label || '',
+  stationLabel: stationOptions.value.filter(o => stationSlugs.value.includes(o.value)).map(o => o.label).join(', '),
   fileName: selectedFile.value?.name || '',
   description: description.value,
 }))
@@ -419,7 +420,7 @@ async function upload() {
   let invalid = false
   if (!artistName.value.trim()) { fieldErrors.value.artistName = t('submission.error_artist'); invalid = true }
   if (!genre.value) { fieldErrors.value.genre = t('submission.error_genre'); invalid = true }
-  if (!stationSlug.value) { fieldErrors.value.station = t('submission.error_station'); invalid = true }
+  if (stationSlugs.value.length === 0) { fieldErrors.value.station = t('submission.error_station'); invalid = true }
   if (!selectedFile.value) { fieldErrors.value.file = t('submission.error_file'); invalid = true }
   if (!agreed.value) { fieldErrors.value.agreement = t('submission.error_agreement'); invalid = true }
   if (invalid) return
@@ -431,7 +432,7 @@ async function upload() {
       email.value.trim(),
       code.value.trim(),
       (p) => { uploadProgress.value = p },
-      { stationSlug: stationSlug.value ?? undefined, artistName: artistName.value.trim(), genre: genreLabel.value || undefined, country: country.value.trim() || undefined, description: description.value.trim() || undefined, notifyOnPlay: notifyOnPlay.value },
+      { stationSlugs: stationSlugs.value, artistName: artistName.value.trim(), genre: genreLabel.value || undefined, country: country.value.trim() || undefined, description: description.value.trim() || undefined, notifyOnPlay: notifyOnPlay.value },
     )
     submitted.value = true
     step.value = 3
@@ -450,7 +451,7 @@ function submitAnother() {
   artistName.value = ''
   genre.value = null
   country.value = ''
-  stationSlug.value = null
+  stationSlugs.value = []
   agreed.value = false
   notifyOnPlay.value = false
   description.value = ''
@@ -466,7 +467,7 @@ function restart() {
   verified.value = false
   submitted.value = false
   step.value = 1
-  stationSlug.value = null
+  stationSlugs.value = []
   selectedFile.value = null
   uploadProgress.value = 0
   notifyOnPlay.value = false

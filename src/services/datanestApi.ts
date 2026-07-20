@@ -539,7 +539,7 @@ class DatanestApiService extends ApiClient {
     email: string,
     code: string,
     onProgress: (percent: number) => void,
-    meta?: { stationSlug?: string; artistName?: string; genre?: string; country?: string; description?: string; notifyOnPlay?: boolean },
+    meta?: { stationSlugs?: string[]; artistName?: string; genre?: string; country?: string; description?: string; notifyOnPlay?: boolean },
   ): Promise<any> {
     const batchId = crypto.randomUUID()
     const fileId = crypto.randomUUID().replace(/-/g, '')
@@ -562,15 +562,17 @@ class DatanestApiService extends ApiClient {
         fileName: file.name,
         chunkIndex: String(i),
         totalChunks: String(totalChunks),
-        // stationSlug is only resolved (and cached per batchId) once, on the first chunk — see
-        // datanest's FileUploadService.resolveBrandSlugIfNeeded. No need to resend it after that.
-        ...(isFirstChunk && meta?.stationSlug ? { stationSlug: meta.stationSlug } : {}),
         ...(isLastChunk && meta?.artistName ? { artistName: meta.artistName } : {}),
         ...(isLastChunk && meta?.genre ? { genre: meta.genre } : {}),
         ...(isLastChunk && meta?.country ? { country: meta.country } : {}),
         ...(isLastChunk && meta?.description ? { description: meta.description } : {}),
         ...(isLastChunk && meta?.notifyOnPlay ? { notifyOnPlay: String(meta.notifyOnPlay) } : {}),
       })
+      // stationSlug is only resolved (and cached per batchId) once, on the first chunk — see
+      // datanest's FileUploadService.resolveBrandSlugIfNeeded. No need to resend it after that.
+      if (isFirstChunk && meta?.stationSlugs) {
+        for (const slug of meta.stationSlugs) params.append('stationSlug', slug)
+      }
 
       const res = await fetch(`${this.baseUrl}/public/songs/chunk?${params}`, {
         method: 'POST',
