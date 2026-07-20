@@ -62,51 +62,56 @@ function init() {
       vy: 0,
       t: Math.random() * Math.PI * 2,
       size: rand(1.5, 3.8),
-      hue: rand(270, 330)
+      hue: rand(260, 340)
     })
   }
 }
 
 function draw() {
-  time += 0.012
+  time += 0.03
 
   ctx.clearRect(0, 0, width, height)
   ctx.globalCompositeOperation = 'lighter'
 
-  const pulse = ((Math.sin(time * 0.8) + 1) / 2) * width
+  const pulse = (time * 140) % (width + 30) - 15
 
   for (const p of particles) {
-
     const targetY = ribbonY(p.x, time)
 
-    p.vy += (targetY - p.y) * 0.04
+    p.vy += (targetY - p.y) * 0.05
     p.vy *= 0.88
 
     p.y += p.vy
-
-    p.x += Math.sin(time + p.t) * 0.08
+    p.x += Math.sin(time * 2 + p.t) * 0.12
 
     const d = Math.abs(p.x - pulse)
 
     let r = p.size
-    let alpha = 0.28
+    let alpha = 0.25
 
-    if (d < 18) {
-      r += (18 - d) * 0.12
+    if (d < 20) {
+      r += (20 - d) * 0.14
       alpha = 1
     }
 
+    const hue =
+        (p.hue +
+            Math.sin(time * 4 + p.t) * 25 +
+            Math.sin(p.x * 0.05 + time * 2) * 15) % 360
+
     ctx.beginPath()
-    ctx.fillStyle = `hsla(${p.hue},100%,65%,${alpha})`
+    ctx.fillStyle = `hsla(${hue},100%,70%,${alpha})`
     ctx.arc(p.x, p.y, r, 0, Math.PI * 2)
     ctx.fill()
   }
 
+  const pulseHue = (time * 220) % 360
+
   ctx.beginPath()
-  ctx.fillStyle = "#ffffff"
-  ctx.shadowBlur = 18
-  ctx.shadowColor = "#ffffff"
-  ctx.arc(pulse, ribbonY(pulse, time), 4, 0, Math.PI * 2)
+  ctx.fillStyle = `hsl(${pulseHue},100%,75%)`
+  ctx.shadowBlur = 24
+  ctx.shadowColor = `hsl(${pulseHue},100%,70%)`
+  ctx.arc(pulse, ribbonY(pulse, time), 5, 0, Math.PI * 2)
   ctx.fill()
 
   ctx.shadowBlur = 0
@@ -115,7 +120,7 @@ function draw() {
 }
 
 onMounted(() => {
-  ctx = canvas.value!.getContext("2d")!
+  ctx = canvas.value!.getContext('2d')!
   init()
   draw()
 })
