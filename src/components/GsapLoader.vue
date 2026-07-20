@@ -1,118 +1,132 @@
 <template>
-  <svg
+  <canvas
+      ref="canvas"
       class="mixpla-loader"
-      :style="{ '--size': size + 'px' }"
-      viewBox="0 0 120 60"
-  >
-    <line
-        v-for="(e, i) in edges"
-        :key="'e'+i"
-        :x1="nodes[e[0]].x"
-        :y1="nodes[e[0]].y"
-        :x2="nodes[e[1]].x"
-        :y2="nodes[e[1]].y"
-        class="edge"
-    />
-
-    <circle
-        v-for="(n, i) in nodes"
-        :key="'n'+i"
-        :cx="n.x"
-        :cy="n.y"
-        :r="i === activeNode ? 4 : 2.6"
-        :class="['node', i === activeNode && 'active']"
-    />
-
-    <circle
-        ref="pulseRef"
-        r="2.8"
-        class="pulse"
-    />
-  </svg>
+      :width="width"
+      :height="height"
+      :style="{ width: size * 3 + 'px', height: size + 'px' }"
+  />
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
-import gsap from 'gsap'
+import { onMounted, onBeforeUnmount, ref } from 'vue'
 
-withDefaults(defineProps<{ size?: number }>(), {
-  size: 48
+const props = withDefaults(defineProps<{
+  size?: number
+}>(), {
+  size: 44
 })
 
-const nodes = [
-  { x: 12, y: 30 },
-  { x: 32, y: 15 },
-  { x: 32, y: 45 },
-  { x: 60, y: 30 },
-  { x: 88, y: 15 },
-  { x: 88, y: 45 },
-  { x: 108, y: 30 }
-]
+const width = 180
+const height = 60
+const canvas = ref<HTMLCanvasElement>()
 
-const edges = [
-  [0,1],[0,2],
-  [1,3],[2,3],
-  [3,4],[3,5],
-  [4,6],[5,6]
-]
+const particles: Particle[] = []
 
-const pulseRef = ref()
-const activeNode = ref(0)
+let ctx: CanvasRenderingContext2D
+let raf = 0
+let time = Math.random() * 1000
 
-let edge = 0
-let progress = 0
-let tick
+interface Particle {
+  x: number
+  y: number
+  vx: number
+  vy: number
+  t: number
+  size: number
+  hue: number
+}
 
-onMounted(() => {
-  const pulse = pulseRef.value
+function rand(min: number, max: number) {
+  return min + Math.random() * (max - min)
+}
 
-  tick = () => {
-    progress += 0.018
+function ribbonY(x: number, t: number) {
+  return (
+      height / 2 +
+      Math.sin(x * 0.035 + t * 1.2) * 10 +
+      Math.sin(x * 0.012 - t * 0.7) * 6
+  )
+}
 
-    if (progress >= 1) {
-      progress = 0
-      edge = (edge + 1) % edges.length
-      activeNode.value = edges[edge][1]
+function init() {
+  particles.length = 0
+
+  for (let i = 0; i < 90; i++) {
+    const x = (i / 89) * width
+
+    particles.push({
+      x,
+      y: ribbonY(x, 0) + rand(-5, 5),
+      vx: 0,
+      vy: 0,
+      t: Math.random() * Math.PI * 2,
+      size: rand(1.5, 3.8),
+      hue: rand(270, 330)
+    })
+  }
+}
+
+function draw() {
+  time += 0.012
+
+  ctx.clearRect(0, 0, width, height)
+  ctx.globalCompositeOperation = 'lighter'
+
+  const pulse = ((Math.sin(time * 0.8) + 1) / 2) * width
+
+  for (const p of particles) {
+
+    const targetY = ribbonY(p.x, time)
+
+    p.vy += (targetY - p.y) * 0.04
+    p.vy *= 0.88
+
+    p.y += p.vy
+
+    p.x += Math.sin(time + p.t) * 0.08
+
+    const d = Math.abs(p.x - pulse)
+
+    let r = p.size
+    let alpha = 0.28
+
+    if (d < 18) {
+      r += (18 - d) * 0.12
+      alpha = 1
     }
 
-    const a = nodes[edges[edge][0]]
-    const b = nodes[edges[edge][1]]
-
-    pulse.setAttribute("cx", (a.x + (b.x-a.x)*progress).toString())
-    pulse.setAttribute("cy", (a.y + (b.y-a.y)*progress).toString())
+    ctx.beginPath()
+    ctx.fillStyle = `hsla(${p.hue},100%,65%,${alpha})`
+    ctx.arc(p.x, p.y, r, 0, Math.PI * 2)
+    ctx.fill()
   }
 
-  gsap.ticker.add(tick)
+  ctx.beginPath()
+  ctx.fillStyle = "#ffffff"
+  ctx.shadowBlur = 18
+  ctx.shadowColor = "#ffffff"
+  ctx.arc(pulse, ribbonY(pulse, time), 4, 0, Math.PI * 2)
+  ctx.fill()
+
+  ctx.shadowBlur = 0
+
+  raf = requestAnimationFrame(draw)
+}
+
+onMounted(() => {
+  ctx = canvas.value!.getContext("2d")!
+  init()
+  draw()
 })
 
 onBeforeUnmount(() => {
-  gsap.ticker.remove(tick)
+  cancelAnimationFrame(raf)
 })
 </script>
 
 <style scoped>
-.mixpla-loader{
-  width:calc(var(--size) * 2.2);
-  height:var(--size);
-}
-
-.edge{
-  stroke:#6b4cff66;
-  stroke-width:1.6;
-}
-
-.node{
-  fill:#7c3aed;
-  transition:.25s;
-}
-
-.node.active{
-  fill:#ff2d95;
-  filter:drop-shadow(0 0 6px #ff2d95);
-}
-
-.pulse{
-  fill:white;
-  filter:drop-shadow(0 0 5px white);
+.mixpla-loader {
+  display: block;
 }
 </style>
