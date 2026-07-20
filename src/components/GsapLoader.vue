@@ -1,100 +1,118 @@
 <template>
   <svg
-      class="mixpla-ribbon"
+      class="mixpla-loader"
       :style="{ '--size': size + 'px' }"
-      viewBox="0 0 160 48"
-      preserveAspectRatio="xMidYMid meet"
+      viewBox="0 0 120 60"
   >
-    <path ref="ribbonRef" class="ribbon" />
-    <circle ref="dotRef" class="dot" r="3.8" />
+    <line
+        v-for="(e, i) in edges"
+        :key="'e'+i"
+        :x1="nodes[e[0]].x"
+        :y1="nodes[e[0]].y"
+        :x2="nodes[e[1]].x"
+        :y2="nodes[e[1]].y"
+        class="edge"
+    />
+
+    <circle
+        v-for="(n, i) in nodes"
+        :key="'n'+i"
+        :cx="n.x"
+        :cy="n.y"
+        :r="i === activeNode ? 4 : 2.6"
+        :class="['node', i === activeNode && 'active']"
+    />
+
+    <circle
+        ref="pulseRef"
+        r="2.8"
+        class="pulse"
+    />
   </svg>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import gsap from 'gsap'
 
 withDefaults(defineProps<{ size?: number }>(), {
-  size: 44
+  size: 48
 })
 
-const WIDTH = 160
-const HEIGHT = 48
-const MID = HEIGHT / 2
+const nodes = [
+  { x: 12, y: 30 },
+  { x: 32, y: 15 },
+  { x: 32, y: 45 },
+  { x: 60, y: 30 },
+  { x: 88, y: 15 },
+  { x: 88, y: 45 },
+  { x: 108, y: 30 }
+]
 
-const ribbonRef = ref<SVGPathElement>()
-const dotRef = ref<SVGCircleElement>()
+const edges = [
+  [0,1],[0,2],
+  [1,3],[2,3],
+  [3,4],[3,5],
+  [4,6],[5,6]
+]
 
-let tick: (() => void) | null = null
-let t = 0
+const pulseRef = ref()
+const activeNode = ref(0)
 
-function y(x: number) {
-  return (
-      MID +
-      Math.sin(x * 0.055 + t * 1.6) * 8 +
-      Math.sin(x * 0.017 - t * 1.2) * 4 +
-      Math.cos(x * 0.09 + t * 0.8) * 2
-  )
-}
-
-function buildPath() {
-  let d = ''
-
-  for (let x = 0; x <= WIDTH; x += 2) {
-    d += `${x === 0 ? 'M' : 'L'}${x},${y(x).toFixed(2)} `
-  }
-
-  return d
-}
+let edge = 0
+let progress = 0
+let tick
 
 onMounted(() => {
-  const ribbon = ribbonRef.value!
-  const dot = dotRef.value!
+  const pulse = pulseRef.value
 
   tick = () => {
-    t += 0.018
+    progress += 0.018
 
-    ribbon.setAttribute('d', buildPath())
+    if (progress >= 1) {
+      progress = 0
+      edge = (edge + 1) % edges.length
+      activeNode.value = edges[edge][1]
+    }
 
-    const p = ((Math.sin(t * 0.7) + 1) / 2) * WIDTH
-    const py = y(p)
+    const a = nodes[edges[edge][0]]
+    const b = nodes[edges[edge][1]]
 
-    dot.setAttribute('cx', p.toFixed(2))
-    dot.setAttribute('cy', py.toFixed(2))
-
-    gsap.set(dot, {
-      scale: 0.9 + Math.sin(t * 5) * 0.12
-    })
-
-    const hue = (t * 35) % 360
-    ribbon.style.stroke = `hsl(${hue},85%,65%)`
-    dot.style.fill = `hsl(${(hue + 30) % 360},95%,70%)`
-    dot.style.filter = `drop-shadow(0 0 6px hsl(${(hue + 30) % 360},95%,70%))`
+    pulse.setAttribute("cx", (a.x + (b.x-a.x)*progress).toString())
+    pulse.setAttribute("cy", (a.y + (b.y-a.y)*progress).toString())
   }
 
   gsap.ticker.add(tick)
 })
 
 onBeforeUnmount(() => {
-  if (tick) gsap.ticker.remove(tick)
+  gsap.ticker.remove(tick)
 })
 </script>
 
 <style scoped>
-.mixpla-ribbon {
-  width: calc(var(--size) * 3);
-  height: var(--size);
-  overflow: visible;
+.mixpla-loader{
+  width:calc(var(--size) * 2.2);
+  height:var(--size);
 }
 
-.ribbon {
-  fill: none;
-  stroke-width: 3;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.edge{
+  stroke:#6b4cff66;
+  stroke-width:1.6;
 }
 
-.dot {
-  transform-origin: center;
+.node{
+  fill:#7c3aed;
+  transition:.25s;
+}
+
+.node.active{
+  fill:#ff2d95;
+  filter:drop-shadow(0 0 6px #ff2d95);
+}
+
+.pulse{
+  fill:white;
+  filter:drop-shadow(0 0 5px white);
 }
 </style>
