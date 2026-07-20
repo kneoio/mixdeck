@@ -1,111 +1,75 @@
 <template>
   <svg
-      class="gsap-loader"
-      :style="{
-      '--gsap-loader-size': size + 'px',
-      '--dot-color': dotColor
-    }"
-      :viewBox="`0 0 ${VW} ${VH}`"
+      class="mixpla-ribbon"
+      :style="{ '--size': size + 'px' }"
+      viewBox="0 0 160 48"
       preserveAspectRatio="xMidYMid meet"
   >
-    <path ref="waveRef" class="gsap-loader__wave" :d="wavePath" />
-    <circle
-        ref="dotRef"
-        class="gsap-loader__dot"
-        r="3.4"
-        :cx="0"
-        :cy="BASELINE"
-    />
+    <path ref="ribbonRef" class="ribbon" />
+    <circle ref="dotRef" class="dot" r="3.8" />
   </svg>
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onMounted, onBeforeUnmount, ref } from 'vue'
 import gsap from 'gsap'
 
-withDefaults(defineProps<{ size?: number }>(), { size: 44 })
+withDefaults(defineProps<{ size?: number }>(), {
+  size: 44
+})
 
-const VW = 120
-const VH = 48
-const BASELINE = VH / 2
+const WIDTH = 160
+const HEIGHT = 48
+const MID = HEIGHT / 2
 
-function randomBetween(min: number, max: number) {
-  return min + Math.random() * (max - min)
-}
-
-function randomColor() {
-  const colors = [
-    '#ff2d95',
-    '#7c3aed',
-    '#00d4ff',
-    '#00e676',
-    '#ffd600',
-    '#ff6d00',
-    '#ff1744'
-  ]
-  return colors[Math.floor(Math.random() * colors.length)]
-}
-
-const dotColor = randomColor()
-
-const waveRef = ref<SVGPathElement | null>(null)
-const dotRef = ref<SVGCircleElement | null>(null)
-
-let amplitude = randomBetween(9, 17)
-let wavelength = VW / randomBetween(3, 5)
-let phase = randomBetween(0, Math.PI * 2)
-
-function waveY(x: number): number {
-  return BASELINE + amplitude * Math.sin((2 * Math.PI * x) / wavelength + phase)
-}
-
-function buildWavePath(): string {
-  const points: string[] = []
-  for (let x = 0; x <= VW; x += 1) {
-    points.push(`${x === 0 ? 'M' : 'L'}${x},${waveY(x).toFixed(2)}`)
-  }
-  return points.join(' ')
-}
-
-const wavePath = ref(buildWavePath())
+const ribbonRef = ref<SVGPathElement>()
+const dotRef = ref<SVGCircleElement>()
 
 let tick: (() => void) | null = null
-let elapsed = 0
+let t = 0
 
-const dotSpeed = randomBetween(1.1, 1.6) // slower
-const morphSpeed = randomBetween(0.25, 0.45)
+function y(x: number) {
+  return (
+      MID +
+      Math.sin(x * 0.055 + t * 1.6) * 8 +
+      Math.sin(x * 0.017 - t * 1.2) * 4 +
+      Math.cos(x * 0.09 + t * 0.8) * 2
+  )
+}
+
+function buildPath() {
+  let d = ''
+
+  for (let x = 0; x <= WIDTH; x += 2) {
+    d += `${x === 0 ? 'M' : 'L'}${x},${y(x).toFixed(2)} `
+  }
+
+  return d
+}
 
 onMounted(() => {
-  const dot = dotRef.value
-  const wave = waveRef.value
-  if (!dot || !wave) return
+  const ribbon = ribbonRef.value!
+  const dot = dotRef.value!
 
   tick = () => {
-    elapsed += gsap.ticker.deltaRatio() / 60
+    t += 0.018
 
-    // Slowly morph the wave forever.
-    phase += morphSpeed * 0.015
-    amplitude += Math.sin(elapsed * 0.6) * 0.015
-    wavelength += Math.cos(elapsed * 0.4) * 0.02
+    ribbon.setAttribute('d', buildPath())
 
-    amplitude = Math.max(8, Math.min(18, amplitude))
-    wavelength = Math.max(25, Math.min(45, wavelength))
+    const p = ((Math.sin(t * 0.7) + 1) / 2) * WIDTH
+    const py = y(p)
 
-    const d = buildWavePath()
-    wave.setAttribute('d', d)
+    dot.setAttribute('cx', p.toFixed(2))
+    dot.setAttribute('cy', py.toFixed(2))
 
-    // Dot movement.
-    const cycle = (elapsed % dotSpeed) / dotSpeed
-    const t = cycle < 0.5 ? cycle * 2 : 2 - cycle * 2
+    gsap.set(dot, {
+      scale: 0.9 + Math.sin(t * 5) * 0.12
+    })
 
-    const x = t * VW
-    const y = waveY(x)
-
-    dot.setAttribute('cx', x.toFixed(2))
-    dot.setAttribute('cy', y.toFixed(2))
-
-    const scale = 0.9 + 0.25 * Math.cos((2 * Math.PI * x) / wavelength + phase)
-    gsap.set(dot, { scale })
+    const hue = (t * 35) % 360
+    ribbon.style.stroke = `hsl(${hue},85%,65%)`
+    dot.style.fill = `hsl(${(hue + 30) % 360},95%,70%)`
+    dot.style.filter = `drop-shadow(0 0 6px hsl(${(hue + 30) % 360},95%,70%))`
   }
 
   gsap.ticker.add(tick)
@@ -117,23 +81,20 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.gsap-loader {
-  display: inline-block;
-  width: calc(var(--gsap-loader-size) * 2.4);
-  height: var(--gsap-loader-size);
+.mixpla-ribbon {
+  width: calc(var(--size) * 3);
+  height: var(--size);
   overflow: visible;
 }
 
-.gsap-loader__wave {
+.ribbon {
   fill: none;
-  stroke: rgba(124, 58, 237, 0.45);
-  stroke-width: 2;
+  stroke-width: 3;
   stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-.gsap-loader__dot {
-  fill: var(--dot-color);
-  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--dot-color) 75%, white));
+.dot {
   transform-origin: center;
 }
 </style>
