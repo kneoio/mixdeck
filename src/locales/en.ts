@@ -581,6 +581,7 @@ export default {
     description_label: 'Description',
     description_placeholder: 'Tell us about your track... (optional)',
     agreement: 'I confirm that I own the rights to this track and agree to the Mixpla submission terms.',
+    notify_on_play: 'Email me when my song plays',
     error_email: 'Please enter a valid email address.',
     error_code: 'Please enter the verification code.',
     error_artist: 'Please enter your artist name.',

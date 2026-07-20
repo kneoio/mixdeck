@@ -203,6 +203,9 @@
                 </n-collapse>
               </div>
               <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.agreement }">{{ fieldErrors.agreement || ' ' }}</div>
+              <n-checkbox v-model:checked="notifyOnPlay">
+                {{ t('submission.notify_on_play') }}
+              </n-checkbox>
             </div>
 
             <div v-if="fieldErrors.api" class="error-row">
@@ -321,6 +324,7 @@ const genreLabel = computed(() => (genre.value && findGenreLabel(genreTreeOption
 const country = ref('')
 const description = ref('')
 const agreed = ref(false)
+const notifyOnPlay = ref(false)
 const ACCEPTED_FILE_EXTENSIONS = ['.mp3', '.wav', '.flac', '.opus']
 const ACCEPTED_FILE_ACCEPT = 'audio/mpeg,audio/wav,audio/x-wav,audio/flac,audio/x-flac,audio/opus,audio/ogg,.mp3,.wav,.flac,.opus'
 
@@ -427,7 +431,7 @@ async function upload() {
       email.value.trim(),
       code.value.trim(),
       (p) => { uploadProgress.value = p },
-      { stationSlug: stationSlug.value ?? undefined, artistName: artistName.value.trim(), genre: genreLabel.value || undefined, country: country.value.trim() || undefined, description: description.value.trim() || undefined },
+      { stationSlug: stationSlug.value ?? undefined, artistName: artistName.value.trim(), genre: genreLabel.value || undefined, country: country.value.trim() || undefined, description: description.value.trim() || undefined, notifyOnPlay: notifyOnPlay.value },
     )
     submitted.value = true
     step.value = 3
@@ -448,6 +452,7 @@ function submitAnother() {
   country.value = ''
   stationSlug.value = null
   agreed.value = false
+  notifyOnPlay.value = false
   description.value = ''
   uploadProgress.value = 0
   fieldErrors.value = { email: '', code: '', artistName: '', genre: '', station: '', file: '', agreement: '', api: '' }
@@ -464,6 +469,7 @@ function restart() {
   stationSlug.value = null
   selectedFile.value = null
   uploadProgress.value = 0
+  notifyOnPlay.value = false
   fieldErrors.value = { email: '', code: '', artistName: '', genre: '', station: '', file: '', agreement: '', api: t('submission.error_code_expired') }
 }
 </script>

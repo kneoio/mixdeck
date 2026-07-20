@@ -539,7 +539,7 @@ class DatanestApiService extends ApiClient {
     email: string,
     code: string,
     onProgress: (percent: number) => void,
-    meta?: { stationSlug?: string; artistName?: string; genre?: string; country?: string; description?: string },
+    meta?: { stationSlug?: string; artistName?: string; genre?: string; country?: string; description?: string; notifyOnPlay?: boolean },
   ): Promise<any> {
     const batchId = crypto.randomUUID()
     const fileId = crypto.randomUUID().replace(/-/g, '')
@@ -569,6 +569,7 @@ class DatanestApiService extends ApiClient {
         ...(isLastChunk && meta?.genre ? { genre: meta.genre } : {}),
         ...(isLastChunk && meta?.country ? { country: meta.country } : {}),
         ...(isLastChunk && meta?.description ? { description: meta.description } : {}),
+        ...(isLastChunk && meta?.notifyOnPlay ? { notifyOnPlay: String(meta.notifyOnPlay) } : {}),
       })
 
       const res = await fetch(`${this.baseUrl}/public/songs/chunk?${params}`, {
