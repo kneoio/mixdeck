@@ -1,137 +1,109 @@
 <template>
-  <canvas
-      ref="canvas"
-      class="mixpla-loader"
-      :width="width"
-      :height="height"
-      :style="{ width: size * 3 + 'px', height: size + 'px' }"
-  />
+  <svg
+      :width="size"
+      :height="size"
+      viewBox="0 0 100 100"
+      class="core"
+  >
+    <defs>
+      <radialGradient id="coreGradient">
+        <stop offset="0%" stop-color="#ffffff"/>
+        <stop offset="40%" stop-color="#00d4ff"/>
+        <stop offset="100%" stop-color="#7c3aed"/>
+      </radialGradient>
+
+      <filter id="glow">
+        <feGaussianBlur stdDeviation="2.5" result="blur"/>
+        <feMerge>
+          <feMergeNode in="blur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+    </defs>
+
+    <g :transform="`rotate(${ring1} 50 50)`">
+      <ellipse
+          cx="50"
+          cy="50"
+          rx="28"
+          ry="12"
+          class="ring"
+      />
+    </g>
+
+    <g :transform="`rotate(${ring2} 50 50)`">
+      <ellipse
+          cx="50"
+          cy="50"
+          rx="28"
+          ry="12"
+          class="ring"
+          transform="rotate(60 50 50)"
+      />
+    </g>
+
+    <g :transform="`rotate(${ring3} 50 50)`">
+      <ellipse
+          cx="50"
+          cy="50"
+          rx="28"
+          ry="12"
+          class="ring"
+          transform="rotate(120 50 50)"
+      />
+    </g>
+
+    <circle
+        cx="50"
+        cy="50"
+        :r="coreRadius"
+        fill="url(#coreGradient)"
+        filter="url(#glow)"
+    />
+  </svg>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 
-const props = withDefaults(defineProps<{
-  size?: number
-}>(), {
-  size: 44
+withDefaults(defineProps<{ size?: number }>(), {
+  size: 56
 })
 
-const width = 180
-const height = 60
-const canvas = ref<HTMLCanvasElement>()
+const ring1 = ref(0)
+const ring2 = ref(120)
+const ring3 = ref(240)
+const coreRadius = ref(10)
 
-const particles: Particle[] = []
-
-let ctx: CanvasRenderingContext2D
 let raf = 0
-let time = Math.random() * 1000
+let t = 0
 
-interface Particle {
-  x: number
-  y: number
-  vx: number
-  vy: number
-  t: number
-  size: number
-  hue: number
+function animate() {
+  t += 0.03
+
+  ring1.value += 0.35
+  ring2.value -= 0.28
+  ring3.value += 0.18
+
+  coreRadius.value = 10 + Math.sin(t * 2.5) * 1.8
+
+  raf = requestAnimationFrame(animate)
 }
 
-function rand(min: number, max: number) {
-  return min + Math.random() * (max - min)
-}
+onMounted(animate)
 
-function ribbonY(x: number, t: number) {
-  return (
-      height / 2 +
-      Math.sin(x * 0.035 + t * 1.2) * 10 +
-      Math.sin(x * 0.012 - t * 0.7) * 6
-  )
-}
-
-function init() {
-  particles.length = 0
-
-  for (let i = 0; i < 90; i++) {
-    const x = (i / 89) * width
-
-    particles.push({
-      x,
-      y: ribbonY(x, 0) + rand(-5, 5),
-      vx: 0,
-      vy: 0,
-      t: Math.random() * Math.PI * 2,
-      size: rand(1.5, 3.8),
-      hue: rand(260, 340)
-    })
-  }
-}
-
-function draw() {
-  time += 0.03
-
-  ctx.clearRect(0, 0, width, height)
-  ctx.globalCompositeOperation = 'lighter'
-
-  const pulse = (time * 140) % (width + 30) - 15
-
-  for (const p of particles) {
-    const targetY = ribbonY(p.x, time)
-
-    p.vy += (targetY - p.y) * 0.05
-    p.vy *= 0.88
-
-    p.y += p.vy
-    p.x += Math.sin(time * 2 + p.t) * 0.12
-
-    const d = Math.abs(p.x - pulse)
-
-    let r = p.size
-    let alpha = 0.25
-
-    if (d < 20) {
-      r += (20 - d) * 0.14
-      alpha = 1
-    }
-
-    const hue =
-        (p.hue +
-            Math.sin(time * 4 + p.t) * 25 +
-            Math.sin(p.x * 0.05 + time * 2) * 15) % 360
-
-    ctx.beginPath()
-    ctx.fillStyle = `hsla(${hue},100%,70%,${alpha})`
-    ctx.arc(p.x, p.y, r, 0, Math.PI * 2)
-    ctx.fill()
-  }
-
-  const pulseHue = (time * 220) % 360
-
-  ctx.beginPath()
-  ctx.fillStyle = `hsl(${pulseHue},100%,75%)`
-  ctx.shadowBlur = 24
-  ctx.shadowColor = `hsl(${pulseHue},100%,70%)`
-  ctx.arc(pulse, ribbonY(pulse, time), 5, 0, Math.PI * 2)
-  ctx.fill()
-
-  ctx.shadowBlur = 0
-
-  raf = requestAnimationFrame(draw)
-}
-
-onMounted(() => {
-  ctx = canvas.value!.getContext('2d')!
-  init()
-  draw()
-})
-
-onBeforeUnmount(() => {
-  cancelAnimationFrame(raf)
-})
+onBeforeUnmount(() => cancelAnimationFrame(raf))
 </script>
 
 <style scoped>
-.mixpla-loader {
-  display: block;
+.core {
+  overflow: visible;
+}
+
+.ring {
+  fill: none;
+  stroke: rgba(0,212,255,.65);
+  stroke-width: 2;
+  filter: url(#glow);
 }
 </style>
