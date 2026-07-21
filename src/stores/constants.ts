@@ -83,6 +83,7 @@ export const useConstantsStore = defineStore('constants', () => {
   const timezones = [
     { label: 'UTC (+0)', value: 'UTC' },
     { label: 'Europe/London', value: 'Europe/London' },
+    { label: 'Europe/Lisbon (+0/+1)', value: 'Europe/Lisbon' },
     { label: 'Europe/Oslo (+1/+2)', value: 'Europe/Oslo' },
     { label: 'Europe/Paris (+1/+2)', value: 'Europe/Paris' },
     { label: 'Europe/Berlin (+1/+2)', value: 'Europe/Berlin' },
