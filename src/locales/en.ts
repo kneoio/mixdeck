@@ -52,7 +52,7 @@ export default {
     songs: 'Shared',
     ads: 'Pending Review',
     received: 'Received',
-    unassigned_brands: 'Archived',
+    unassigned_brands: 'No Brand',
     sound_assets: 'Sound Assets',
     sound_assets_new: 'New Asset',
     one_time_stream: 'One-Time Stream',
@@ -120,6 +120,8 @@ export default {
       upNext: 'Up Next',
       inQueue: 'Fallback',
       priority: 'Priority',
+      copy: 'Copy title and artist',
+      copied: 'Copied!',
       mixing: {
         INTRO_SONG: 'Intro → song',
         LISTENER_INTRO_SONG: 'Listener intro → song',

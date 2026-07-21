@@ -45,7 +45,7 @@ export default {
     songs: '공유됨',
     ads: '검토 대기 중',
     received: '받은 것',
-    unassigned_brands: '보관됨',
+    unassigned_brands: '브랜드 없음',
     sound_assets: '사운드 에셋',
     sound_assets_new: '새 에셋',
     one_time_stream: '원타임 스트림',

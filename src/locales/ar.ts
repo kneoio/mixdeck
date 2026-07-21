@@ -45,7 +45,7 @@ export default {
     songs: 'الأغاني',
     ads: 'الإعلانات',
     received: 'المستلمة',
-    unassigned_brands: 'Archived',
+    unassigned_brands: 'بدون علامة تجارية',
     sound_assets: 'Sound Assets',
     sound_assets_new: 'New Asset',
     one_time_stream: 'بث لمرة واحدة',

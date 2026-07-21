@@ -45,7 +45,7 @@ export default {
     songs: 'Delt',
     ads: 'Venter på gjennomgang',
     received: 'Mottatt',
-    unassigned_brands: 'Arkivert',
+    unassigned_brands: 'Ingen merke',
     sound_assets: 'Lydressurser',
     sound_assets_new: 'Ny ressurs',
     one_time_stream: 'Engangsstrøm',

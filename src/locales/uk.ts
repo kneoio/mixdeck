@@ -45,7 +45,7 @@ export default {
     songs: 'Пісні',
     ads: 'Реклама',
     received: 'Отримані',
-    unassigned_brands: 'Archived',
+    unassigned_brands: 'Без бренду',
     sound_assets: 'Sound Assets',
     sound_assets_new: 'New Asset',
     one_time_stream: 'Одноразовий ефір',

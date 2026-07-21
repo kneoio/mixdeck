@@ -45,7 +45,7 @@ export default {
     songs: '楽曲',
     ads: '広告',
     received: '受信済み',
-    unassigned_brands: 'Archived',
+    unassigned_brands: 'ブランドなし',
     sound_assets: 'Sound Assets',
     sound_assets_new: 'New Asset',
     one_time_stream: 'ワンタイムストリーム',

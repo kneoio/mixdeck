@@ -45,7 +45,7 @@ export default {
     songs: 'Әндер',
     ads: 'Жарнама',
     received: 'Алынған',
-    unassigned_brands: 'Archived',
+    unassigned_brands: 'Бренд жоқ',
     sound_assets: 'Sound Assets',
     sound_assets_new: 'New Asset',
     one_time_stream: 'Бір реттік трансляция',

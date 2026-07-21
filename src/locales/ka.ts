@@ -45,7 +45,7 @@ export default {
     songs: 'სიმღერები',
     ads: 'რეკლამა',
     received: 'მიღებული',
-    unassigned_brands: 'Archived',
+    unassigned_brands: 'ბრენდის გარეშე',
     sound_assets: 'Sound Assets',
     sound_assets_new: 'New Asset',
     one_time_stream: 'ერთჯერადი სტრიმი',

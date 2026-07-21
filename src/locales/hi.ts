@@ -45,7 +45,7 @@ export default {
     songs: 'गाने',
     ads: 'विज्ञापन',
     received: 'प्राप्त',
-    unassigned_brands: 'Archived',
+    unassigned_brands: 'कोई ब्रांड नहीं',
     sound_assets: 'Sound Assets',
     sound_assets_new: 'New Asset',
     one_time_stream: 'एक बार की स्ट्रीम',

@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { NIcon } from 'naive-ui'
+import { CopyOutline } from '@vicons/ionicons5'
 import type { AivoxQueueEntry } from '@/services/aivoxApi'
 
 const props = defineProps<{ entries: AivoxQueueEntry[] }>()
@@ -9,6 +11,18 @@ const { t, te } = useI18n()
 const sortedQueueEntries = computed(() =>
   [...props.entries].sort((a, b) => a.tech.pos - b.tech.pos)
 )
+
+const copiedKey = ref<string | null>(null)
+
+function itemKey(item: AivoxQueueEntry): string {
+  return `${item.tech.slugName}-${item.tech.pos}`
+}
+
+function copySongInfo(item: AivoxQueueEntry) {
+  navigator.clipboard.writeText(`${item.songInfo.title} - ${item.songInfo.artist}`)
+  copiedKey.value = itemKey(item)
+  setTimeout(() => { copiedKey.value = null }, 1500)
+}
 
 function queueTypeLabel(item: AivoxQueueEntry): string {
   if (item.tech.queueType === 'playing') return t('dashboard.queue.nowPlaying')
@@ -43,6 +57,15 @@ function mergingMethodLabel(item: AivoxQueueEntry): string {
           <span class="queue-title">{{ item.songInfo.title }}</span>
           <span class="queue-sep">·</span>
           <span class="queue-artist">{{ item.songInfo.artist }}</span>
+          <button
+            type="button"
+            class="queue-copy-btn"
+            :title="t('dashboard.queue.copy')"
+            @click="copySongInfo(item)"
+          >
+            <NIcon :component="CopyOutline" size="12" />
+            <span v-if="copiedKey === itemKey(item)" class="queue-copy-tooltip">{{ t('dashboard.queue.copied') }}</span>
+          </button>
         </div>
         <div class="queue-right">
           <span class="queue-mixing">{{ mergingMethodLabel(item) }}</span>
@@ -128,6 +151,40 @@ function mergingMethodLabel(item: AivoxQueueEntry): string {
 .queue-artist {
   font-size: 0.88em;
   opacity: 0.6;
+}
+.queue-copy-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  opacity: 0.4;
+  cursor: pointer;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.queue-copy-btn:hover {
+  opacity: 0.9;
+  background: rgba(255, 255, 255, 0.08);
+}
+.queue-copy-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 4px;
+  font-size: 10px;
+  white-space: nowrap;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 3px;
+  pointer-events: none;
 }
 .queue-right {
   flex-shrink: 0;

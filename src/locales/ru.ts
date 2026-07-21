@@ -45,7 +45,7 @@ export default {
     songs: 'Песни',
     ads: 'Реклама',
     received: 'Полученные',
-    unassigned_brands: 'Archived',
+    unassigned_brands: 'Без бренда',
     sound_assets: 'Sound Assets',
     sound_assets_new: 'New Asset',
     one_time_stream: 'Одноразовый эфир',

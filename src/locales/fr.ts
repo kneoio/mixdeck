@@ -45,7 +45,7 @@ export default {
     songs: 'Chansons',
     ads: 'Publicites',
     received: 'Reçu',
-    unassigned_brands: 'Archived',
+    unassigned_brands: 'Sans Marque',
     sound_assets: 'Sound Assets',
     sound_assets_new: 'New Asset',
     one_time_stream: 'Diffusion ponctuelle',

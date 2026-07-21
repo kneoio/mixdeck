@@ -45,7 +45,7 @@ export default {
     songs: 'Geteilt',
     ads: 'Zur Prüfung',
     received: 'Empfangen',
-    unassigned_brands: 'Archiviert',
+    unassigned_brands: 'Keine Marke',
     sound_assets: 'Sound Assets',
     sound_assets_new: 'Neues Asset',
     one_time_stream: 'Einmal-Stream',
