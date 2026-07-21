@@ -297,11 +297,6 @@ function applyDashboardEntry(entry: AivoxDashboardStreamEntry) {
   else if (wasLive && !isOtsLive(wizard)) wizard.queue = []
 }
 
-/**
- * The stream pushes the full set of what's currently in the pool, not a per-slug diff.
- * Anything known to us but absent from this tick is no longer pooled: RADIO brands
- * fall back to offline, OTS cards (permanent records, only shown while pooled) are dropped.
- */
 function applyDashboardSnapshot(entries: AivoxDashboardStreamEntry[]) {
   const present = new Set(entries.map(e => e.brand))
   for (const brand of brandsStore.brands) {

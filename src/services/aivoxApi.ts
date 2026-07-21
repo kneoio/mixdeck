@@ -64,12 +64,6 @@ class AivoxApiService extends ApiClient {
     })
   }
 
-  /**
-   * Soft-deletes an OTS definition and tears down its live stream in aivox.
-   * Gated by validateAccess via X-Client-ID (no bearer/session token).
-   * 200 -> resolved; 404 (OTS not found) -> treated as already-gone and resolved;
-   * 400 (Invalid id) / 500 -> throws with the server error message.
-   */
   async deleteOtsDefinition(id: string): Promise<void> {
     const response = await fetch(`${this.baseUrl}/ots-definitions/${encodeURIComponent(id)}`, {
       method: 'DELETE',
