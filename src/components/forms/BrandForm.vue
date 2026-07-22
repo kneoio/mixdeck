@@ -1647,7 +1647,7 @@ watch(activeTab, async (tab) => {
       </NTabPane>
 
       <!-- temporarily hidden -->
-      <NTabPane v-if="false" name="audience" :tab="t('brandForm.tab_audience')">
+      <NTabPane name="audience" :tab="t('brandForm.tab_audience')">
         <NForm :label-placement="formLabelPlacement" label-width="160" :disabled="loading">
           <NFormItem :label="t('brandForm.audience_type')">
             <div class="field-stack">
