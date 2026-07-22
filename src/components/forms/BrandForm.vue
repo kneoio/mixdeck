@@ -854,7 +854,7 @@ async function handleCloseBrand() {
     loading.value = true
     await store.closeBrand(route.params.id as string)
     message.success('Brand closed successfully')
-    await store.loadBrands(1, 1)
+    await store.loadBrands(1, 10)
     const nextBrand = store.brands[0]
     if (nextBrand?.id) {
       await router.push(`/brands/${nextBrand.id}/playlist`)
