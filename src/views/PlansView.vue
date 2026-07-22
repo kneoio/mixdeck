@@ -29,6 +29,12 @@
           <ul style="list-style: none; padding: 0; margin: 0 0 24px; display: flex; flex-direction: column; gap: 10px; font-size: 13px; flex: 1;">
             <li v-for="feature in card.features" :key="feature">✓ {{ feature }}</li>
           </ul>
+          <div v-if="!card.subscribed && card.identifier === PRO_IDENTIFIER" style="margin-top: -8px; margin-bottom: 16px; display: flex; gap: 16px;">
+            <NInput v-model:value="promoCode" size="small" clearable :placeholder="t('plans.promo_placeholder')" @keyup.enter="redeemPromo" />
+            <GsapButton type="error" size="small" :disabled="!promoCode || redeeming" @click="redeemPromo">
+              <span>{{ redeeming ? t('plans.processing') : t('plans.promo_apply') }}</span>
+            </GsapButton>
+          </div>
           <GsapButton
             block
             :disabled="card.subscribed || subscribing === card.identifier"
@@ -48,7 +54,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { NCard, NDivider, NEmpty, NTag, useMessage } from 'naive-ui'
+import { NCard, NDivider, NEmpty, NInput, NTag, useMessage } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
 import GsapSpin from '@/components/GsapSpin.vue'
 import PageHeader from '@/components/PageHeader.vue'
@@ -92,6 +98,9 @@ const subscriptionProductsStore = useSubscriptionProductsStore()
 const userSubscriptionStore = useUserSubscriptionStore()
 const subscribing = ref<string | null>(null)
 const justUpgradedId = ref<string | null>(null)
+const promoCode = ref('')
+const redeeming = ref(false)
+const PRO_IDENTIFIER = 'mixpla_pro'
 
 function parseDescription(raw: string | undefined): PlanDescription {
   if (!raw || typeof raw !== 'string') return {}
@@ -197,6 +206,22 @@ async function subscribe(planIdentifier: string, price: number) {
     }
   } finally {
     subscribing.value = null
+  }
+}
+
+async function redeemPromo() {
+  if (!promoCode.value) return
+  redeeming.value = true
+  try {
+    const subscription = await nivaroApiService.redeemPromoCode(promoCode.value.trim())
+    userSubscriptionStore.setSubscription(subscription)
+    await subscriptionProductsStore.loadProducts()
+    promoCode.value = ''
+    message.success(t('plans.promo_success'))
+  } catch (error) {
+    message.error(getErrorMessage(error))
+  } finally {
+    redeeming.value = false
   }
 }
 </script>

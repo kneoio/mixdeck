@@ -41,6 +41,13 @@ class NivaroApiService extends ApiClient {
   async cancelSubscription(): Promise<UserSubscriptionDTO> {
     return this.request<UserSubscriptionDTO>('/subscriptions/current', { method: 'DELETE' })
   }
+
+  async redeemPromoCode(code: string): Promise<UserSubscriptionDTO> {
+    return this.request<UserSubscriptionDTO>('/subscriptions/redeem-promo', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    })
+  }
 }
 
 export const nivaroApiService = new NivaroApiService()
