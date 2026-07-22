@@ -1026,9 +1026,9 @@ function applyBrandToForm(brand: any) {
     profileId: brand.profileId || null,
     oneTimeStreamPolicy: brand.oneTimeStreamPolicy || 'NOT_ALLOWED',
     submissionPolicy: brand.submissionPolicy || 'NOT_ALLOWED',
-    messagingPolicy: brand.messagingPolicy || 'NOT_ALLOWED',
+    messagingPolicy: isEditing.value ? (brand.messagingPolicy || 'NOT_ALLOWED') : 'NO_RESTRICTIONS',
     chatFeatureFlags: {
-      CREATE_AD: brand.chatFeatureFlags?.CREATE_AD ?? false,
+      CREATE_AD: isEditing.value ? (brand.chatFeatureFlags?.CREATE_AD ?? false) : true,
       STORE_PROMO: brand.chatFeatureFlags?.STORE_PROMO ?? false,
     },
     aiOverriding: { enabled: !!(brand.aiOverriding?.name || brand.aiOverriding?.prompt), name: brand.aiOverriding?.name || '', prompt: brand.aiOverriding?.prompt || '' },
@@ -1646,7 +1646,8 @@ watch(activeTab, async (tab) => {
         </div>
       </NTabPane>
 
-      <NTabPane name="audience" :tab="t('brandForm.tab_audience')">
+      <!-- temporarily hidden -->
+      <NTabPane v-if="false" name="audience" :tab="t('brandForm.tab_audience')">
         <NForm :label-placement="formLabelPlacement" label-width="160" :disabled="loading">
           <NFormItem :label="t('brandForm.audience_type')">
             <div class="field-stack">
@@ -1729,7 +1730,7 @@ watch(activeTab, async (tab) => {
                 <div class="field-stack">
                   <div class="field-error-shell" style="display:flex;align-items:center;justify-content:flex-end;gap:10px">
                     <span style="font-size: 12px">{{ t('brandForm.chat_feature_store_promo') }}</span>
-                    <NSwitch size="small" :disabled="formData.messagingPolicy !== 'NO_RESTRICTIONS'" v-model:value="formData.chatFeatureFlags.STORE_PROMO" />
+                    <NSwitch size="small" disabled v-model:value="formData.chatFeatureFlags.STORE_PROMO" />
                   </div>
                   <div class="field-error-label"></div>
                 </div>
