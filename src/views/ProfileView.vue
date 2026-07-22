@@ -10,6 +10,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useUserSubscriptionStore } from '@/stores/userSubscription'
 import { useThemeStore } from '@/stores/theme'
 import PageHeader from '@/components/PageHeader.vue'
+import ActionBar from '@/components/ActionBar.vue'
 import GsapButton from '@/components/GsapButton.vue'
 import GsapSpin from '@/components/GsapSpin.vue'
 import { LOCALE_LABELS, SUPPORTED_LOCALES, saveLocale, type SupportedLocale } from '@/i18n'
@@ -67,6 +68,28 @@ function renderCodecTag(codec: string) {
   }, { default: () => codec.toUpperCase() })
 }
 
+function renderInfoTag(text: string) {
+  const dark = themeStore.isDark
+  const tagColor = { color: dark ? 'rgba(59,130,246,0.10)' : 'rgba(59,130,246,0.08)', textColor: dark ? '#3B82F6' : '#2563EB', borderColor: 'rgba(59,130,246,0.40)' }
+  return h(NTag, {
+    size: 'small',
+    bordered: true,
+    color: tagColor,
+  }, { default: () => text })
+}
+
+function renderStatusTag(text: string, active: boolean) {
+  const dark = themeStore.isDark
+  const tagColor = active
+    ? { color: dark ? 'rgba(34,197,94,0.10)' : 'rgba(34,197,94,0.08)', textColor: dark ? '#22C55E' : '#16A34A', borderColor: 'rgba(34,197,94,0.40)' }
+    : { color: dark ? 'rgba(245,158,11,0.10)' : 'rgba(245,158,11,0.08)', textColor: dark ? '#F59E0B' : '#D97706', borderColor: 'rgba(245,158,11,0.40)' }
+  return h(NTag, {
+    size: 'small',
+    bordered: true,
+    color: tagColor,
+  }, { default: () => text })
+}
+
 onMounted(async () => {
   try {
     await userSubscriptionStore.refresh()
@@ -80,6 +103,10 @@ onMounted(async () => {
 <template>
   <div>
     <PageHeader :title="t('profile.title')" :subtitle="t('profile.subtitle')" />
+
+    <ActionBar>
+      <GsapButton @click="router.push('/mixdeck')"><span>{{ t('common.close') }}</span></GsapButton>
+    </ActionBar>
 
     <div style="max-width: 760px; display: flex; flex-direction: column; gap: 16px;">
 
@@ -100,9 +127,7 @@ onMounted(async () => {
           <NDescriptionsItem :label="t('profile.email')">
             <NSpace :size="8" align="center">
               <span>{{ authStore.userEmail || '—' }}</span>
-              <NTag v-if="profile.emailVerified" type="success" size="small" round>
-                {{ t('profile.verified') }}
-              </NTag>
+              <component :is="renderStatusTag(t('profile.verified'), true)" v-if="profile.emailVerified" />
             </NSpace>
           </NDescriptionsItem>
         </NDescriptions>
@@ -131,12 +156,10 @@ onMounted(async () => {
             style="margin-bottom: 20px;"
           >
             <NDescriptionsItem :label="t('profile.plan')">
-              <NTag type="info" size="small" round>{{ formatPlanName(userSubscriptionStore.subscriptionType) }}</NTag>
+              <component :is="renderInfoTag(formatPlanName(userSubscriptionStore.subscriptionType))" />
             </NDescriptionsItem>
             <NDescriptionsItem :label="t('profile.status')">
-              <NTag :type="userSubscriptionStore.hasActiveSubscription ? 'success' : 'warning'" size="small" round>
-                {{ userSubscriptionStore.subscriptionStatus }}
-              </NTag>
+              <component :is="renderStatusTag(userSubscriptionStore.subscriptionStatus, userSubscriptionStore.hasActiveSubscription)" />
             </NDescriptionsItem>
             <NDescriptionsItem :label="t('profile.max_songs')">{{ userSubscriptionStore.maxSongs?.toLocaleString() ?? '—' }}</NDescriptionsItem>
             <NDescriptionsItem :label="t('profile.stream_quality')">{{ userSubscriptionStore.streamQualityKbps != null ? `${userSubscriptionStore.streamQualityKbps} kbps (opus)` : '—' }}</NDescriptionsItem>
