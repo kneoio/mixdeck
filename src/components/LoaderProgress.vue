@@ -2,7 +2,7 @@
 defineProps({
   size: {
     type: Number,
-    default: 18
+    default: 28
   }
 })
 </script>
@@ -27,7 +27,7 @@ defineProps({
 
 <style scoped>
 .loader {
-  animation: rotate 1.2s linear infinite;
+  animation: rotate 0.7s linear infinite;
 }
 
 .path {
@@ -35,7 +35,7 @@ defineProps({
   stroke-linecap: round;
   stroke-dasharray: 90 150;
   stroke-dashoffset: 0;
-  animation: dash 1.5s ease-in-out infinite;
+  animation: dash 0.9s ease-in-out infinite;
 }
 
 @keyframes rotate {
