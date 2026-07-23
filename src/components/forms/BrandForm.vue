@@ -518,22 +518,6 @@ const renderedDescription = computed(() =>
   selectedScript.value?.description ? md.render(selectedScript.value.description) : ''
 )
 
-const djLanguageFilter = ref(false)
-
-const filteredAgentOptions = computed(() => {
-  const lang = COUNTRY_LANG[formData.value.country || '']
-  if (!djLanguageFilter.value || !lang) return agentOptions.value
-  const filtered = agentOptions.value.filter(opt =>
-    (opt.preferredLang ?? []).some(l => l.languageTag?.split('-')[0]?.toLowerCase() === lang)
-  )
-  const selectedId = formData.value.aiAgentId
-  if (selectedId && !filtered.some(o => o.value === selectedId)) {
-    const current = agentOptions.value.find(o => o.value === selectedId)
-    if (current) return [current, ...filtered]
-  }
-  return filtered
-})
-
 const selectedAgent = computed(() =>
   formData.value.aiAgentId
     ? agentsList.value.find(a => a.id === formData.value.aiAgentId) ?? null
@@ -1108,6 +1092,7 @@ onMounted(async () => {
       applyBrandToForm(template)
       normalizeScenePlaylistIds()
     }
+    loadAgents()
   } catch (error: any) {
     message.error(error?.message || t('brandForm.load_failed'))
     if (isEditing.value) router.push(backRoute.value)
@@ -1177,10 +1162,9 @@ const agentsLoaded = ref(false)
 const scriptsLoaded = ref(false)
 const audienceLoaded = ref(false)
 
-watch(activeTab, async (tab) => {
-  if (isTabChangeFromValidation.value) return
-  clearAllFieldErrors()
-  if (tab === 'dj' && !agentsLoaded.value) {
+async function loadAgents() {
+  if (agentsLoaded.value) return
+  try {
     const result = await datanestApiService.getPagedDictionary<any>(`/dictionary/agents?brand=${encodeURIComponent(brandSlug.value ?? '')}`, 1, 100)
     const entries = result.entries as any[]
     agentsList.value = entries.map((a: any) => {
@@ -1194,7 +1178,15 @@ watch(activeTab, async (tab) => {
       return { label: a.name || a.id, value: a.id, labels, preferredLang: Array.isArray(a.preferredLang) ? a.preferredLang : [] }
     })
     agentsLoaded.value = true
+  } catch (error: any) {
+    message.error(error?.message || t('brandForm.load_failed'))
   }
+}
+
+watch(activeTab, async (tab) => {
+  if (isTabChangeFromValidation.value) return
+  clearAllFieldErrors()
+  if (tab === 'dj') loadAgents()
   if (tab === 'script' && scriptMode.value === 'custom') {
     actionsStore.loadOptions()
   }
@@ -1346,16 +1338,7 @@ watch(activeTab, async (tab) => {
 
       <NTabPane name="dj" :tab="t('brandForm.tab_dj')">
         <NForm :label-placement="formLabelPlacement" label-width="160" :disabled="loading">
-          <NFormItem>
-            <template #label>
-              <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
-                <span>{{ t('brandForm.ai_agent') }}</span>
-                <span style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #888; font-weight: 400; white-space: nowrap;">
-                  Show country language
-                  <NCheckbox v-model:checked="djLanguageFilter" size="small" />
-                </span>
-              </div>
-            </template>
+          <NFormItem :label="t('brandForm.ai_agent')">
             <div class="field-stack">
               <div
                 ref="aiAgentFieldRef"
@@ -1363,7 +1346,7 @@ watch(activeTab, async (tab) => {
                 :class="{ 'field-error-shell--active': !!fieldErrors.aiAgentId }"
               >
                 <NSkeleton v-if="!agentsLoaded" text style="width: 100%; height: 34px; border-radius: 3px;" />
-                <NSelect v-else v-model:value="formData.aiAgentId" :options="filteredAgentOptions"
+                <NSelect v-else v-model:value="formData.aiAgentId" :options="agentOptions"
                   :render-label="renderAgentOptionLabel" style="width: 100%" />
               </div>
               <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.aiAgentId }">
