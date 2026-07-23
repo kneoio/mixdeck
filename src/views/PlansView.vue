@@ -123,10 +123,16 @@ function durationLabel(val: number | string): string {
 }
 
 const cards = computed(() => {
+  const subscriptionType = userSubscriptionStore.subscriptionType
+  // Backend reports the free tier as subscriptionType "free" (or unset), which doesn't
+  // match the "mixpla_free" product identifier — fall back to price-based matching for it.
+  const isOnFreePlan = !subscriptionType || subscriptionType === 'free'
+
   const mapped = (subscriptionProductsStore.products as SubscriptionProductViewEntry[])
     .map((entry) => {
       const name = entry.name || entry.identifier
       const details = parseDescription(entry.description)
+      const price = details.price ?? 0
       const features: string[] = []
       if (details.maxStations !== undefined) features.push(`${t('plans.feat_max_stations')}: ${details.maxStations}`)
       if (details.maxSongs !== undefined) features.push(`${t('plans.feat_max_songs')}: ${details.maxSongs.toLocaleString()}`)
@@ -141,10 +147,10 @@ const cards = computed(() => {
         id: entry.id,
         identifier: entry.identifier,
         name,
-        price: details.price ?? 0,
+        price,
         description: details.name ?? '',
         features,
-        subscribed: userSubscriptionStore.hasActiveSubscription && entry.identifier === userSubscriptionStore.subscriptionType,
+        subscribed: entry.identifier === subscriptionType || (isOnFreePlan && price === 0),
       }
     })
 
