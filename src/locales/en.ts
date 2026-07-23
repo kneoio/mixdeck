@@ -208,6 +208,7 @@ export default {
     downgrade: 'Downgrade',
     processing: 'Processing…',
     subscribe_success: 'Subscription updated.',
+    pro_not_ready: 'Pro subscriptions are not available yet — please check back soon.',
     promo_placeholder: 'Promo code',
     promo_apply: 'Apply',
     promo_success: 'Promo code applied — enjoy Pro!',

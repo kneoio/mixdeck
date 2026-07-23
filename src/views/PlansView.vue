@@ -176,6 +176,10 @@ onMounted(async () => {
 })
 
 async function subscribe(planIdentifier: string, price: number) {
+  if (planIdentifier === PRO_IDENTIFIER) {
+    message.warning(t('plans.pro_not_ready'))
+    return
+  }
   subscribing.value = planIdentifier
   try {
     if (price === 0) {

@@ -21,6 +21,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+defineOptions({ inheritAttrs: false })
+
 const props = withDefaults(defineProps<{
   type?: 'default' | 'primary' | 'info' | 'error' | 'warning' | 'success' | 'text'
   size?: 'small' | 'default' | 'large'
