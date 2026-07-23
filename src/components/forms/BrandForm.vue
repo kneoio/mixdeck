@@ -107,7 +107,6 @@ const formData = ref({
   bitRate: 64_000,
   aiAgentId: null as string | null,
   profileId: null as string | null,
-  oneTimeStreamPolicy: 'NOT_ALLOWED' as SubmissionPolicy,
   submissionPolicy: 'NOT_ALLOWED' as SubmissionPolicy,
   messagingPolicy: 'NOT_ALLOWED' as SubmissionPolicy,
   chatFeatureFlags: { CREATE_AD: false, STORE_PROMO: false },
@@ -1008,7 +1007,6 @@ function applyBrandToForm(brand: any) {
     bitRate: snapBrandBitRate(normalizeBitRateFromServer(brand.bitRate)),
     aiAgentId: brand.aiAgentId || null,
     profileId: brand.profileId || null,
-    oneTimeStreamPolicy: brand.oneTimeStreamPolicy || 'NOT_ALLOWED',
     submissionPolicy: brand.submissionPolicy || 'NOT_ALLOWED',
     messagingPolicy: isEditing.value ? (brand.messagingPolicy || 'NOT_ALLOWED') : 'NO_RESTRICTIONS',
     chatFeatureFlags: {
@@ -1668,17 +1666,6 @@ watch(activeTab, async (tab) => {
 
       <NTabPane name="features" :tab="t('brandForm.tab_features')">
         <NForm :label-placement="formLabelPlacement" label-width="180" :disabled="loading">
-          <NFormItem :label="t('brandForm.one_time_stream')">
-            <div class="field-stack">
-              <div class="field-error-shell">
-                <NSwitch
-                  :value="formData.oneTimeStreamPolicy === 'NO_RESTRICTIONS'"
-                  style="pointer-events: none"
-                />
-              </div>
-              <div class="field-error-label"></div>
-            </div>
-          </NFormItem>
           <NFormItem :label="t('brandForm.accept_shared_sounds')">
             <div class="field-stack">
               <div class="field-error-shell">
