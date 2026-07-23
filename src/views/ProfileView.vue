@@ -161,16 +161,6 @@ onMounted(async () => {
             <NDescriptionsItem :label="t('profile.status')">
               <component :is="renderStatusTag(userSubscriptionStore.subscriptionStatus, userSubscriptionStore.hasActiveSubscription)" />
             </NDescriptionsItem>
-            <NDescriptionsItem :label="t('profile.max_songs')">{{ userSubscriptionStore.maxSongs?.toLocaleString() ?? '—' }}</NDescriptionsItem>
-            <NDescriptionsItem :label="t('profile.stream_quality')">{{ userSubscriptionStore.streamQualityKbps != null ? `${userSubscriptionStore.streamQualityKbps} kbps (opus)` : '—' }}</NDescriptionsItem>
-            <NDescriptionsItem :label="t('profile.stream_duration')">{{ durationLabel(userSubscriptionStore.streamDurationMinutes ?? 0) }}</NDescriptionsItem>
-            <NDescriptionsItem :label="t('profile.custom_script')">{{ userSubscriptionStore.customScriptAllowed ? t('profile.yes') : t('profile.no') }}</NDescriptionsItem>
-            <NDescriptionsItem v-if="userSubscriptionStore.codecs.length" :label="t('profile.codecs')">
-              <NSpace :size="6">
-                <component :is="renderCodecTag(codec)" v-for="codec in userSubscriptionStore.codecs" :key="codec" />
-              </NSpace>
-            </NDescriptionsItem>
-            <NDescriptionsItem v-if="userSubscriptionStore.djType.length" :label="t('profile.dj_type')">{{ userSubscriptionStore.djType.join(', ') }}</NDescriptionsItem>
           </NDescriptions>
 
           <div v-else style="margin-bottom: 20px;">

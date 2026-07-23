@@ -11,8 +11,8 @@ export const useSubscriptionProductsStore = defineStore('subscriptionProducts', 
   const pageSize = ref(10)
   const maxPage = ref(1)
 
-  async function loadProducts(page = pageNum.value, size = pageSize.value) {
-    loading.value = true
+  async function loadProducts(page = pageNum.value, size = pageSize.value, silent = false) {
+    if (!silent) loading.value = true
     try {
       const result = await nivaroApiService.getSubscriptionProducts(page, size)
       products.value = result.entries

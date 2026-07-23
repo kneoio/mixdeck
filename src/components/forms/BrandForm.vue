@@ -1212,7 +1212,7 @@ watch(activeTab, async (tab) => {
   }
   if (tab === 'audience' && !audienceLoaded.value) {
     try {
-      const profiles = await datanestApiService.getPagedDictionary<any>('/profiles', 1, 100)
+      const profiles = await datanestApiService.getPagedDictionary<any>('/dictionary/profiles', 1, 100)
       profileOptions.value = profiles.entries.map((p: any) => ({ label: p.name || p.id, value: p.id }))
     } catch (error: any) {
       message.error(error?.message || t('brandForm.load_failed'))

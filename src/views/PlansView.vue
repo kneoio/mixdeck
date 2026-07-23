@@ -144,7 +144,7 @@ const cards = computed(() => {
         price: details.price ?? 0,
         description: details.name ?? '',
         features,
-        subscribed: entry.subscribed ?? false,
+        subscribed: userSubscriptionStore.hasActiveSubscription && entry.identifier === userSubscriptionStore.subscriptionType,
       }
     })
 
@@ -215,7 +215,7 @@ async function redeemPromo() {
   try {
     const subscription = await nivaroApiService.redeemPromoCode(promoCode.value.trim())
     userSubscriptionStore.setSubscription(subscription)
-    await subscriptionProductsStore.loadProducts()
+    await subscriptionProductsStore.loadProducts(undefined, undefined, true)
     promoCode.value = ''
     message.success(t('plans.promo_success'))
   } catch (error) {

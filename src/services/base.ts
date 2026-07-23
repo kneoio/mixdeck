@@ -52,7 +52,7 @@ export class ApiClient {
           throw new ApiPaymentActionRequiredError((data as any).clientSecret)
         }
 
-        if (response.status === 401 && typeof (data as any).error === 'string') {
+        if (typeof (data as any).error === 'string') {
           errorMessage = (data as any).error
         } else if (data && typeof (data as any).message === 'string') {
           errorMessage = (data as any).message
