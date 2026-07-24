@@ -6,6 +6,7 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import { useBrandsStore } from '@/stores/brands'
+import { useUserSubscriptionStore } from '@/stores/userSubscription'
 import { useServiceWorker } from '@/composables/useServiceWorker'
 import ThemeAccentPicker from '@/components/ThemeAccentPicker.vue'
 import {
@@ -31,6 +32,7 @@ const { t } = useI18n()
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
 const brandsStore = useBrandsStore()
+const userSubscriptionStore = useUserSubscriptionStore()
 const router = useRouter()
 const route = useRoute()
 const { needRefresh, applyUpdate } = useServiceWorker()
@@ -384,6 +386,40 @@ html.dark .update-pill--glow {
   font-display: swap;
 }
 
+.user-name-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.2;
+}
+
+.user-name-col__name {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.subscription-badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 3px;
+  padding: 0px 4px;
+}
+
+.dashboard-layout-header--light-stripe :deep(.user-name-col__name) {
+  color: rgba(0, 0, 0, 0.82);
+}
+
+.dashboard-layout-header--light-stripe :deep(.subscription-badge) {
+  color: rgba(0, 0, 0, 0.82);
+  background-color: rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.3);
+}
+
 .dashboard-layout-header {
   position: relative;
   overflow: hidden;
@@ -572,7 +608,12 @@ html.dark .update-pill--glow {
                     <NAvatar size="small">
                       {{ authStore.userName.charAt(0).toUpperCase() }}
                     </NAvatar>
-                    <span v-if="!isMobile">{{ authStore.userName }}</span>
+                    <div v-if="!isMobile" class="user-name-col">
+                      <span class="user-name-col__name">{{ authStore.userName }}</span>
+                      <span v-if="userSubscriptionStore.subscriptionType" class="subscription-badge">
+                        {{ userSubscriptionStore.subscriptionType }}
+                      </span>
+                    </div>
                   </NSpace>
                 </NButton>
               </NDropdown>
