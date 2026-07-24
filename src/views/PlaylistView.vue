@@ -345,7 +345,6 @@ const columns = computed<DataTableColumns<any>>(() => {
     width: 110,
     title: 'Boost',
     render: (row) => {
-      if (row.shared) return null
       const boost = row.boost ?? 0
       const busy = boostingId.value === row.id
       const upBtn = h(NButton, {
