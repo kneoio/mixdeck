@@ -35,7 +35,7 @@ withDefaults(
   width: 9%;
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(180deg, #00d4ff, #7c3aed, #ff2d95);
+  background: linear-gradient(180deg, #b180ef, #7c3aed, #ff2d95);
   animation: pulse 1.1s ease-in-out infinite;
   transform-origin: center;
   will-change: transform;
