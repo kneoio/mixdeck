@@ -412,8 +412,8 @@ html.dark .update-pill--glow {
 
 .subscription-badge--pro {
   color: #ffffff;
-  background-color: rgba(34, 197, 94, 0.25);
-  border-color: rgba(34, 197, 94, 0.7);
+  background-color: #16a34a;
+  border-color: #16a34a;
 }
 
 .dashboard-layout-header--light-stripe :deep(.user-name-col__name) {
@@ -625,9 +625,9 @@ html.dark .update-pill--glow {
                       <span
                         v-if="userSubscriptionStore.subscriptionType"
                         class="subscription-badge"
-                        :class="{ 'subscription-badge--pro': userSubscriptionStore.subscriptionType === 'MIXPLA_PRO' }"
+                        :class="{ 'subscription-badge--pro': userSubscriptionStore.subscriptionType?.toUpperCase().endsWith('PRO') }"
                       >
-                        {{ userSubscriptionStore.subscriptionType }}
+                        {{ userSubscriptionStore.subscriptionType?.replace(/MIXPLA_/i, '') }}
                       </span>
                     </div>
                   </NSpace>
