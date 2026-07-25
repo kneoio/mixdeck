@@ -400,6 +400,7 @@ export default {
     add_info_empty: 'No analysis data available',
     add_info_vibe: 'Vibe',
     add_info_raw: 'Raw analysis data',
+    add_info_ai_guess: 'Heuristic guess, not certain',
     sharing_empty: 'Song not shared',
     sharing_target_brand: 'Brand',
     sharing_shared_with: 'Shared with',

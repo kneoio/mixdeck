@@ -4,8 +4,9 @@ import { useI18n } from 'vue-i18n'
 import { gsap } from 'gsap'
 import {
   NSpace, NForm, NFormItem, NInput, NSelect, NTreeSelect, NDynamicTags,
-  NTabs, NTabPane, NUpload, NProgress, NTag, NButton, NPopover, NPopselect, NTree, NScrollbar, NEmpty, NCollapse, NCollapseItem, useMessage,
+  NTabs, NTabPane, NUpload, NProgress, NTag, NButton, NPopover, NPopselect, NTree, NScrollbar, NEmpty, NCollapse, NCollapseItem, NIcon, useMessage,
 } from 'naive-ui'
+import { CheckmarkCircle } from '@vicons/ionicons5'
 import GsapButton from '@/components/GsapButton.vue'
 import type { UploadCustomRequestOptions } from 'naive-ui'
 import FormWrapper from '@/components/FormWrapper.vue'
@@ -67,7 +68,6 @@ const rawAddInfo = ref<Record<string, any> | null>(null)
 
 const MOOD_THRESHOLD = 0.5
 const DANCEABLE_THRESHOLD = 0.6
-const SECOND_GENRE_RATIO = 0.7
 // Only fully-consumed scalars are dropped from the raw table; moods/top_genres/ai_generated_metadata_check
 // carry extra internal signal (scores, caveats) beyond what the vibe row surfaces, so they stay visible raw.
 const ADD_INFO_VIBE_KEYS = ['bpm', 'scale', 'danceability']
@@ -95,49 +95,48 @@ function genreName(entry: any): string {
   return (sep >= 0 ? g.slice(sep + 3) : g).trim()
 }
 
-function topGenre(raw: unknown): string {
-  if (!Array.isArray(raw) || raw.length === 0) return ''
-  const first = genreName(raw[0])
-  if (!first) return ''
-  const firstScore = Number(raw[0]?.score)
-  if (raw.length > 1 && !Number.isNaN(firstScore)) {
-    const second = genreName(raw[1])
-    const secondScore = Number(raw[1]?.score)
-    if (second && !Number.isNaN(secondScore) && secondScore >= SECOND_GENRE_RATIO * firstScore) {
-      return `${first}/${second}`
-    }
-  }
-  return first
+function formatPercent(score: number): string {
+  return `${(score * 100).toFixed(1)}%`
+}
+
+/** All detected genres (not just the top one/two used for the vibe phrase), sorted strongest first. */
+function allGenres(raw: unknown): { name: string; percent: string }[] {
+  if (!Array.isArray(raw)) return []
+  return raw
+    .map(entry => ({ name: genreName(entry), score: Number(entry?.score) }))
+    .filter(g => g.name && !Number.isNaN(g.score))
+    .sort((a, b) => b.score - a.score)
+    .map(g => ({ name: g.name, percent: formatPercent(g.score) }))
 }
 
 /** Mirrors com.semantyca.jesoos.service.live.scripting.AddInfoInterpreter's DJ-relevant vibe fields. */
-const vibeInfoRows = computed(() => {
-  const info = rawAddInfo.value
-  if (!info) return []
-  const rows: { label: string; value: string }[] = []
-
-  const bpm = Number(info.bpm)
-  if (!Number.isNaN(bpm) && info.bpm !== undefined && info.bpm !== null) {
-    rows.push({ label: 'Tempo', value: `${tempoBand(bpm)} (${Math.round(bpm)} BPM)` })
-  }
-  if (typeof info.scale === 'string' && info.scale.trim()) {
-    rows.push({ label: 'Key', value: `${info.scale.trim()} key` })
-  }
-  const moods = dominantMoods(info.moods)
-  if (moods) rows.push({ label: 'Mood', value: moods })
-
-  const danceability = Number(info.danceability)
-  if (!Number.isNaN(danceability) && danceability >= DANCEABLE_THRESHOLD) {
-    rows.push({ label: 'Danceability', value: 'Danceable' })
-  }
-  const genre = topGenre(info.top_genres)
-  if (genre) rows.push({ label: 'Genre', value: genre })
-
-  if (info.ai_generated_metadata_check?.suspected_ai_generated === true) {
-    rows.push({ label: 'AI check', value: 'AI-generated' })
-  }
-  return rows
+const tempoInfo = computed(() => {
+  const bpm = Number(rawAddInfo.value?.bpm)
+  if (rawAddInfo.value?.bpm === undefined || rawAddInfo.value?.bpm === null || Number.isNaN(bpm)) return ''
+  return `${tempoBand(bpm)} (${Math.round(bpm)} BPM)`
 })
+
+const keyInfo = computed(() => {
+  const scale = rawAddInfo.value?.scale
+  return typeof scale === 'string' && scale.trim() ? `${scale.trim()} key` : ''
+})
+
+const moodInfo = computed(() => dominantMoods(rawAddInfo.value?.moods))
+
+const genreRows = computed(() => allGenres(rawAddInfo.value?.top_genres))
+
+const isDanceable = computed(() => {
+  const d = Number(rawAddInfo.value?.danceability)
+  return !Number.isNaN(d) && d >= DANCEABLE_THRESHOLD
+})
+const hasDanceabilityData = computed(() => rawAddInfo.value?.danceability !== undefined && rawAddInfo.value?.danceability !== null)
+
+const isAiGenerated = computed(() => rawAddInfo.value?.ai_generated_metadata_check?.suspected_ai_generated === true)
+const hasAiCheckData = computed(() => !!rawAddInfo.value?.ai_generated_metadata_check)
+
+const hasVibeInfo = computed(() =>
+  !!(tempoInfo.value || keyInfo.value || moodInfo.value || genreRows.value.length || hasDanceabilityData.value || hasAiCheckData.value)
+)
 
 const rawAddInfoRows = computed(() => {
   const info = rawAddInfo.value
@@ -845,13 +844,40 @@ watch(activeTab, () => {
       </NTabPane>
 
       <NTabPane v-if="isEditing" name="addInfo" :tab="t('fragmentForm.tab_add_info')">
-        <NEmpty v-if="!vibeInfoRows.length && !rawAddInfoRows.length" :description="t('fragmentForm.add_info_empty')" />
+        <NEmpty v-if="!hasVibeInfo && !rawAddInfoRows.length" :description="t('fragmentForm.add_info_empty')" />
         <template v-else>
-          <table v-if="vibeInfoRows.length" class="add-info-table">
+          <table class="add-info-table">
             <tbody>
-              <tr v-for="row in vibeInfoRows" :key="row.label">
-                <td class="add-info-table__label">{{ row.label }}</td>
-                <td>{{ row.value }}</td>
+              <tr v-if="tempoInfo">
+                <td class="add-info-table__label">Tempo</td>
+                <td>{{ tempoInfo }}</td>
+              </tr>
+              <tr v-if="keyInfo">
+                <td class="add-info-table__label">Key</td>
+                <td>{{ keyInfo }}</td>
+              </tr>
+              <tr v-if="moodInfo">
+                <td class="add-info-table__label">Mood</td>
+                <td>{{ moodInfo }}</td>
+              </tr>
+              <tr v-if="hasDanceabilityData">
+                <td class="add-info-table__label">Danceability</td>
+                <td><NIcon v-if="isDanceable" :component="CheckmarkCircle" color="#16a34a" size="18" /></td>
+              </tr>
+              <tr v-if="genreRows.length">
+                <td class="add-info-table__label">Genre</td>
+                <td>
+                  <div class="add-info-genre-list">
+                    <span v-for="g in genreRows" :key="g.name" class="add-info-genre-item">{{ g.name }} {{ g.percent }}</span>
+                  </div>
+                </td>
+              </tr>
+              <tr v-if="hasAiCheckData">
+                <td class="add-info-table__label">AI check</td>
+                <td>
+                  <NIcon v-if="isAiGenerated" :component="CheckmarkCircle" color="#16a34a" size="18" />
+                  <div class="add-info-ai-hint">{{ t('fragmentForm.add_info_ai_guess') }}</div>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -1035,11 +1061,24 @@ watch(activeTab, () => {
 .add-info-table td {
   padding: 6px 12px 6px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  word-break: break-word;
 }
 
 .add-info-table__label {
   opacity: 0.55;
   white-space: nowrap;
   width: 1%;
+}
+
+.add-info-genre-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+}
+
+.add-info-ai-hint {
+  font-size: 11px;
+  opacity: 0.5;
+  margin-top: 2px;
 }
 </style>
