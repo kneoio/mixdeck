@@ -99,14 +99,21 @@ function formatPercent(score: number): string {
   return `${(score * 100).toFixed(1)}%`
 }
 
+const GENRE_COLORS = ['#7C3AED', '#2563eb', '#0d9488', '#ca8a04', '#db2777', '#65a30d', '#c2410c', '#4f46e5']
+
 /** All detected genres (not just the top one/two used for the vibe phrase), sorted strongest first. */
-function allGenres(raw: unknown): { name: string; percent: string }[] {
+function allGenres(raw: unknown): { name: string; percent: string; width: number; color: string }[] {
   if (!Array.isArray(raw)) return []
   return raw
     .map(entry => ({ name: genreName(entry), score: Number(entry?.score) }))
     .filter(g => g.name && !Number.isNaN(g.score))
     .sort((a, b) => b.score - a.score)
-    .map(g => ({ name: g.name, percent: formatPercent(g.score) }))
+    .map((g, i) => ({
+      name: g.name,
+      percent: formatPercent(g.score),
+      width: g.score * 100,
+      color: GENRE_COLORS[i % GENRE_COLORS.length],
+    }))
 }
 
 /** Mirrors com.semantyca.jesoos.service.live.scripting.AddInfoInterpreter's DJ-relevant vibe fields. */
@@ -867,13 +874,23 @@ watch(activeTab, () => {
               </tr>
               <tr v-if="hasDanceabilityData">
                 <td class="add-info-table__label">Danceability</td>
-                <td><NIcon v-if="isDanceable" :component="CheckmarkCircle" color="#16a34a" size="18" /></td>
+                <td>
+                  <NIcon v-if="isDanceable" :component="CheckmarkCircle" color="#16a34a" size="18" />
+                  <span v-else class="add-info-negative">{{ t('fragmentForm.add_info_not_danceable') }}</span>
+                </td>
               </tr>
               <tr v-if="genreRows.length">
                 <td class="add-info-table__label">Genre</td>
                 <td>
-                  <div class="add-info-genre-list">
-                    <span v-for="g in genreRows" :key="g.name" class="add-info-genre-item">{{ g.name }} {{ g.percent }}</span>
+                  <div class="add-info-genre-bar">
+                    <div
+                      v-for="g in genreRows"
+                      :key="g.name"
+                      class="add-info-genre-bar__segment"
+                      :style="{ width: `${g.width}%`, backgroundColor: g.color }"
+                    >
+                      <span class="add-info-genre-bar__label">{{ g.name }} {{ g.percent }}</span>
+                    </div>
                   </div>
                 </td>
               </tr>
@@ -881,6 +898,7 @@ watch(activeTab, () => {
                 <td class="add-info-table__label">AI check</td>
                 <td>
                   <NIcon v-if="isAiGenerated" :component="CheckmarkCircle" color="#16a34a" size="18" />
+                  <span v-else class="add-info-negative">{{ t('fragmentForm.add_info_ai_not_detected') }}</span>
                   <div class="add-info-ai-hint">{{ t('fragmentForm.add_info_ai_guess') }}</div>
                 </td>
               </tr>
@@ -1075,15 +1093,37 @@ watch(activeTab, () => {
   width: 1%;
 }
 
-.add-info-genre-list {
+.add-info-genre-bar {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px 16px;
+  width: 100%;
+  border-radius: 3px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.add-info-genre-bar__segment {
+  display: flex;
+  align-items: center;
+  padding: 4px 6px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.add-info-genre-bar__label {
+  font-size: 11px;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .add-info-ai-hint {
   font-size: 11px;
   opacity: 0.5;
   margin-top: 2px;
+}
+
+.add-info-negative {
+  opacity: 0.55;
 }
 </style>
