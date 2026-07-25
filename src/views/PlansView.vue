@@ -18,7 +18,7 @@
           <div style="margin-bottom: 16px;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <div style="font-size: 18px; font-weight: 700;">{{ card.name }}</div>
-              <NTag v-if="card.subscribed" :class="{ 'plan-glow-badge': card.id === justUpgradedId }" type="success" size="small" round>{{ t('plans.current') }}</NTag>
+              <NTag v-if="card.subscribed" class="current-plan-badge" :class="{ 'plan-glow-badge': card.id === justUpgradedId }" type="success" size="small">{{ t('plans.current') }}</NTag>
             </div>
             <div style="font-size: 28px; font-weight: 800; margin: 8px 0;">
               €{{ card.price }} <span style="font-size: 14px; font-weight: 400; opacity: 0.5;">/ mo</span>
@@ -255,5 +255,9 @@ async function redeemPromo() {
 
 .plan-glow-badge {
   animation: plan-glow-badge-pulse 1.6s ease-out;
+}
+
+.current-plan-badge {
+  border-radius: 3px !important;
 }
 </style>
