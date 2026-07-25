@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { gsap } from 'gsap'
 import {
   NSpace, NForm, NFormItem, NInput, NSelect, NTreeSelect, NDynamicTags,
-  NTabs, NTabPane, NUpload, NProgress, NTag, NButton, NPopover, NPopselect, NTree, NScrollbar, NEmpty, useMessage,
+  NTabs, NTabPane, NUpload, NProgress, NTag, NButton, NPopover, NPopselect, NTree, NScrollbar, NEmpty, NCollapse, NCollapseItem, useMessage,
 } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
 import type { UploadCustomRequestOptions } from 'naive-ui'
@@ -63,6 +63,89 @@ const regDate = ref('')
 const lastModifiedDate = ref('')
 const likes = ref(0)
 const dislikes = ref(0)
+const rawAddInfo = ref<Record<string, any> | null>(null)
+
+const MOOD_THRESHOLD = 0.5
+const DANCEABLE_THRESHOLD = 0.6
+const SECOND_GENRE_RATIO = 0.7
+// Only fully-consumed scalars are dropped from the raw table; moods/top_genres/ai_generated_metadata_check
+// carry extra internal signal (scores, caveats) beyond what the vibe row surfaces, so they stay visible raw.
+const ADD_INFO_VIBE_KEYS = ['bpm', 'scale', 'danceability']
+
+function tempoBand(bpm: number): string {
+  if (bpm < 70) return 'slow'
+  if (bpm < 100) return 'mid-tempo'
+  if (bpm < 130) return 'upbeat'
+  return 'fast'
+}
+
+function dominantMoods(raw: unknown): string {
+  if (!raw || typeof raw !== 'object') return ''
+  const present = Object.entries(raw as Record<string, unknown>)
+    .map(([name, score]) => ({ name, score: Number(score) }))
+    .filter(m => !Number.isNaN(m.score) && m.score >= MOOD_THRESHOLD)
+  present.sort((a, b) => b.score - a.score)
+  return present.map(m => m.name).join('/')
+}
+
+function genreName(entry: any): string {
+  const g = entry?.genre
+  if (typeof g !== 'string') return ''
+  const sep = g.lastIndexOf('---')
+  return (sep >= 0 ? g.slice(sep + 3) : g).trim()
+}
+
+function topGenre(raw: unknown): string {
+  if (!Array.isArray(raw) || raw.length === 0) return ''
+  const first = genreName(raw[0])
+  if (!first) return ''
+  const firstScore = Number(raw[0]?.score)
+  if (raw.length > 1 && !Number.isNaN(firstScore)) {
+    const second = genreName(raw[1])
+    const secondScore = Number(raw[1]?.score)
+    if (second && !Number.isNaN(secondScore) && secondScore >= SECOND_GENRE_RATIO * firstScore) {
+      return `${first}/${second}`
+    }
+  }
+  return first
+}
+
+/** Mirrors com.semantyca.jesoos.service.live.scripting.AddInfoInterpreter's DJ-relevant vibe fields. */
+const vibeInfoRows = computed(() => {
+  const info = rawAddInfo.value
+  if (!info) return []
+  const rows: { label: string; value: string }[] = []
+
+  const bpm = Number(info.bpm)
+  if (!Number.isNaN(bpm) && info.bpm !== undefined && info.bpm !== null) {
+    rows.push({ label: 'Tempo', value: `${tempoBand(bpm)} (${Math.round(bpm)} BPM)` })
+  }
+  if (typeof info.scale === 'string' && info.scale.trim()) {
+    rows.push({ label: 'Key', value: `${info.scale.trim()} key` })
+  }
+  const moods = dominantMoods(info.moods)
+  if (moods) rows.push({ label: 'Mood', value: moods })
+
+  const danceability = Number(info.danceability)
+  if (!Number.isNaN(danceability) && danceability >= DANCEABLE_THRESHOLD) {
+    rows.push({ label: 'Danceability', value: 'Danceable' })
+  }
+  const genre = topGenre(info.top_genres)
+  if (genre) rows.push({ label: 'Genre', value: genre })
+
+  if (info.ai_generated_metadata_check?.suspected_ai_generated === true) {
+    rows.push({ label: 'AI check', value: 'AI-generated' })
+  }
+  return rows
+})
+
+const rawAddInfoRows = computed(() => {
+  const info = rawAddInfo.value
+  if (!info) return []
+  return Object.keys(info)
+    .filter(key => !ADD_INFO_VIBE_KEYS.includes(key))
+    .map(key => ({ label: key, value: typeof info[key] === 'object' ? JSON.stringify(info[key]) : String(info[key]) }))
+})
 
 interface SharedWithEntry {
   targetBrand: string
@@ -459,6 +542,7 @@ onMounted(async () => {
       likes.value = frag.likes ?? 0
       dislikes.value = frag.dislikes ?? 0
       sharedWith.value = normalizeSharedWith(frag.sharedWith)
+      rawAddInfo.value = frag.addInfo && typeof frag.addInfo === 'object' ? frag.addInfo : null
       const opusFile = frag.uploadedFiles?.find((f: any) => f.type === 'opus')
       isOpusPreview.value = !!opusFile
       const f0 = opusFile || frag.uploadedFiles?.[0]
@@ -760,6 +844,32 @@ watch(activeTab, () => {
         </NForm>
       </NTabPane>
 
+      <NTabPane v-if="isEditing" name="addInfo" :tab="t('fragmentForm.tab_add_info')">
+        <NEmpty v-if="!vibeInfoRows.length && !rawAddInfoRows.length" :description="t('fragmentForm.add_info_empty')" />
+        <template v-else>
+          <table v-if="vibeInfoRows.length" class="add-info-table">
+            <tbody>
+              <tr v-for="row in vibeInfoRows" :key="row.label">
+                <td class="add-info-table__label">{{ row.label }}</td>
+                <td>{{ row.value }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <NCollapse v-if="rawAddInfoRows.length" style="margin-top: 16px;">
+            <NCollapseItem :title="t('fragmentForm.add_info_raw')" name="raw">
+              <table class="add-info-table">
+                <tbody>
+                  <tr v-for="row in rawAddInfoRows" :key="row.label">
+                    <td class="add-info-table__label">{{ row.label }}</td>
+                    <td>{{ row.value }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </NCollapseItem>
+          </NCollapse>
+        </template>
+      </NTabPane>
+
       <NTabPane name="sharing" :tab="t('fragmentForm.tab_sharing')">
         <div v-if="activeSharedWith.length" class="sharing-list">
           <div v-for="(entry, idx) in activeSharedWith" :key="`${entry.targetBrand}-${idx}`" class="sharing-row">
@@ -914,5 +1024,22 @@ watch(activeTab, () => {
   text-align: center;
   opacity: 0.45;
   font-size: 14px;
+}
+
+.add-info-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.add-info-table td {
+  padding: 6px 12px 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.add-info-table__label {
+  opacity: 0.55;
+  white-space: nowrap;
+  width: 1%;
 }
 </style>
