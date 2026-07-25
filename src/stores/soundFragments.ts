@@ -58,7 +58,7 @@ export const useSoundFragmentsStore = defineStore('soundFragments', () => {
   const loading = ref(false)
 
   async function fetchFragment(id: string): Promise<SoundFragment> {
-    const raw: any = await datanestApiService.getDocument<any>('/soundfragments', id)
+    const raw: any = await datanestApiService.getDocument<any>('/public/soundfragments', id)
     return (raw?.payload?.docData ?? raw?.docData ?? raw) as SoundFragment
   }
 

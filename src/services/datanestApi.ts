@@ -240,7 +240,7 @@ class DatanestApiService extends ApiClient {
   }
 
   async patchSoundFragmentBoost(id: string, brandId: string, boost: number, type: 'brand' | 'shared' = 'brand'): Promise<void> {
-    await this.request<void>(`/soundfragments/${id}/boost/${brandId}`, {
+    await this.request<void>(`/public/soundfragments/${id}/boost/${brandId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ boost, type }),

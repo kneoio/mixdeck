@@ -195,7 +195,7 @@ function rowProps(row: any) {
     style: 'cursor:pointer',
     onClick: (e: MouseEvent) => {
       if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return
-      const fragmentId = row.id
+      const fragmentId = row.slugName
       if (!fragmentId) return
       router.push({ path: `/shared/${fragmentId}` })
     },
@@ -239,7 +239,7 @@ onMounted(async () => {
       :columns="columns"
       :data="entries"
       :loading="loading"
-      :row-key="(row: any) => row.id || row.slugName"
+      :row-key="(row: any) => row.slugName"
       v-model:checked-row-keys="selectedIds"
       :pagination="pagination"
       remote

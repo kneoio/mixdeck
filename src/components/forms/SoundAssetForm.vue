@@ -15,7 +15,6 @@ import { useSoundFragmentsStore, FRAGMENT_TYPE_VALUES } from '@/stores/soundFrag
 import { useBrandsStore } from '@/stores/brands'
 import { useDictionaryStore } from '@/stores/dictionary'
 import datanestApiService from '@/services/datanestApi'
-import { appConfig } from '@/config/appConfig'
 import { useRoute, useRouter } from 'vue-router'
 import { handleApiError } from '@/utils/notificationService'
 
@@ -327,7 +326,7 @@ if (isPrerecorded.value) {
         existingFiles.value = (frag.uploadedFiles || []).map((f: any) => ({
           id: f.id,
           name: f.name || f.id,
-          url: f.url?.startsWith('http') ? f.url : f.url ? `${appConfig.datanestServer}${f.url}` : '',
+          url: f.url || '',
           status: f.status,
         }))
       } else {
@@ -335,7 +334,7 @@ if (isPrerecorded.value) {
         const f0 = opusFile || frag.uploadedFiles?.[0]
         activeFileType.value = f0?.type ?? 'unknown'
         const fileUrl = f0?.url || frag.url || ''
-        existingUrl.value = fileUrl.startsWith('http') ? fileUrl : fileUrl ? `${appConfig.datanestServer}${fileUrl}` : ''
+        existingUrl.value = fileUrl
         existingFileName.value = frag.uploadedFiles?.find((f: any) => f.type === 'original')?.name || f0?.name || fileUrl.split('/').pop()?.split('?')[0] || ''
       }
     }

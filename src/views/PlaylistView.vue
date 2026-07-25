@@ -9,7 +9,6 @@ import {
 import { ShareSocialOutline, PlayOutline, PauseOutline, RefreshOutline, ArrowUpOutline, ArrowDownOutline } from '@vicons/ionicons5'
 import LedIndicator from '@/components/LedIndicator.vue'
 import datanestApiService from '@/services/datanestApi'
-import { appConfig } from '@/config/appConfig'
 import { useBrandsStore } from '@/stores/brands'
 import { useDictionaryStore } from '@/stores/dictionary'
 import PageHeader from '@/components/PageHeader.vue'
@@ -89,7 +88,7 @@ function stopCurrentAudio() {
 
 async function toggleRowPlay(row: any, e: MouseEvent) {
   e.stopPropagation()
-  const id = row.id
+  const id = row.slugName
   if (playingId.value === id) {
     currentAudio?.pause()
     playingId.value = null
@@ -104,7 +103,7 @@ async function toggleRowPlay(row: any, e: MouseEvent) {
   loadingPlayId.value = id
   const reqId = ++playRequestId
   try {
-    const frag: any = await datanestApiService.getDocument<any>('/soundfragments', id)
+    const frag: any = await datanestApiService.getDocument<any>('/public/soundfragments', id)
     if (reqId !== playRequestId) return
     const doc = frag?.payload?.docData ?? frag?.docData ?? frag
     const opusFile = doc?.uploadedFiles?.find((f: any) => f.type === 'opus')
@@ -114,7 +113,7 @@ async function toggleRowPlay(row: any, e: MouseEvent) {
     if (!rawUrl) return
     let blobUrl = blobUrlCache.get(id)
     if (!blobUrl) {
-      const url = rawUrl.startsWith('http') ? rawUrl : `${appConfig.datanestServer}${rawUrl}`
+      const url = rawUrl
       blobUrl = await datanestApiService.fetchBlobUrl(url)
       if (reqId !== playRequestId) { URL.revokeObjectURL(blobUrl); return }
       blobUrlCache.set(id, blobUrl)
@@ -206,8 +205,8 @@ const columns = computed<DataTableColumns<any>>(() => {
         key: 'mob',
         title: '',
         render: (row) => {
-          const isRowPlaying = playingId.value === row.id
-          const isRowLoading = loadingPlayId.value === row.id
+          const isRowPlaying = playingId.value === row.slugName
+          const isRowLoading = loadingPlayId.value === row.slugName
           const iconClass = isRowLoading ? 'play-icon--loading' : isRowPlaying ? 'play-icon--playing' : ''
           const playBtn = h(NButton, {
             text: true, disabled: isRowLoading, style: 'flex-shrink:0',
@@ -285,8 +284,8 @@ const columns = computed<DataTableColumns<any>>(() => {
     width: 40,
     title: '',
     render: (row) => {
-      const isRowPlaying = playingId.value === row.id
-      const isRowLoading = loadingPlayId.value === row.id
+      const isRowPlaying = playingId.value === row.slugName
+      const isRowLoading = loadingPlayId.value === row.slugName
       const iconClass = isRowLoading ? 'play-icon--loading' : isRowPlaying ? 'play-icon--playing' : ''
       return h(NButton, {
         text: true,
@@ -346,7 +345,7 @@ const columns = computed<DataTableColumns<any>>(() => {
     title: 'Boost',
     render: (row) => {
       const boost = row.boost ?? 0
-      const busy = boostingId.value === row.id
+      const busy = boostingId.value === row.slugName
       const upBtn = h(NButton, {
         text: true, size: 'tiny',
         disabled: busy || boost >= 2,
@@ -441,9 +440,9 @@ async function changeBoost(row: any, delta: number, e: MouseEvent) {
   const cur = row.boost ?? 0
   const next = Math.min(2, Math.max(-1, cur + delta))
   if (next === cur) return
-  boostingId.value = row.id
+  boostingId.value = row.slugName
   try {
-    await datanestApiService.patchSoundFragmentBoost(row.id, route.params.id as string, next, row.shared ? 'shared' : 'brand')
+    await datanestApiService.patchSoundFragmentBoost(row.slugName, route.params.id as string, next, row.shared ? 'shared' : 'brand')
     row.boost = next
   } catch (err: any) {
     handleApiError(err, message)
@@ -558,11 +557,11 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
       :columns="columns"
       :data="entries"
       :loading="loading"
-      :row-key="(row: any) => row.id || row.slugName"
+      :row-key="(row: any) => row.slugName"
       v-model:checked-row-keys="selectedIds"
       :pagination="pagination"
       remote
-      :row-props="(row: any) => ({ style: 'cursor:pointer;height:48px', onClick: (e: MouseEvent) => { if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return; router.push({ path: `/brands/${route.params.id}/playlist/${row.id}`, query: { returnTo: route.fullPath } }) } })"
+      :row-props="(row: any) => ({ style: 'cursor:pointer;height:48px', onClick: (e: MouseEvent) => { if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return; router.push({ path: `/brands/${route.params.id}/playlist/${row.slugName}`, query: { returnTo: route.fullPath } }) } })"
       @update:page="(p) => { pageNum = p; fetchData(p) }"
       @update:page-size="(s) => { pageSize = s; fetchData(1, s) }"
     >

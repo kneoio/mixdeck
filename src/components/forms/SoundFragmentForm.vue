@@ -15,7 +15,6 @@ import { useBrandsStore } from '@/stores/brands'
 import { useDictionaryStore } from '@/stores/dictionary'
 import type { Label } from '@/stores/labels'
 import datanestApiService from '@/services/datanestApi'
-import { appConfig } from '@/config/appConfig'
 import { useRoute, useRouter } from 'vue-router'
 import { handleApiError } from '@/utils/notificationService'
 import { normalizeIdList, toGenreTreeOptions } from '@/utils/genreTree'
@@ -464,9 +463,7 @@ onMounted(async () => {
       isOpusPreview.value = !!opusFile
       const f0 = opusFile || frag.uploadedFiles?.[0]
       const fileUrl = f0?.url || frag.url || ''
-      existingUrl.value = fileUrl.startsWith('http')
-        ? fileUrl
-        : fileUrl ? `${appConfig.datanestServer}${fileUrl}` : ''
+      existingUrl.value = fileUrl
       existingFileName.value = frag.uploadedFiles?.find((f: any) => f.type === 'original')?.name || f0?.name || fileUrl.split('/').pop()?.split('?')[0] || ''
     }
   } catch (error: any) {

@@ -198,7 +198,7 @@ onMounted(async () => {
       :columns="columns"
       :data="entries"
       :loading="loading"
-      :row-key="(row: any) => row.id || row.slugName"
+      :row-key="(row: any) => row.slugName"
       v-model:checked-row-keys="selectedIds"
       :pagination="pagination"
       remote
@@ -206,7 +206,7 @@ onMounted(async () => {
         style: 'cursor:pointer',
         onClick: (e: MouseEvent) => {
           if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return
-          router.push(`/sound-library/archived/${row.id}`)
+          router.push(`/sound-library/archived/${row.slugName}`)
         }
       })"
       @update:page="(p) => { pageNum = p; fetchData(p) }"
