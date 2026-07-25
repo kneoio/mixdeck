@@ -137,6 +137,22 @@ const moodInfo = computed(() => dominantMoods(rawAddInfo.value?.moods))
 
 const genreRows = computed(() => allGenres(rawAddInfo.value?.top_genres))
 
+// A segment's width comes from its score, so narrow genres clip their label. Only those get a
+// tooltip - measured after render rather than guessed, since it depends on the rendered font.
+const genreBarRef = ref<HTMLElement | null>(null)
+const clippedGenres = ref(new Set<string>())
+
+function updateGenreClipping() {
+  const el = genreBarRef.value
+  if (!el) return
+  const clipped = new Set<string>()
+  el.querySelectorAll<HTMLElement>('.add-info-genre-bar__label').forEach(label => {
+    const name = label.dataset.genre
+    if (name && label.scrollWidth > label.clientWidth) clipped.add(name)
+  })
+  clippedGenres.value = clipped
+}
+
 const isDanceable = computed(() => {
   const d = Number(rawAddInfo.value?.danceability)
   return !Number.isNaN(d) && d >= DANCEABLE_THRESHOLD
@@ -361,6 +377,11 @@ function updateIsMobile() {
   isMobile.value = window.innerWidth <= 768
 }
 
+function handleResize() {
+  updateIsMobile()
+  updateGenreClipping()
+}
+
 const formTitle = computed(() => {
   const title = formData.value.title.trim()
   const artist = formData.value.artist.trim()
@@ -514,12 +535,12 @@ function navigateBack() {
 }
 
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', updateIsMobile)
+  window.removeEventListener('resize', handleResize)
 })
 
 onMounted(async () => {
   updateIsMobile()
-  window.addEventListener('resize', updateIsMobile)
+  window.addEventListener('resize', handleResize)
   try {
     loading.value = true
 
@@ -601,6 +622,13 @@ watch(() => formData.value.source, () => {
 watch(activeTab, () => {
   if (isTabChangeFromValidation.value) return
   clearAllFieldErrors()
+})
+
+// The bar only exists once its tab is rendered, so measure after that switch (and after data loads).
+watch([activeTab, genreRows], async () => {
+  if (activeTab.value !== 'addInfo') return
+  await nextTick()
+  updateGenreClipping()
 })
 </script>
 
@@ -882,14 +910,18 @@ watch(activeTab, () => {
               <tr v-if="genreRows.length">
                 <td class="add-info-table__label">Genre</td>
                 <td>
-                  <div class="add-info-genre-bar">
+                  <div ref="genreBarRef" class="add-info-genre-bar">
                     <div
                       v-for="g in genreRows"
                       :key="g.name"
                       class="add-info-genre-bar__segment"
-                      :style="{ width: `${g.width}%`, backgroundColor: g.color }"
+                      :style="{ width: `${g.width}%`, borderBottomColor: g.color }"
                     >
-                      <span class="add-info-genre-bar__label">{{ g.name }} {{ g.percent }}</span>
+                      <span
+                        class="add-info-genre-bar__label"
+                        :data-genre="g.name"
+                        :title="clippedGenres.has(g.name) ? `${g.name} ${g.percent}` : undefined"
+                      >{{ g.name }} {{ g.percent }}</span>
                     </div>
                   </div>
                 </td>
@@ -1096,22 +1128,19 @@ watch(activeTab, () => {
 .add-info-genre-bar {
   display: flex;
   width: 100%;
-  border-radius: 3px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.08);
 }
 
 .add-info-genre-bar__segment {
   display: flex;
   align-items: center;
-  padding: 4px 6px;
+  padding: 0 6px 4px 0;
   min-width: 0;
   overflow: hidden;
+  border-bottom: 3px solid transparent;
 }
 
 .add-info-genre-bar__label {
   font-size: 11px;
-  color: #ffffff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
