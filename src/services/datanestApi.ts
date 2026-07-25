@@ -14,7 +14,7 @@ class DatanestApiService extends ApiClient {
 
   async getBrandListeners(brandSlug: string, page = 1, pageSize = 10): Promise<PagedResult<any>> {
     const response = await this.request<any>(
-      `/listeners/available-listeners?brand=${encodeURIComponent(brandSlug)}&page=${page}&size=${pageSize}`
+      `/public/listeners/available-listeners?brand=${encodeURIComponent(brandSlug)}&page=${page}&size=${pageSize}`
     )
     const viewData = response?.payload?.viewData ?? response?.viewData
     if (!viewData) throw new Error('Unexpected response format')
@@ -44,7 +44,7 @@ class DatanestApiService extends ApiClient {
     if (filters.type?.length) cleanFilters.type = filters.type
     if (filters.source?.length) cleanFilters.source = filters.source
     if (Object.keys(cleanFilters).length) params.set('filter', JSON.stringify(cleanFilters))
-    const response = await this.request<any>(`/soundfragments/available-soundfragments?${params}`)
+    const response = await this.request<any>(`/public/soundfragments/available-soundfragments?${params}`)
     const viewData = response?.payload?.viewData ?? response?.viewData
     if (!viewData) throw new Error('Unexpected response format')
     return {
