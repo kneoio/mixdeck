@@ -432,6 +432,19 @@ html.dark .update-pill--glow {
   border-color: rgba(34, 197, 94, 0.6);
 }
 
+/* naive-ui gives NLayout and NLayoutContent their own scroll containers, which stack on top of the
+   window scroll and produce nested scrollbars. The page itself scrolls, so let content flow. */
+.dashboard-main-layout,
+.dashboard-content {
+  overflow: visible;
+}
+
+.dashboard-main-layout > :deep(.n-layout-scroll-container),
+.dashboard-content > :deep(.n-layout-scroll-container) {
+  overflow: visible;
+  height: auto;
+}
+
 .dashboard-layout-header {
   position: relative;
   overflow: hidden;
@@ -557,7 +570,7 @@ html.dark .update-pill--glow {
       </NDrawerContent>
     </NDrawer>
 
-    <NLayout style="flex: 1; min-width: 0;">
+    <NLayout class="dashboard-main-layout" style="flex: 1; min-width: 0;">
       <NLayoutHeader
         class="dashboard-layout-header"
         :class="{ 'dashboard-layout-header--light-stripe': !themeStore.isDark }"
@@ -638,7 +651,7 @@ html.dark .update-pill--glow {
         </div>
       </NLayoutHeader>
 
-      <NLayoutContent :style="isMobile ? 'padding: 8px 4px' : 'padding: 24px'">
+      <NLayoutContent class="dashboard-content" :style="isMobile ? 'padding: 8px 4px' : 'padding: 24px'">
         <router-view :key="$route.fullPath" />
       </NLayoutContent>
     </NLayout>

@@ -70,7 +70,7 @@ const MOOD_THRESHOLD = 0.5
 const DANCEABLE_THRESHOLD = 0.6
 // Only fully-consumed scalars are dropped from the raw table; moods/top_genres/ai_generated_metadata_check
 // carry extra internal signal (scores, caveats) beyond what the vibe row surfaces, so they stay visible raw.
-const ADD_INFO_VIBE_KEYS = ['bpm', 'scale', 'danceability']
+const ADD_INFO_VIBE_KEYS = ['bpm', 'key', 'scale', 'danceability']
 
 function tempoBand(bpm: number): string {
   if (bpm < 70) return 'slow'
@@ -117,8 +117,13 @@ const tempoInfo = computed(() => {
 })
 
 const keyInfo = computed(() => {
+  const key = rawAddInfo.value?.key
   const scale = rawAddInfo.value?.scale
-  return typeof scale === 'string' && scale.trim() ? `${scale.trim()} key` : ''
+  const parts = [
+    typeof key === 'string' && key.trim() ? key.trim() : '',
+    typeof scale === 'string' && scale.trim() ? scale.trim() : '',
+  ].filter(Boolean)
+  return parts.length ? parts.join(' ') : ''
 })
 
 const moodInfo = computed(() => dominantMoods(rawAddInfo.value?.moods))
