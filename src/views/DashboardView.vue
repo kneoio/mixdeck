@@ -410,6 +410,12 @@ html.dark .update-pill--glow {
   padding: 0px 4px;
 }
 
+.subscription-badge--pro {
+  color: #ffffff;
+  background-color: rgba(34, 197, 94, 0.25);
+  border-color: rgba(34, 197, 94, 0.7);
+}
+
 .dashboard-layout-header--light-stripe :deep(.user-name-col__name) {
   color: rgba(0, 0, 0, 0.82);
 }
@@ -418,6 +424,12 @@ html.dark .update-pill--glow {
   color: rgba(0, 0, 0, 0.82);
   background-color: rgba(0, 0, 0, 0.08);
   border-color: rgba(0, 0, 0, 0.3);
+}
+
+.dashboard-layout-header--light-stripe :deep(.subscription-badge--pro) {
+  color: #15803d;
+  background-color: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.6);
 }
 
 .dashboard-layout-header {
@@ -610,7 +622,11 @@ html.dark .update-pill--glow {
                     </NAvatar>
                     <div v-if="!isMobile" class="user-name-col">
                       <span class="user-name-col__name">{{ authStore.userName }}</span>
-                      <span v-if="userSubscriptionStore.subscriptionType" class="subscription-badge">
+                      <span
+                        v-if="userSubscriptionStore.subscriptionType"
+                        class="subscription-badge"
+                        :class="{ 'subscription-badge--pro': userSubscriptionStore.subscriptionType === 'MIXPLA_PRO' }"
+                      >
                         {{ userSubscriptionStore.subscriptionType }}
                       </span>
                     </div>
