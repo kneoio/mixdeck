@@ -89,11 +89,13 @@ function dominantMoods(raw: unknown): string {
   return present.map(m => m.name).join('/')
 }
 
-function genreName(entry: any): string {
+function genreParts(entry: any): { category: string; name: string } {
   const g = entry?.genre
-  if (typeof g !== 'string') return ''
+  if (typeof g !== 'string') return { category: '', name: '' }
   const sep = g.lastIndexOf('---')
-  return (sep >= 0 ? g.slice(sep + 3) : g).trim()
+  return sep >= 0
+    ? { category: g.slice(0, sep).trim(), name: g.slice(sep + 3).trim() }
+    : { category: '', name: g.trim() }
 }
 
 function formatPercent(score: number): string {
@@ -103,17 +105,21 @@ function formatPercent(score: number): string {
 const GENRE_COLORS = ['#7C3AED', '#2563eb', '#0d9488', '#ca8a04', '#db2777', '#65a30d', '#c2410c', '#4f46e5']
 
 /** All detected genres (not just the top one/two used for the vibe phrase), sorted strongest first. */
-function allGenres(raw: unknown): { name: string; percent: string; width: number; color: string }[] {
+function allGenres(raw: unknown): { name: string; category: string; percent: string; width: number; color: string }[] {
   if (!Array.isArray(raw)) return []
   const parsed = raw
-    .map(entry => ({ name: genreName(entry), score: Number(entry?.score) }))
+    .map(entry => ({ ...genreParts(entry), score: Number(entry?.score) }))
     .filter(g => g.name && !Number.isNaN(g.score))
     .sort((a, b) => b.score - a.score)
+  const nameCounts = new Map<string, number>()
+  parsed.forEach(g => nameCounts.set(g.name, (nameCounts.get(g.name) ?? 0) + 1))
   const total = parsed.reduce((sum, g) => sum + g.score, 0)
   return parsed.map((g, i) => {
+    const showCategory = (nameCounts.get(g.name) ?? 0) > 1 && !!g.category
     const normalized = total > 0 ? g.score / total : 0
     return {
       name: g.name,
+      category: showCategory ? g.category : '',
       percent: formatPercent(normalized),
       width: normalized * 100,
       color: GENRE_COLORS[i % GENRE_COLORS.length],
@@ -926,11 +932,17 @@ watch([activeTab, genreRows], async () => {
                 <td>
                   <div ref="genreBarRef" class="add-info-genre-bar">
                     <div
-                      v-for="g in genreRows"
-                      :key="g.name"
+                      v-for="(g, gi) in genreRows"
+                      :key="`${g.category}-${g.name}-${gi}`"
                       class="add-info-genre-bar__segment"
                       :style="{ width: `${g.width}%` }"
                     >
+                      <span
+                        v-if="g.category"
+                        class="add-info-genre-bar__category"
+                        :data-genre="g.name"
+                        :title="clippedGenres.has(g.name) ? `${g.category} · ${g.name} ${g.percent}` : undefined"
+                      >{{ g.category }}</span>
                       <span
                         class="add-info-genre-bar__label"
                         :data-genre="g.name"
@@ -1163,6 +1175,14 @@ watch([activeTab, genreRows], async () => {
 .add-info-genre-bar__bar {
   height: 3px;
   margin: 4px 0;
+}
+
+.add-info-genre-bar__category {
+  font-size: 10px;
+  opacity: 0.6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .add-info-genre-bar__label {
