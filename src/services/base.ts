@@ -36,6 +36,11 @@ export class ApiClient {
     })
 
     if (!response.ok) {
+      if (response.status === 401) {
+        void authService.login(window.location.href)
+        return new Promise<T>(() => {})
+      }
+
       let errorMessage = `HTTP error! status: ${response.status}`
       try {
         const data = await response.json()

@@ -31,7 +31,12 @@ function createServiceWorkerState() {
   })
 
   function applyUpdate() {
+    // Don't rely solely on the SW 'controlling' event to trigger the reload —
+    // if it never fires the click silently does nothing. Reload directly so
+    // the click always re-runs the router's auth guard (and redirects to
+    // login if the session has since expired).
     updateServiceWorker(true)
+    window.location.reload()
   }
 
   return { needRefresh, applyUpdate }
