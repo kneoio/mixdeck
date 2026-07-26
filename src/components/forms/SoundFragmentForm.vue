@@ -898,7 +898,7 @@ watch([activeTab, genreRows], async () => {
               <tr v-if="tempoInfo">
                 <td class="add-info-table__label">Tempo</td>
                 <td class="add-info-table__tempo">
-                  <LedIndicator active pulse :bpm="tempoBpm ?? undefined" :size="12" color="#22c55e" />
+                  <LedIndicator active pulse :bpm="tempoBpm ?? undefined" :size="18" color="#22c55e" />
                   {{ tempoInfo }}
                 </td>
               </tr>
