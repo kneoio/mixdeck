@@ -11,6 +11,7 @@ import GsapButton from '@/components/GsapButton.vue'
 import type { UploadCustomRequestOptions } from 'naive-ui'
 import FormWrapper from '@/components/FormWrapper.vue'
 import AudioMiniPlayer from '@/components/AudioMiniPlayer.vue'
+import LedIndicator from '@/components/LedIndicator.vue'
 import { useSoundFragmentsStore, FRAGMENT_TYPE_VALUES } from '@/stores/soundFragments'
 import { useBrandsStore } from '@/stores/brands'
 import { useDictionaryStore } from '@/stores/dictionary'
@@ -117,9 +118,15 @@ function allGenres(raw: unknown): { name: string; percent: string; width: number
 }
 
 /** Mirrors com.semantyca.jesoos.service.live.scripting.AddInfoInterpreter's DJ-relevant vibe fields. */
-const tempoInfo = computed(() => {
+const tempoBpm = computed(() => {
   const bpm = Number(rawAddInfo.value?.bpm)
-  if (rawAddInfo.value?.bpm === undefined || rawAddInfo.value?.bpm === null || Number.isNaN(bpm)) return ''
+  if (rawAddInfo.value?.bpm === undefined || rawAddInfo.value?.bpm === null || Number.isNaN(bpm)) return null
+  return bpm
+})
+
+const tempoInfo = computed(() => {
+  const bpm = tempoBpm.value
+  if (bpm === null) return ''
   return `${tempoBand(bpm)} (${Math.round(bpm)} BPM)`
 })
 
@@ -890,7 +897,10 @@ watch([activeTab, genreRows], async () => {
             <tbody>
               <tr v-if="tempoInfo">
                 <td class="add-info-table__label">Tempo</td>
-                <td>{{ tempoInfo }}</td>
+                <td class="add-info-table__tempo">
+                  <LedIndicator active pulse :bpm="tempoBpm ?? undefined" :size="12" color="#22c55e" />
+                  {{ tempoInfo }}
+                </td>
               </tr>
               <tr v-if="keyInfo">
                 <td class="add-info-table__label">Key</td>
@@ -1123,6 +1133,12 @@ watch([activeTab, genreRows], async () => {
   opacity: 0.55;
   white-space: nowrap;
   width: 1%;
+}
+
+.add-info-table__tempo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .add-info-genre-bar {

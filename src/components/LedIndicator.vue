@@ -2,14 +2,21 @@
   <span
     class="led"
     :class="{ active, pulse }"
-    :style="{ color: color ?? '#00FF3C' }"
+    :style="{ color: color ?? '#00FF3C', animationDuration: pulse ? beatDuration : undefined }"
   >
     ▬
   </span>
 </template>
 
 <script setup lang="ts">
-const props = defineProps<{ active?: boolean; pulse?: boolean; size?: number; color?: string }>();
+import { computed } from 'vue';
+
+const props = defineProps<{ active?: boolean; pulse?: boolean; size?: number; color?: string; bpm?: number }>();
+
+const beatDuration = computed(() => {
+  if (!props.bpm || props.bpm <= 0) return '0.8s';
+  return `${(60 / props.bpm).toFixed(3)}s`;
+});
 </script>
 
 <style scoped>
@@ -32,7 +39,10 @@ const props = defineProps<{ active?: boolean; pulse?: boolean; size?: number; co
 }
 
 .pulse {
-  animation: pulse 0.8s ease-in-out infinite;
+  animation-name: pulse;
+  animation-duration: 0.8s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
 }
 
 @keyframes pulse {
