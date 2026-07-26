@@ -37,7 +37,7 @@ async function changeBoost(row: any, delta: number, e: MouseEvent) {
   if (next === cur) return
   boostingId.value = row.id
   try {
-    await datanestApiService.patchSoundFragmentBoost(row.id, row.id, next, 'shared')
+    await datanestApiService.patchSoundFragmentBoost(row.slugName, row.targetBrandId, next, 'shared')
     row.boost = next
   } catch (err: any) {
     handleApiError(err, message)
