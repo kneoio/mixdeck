@@ -340,6 +340,10 @@ const columns = computed<DataTableColumns<any>>(() => {
     }
   },
   {
+    title: t('playlistView.col_played'), key: 'playedByBrandCount', width: playedW,
+    render: (row) => row.playedByBrandCount ?? 0,
+  },
+  {
     key: 'boost',
     width: 110,
     title: 'Boost',
