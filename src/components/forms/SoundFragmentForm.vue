@@ -105,16 +105,20 @@ const GENRE_COLORS = ['#7C3AED', '#2563eb', '#0d9488', '#ca8a04', '#db2777', '#6
 /** All detected genres (not just the top one/two used for the vibe phrase), sorted strongest first. */
 function allGenres(raw: unknown): { name: string; percent: string; width: number; color: string }[] {
   if (!Array.isArray(raw)) return []
-  return raw
+  const parsed = raw
     .map(entry => ({ name: genreName(entry), score: Number(entry?.score) }))
     .filter(g => g.name && !Number.isNaN(g.score))
     .sort((a, b) => b.score - a.score)
-    .map((g, i) => ({
+  const total = parsed.reduce((sum, g) => sum + g.score, 0)
+  return parsed.map((g, i) => {
+    const normalized = total > 0 ? g.score / total : 0
+    return {
       name: g.name,
-      percent: formatPercent(g.score),
-      width: g.score * 100,
+      percent: formatPercent(normalized),
+      width: normalized * 100,
       color: GENRE_COLORS[i % GENRE_COLORS.length],
-    }))
+    }
+  })
 }
 
 /** Mirrors com.semantyca.jesoos.service.live.scripting.AddInfoInterpreter's DJ-relevant vibe fields. */
