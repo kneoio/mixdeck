@@ -929,13 +929,15 @@ watch([activeTab, genreRows], async () => {
                       v-for="g in genreRows"
                       :key="g.name"
                       class="add-info-genre-bar__segment"
-                      :style="{ width: `${g.width}%`, borderBottomColor: g.color }"
+                      :style="{ width: `${g.width}%` }"
                     >
                       <span
                         class="add-info-genre-bar__label"
                         :data-genre="g.name"
                         :title="clippedGenres.has(g.name) ? `${g.name} ${g.percent}` : undefined"
-                      >{{ g.name }} {{ g.percent }}</span>
+                      >{{ g.name }}</span>
+                      <div class="add-info-genre-bar__bar" :style="{ backgroundColor: g.color }" />
+                      <span class="add-info-genre-bar__percent">{{ g.percent }}</span>
                     </div>
                   </div>
                 </td>
@@ -1152,15 +1154,27 @@ watch([activeTab, genreRows], async () => {
 
 .add-info-genre-bar__segment {
   display: flex;
-  align-items: center;
-  padding: 0 6px 4px 0;
+  flex-direction: column;
+  padding-right: 6px;
   min-width: 0;
   overflow: hidden;
-  border-bottom: 3px solid transparent;
+}
+
+.add-info-genre-bar__bar {
+  height: 3px;
+  margin: 4px 0;
 }
 
 .add-info-genre-bar__label {
   font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.add-info-genre-bar__percent {
+  font-size: 11px;
+  opacity: 0.7;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
