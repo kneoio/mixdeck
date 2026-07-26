@@ -132,7 +132,6 @@ const columns = computed<DataTableColumns<any>>(() => {
         })
       }
     },
-    { title: t('playlistView.col_description'), key: 'description', minWidth: 160, ellipsis: { tooltip: true } },
   ]
 })
 

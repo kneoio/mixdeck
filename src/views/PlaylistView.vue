@@ -365,7 +365,7 @@ const columns = computed<DataTableColumns<any>>(() => {
     },
   },
   {
-    title: t('playlistView.col_shared'),
+    title: '',
     key: 'shared',
     width: sharedW,
     align: 'center',
@@ -373,7 +373,6 @@ const columns = computed<DataTableColumns<any>>(() => {
       ? h(NIcon, { size: 18, color: 'var(--vt-c-primary)' }, { default: () => h(ShareSocialOutline) })
       : null,
   },
-  { title: t('playlistView.col_description'), key: 'description', width: nw ? 100 : undefined, minWidth: descMin, ellipsis: { tooltip: true } },
 ]
 })
 
