@@ -189,7 +189,7 @@ class DatanestApiService extends ApiClient {
   async getReceived(page = 1, pageSize = 10, searchTerm = ''): Promise<PagedResult<any>> {
     const params = new URLSearchParams({ page: String(page), size: String(pageSize) })
     if (searchTerm) params.set('search', searchTerm)
-    const response = await this.request<any>(`/shared-sound-fragments/received?${params}`)
+    const response = await this.request<any>(`/public/shared-sound-fragments/received?${params}`)
     const viewData = response?.payload?.viewData ?? response?.viewData
     if (!viewData) throw new Error('Unexpected response format')
     return {
