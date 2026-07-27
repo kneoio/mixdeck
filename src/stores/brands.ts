@@ -65,7 +65,7 @@ export const useBrandsStore = defineStore('brands', () => {
   async function loadBrands(page = pageNum.value, size = pageSize.value) {
     loading.value = true
     try {
-      const result = await datanestApiService.getPagedDictionary<Brand>('/brands', page, size)
+      const result = await datanestApiService.getPagedDictionary<Brand>('/public/brands', page, size)
       brands.value = result.entries
       totalCount.value = result.count
       pageNum.value = result.pageNum
