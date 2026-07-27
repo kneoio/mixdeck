@@ -9,6 +9,7 @@ import GsapButton from '@/components/GsapButton.vue'
 import FormWrapper from '@/components/FormWrapper.vue'
 import { useListenersStore } from '@/stores/listeners'
 import { useConstantsStore } from '@/stores/constants'
+import { useBrandsStore } from '@/stores/brands'
 import { useRoute, useRouter } from 'vue-router'
 import { useDictionaryStore } from '@/stores/dictionary'
 
@@ -18,13 +19,15 @@ const route = useRoute()
 const router = useRouter()
 const store = useListenersStore()
 const constantsStore = useConstantsStore()
+const brandsStore = useBrandsStore()
 const message = useMessage()
 
-const brandId = computed(() => route.params.id as string)
+const brandSlug = computed(() => route.params.slug as string)
+const brand = computed(() => brandsStore.brands.find(b => b.slugName === brandSlug.value))
 const listenerId = computed(() => route.params.listenerId as string)
 const isEditing = computed(() => !!listenerId.value && listenerId.value !== 'new')
 const pageTitle = computed(() => isEditing.value ? t('listenerForm.edit_title') : t('listenerForm.create_title'))
-const backRoute = computed(() => `/brands/${brandId.value}/listeners`)
+const backRoute = computed(() => `/brands/${brandSlug.value}/listeners`)
 const formLabelPlacement = computed(() => (isMobile.value ? 'top' : 'left'))
 
 const loading = ref(false)
@@ -76,7 +79,7 @@ async function handleSave() {
       isEditing.value ? listenerId.value : null,
       {
         localizedName: buildLocalizedName(),
-        listenerOf: brandId.value ? [brandId.value] : undefined,
+        listenerOf: brand.value?.id ? [brand.value.id] : undefined,
         labels: labels.value.length ? labels.value : undefined,
         userData: buildUserData(),
       }

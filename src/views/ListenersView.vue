@@ -32,10 +32,10 @@ const pageSize = ref(10)
 const maxPage = ref(1)
 const selectedIds = ref<string[]>([])
 
-const brand = computed(() => brandsStore.brands.find(b => b.id === route.params.id))
-const slugName = computed(() => brand.value?.slugName ?? '')
+const brand = computed(() => brandsStore.brands.find(b => b.slugName === route.params.slug))
+const slugName = computed(() => brand.value?.slugName ?? (route.params.slug as string) ?? '')
 const brandName = computed(() =>
-  brand.value?.localizedName?.['en'] || brand.value?.title || brand.value?.slugName || (route.params.id as string)
+  brand.value?.localizedName?.['en'] || brand.value?.title || brand.value?.slugName || (route.params.slug as string)
 )
 
 const pagination = computed(() => ({
@@ -108,7 +108,7 @@ watch(slugName, (val) => { if (val) fetchData(1) }, { immediate: true })
     <PageHeader :title="brandName" :subtitle="t('listenersView.subtitle')" :count="totalCount" />
     <ActionBar>
       <div class="gsap-row">
-        <GsapButton type="primary" @click="router.push(`/brands/${route.params.id}/listeners/new`)">
+        <GsapButton type="primary" @click="router.push(`/brands/${route.params.slug}/listeners/new`)">
           <span>{{ t('listenersView.new_listener') }}</span>
         </GsapButton>
         <NPopconfirm @positive-click="handleDelete">
@@ -132,7 +132,7 @@ watch(slugName, (val) => { if (val) fetchData(1) }, { immediate: true })
       v-model:checked-row-keys="selectedIds"
       :pagination="pagination"
       remote
-      :row-props="(row: any) => ({ style: 'cursor:pointer', onClick: (e: MouseEvent) => { if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return; router.push(`/brands/${route.params.id}/listeners/${row.id || row.listener?.id}`) } })"
+      :row-props="(row: any) => ({ style: 'cursor:pointer', onClick: (e: MouseEvent) => { if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return; router.push(`/brands/${route.params.slug}/listeners/${row.id || row.listener?.id}`) } })"
       @update:page="(p) => { pageNum = p; fetchData(p) }"
       @update:page-size="(s) => { pageSize = s; fetchData(1, s) }"
     >

@@ -38,7 +38,9 @@ const dictionaryStore = useDictionaryStore()
 const message = useMessage()
 
 
-const brandId = computed(() => route.params.id as string)
+const brandSlug = computed(() => route.params.slug as string)
+const brand = computed(() => brandsStore.brands.find(b => b.slugName === brandSlug.value))
+const brandId = computed(() => brand.value?.id ?? '')
 const isEditing = computed(() => !!route.params.fragmentId && route.params.fragmentId !== 'new')
 const loading = ref(false)
 const activeTab = ref('properties')
@@ -376,7 +378,7 @@ const returnToRoute = computed(() => {
   return typeof value === 'string' && value ? value : null
 })
 const isSharedRoute = computed(() => route.path.startsWith('/shared'))
-const backRoute = computed(() => returnToRoute.value ?? (isSharedRoute.value ? '/shared' : (brandId.value ? `/brands/${brandId.value}/playlist` : '/sound-library/archived')))
+const backRoute = computed(() => returnToRoute.value ?? (isSharedRoute.value ? '/shared' : (brandSlug.value ? `/brands/${brandSlug.value}/playlist` : '/sound-library/archived')))
 const formLabelPlacement = computed(() => (isMobile.value ? 'top' : 'left'))
 
 function updateIsMobile() {

@@ -77,7 +77,7 @@ export const useBrandsStore = defineStore('brands', () => {
   }
 
   async function fetchBrand(id: string) {
-    return datanestApiService.getDocument<Brand>('/brands', id)
+    return datanestApiService.getDocument<Brand>('/public/brands', id)
   }
 
   async function saveBrand(id: string | null, data: Partial<Brand>) {

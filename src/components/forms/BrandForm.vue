@@ -815,12 +815,12 @@ async function handleSave() {
     saveAttempted.value = false
     message.success(t('brandForm.saved'))
     if (!isEditing.value) {
-      const newId = (savedBrand as any)?.id
-        ?? (savedBrand as any)?.docData?.id
-        ?? (savedBrand as any)?.payload?.docData?.id
-      if (newId) {
+      const newSlug = (savedBrand as any)?.slugName
+        ?? (savedBrand as any)?.docData?.slugName
+        ?? (savedBrand as any)?.payload?.docData?.slugName
+      if (newSlug) {
         await store.loadBrands()
-        await router.push(`/brands/${newId}/playlist`)
+        await router.push(`/brands/${newSlug}/playlist`)
       }
     }
   } catch (error: any) {
@@ -835,12 +835,12 @@ async function handleCloseBrand() {
   if (!isEditing.value) return
   try {
     loading.value = true
-    await store.closeBrand(route.params.id as string)
+    await store.closeBrand(route.params.slug as string)
     message.success('Brand closed successfully')
     await store.loadBrands()
     const nextBrand = store.brands[0]
-    if (nextBrand?.id) {
-      await router.push(`/brands/${nextBrand.id}/playlist`)
+    if (nextBrand?.slugName) {
+      await router.push(`/brands/${nextBrand.slugName}/playlist`)
     } else {
       await router.push('/broadcaster-welcome')
     }
@@ -1067,7 +1067,7 @@ function applyBrandToForm(brand: any) {
   const logoSlug = (brand as any).logoFiles?.[0]?.slugName
   if (logoSlug) {
     logoSlugName.value = logoSlug
-    loadLogoPreview(route.params.id as string, logoSlug)
+    loadLogoPreview(brandId.value as string, logoSlug)
   } else {
     logoSlugName.value = null
     logoPreviewUrl.value = null
@@ -1082,7 +1082,7 @@ onMounted(async () => {
   try {
     loading.value = true
     if (isEditing.value) {
-      const brand = await store.fetchBrand(route.params.id as string)
+      const brand = await store.fetchBrand(route.params.slug as string)
       applyBrandToForm(brand)
       normalizeScenePlaylistIds()
     } else {
@@ -1105,7 +1105,7 @@ onBeforeUnmount(() => {
 })
 
 watch(
-  () => route.params.id,
+  () => route.params.slug,
   async (newId, oldId) => {
     if (!isEditing.value || !newId || newId === oldId) return
     try {

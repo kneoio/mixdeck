@@ -187,7 +187,7 @@ const expandedKeys = ref<string[]>(['sound-library-root', 'brands-group'])
 watch(
   () => brandsStore.brands,
   (brands) => {
-    const brandKeys = brands.map(b => `brand-root-${b.id}`)
+    const brandKeys = brands.map(b => `brand-root-${b.slugName}`)
     const next = [...expandedKeys.value]
     for (const k of brandKeys) {
       if (!next.includes(k)) next.push(k)
@@ -231,21 +231,21 @@ const menuOptions = computed<MenuOption[]>(() => [
     children: [
       ...brandsStore.brands.map(brand => ({
         label: brandLabel(brand),
-        key: `brand-root-${brand.id}`,
+        key: `brand-root-${brand.slugName}`,
         children: [
           {
             label: t('menu.listeners'),
-            key: `brand-${brand.id}-listeners`,
+            key: `brand-${brand.slugName}-listeners`,
             icon: () => h(NIcon, null, { default: () => h(ListenersIcon) }),
           },
           {
             label: t('menu.playlist'),
-            key: `brand-${brand.id}-playlist`,
+            key: `brand-${brand.slugName}-playlist`,
             icon: () => h(NIcon, null, { default: () => h(PlaylistIcon) }),
           },
           {
             label: t('menu.settings'),
-            key: `brand-${brand.id}-settings`,
+            key: `brand-${brand.slugName}-settings`,
             icon: () => h(NIcon, null, { default: () => h(SettingsIcon) }),
           },
         ],
@@ -309,14 +309,14 @@ const handleMenuSelect = async (key: string) => {
   } else if (key === 'brands-new') {
     router.push('/brands/new')
   } else if (key.startsWith('brand-') && key.endsWith('-listeners')) {
-    const id = key.replace('brand-', '').replace('-listeners', '')
-    router.push(`/brands/${id}/listeners`)
+    const slug = key.replace('brand-', '').replace('-listeners', '')
+    router.push(`/brands/${slug}/listeners`)
   } else if (key.startsWith('brand-') && key.endsWith('-playlist')) {
-    const id = key.replace('brand-', '').replace('-playlist', '')
-    router.push(`/brands/${id}/playlist`)
+    const slug = key.replace('brand-', '').replace('-playlist', '')
+    router.push(`/brands/${slug}/playlist`)
   } else if (key.startsWith('brand-') && key.endsWith('-settings')) {
-    const id = key.replace('brand-', '').replace('-settings', '')
-    router.push(`/brands/${id}/settings`)
+    const slug = key.replace('brand-', '').replace('-settings', '')
+    router.push(`/brands/${slug}/settings`)
   }
 }
 

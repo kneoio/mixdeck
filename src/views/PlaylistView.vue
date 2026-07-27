@@ -179,14 +179,14 @@ function resolveLabel(l: any) {
   return { name: l.identifier || l.id, color: l.color, fontColor: l.fontColor }
 }
 
-const brand = computed(() => brandsStore.brands.find(b => b.id === route.params.id))
+const brand = computed(() => brandsStore.brands.find(b => b.slugName === route.params.slug))
 const effectiveBrand = computed(() => brand.value ?? brandDoc.value)
-const slugName = computed(() => effectiveBrand.value?.slugName ?? '')
+const slugName = computed(() => effectiveBrand.value?.slugName ?? (route.params.slug as string) ?? '')
 const brandName = computed(() =>
   effectiveBrand.value?.localizedName?.['en']
     || effectiveBrand.value?.title
     || effectiveBrand.value?.slugName
-    || (route.params.id as string)
+    || (route.params.slug as string)
 )
 
 const pagination = computed(() => ({
@@ -405,7 +405,7 @@ async function ensureBrandLoaded() {
     return
   }
   try {
-    brandDoc.value = await brandsStore.fetchBrand(route.params.id as string)
+    brandDoc.value = await brandsStore.fetchBrand(route.params.slug as string)
   } catch {
     brandDoc.value = null
   }
@@ -445,7 +445,7 @@ async function changeBoost(row: any, delta: number, e: MouseEvent) {
   if (next === cur) return
   boostingId.value = row.slugName
   try {
-    await datanestApiService.patchSoundFragmentBoost(row.slugName, route.params.id as string, next, row.shared ? 'shared' : 'brand')
+    await datanestApiService.patchSoundFragmentBoost(row.slugName, effectiveBrand.value?.id, next, row.shared ? 'shared' : 'brand')
     row.boost = next
   } catch (err: any) {
     handleApiError(err, message)
@@ -482,7 +482,7 @@ onUnmounted(() => {
 })
 
 watch(
-  () => route.params.id,
+  () => route.params.slug,
   () => {
     brandDoc.value = null
     ensureBrandLoaded()
@@ -502,7 +502,7 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
     <ActionBar>
       <div class="playlist-action-row">
         <div class="gsap-row" style="padding-left:0;flex-wrap:wrap">
-          <GsapButton type="primary" @click="router.push({ path: `/brands/${route.params.id}/playlist/new`, query: { returnTo: route.fullPath } })">
+          <GsapButton type="primary" @click="router.push({ path: `/brands/${route.params.slug}/playlist/new`, query: { returnTo: route.fullPath } })">
             <span>{{ t('playlistView.new_track') }}</span>
           </GsapButton>
           <GsapButton @click="showBulkUpload = true"><span>{{ t('playlistView.bulk_upload') }}</span></GsapButton>
@@ -564,7 +564,7 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
       v-model:checked-row-keys="selectedIds"
       :pagination="pagination"
       remote
-      :row-props="(row: any) => ({ style: 'cursor:pointer;height:48px', onClick: (e: MouseEvent) => { if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return; router.push({ path: `/brands/${route.params.id}/playlist/${row.slugName}`, query: { returnTo: route.fullPath } }) } })"
+      :row-props="(row: any) => ({ style: 'cursor:pointer;height:48px', onClick: (e: MouseEvent) => { if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return; router.push({ path: `/brands/${route.params.slug}/playlist/${row.slugName}`, query: { returnTo: route.fullPath } }) } })"
       @update:page="(p) => { pageNum = p; fetchData(p) }"
       @update:page-size="(s) => { pageSize = s; fetchData(1, s) }"
     >

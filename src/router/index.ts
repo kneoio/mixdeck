@@ -102,43 +102,43 @@ const router = createRouter({
         },
         // Brand sub-pages (must come after /brands/new)
         {
-          path: '/brands/:id/listeners',
+          path: '/brands/:slug/listeners',
           name: 'brand-listeners',
           component: () => import('../views/ListenersView.vue'),
           meta: { requiresAuth: true }
         },
         {
-          path: '/brands/:id/listeners/new',
+          path: '/brands/:slug/listeners/new',
           name: 'brand-listener-new',
           component: () => import('../components/forms/ListenerForm.vue'),
           meta: { requiresAuth: true }
         },
         {
-          path: '/brands/:id/listeners/:listenerId',
+          path: '/brands/:slug/listeners/:listenerId',
           name: 'brand-listener-edit',
           component: () => import('../components/forms/ListenerForm.vue'),
           meta: { requiresAuth: true }
         },
         {
-          path: '/brands/:id/playlist',
+          path: '/brands/:slug/playlist',
           name: 'brand-playlist',
           component: () => import('../views/PlaylistView.vue'),
           meta: { requiresAuth: true }
         },
         {
-          path: '/brands/:id/playlist/new',
+          path: '/brands/:slug/playlist/new',
           name: 'brand-fragment-new',
           component: () => import('../components/forms/SoundFragmentForm.vue'),
           meta: { requiresAuth: true }
         },
         {
-          path: '/brands/:id/playlist/:fragmentId',
+          path: '/brands/:slug/playlist/:fragmentId',
           name: 'brand-fragment-edit',
           component: () => import('../components/forms/SoundFragmentForm.vue'),
           meta: { requiresAuth: true }
         },
         {
-          path: '/brands/:id/settings',
+          path: '/brands/:slug/settings',
           name: 'brand-settings',
           component: () => import('../components/forms/BrandForm.vue'),
           meta: { requiresAuth: true }
