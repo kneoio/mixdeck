@@ -606,7 +606,7 @@ function getFieldLabel(field: ValidationField) {
 
 function getFieldTab(field: ValidationField) {
   if (field === 'localizedNames' || field === 'country' || field === 'timeZone' || field === 'genres') return 'properties'
-  if (field === 'aiAgentId') return 'dj'
+  if (field === 'aiAgentId') return 'onAir'
   return 'script'
 }
 
@@ -1184,7 +1184,7 @@ async function loadAgents() {
 watch(activeTab, async (tab) => {
   if (isTabChangeFromValidation.value) return
   clearAllFieldErrors()
-  if (tab === 'dj') loadAgents()
+  if (tab === 'onAir') loadAgents()
   if (tab === 'script' && scriptMode.value === 'custom') {
     actionsStore.loadOptions()
   }
@@ -1200,7 +1200,7 @@ watch(activeTab, async (tab) => {
     })
     scriptsLoaded.value = true
   }
-  if (tab === 'audience' && !audienceLoaded.value) {
+  if (tab === 'onAir' && !audienceLoaded.value) {
     try {
       const profiles = await datanestApiService.getPagedDictionary<any>('/dictionary/profiles', 1, 100)
       profileOptions.value = profiles.entries.map((p: any) => ({ label: p.name || p.id, value: p.id }))
@@ -1334,50 +1334,91 @@ watch(activeTab, async (tab) => {
         </NForm>
       </NTabPane>
 
-      <NTabPane name="dj" :tab="t('brandForm.tab_dj')">
-        <NForm :label-placement="formLabelPlacement" label-width="160" :disabled="loading">
-          <NFormItem :label="t('brandForm.ai_agent')">
-            <div class="field-stack">
-              <div
-                ref="aiAgentFieldRef"
-                class="field-error-shell"
-                :class="{ 'field-error-shell--active': !!fieldErrors.aiAgentId }"
-              >
-                <NSkeleton v-if="!agentsLoaded" text style="width: 100%; height: 34px; border-radius: 3px;" />
-                <NSelect v-else v-model:value="formData.aiAgentId" :options="agentOptions"
-                  :render-label="renderAgentOptionLabel" style="width: 100%" />
-              </div>
-              <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.aiAgentId }">
-                {{ fieldErrors.aiAgentId || '\u00A0' }}
-              </div>
-            </div>
-          </NFormItem>
+      <NTabPane name="onAir" :tab="t('brandForm.tab_on_air')">
+        <div class="script-cards">
+          <div :class="['player-card', { 'player-card--dark': themeStore.isDark }]">
+            <div class="player-card__label">{{ t('brandForm.card_dj') }}</div>
+            <NForm :label-placement="formLabelPlacement" label-width="160" :disabled="loading" style="margin:0">
+              <NFormItem :label="t('brandForm.ai_agent')">
+                <div class="field-stack">
+                  <div
+                    ref="aiAgentFieldRef"
+                    class="field-error-shell"
+                    :class="{ 'field-error-shell--active': !!fieldErrors.aiAgentId }"
+                  >
+                    <NSkeleton v-if="!agentsLoaded" text style="width: 100%; height: 34px; border-radius: 3px;" />
+                    <NSelect v-else v-model:value="formData.aiAgentId" :options="agentOptions"
+                      :render-label="renderAgentOptionLabel" style="width: 100%" />
+                  </div>
+                  <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.aiAgentId }">
+                    {{ fieldErrors.aiAgentId || '\u00A0' }}
+                  </div>
+                </div>
+              </NFormItem>
 
-          <NDivider v-if="selectedAgent?.description" style="margin: 4px 0 12px 0" />
-          <div v-if="selectedAgent?.description" style="padding: 0 0 8px 0">
-            <span style="color: #888; font-size: 13px;">{{ selectedAgent.description }}</span>
+              <NDivider v-if="selectedAgent?.description" style="margin: 4px 0 12px 0" />
+              <div v-if="selectedAgent?.description" style="padding: 0 0 8px 0">
+                <span style="color: #888; font-size: 13px;">{{ selectedAgent.description }}</span>
+              </div>
+
+              <NFormItem :label="t('brandForm.ai_override')">
+                <div class="field-stack">
+                  <div class="field-error-shell">
+                    <NSwitch v-model:value="formData.aiOverriding.enabled" />
+                  </div>
+                  <div class="field-error-label"></div>
+                </div>
+              </NFormItem>
+
+              <NFormItem v-if="formData.aiOverriding.enabled" :label="t('brandForm.ai_override_name')">
+                <div class="field-stack">
+                  <div class="field-error-shell">
+                    <NInput v-model:value="formData.aiOverriding.name"
+                      :placeholder="t('brandForm.ai_override_name_placeholder')" style="width: 100%; max-width: 400px" />
+                  </div>
+                  <div class="field-error-label"></div>
+                </div>
+              </NFormItem>
+            </NForm>
           </div>
 
-          <NFormItem :label="t('brandForm.ai_override')">
-            <div class="field-stack">
-              <div class="field-error-shell">
-                <NSwitch v-model:value="formData.aiOverriding.enabled" />
-              </div>
-              <div class="field-error-label"></div>
-            </div>
-          </NFormItem>
+          <div :class="['player-card', { 'player-card--dark': themeStore.isDark }]">
+            <div class="player-card__label">{{ t('brandForm.card_audience') }}</div>
+            <NForm :label-placement="formLabelPlacement" label-width="160" :disabled="loading" style="margin:0">
+              <NFormItem :label="t('brandForm.audience_type')">
+                <div class="field-stack">
+                  <div class="field-error-shell">
+                    <NSkeleton v-if="!audienceLoaded" text style="width: 100%; max-width: 500px; height: 34px; border-radius: 3px;" />
+                    <NSelect v-else v-model:value="formData.profileId" :options="profileOptions"
+                      filterable clearable style="width: 100%; max-width: 500px" />
+                  </div>
+                  <div class="field-error-label"></div>
+                </div>
+              </NFormItem>
 
-          <NFormItem v-if="formData.aiOverriding.enabled" :label="t('brandForm.ai_override_name')">
-            <div class="field-stack">
-              <div class="field-error-shell">
-                <NInput v-model:value="formData.aiOverriding.name"
-                  :placeholder="t('brandForm.ai_override_name_placeholder')" style="width: 100%; max-width: 400px" />
-              </div>
-              <div class="field-error-label"></div>
-            </div>
-          </NFormItem>
+              <NFormItem v-if="formData.profileId" :label="t('brandForm.local_name')">
+                <div class="field-stack">
+                  <div class="field-error-shell">
+                    <NInput v-model:value="formData.profileOverriding.name"
+                      :placeholder="t('brandForm.optional_override')" style="width: 100%; max-width: 500px" />
+                  </div>
+                  <div class="field-error-label"></div>
+                </div>
+              </NFormItem>
 
-        </NForm>
+              <NFormItem v-if="formData.profileId" :label="t('brandForm.additional_info')">
+                <div class="field-stack">
+                  <div class="field-error-shell">
+                    <NInput v-model:value="formData.profileOverriding.description"
+                      type="textarea" :autosize="{ minRows: 3, maxRows: 5 }"
+                      :placeholder="t('brandForm.optional_override')" style="width: 100%; max-width: 500px" />
+                  </div>
+                  <div class="field-error-label"></div>
+                </div>
+              </NFormItem>
+            </NForm>
+          </div>
+        </div>
       </NTabPane>
 
       <NTabPane name="script" :tab="t('brandForm.tab_script')">
@@ -1625,43 +1666,6 @@ watch(activeTab, async (tab) => {
             </div>
           </div>
         </div>
-      </NTabPane>
-
-      <!-- temporarily hidden -->
-      <NTabPane name="audience" :tab="t('brandForm.tab_audience')">
-        <NForm :label-placement="formLabelPlacement" label-width="160" :disabled="loading">
-          <NFormItem :label="t('brandForm.audience_type')">
-            <div class="field-stack">
-              <div class="field-error-shell">
-                <NSkeleton v-if="!audienceLoaded" text style="width: 100%; max-width: 500px; height: 34px; border-radius: 3px;" />
-                <NSelect v-else v-model:value="formData.profileId" :options="profileOptions"
-                  filterable clearable style="width: 100%; max-width: 500px" />
-              </div>
-              <div class="field-error-label"></div>
-            </div>
-          </NFormItem>
-
-          <NFormItem v-if="formData.profileId" :label="t('brandForm.local_name')">
-            <div class="field-stack">
-              <div class="field-error-shell">
-                <NInput v-model:value="formData.profileOverriding.name"
-                  :placeholder="t('brandForm.optional_override')" style="width: 100%; max-width: 500px" />
-              </div>
-              <div class="field-error-label"></div>
-            </div>
-          </NFormItem>
-
-          <NFormItem v-if="formData.profileId" :label="t('brandForm.additional_info')">
-            <div class="field-stack">
-              <div class="field-error-shell">
-                <NInput v-model:value="formData.profileOverriding.description"
-                  type="textarea" :autosize="{ minRows: 3, maxRows: 5 }"
-                  :placeholder="t('brandForm.optional_override')" style="width: 100%; max-width: 500px" />
-              </div>
-              <div class="field-error-label"></div>
-            </div>
-          </NFormItem>
-        </NForm>
       </NTabPane>
 
       <NTabPane name="features" :tab="t('brandForm.tab_features')">
