@@ -145,7 +145,7 @@ onMounted(async () => {
     return
   }
   try {
-    await brandsStore.loadBrands(1, 10)
+    await brandsStore.loadBrands()
     if (brandsStore.brands.length === 0 && route.path !== '/broadcaster-welcome') {
       await router.replace('/broadcaster-welcome')
     }

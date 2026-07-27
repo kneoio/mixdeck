@@ -62,15 +62,15 @@ export const useBrandsStore = defineStore('brands', () => {
   const streamingStates = ref<Record<string, boolean>>({})
   const heartbeatPulses = ref<Record<string, number>>({})
 
-  async function loadBrands(page = pageNum.value, size = pageSize.value) {
+  async function loadBrands() {
     loading.value = true
     try {
-      const result = await datanestApiService.getPagedDictionary<Brand>('/public/brands', page, size)
-      brands.value = result.entries
-      totalCount.value = result.count
-      pageNum.value = result.pageNum
-      pageSize.value = result.pageSize
-      maxPage.value = result.maxPage
+      const entries = await datanestApiService.getDictionary<Brand>('/public/brands')
+      brands.value = entries
+      totalCount.value = entries.length
+      pageNum.value = 1
+      pageSize.value = entries.length
+      maxPage.value = 1
     } finally {
       loading.value = false
     }

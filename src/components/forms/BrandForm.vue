@@ -819,7 +819,7 @@ async function handleSave() {
         ?? (savedBrand as any)?.docData?.id
         ?? (savedBrand as any)?.payload?.docData?.id
       if (newId) {
-        await store.loadBrands(1, 10)
+        await store.loadBrands()
         await router.push(`/brands/${newId}/playlist`)
       }
     }
@@ -837,7 +837,7 @@ async function handleCloseBrand() {
     loading.value = true
     await store.closeBrand(route.params.id as string)
     message.success('Brand closed successfully')
-    await store.loadBrands(1, 10)
+    await store.loadBrands()
     const nextBrand = store.brands[0]
     if (nextBrand?.id) {
       await router.push(`/brands/${nextBrand.id}/playlist`)
