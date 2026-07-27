@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { gsap } from 'gsap'
 import {
   NSpace, NForm, NFormItem, NInput, NSelect, NTreeSelect, NDynamicTags,
-  NTabs, NTabPane, NUpload, NProgress, NTag, NButton, NPopover, NPopselect, NTree, NScrollbar, NEmpty, NCollapse, NCollapseItem, NIcon, useMessage,
+  NTabs, NTabPane, NUpload, NProgress, NTag, NButton, NPopover, NPopselect, NTree, NScrollbar, NEmpty, NIcon, useMessage,
 } from 'naive-ui'
 import { CheckmarkCircle } from '@vicons/ionicons5'
 import GsapButton from '@/components/GsapButton.vue'
@@ -69,9 +69,6 @@ const rawAddInfo = ref<Record<string, any> | null>(null)
 
 const MOOD_THRESHOLD = 0.5
 const DANCEABLE_THRESHOLD = 0.6
-// Only fully-consumed scalars are dropped from the raw table; moods/top_genres/ai_generated_metadata_check
-// carry extra internal signal (scores, caveats) beyond what the vibe row surfaces, so they stay visible raw.
-const ADD_INFO_VIBE_KEYS = ['bpm', 'key', 'scale', 'danceability']
 
 function tempoBand(bpm: number): string {
   if (bpm < 70) return 'slow'
@@ -182,14 +179,6 @@ const hasAiCheckData = computed(() => !!rawAddInfo.value?.ai_generated_metadata_
 const hasVibeInfo = computed(() =>
   !!(tempoInfo.value || keyInfo.value || moodInfo.value || genreRows.value.length || hasDanceabilityData.value || hasAiCheckData.value)
 )
-
-const rawAddInfoRows = computed(() => {
-  const info = rawAddInfo.value
-  if (!info) return []
-  return Object.keys(info)
-    .filter(key => !ADD_INFO_VIBE_KEYS.includes(key))
-    .map(key => ({ label: key, value: typeof info[key] === 'object' ? JSON.stringify(info[key]) : String(info[key]) }))
-})
 
 interface SharedWithEntry {
   targetBrand: string
@@ -901,7 +890,7 @@ watch([activeTab, genreRows], async () => {
       </NTabPane>
 
       <NTabPane v-if="isEditing" name="addInfo" :tab="t('fragmentForm.tab_add_info')">
-        <NEmpty v-if="!hasVibeInfo && !rawAddInfoRows.length" :description="t('fragmentForm.add_info_empty')" />
+        <NEmpty v-if="!hasVibeInfo" :description="t('fragmentForm.add_info_empty')" />
         <template v-else>
           <table class="add-info-table">
             <tbody>
@@ -964,18 +953,6 @@ watch([activeTab, genreRows], async () => {
               </tr>
             </tbody>
           </table>
-          <NCollapse v-if="rawAddInfoRows.length" style="margin-top: 16px;">
-            <NCollapseItem :title="t('fragmentForm.add_info_raw')" name="raw">
-              <table class="add-info-table">
-                <tbody>
-                  <tr v-for="row in rawAddInfoRows" :key="row.label">
-                    <td class="add-info-table__label">{{ row.label }}</td>
-                    <td>{{ row.value }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </NCollapseItem>
-          </NCollapse>
         </template>
       </NTabPane>
 

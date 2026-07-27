@@ -399,7 +399,6 @@ export default {
     scheduler_sun: 'Sunday',
     add_info_empty: 'No analysis data available',
     add_info_vibe: 'Vibe',
-    add_info_raw: 'Raw analysis data',
     add_info_ai_guess: 'Heuristic guess, not certain',
     add_info_ai_not_detected: 'Not detected',
     add_info_not_danceable: 'Not danceable',
