@@ -235,8 +235,8 @@ class DatanestApiService extends ApiClient {
     }
   }
 
-  async deleteSoundFragment(id: string): Promise<void> {
-    await this.request<void>(`/soundfragments/${id}`, { method: 'DELETE' })
+  async deleteSoundFragment(slugName: string): Promise<void> {
+    await this.request<void>(`/public/soundfragments/${slugName}`, { method: 'DELETE' })
   }
 
   async patchSoundFragmentBoost(id: string, brandId: string, boost: number, type: 'brand' | 'shared' = 'brand'): Promise<void> {
