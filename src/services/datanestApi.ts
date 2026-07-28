@@ -444,9 +444,9 @@ class DatanestApiService extends ApiClient {
     URL.revokeObjectURL(objectUrl)
   }
 
-  uploadBrandLogo(brandId: string, file: File): Promise<{ slugName: string }> {
+  uploadBrandLogo(brandSlug: string, file: File): Promise<{ slugName: string }> {
     return new Promise((resolve, reject) => {
-      const url = `${this.baseUrl}/brands/${encodeURIComponent(brandId)}/logo`
+      const url = `${this.baseUrl}/brands/${encodeURIComponent(brandSlug)}/logo`
       const formData = new FormData()
       formData.append('file', file)
       const xhr = new XMLHttpRequest()

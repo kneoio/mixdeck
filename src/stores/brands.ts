@@ -8,7 +8,7 @@ export type SubmissionPolicy = 'NOT_ALLOWED' | 'REVIEW_REQUIRED' | 'NO_RESTRICTI
 export type AiAgentMode = 'BASIC' | 'SCRIPT_FOLLOWING'
 
 export interface Brand {
-  id: string
+  id?: string
   author: string
   regDate: string
   lastModifier: string
@@ -76,22 +76,22 @@ export const useBrandsStore = defineStore('brands', () => {
     }
   }
 
-  async function fetchBrand(id: string) {
-    return datanestApiService.getDocument<Brand>('/public/brands', id)
+  async function fetchBrand(slug: string) {
+    return datanestApiService.getDocument<Brand>('/public/brands', slug)
   }
 
-  async function saveBrand(id: string | null, data: Partial<Brand>) {
+  async function saveBrand(slug: string | null, data: Partial<Brand>) {
     const { id: _id, author: _a, regDate: _r, lastModifier: _lm, lastModifiedDate: _lmd, status: _s, ...payload } = data as Brand
-    if (id) return datanestApiService.updateDictionaryItem<Brand>('/pub/brands', id, payload)
-    return datanestApiService.createDictionaryItem<Brand>('/pub/brands', payload)
+    if (slug) return datanestApiService.updateDictionaryItem<Brand>('/public/brands', slug, payload)
+    return datanestApiService.createDictionaryItem<Brand>('/public/brands', payload)
   }
 
-  async function deleteBrand(id: string) {
-    return datanestApiService.deleteDictionaryItem('/brands', id)
+  async function deleteBrand(slug: string) {
+    return datanestApiService.deleteDictionaryItem('/brands', slug)
   }
 
-  async function closeBrand(id: string) {
-    return datanestApiService.post(`/brands/${id}/close`, {})
+  async function closeBrand(slug: string) {
+    return datanestApiService.post(`/public/brands/${encodeURIComponent(slug)}/close`, {})
   }
 
   function setStreamingState(slug: string, alive: boolean) {

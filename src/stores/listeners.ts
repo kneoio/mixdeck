@@ -26,9 +26,12 @@ export const useListenersStore = defineStore('listeners', () => {
     return datanestApiService.getDocument<Listener>('/listeners', id)
   }
 
-  async function saveListener(id: string | null, data: Partial<Listener>) {
-    if (id) return datanestApiService.updateDictionaryItem<Listener>('/listeners', id, data)
-    return datanestApiService.createDictionaryItem<Listener>('/listeners', data)
+  async function saveListener(id: string | null, data: Partial<Listener>, contextBrandSlug?: string) {
+    const qs = contextBrandSlug ? `?contextBrandSlug=${encodeURIComponent(contextBrandSlug)}` : ''
+    if (id) {
+      return datanestApiService.post<Listener>(`/listeners/${encodeURIComponent(id)}${qs}`, data)
+    }
+    return datanestApiService.post<Listener>(`/listeners/new${qs}`, data)
   }
 
   async function deleteListener(id: string) {

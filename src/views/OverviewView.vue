@@ -6,7 +6,7 @@
       <h3 class="overview-section-title">{{ t('overview.radio_stream') }}</h3>
       <NCard
         v-for="brand in brandsStore.brands"
-        :key="brand.id"
+        :key="brand.slugName"
         class="brand-card"
         :style="brand.color ? { '--brand-color': brand.color } : undefined"
       >
@@ -22,11 +22,11 @@
             <a :href="brand.mixplaUrl" target="_blank" rel="noopener noreferrer" class="brand-url-link">{{ brand.mixplaUrl }}</a>
             <button
               class="copy-btn"
-              :class="{ 'copy-btn--done': copiedId === brand.id }"
+              :class="{ 'copy-btn--done': copiedId === brand.slugName }"
               :title="t('dashboard.copy_url')"
               @click="copyUrl(brand)"
             >
-              <svg v-if="copiedId !== brand.id" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <svg v-if="copiedId !== brand.slugName" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
               <svg v-else width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
             </button>
             <button
@@ -48,7 +48,7 @@
 
         <!--
         <NCollapse v-if="brand.slugName" class="agenda-collapse">
-          <NCollapseItem :title="t('agenda.title')" :name="brand.id">
+          <NCollapseItem :title="t('agenda.title')" :name="brand.slugName">
             <AgendaCard :brand-slug="brand.slugName" :alive="isAlive(brand)" />
           </NCollapseItem>
         </NCollapse>
@@ -159,7 +159,7 @@ const brandsStore = useBrandsStore()
 const otsDefinitionsStore = useOtsDefinitionsStore()
 
 const brandLabel = (brand: Brand) =>
-  brand.localizedName?.['en'] || brand.title || brand.slugName || brand.id
+  brand.localizedName?.['en'] || brand.title || brand.slugName || brand.slugName
 
 function isAlive(brand: Brand): boolean {
   return brandsStore.streamingStates[brand.slugName ?? ''] ?? false
@@ -188,7 +188,7 @@ const copiedId = ref<string | null>(null)
 function copyUrl(brand: Brand) {
   if (!brand.mixplaUrl) return
   navigator.clipboard.writeText(brand.mixplaUrl)
-  copiedId.value = brand.id
+  copiedId.value = brand.slugName ?? null
   setTimeout(() => { copiedId.value = null }, 2000)
 }
 

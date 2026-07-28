@@ -46,7 +46,7 @@ const message = useMessage()
 const themeStore = useThemeStore()
 const actionsStore = useActionsStore()
 
-// true when at /brands/:id/settings
+// true when at /brands/:slug/settings
 const isSettings = computed(() => route.name === 'brand-settings')
 const isEditing = computed(() => isSettings.value)
 
@@ -62,7 +62,6 @@ const formTitle = computed(() => {
 })
 
 const loading = ref(false)
-const brandId = ref<string | null>(null)
 const brandSlug = ref<string | null>(null)
 const activeTab = ref('properties')
 const isTabChangeFromValidation = ref(false)
@@ -566,7 +565,7 @@ function onLogoFileSelected(e: Event) {
 }
 
 async function cropAndUpload() {
-  if (!cropperRef.value || !isEditing.value || !brandId.value) return
+  if (!cropperRef.value || !isEditing.value || !brandSlug.value) return
   logoUploading.value = true
   try {
     const { canvas } = cropperRef.value.getResult()
@@ -575,9 +574,9 @@ async function cropAndUpload() {
       canvas.toBlob(b => b ? res(b) : rej(new Error('toBlob failed')), 'image/png')
     )
     const file = new File([blob], 'logo.png', { type: 'image/png' })
-    const result = await datanestApiService.uploadBrandLogo(brandId.value!, file)
+    const result = await datanestApiService.uploadBrandLogo(brandSlug.value!, file)
     logoSlugName.value = result.slugName
-    await loadLogoPreview(brandId.value!, result.slugName)
+    await loadLogoPreview(brandSlug.value!, result.slugName)
     showCropDialog.value = false
   } catch (e: any) {
     message.error(e?.message || 'Logo upload failed')
@@ -773,7 +772,7 @@ async function handleSave() {
   try {
     loading.value = true
     console.log('[BrandForm] save | scriptMode:', scriptMode.value, '| scriptId:', formData.value.scriptId, '| customScriptId will be:', scriptMode.value === 'custom' ? formData.value.scriptId || undefined : undefined)
-    const savedBrand = await store.saveBrand(isEditing.value ? brandId.value : null, {
+    const savedBrand = await store.saveBrand(isEditing.value ? brandSlug.value : null, {
       ...formData.value,
       localizedName: buildLocalizedName(),
       country: formData.value.country || undefined,
@@ -988,7 +987,6 @@ function normalizeBitRateFromServer(raw: number | null | undefined): number {
 }
 
 function applyBrandToForm(brand: any) {
-  brandId.value = brand.id ?? null
   brandSlug.value = brand.slugName ?? null
   const ln = brand.localizedName || {}
   localizedNames.value = Object.entries(ln).map(([lang, name]) => ({ lang, name: String(name ?? '') }))
@@ -1067,8 +1065,7 @@ function applyBrandToForm(brand: any) {
   const logoSlug = (brand as any).logoFiles?.[0]?.slugName
   if (logoSlug) {
     logoSlugName.value = logoSlug
-    loadLogoPreview(brandId.value as string, logoSlug)
-  } else {
+    loadLogoPreview(route.params.slug as string, logoSlug)  } else {
     logoSlugName.value = null
     logoPreviewUrl.value = null
   }
@@ -1106,11 +1103,11 @@ onBeforeUnmount(() => {
 
 watch(
   () => route.params.slug,
-  async (newId, oldId) => {
-    if (!isEditing.value || !newId || newId === oldId) return
+  async (newSlug, oldSlug) => {
+    if (!isEditing.value || !newSlug || newSlug === oldSlug) return
     try {
       loading.value = true
-      const brand = await store.fetchBrand(newId as string)
+      const brand = await store.fetchBrand(newSlug as string)
       applyBrandToForm(brand)
       normalizeScenePlaylistIds()
     } catch (error: any) {

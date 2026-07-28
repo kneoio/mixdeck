@@ -55,7 +55,7 @@ const agentOptions = ref<SelectOption[]>([])
 const loadingAgents = ref(false)
 
 const brandOptions = computed(() =>
-  brandsStore.brands.map((brand) => ({ label: brand.localizedName?.['en'] || brand.title || brand.slugName || brand.id, value: brand.id }))
+  brandsStore.brands.map((brand) => ({ label: brand.localizedName?.['en'] || brand.title || brand.slugName || '', value: brand.slugName! }))
 )
 
 const md = new MarkdownIt()
@@ -132,7 +132,7 @@ async function loadAgents() {
   try {
     let endpoint = '/dictionary/agents'
     if (formData.value.scope === 'brand' && formData.value.brandId) {
-      const brand = brandsStore.brands.find((b) => b.id === formData.value.brandId)
+      const brand = brandsStore.brands.find((b) => b.slugName === formData.value.brandId)
       endpoint = `/dictionary/agents?brand=${encodeURIComponent(brand?.slugName ?? '')}`
     }
     const result = await datanestApiService.getPagedDictionary<any>(endpoint, 1, 100)

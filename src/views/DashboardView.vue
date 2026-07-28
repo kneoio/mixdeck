@@ -217,7 +217,7 @@ function handleUpdateExpandedKeys(keys: string[]) {
 }
 
 const brandLabel = (brand: any) =>
-  brand.localizedName?.['en'] || brand.title || brand.slugName || brand.id
+  brand.localizedName?.['en'] || brand.title || brand.slugName || ''
 
 const menuOptions = computed<MenuOption[]>(() => [
   {

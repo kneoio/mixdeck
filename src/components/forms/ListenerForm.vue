@@ -79,10 +79,10 @@ async function handleSave() {
       isEditing.value ? listenerId.value : null,
       {
         localizedName: buildLocalizedName(),
-        listenerOf: brand.value?.id ? [brand.value.id] : undefined,
         labels: labels.value.length ? labels.value : undefined,
         userData: buildUserData(),
-      }
+      },
+      brandSlug.value || undefined,
     )
     message.success(t('listenerForm.saved'))
     router.push(backRoute.value)

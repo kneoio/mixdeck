@@ -39,8 +39,6 @@ const message = useMessage()
 
 
 const brandSlug = computed(() => route.params.slug as string)
-const brand = computed(() => brandsStore.brands.find(b => b.slugName === brandSlug.value))
-const brandId = computed(() => brand.value?.id ?? '')
 const isEditing = computed(() => !!route.params.fragmentId && route.params.fragmentId !== 'new')
 const loading = ref(false)
 const activeTab = ref('properties')
@@ -230,7 +228,7 @@ const formData = ref({
   description: '',
   genres: [] as string[],
   labels: [] as string[],
-  representedInBrands: brandId.value ? [brandId.value] : [] as string[],
+  representedInBrands: brandSlug.value ? [brandSlug.value] : [] as string[],
   expiresAt: '' as string | null,
   length: null as number | null,
   source: 'USER_UPLOAD' as string,
@@ -350,8 +348,8 @@ function handleLabelTagsChange(newTags: string[]) {
 
 const brandOptions = computed(() =>
   brandsStore.brands.map(b => ({
-    label: b.localizedName?.['en'] || b.title || b.slugName || b.id,
-    value: b.id,
+    label: b.localizedName?.['en'] || b.title || b.slugName || '',
+    value: b.slugName!,
   }))
 )
 
@@ -526,6 +524,10 @@ async function handleSave() {
     const id = isEditing.value ? (route.params.fragmentId as string) : null
     const payload: any = { ...formData.value, customTags: customTags.value }
     if (uploadedFileNames.value.length) payload.newlyUploaded = uploadedFileNames.value
+    if (payload.representedInBrands?.length) {
+      payload.brands = payload.representedInBrands
+      delete payload.representedInBrands
+    }
     const saved = await store.saveFragment(id, payload)
     formData.value.labels = saved.labels || []
     customTags.value = []
