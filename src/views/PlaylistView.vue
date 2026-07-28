@@ -181,7 +181,8 @@ function resolveLabel(l: any) {
 
 const brand = computed(() => brandsStore.brands.find(b => b.slugName === route.params.slug))
 const effectiveBrand = computed(() => brand.value ?? brandDoc.value)
-const slugName = computed(() => effectiveBrand.value?.slugName ?? (route.params.slug as string) ?? '')const brandName = computed(() =>
+const slugName = computed(() => effectiveBrand.value?.slugName ?? (route.params.slug as string) ?? '')
+const brandName = computed(() =>
   effectiveBrand.value?.localizedName?.['en']
     || effectiveBrand.value?.title
     || effectiveBrand.value?.slugName
