@@ -444,7 +444,8 @@ async function changeBoost(row: any, delta: number, e: MouseEvent) {
   if (next === cur) return
   boostingId.value = row.slugName
   try {
-    await datanestApiService.patchSoundFragmentBoost(row.slugName, route.params.slug as string, next, row.shared ? 'shared' : 'brand')    row.boost = next
+    await datanestApiService.patchSoundFragmentBoost(row.slugName, route.params.slug as string, next, row.shared ? 'shared' : 'brand')
+    row.boost = next
   } catch (err: any) {
     handleApiError(err, message)
   } finally {
