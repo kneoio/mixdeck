@@ -33,7 +33,8 @@ const maxPage = ref(1)
 const selectedIds = ref<string[]>([])
 
 const brand = computed(() => brandsStore.brands.find(b => b.slugName === route.params.slug))
-const slugName = computed(() => brand.value?.slugName ?? (route.params.slug as string) ?? '')const brandName = computed(() =>
+const slugName = computed(() => brand.value?.slugName ?? (route.params.slug as string) ?? '')
+const brandName = computed(() =>
   brand.value?.localizedName?.['en'] || brand.value?.title || brand.value?.slugName || (route.params.slug as string)
 )
 

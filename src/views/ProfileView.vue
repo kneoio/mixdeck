@@ -159,7 +159,7 @@ onMounted(async () => {
               <component :is="renderInfoTag(formatPlanName(userSubscriptionStore.subscriptionType))" />
             </NDescriptionsItem>
             <NDescriptionsItem :label="t('profile.status')">
-              <component :is="renderStatusTag(userSubscriptionStore.subscriptionStatus, userSubscriptionStore.hasActiveSubscription)" />
+              <component :is="renderStatusTag(userSubscriptionStore.subscriptionStatus ?? '', userSubscriptionStore.hasActiveSubscription)" />
             </NDescriptionsItem>
           </NDescriptions>
 

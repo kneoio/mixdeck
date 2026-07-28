@@ -49,7 +49,7 @@ const formData = ref({
 const scriptDetail = ref<Script | null>(null)
 const otsStatus = ref<string | null>(null)
 const otsType = ref<string | null>(null)
-const variables = reactive<Record<string, unknown>>({})
+const variables = reactive<Record<string, any>>({})
 const varErrors = reactive<Record<string, string>>({})
 const agentOptions = ref<SelectOption[]>([])
 const loadingAgents = ref(false)
@@ -198,7 +198,7 @@ async function handleSave() {
   loading.value = true
   try {
     const payload = {
-      name: formData.value.name || null,
+      name: formData.value.name || undefined,
       scriptId: formData.value.scriptId!,
       userVariables: { ...variables },
       brandId: formData.value.scope === 'brand' ? formData.value.brandId : null,
