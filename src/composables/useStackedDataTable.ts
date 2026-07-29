@@ -2,9 +2,9 @@ import { ref, watch, onUnmounted } from 'vue'
 
 /**
  * Stack when the *table container* is at or below this width (not the window).
- * Playlist/Received need ~1200px for title+artist+genres+labels+rating+played+boost.
+ * Tuned so mid-width desktops keep columns; stack only when trailing cols would clip.
  */
-export const STACKED_TABLE_MAX_WIDTH = 1200
+export const STACKED_TABLE_MAX_WIDTH = 980
 
 /** Phone-sized layout tweaks (action bars, etc.). */
 export const MOBILE_MAX_WIDTH = 640

@@ -289,14 +289,14 @@ const columns = computed<DataTableColumns<any>>(() => {
   {
     title: t('playlistView.col_title'),
     key: 'title',
-    minWidth: 200,
+    minWidth: 160,
     ellipsis: { tooltip: true },
     render: (row) => row.title || '-',
   },
   {
     title: t('playlistView.col_artist'),
     key: 'artist',
-    minWidth: 160,
+    minWidth: 120,
     ellipsis: { tooltip: true },
     render: (row) => row.artist || '-',
   },
@@ -320,7 +320,7 @@ const columns = computed<DataTableColumns<any>>(() => {
     },
   },
   {
-    title: t('playlistView.col_genres'), key: 'genres', width: 180,
+    title: t('playlistView.col_genres'), key: 'genres', width: 140,
     render: (row) => {
       if (!row.genres?.length) return '-'
       return h(NSpace, { size: 4, wrap: true }, {
@@ -335,7 +335,7 @@ const columns = computed<DataTableColumns<any>>(() => {
     }
   },
   {
-    title: t('playlistView.col_labels'), key: 'labels', width: 180,
+    title: t('playlistView.col_labels'), key: 'labels', width: 120,
     render: (row) => {
       if (!row.labels?.length) return '-'
       return h(NSpace, { size: 4, wrap: true }, {
@@ -350,7 +350,7 @@ const columns = computed<DataTableColumns<any>>(() => {
     }
   },
   {
-    title: t('playlistView.col_rating'), key: 'rating', width: 120,
+    title: t('playlistView.col_rating'), key: 'rating', width: 100,
     render: (row) => {
       const l = row.likes ?? 0
       const d = row.dislikes ?? 0
@@ -361,19 +361,19 @@ const columns = computed<DataTableColumns<any>>(() => {
     }
   },
   {
-    title: t('playlistView.col_played'), key: 'playedByBrandCount', width: 80,
+    title: t('playlistView.col_played'), key: 'playedByBrandCount', width: 72,
     render: (row) => row.playedByBrandCount ?? 0,
   },
   {
     key: 'boost',
-    width: 110,
+    width: 100,
     title: 'Boost',
     render: (row) => renderBoostControls(row),
   },
   {
     title: '',
     key: 'shared',
-    width: 72,
+    width: 56,
     align: 'center',
     render: (row) => row.shared
       ? h(NIcon, { size: 18, color: 'var(--vt-c-primary)' }, { default: () => h(ShareSocialOutline) })
