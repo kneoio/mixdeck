@@ -182,13 +182,18 @@ onBeforeUnmount(() => {
 }
 
 .ask-page {
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
   background: #050505;
   color: #f5f5f5;
   font-family: 'Inter', sans-serif;
-  padding: 24px clamp(16px, 4vw, 64px) 16px;
+  padding: 16px clamp(16px, 4vw, 64px) 12px;
 }
 
 .nav {
@@ -196,7 +201,8 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding-bottom: 16px;
+  padding-bottom: 12px;
+  flex-shrink: 0;
 }
 
 .logo {
@@ -253,8 +259,9 @@ onBeforeUnmount(() => {
 }
 
 .ask-header {
-  padding: 20px 20px 12px;
+  padding: 16px 20px 12px;
   border-bottom: 1px solid #1a1a1a;
+  flex-shrink: 0;
 }
 
 .eyebrow {
@@ -278,13 +285,13 @@ onBeforeUnmount(() => {
 
 .ask-messages {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  min-height: 280px;
-  max-height: calc(100vh - 280px);
 }
 
 .ask-empty {
@@ -437,6 +444,7 @@ onBeforeUnmount(() => {
   padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
   border-top: 1px solid #1a1a1a;
   background: #0c0c0c;
+  flex-shrink: 0;
 }
 
 .ask-composer :deep(.n-input) {
@@ -448,11 +456,12 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-  padding-top: 20px;
-  margin-top: 16px;
+  padding-top: 12px;
+  margin-top: 12px;
   border-top: 1px solid #1a1a1a;
   color: #444;
   font-size: 0.8rem;
+  flex-shrink: 0;
 }
 
 .back-link {
@@ -471,11 +480,10 @@ onBeforeUnmount(() => {
 
 @media (max-width: 640px) {
   .ask-page {
-    padding: 16px 12px 12px;
+    padding: 12px 12px 8px;
   }
 
   .ask-messages {
-    max-height: calc(100vh - 260px);
     padding: 14px;
   }
 

@@ -1,5 +1,5 @@
 <template>
-  <n-config-provider :theme="darkTheme" :theme-overrides="themeOverrides">
+  <n-config-provider class="ask-view-root" :theme="darkTheme" :theme-overrides="themeOverrides">
     <n-message-provider>
       <AskChatPanel />
     </n-message-provider>
@@ -33,3 +33,12 @@ const themeOverrides = computed<GlobalThemeOverrides>(() => ({
   },
 }))
 </script>
+
+<style scoped>
+.ask-view-root {
+  display: block;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+</style>
