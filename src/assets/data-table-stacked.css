@@ -1,0 +1,62 @@
+.mob-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 0;
+}
+.mob-r1 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.mob-title {
+  font-weight: 500;
+  min-width: 0;
+}
+.mob-sep {
+  opacity: 0.35;
+  flex-shrink: 0;
+}
+.mob-artist {
+  opacity: 0.65;
+  font-size: 0.9em;
+  min-width: 0;
+}
+.mob-r2 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding-left: 2px;
+}
+.mob-r3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  font-size: 0.8em;
+  opacity: 0.55;
+  padding-left: 2px;
+}
+.mob-meta-item {
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.mob-desc {
+  max-width: min(420px, 100%);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.n-data-table--stacked-rows .n-data-table-tr {
+  height: auto !important;
+}
+.n-data-table--stacked-rows .n-data-table-td {
+  vertical-align: top;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}

@@ -15,6 +15,9 @@ import GsapButton from '@/components/GsapButton.vue'
 import GsapLoader from '@/components/GsapLoader.vue'
 import { handleApiError } from '@/utils/notificationService'
 import { useBrandsStore } from '@/stores/brands'
+import { useStackedDataTable } from '@/composables/useStackedDataTable'
+
+const { stackedRows } = useStackedDataTable()
 
 const { t } = useI18n()
 const pageTitle = computed(() => `${t('menu.my_sounds')} / ${t('menu.songs')}`)
@@ -69,7 +72,37 @@ const pagination = computed(() => ({
   itemCount: totalCount.value,
 }))
 
-const columns = computed<DataTableColumns<any>>(() => [
+const columns = computed<DataTableColumns<any>>(() => {
+  if (stackedRows.value) {
+    return [
+      { type: 'selection', multiple: true },
+      {
+        key: 'stacked',
+        title: '',
+        render: (row) => {
+          const row1 = h('div', { class: 'mob-r1' }, [
+            h('span', { class: 'mob-title' }, row.title || '-'),
+            h('span', { class: 'mob-sep' }, '—'),
+            h('span', { class: 'mob-artist' }, row.artist || '-'),
+          ])
+          const genreTags = (row.genres || []).map((g: any) => {
+            const r = resolveGenre(g)
+            return h(NTag, { size: 'small', style: r.color ? `background:${r.color};color:${r.fontColor || '#fff'}` : '' }, { default: () => r.name })
+          })
+          const labelTags = (row.labels || []).map((l: any) => {
+            const r = resolveLabel(l)
+            return h(NTag, { size: 'small', style: r.color ? `background:${r.color};color:${r.fontColor || '#fff'}` : '' }, { default: () => r.name })
+          })
+          const row2 = (genreTags.length || labelTags.length)
+            ? h('div', { class: 'mob-r2' }, [...genreTags, ...labelTags])
+            : null
+          return h('div', { class: 'mob-card' }, [row1, row2].filter(Boolean))
+        },
+      },
+    ]
+  }
+
+  return [
   { type: 'selection', multiple: true },
   { title: t('playlistView.col_title'), key: 'title', minWidth: 200, render: (row) => row.title || '-' },
   { title: t('playlistView.col_artist'), key: 'artist', minWidth: 160, render: (row) => row.artist || '-' },
@@ -103,7 +136,8 @@ const columns = computed<DataTableColumns<any>>(() => [
       })
     }
   },
-])
+  ]
+})
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 function onSearchChange() {
@@ -235,6 +269,7 @@ onMounted(async () => {
       </div>
     </ActionBar>
     <NDataTable
+      :class="{ 'n-data-table--stacked-rows': stackedRows }"
       :columns="columns"
       :data="entries"
       :loading="loading"

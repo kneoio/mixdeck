@@ -18,6 +18,7 @@ import GsapLoader from '@/components/GsapLoader.vue'
 import BulkUploadDialog from '@/components/forms/BulkUploadDialog.vue'
 import ShareToBrandsDialog from '@/components/forms/ShareToBrandsDialog.vue'
 import { handleApiError } from '@/utils/notificationService'
+import { useStackedDataTable } from '@/composables/useStackedDataTable'
 
 const { t } = useI18n()
 
@@ -133,20 +134,8 @@ async function toggleRowPlay(row: any, e: MouseEvent) {
   }
 }
 
-/** When true, narrow genres / labels / played / description so title & artist keep space. */
-const narrowPlaylistTable = ref(false)
-let playlistTableMql: MediaQueryList | null = null
-
-function syncPlaylistTableNarrow() {
-  narrowPlaylistTable.value = playlistTableMql?.matches ?? false
-}
-
-const isMobile = ref(false)
-let mobileMql: MediaQueryList | null = null
-
-function syncMobile() {
-  isMobile.value = mobileMql?.matches ?? false
-}
+/** When true, use multi-line row cards instead of squeezed columns (see STACKED_TABLE_MAX_WIDTH). */
+const { stackedRows } = useStackedDataTable()
 
 // Lookup maps for resolving IDs → display names
 const genreMap = ref<Map<string, { name: string; color?: string; fontColor?: string }>>(new Map())
@@ -197,8 +186,51 @@ const pagination = computed(() => ({
   itemCount: totalCount.value,
 }))
 
+const boostingId = ref<string | null>(null)
+
+async function changeBoost(row: any, delta: number, e: MouseEvent) {
+  e.stopPropagation()
+  const cur = row.boost ?? 0
+  const next = Math.min(2, Math.max(-1, cur + delta))
+  if (next === cur) return
+  boostingId.value = row.slugName
+  try {
+    await datanestApiService.patchSoundFragmentBoost(row.slugName, route.params.slug as string, next, row.shared ? 'shared' : 'brand')
+    row.boost = next
+  } catch (err: any) {
+    handleApiError(err, message)
+  } finally {
+    boostingId.value = null
+  }
+}
+
+function renderBoostControls(row: any) {
+  const boost = row.boost ?? 0
+  const busy = boostingId.value === row.slugName
+  const upBtn = h(NButton, {
+    text: true, size: 'tiny',
+    disabled: busy || boost >= 2,
+    onClick: (e: MouseEvent) => changeBoost(row, 1, e),
+  }, { icon: () => h(NIcon, { size: 16 }, { default: () => h(ArrowUpOutline) }) })
+  const leds = h('span', { style: 'display:flex;flex-direction:row;align-items:center;gap:2px' }, [
+    h(LedIndicator, { active: boost === 2, color: '#f59e0b', size: 12 }),
+    h(LedIndicator, { active: boost === 1, color: '#22c55e', size: 12 }),
+    h(LedIndicator, { active: boost === -1, color: '#ef4444', size: 12 }),
+  ])
+  const downBtn = h(NButton, {
+    text: true, size: 'tiny',
+    disabled: busy || boost <= -1,
+    onClick: (e: MouseEvent) => changeBoost(row, -1, e),
+  }, { icon: () => h(NIcon, { size: 16 }, { default: () => h(ArrowDownOutline) }) })
+  return h('span', {
+    style: 'display:flex;align-items:center;gap:3px',
+    onMousedown: (e: MouseEvent) => e.stopPropagation(),
+    onClick: (e: MouseEvent) => e.stopPropagation(),
+  }, [upBtn, leds, downBtn])
+}
+
 const columns = computed<DataTableColumns<any>>(() => {
-  if (isMobile.value) {
+  if (stackedRows.value) {
     return [
       { type: 'selection', multiple: true },
       {
@@ -241,6 +273,7 @@ const columns = computed<DataTableColumns<any>>(() => {
             h('span', { class: 'mob-meta-item' }, `${t('playlistView.col_played')}: ${played}`),
             h('span', { class: 'mob-meta-item' }, [t('playlistView.col_rating') + ': ', dislikesBadge, ' ', likesBadge]),
           ]
+          metaItems.push(h('span', { class: 'mob-meta-item', style: 'opacity:1' }, ['Boost: ', renderBoostControls(row)]))
           if (row.shared) metaItems.push(h('span', { class: 'mob-meta-item' }, [h(NIcon, { size: 14, color: 'var(--vt-c-primary)' }, { default: () => h(ShareSocialOutline) })]))
           if (row.description) metaItems.push(h('span', { class: 'mob-meta-item mob-desc' }, row.description))
           const row3 = h('div', { class: 'mob-r3' }, metaItems)
@@ -251,31 +284,19 @@ const columns = computed<DataTableColumns<any>>(() => {
     ]
   }
 
-  const nw = narrowPlaylistTable.value
-  const genreW = nw ? 100 : 180
-  const labelW = nw ? 88 : 180
-  const playedW = nw ? 56 : 80
-  const descMin = nw ? 72 : 160
-  const titleMin = nw ? 220 : 200
-  const artistMin = nw ? 180 : 160
-  const ratingW = nw ? 100 : 120
-  const sharedW = nw ? 56 : 72
-
   return [
   { type: 'selection', multiple: true },
   {
     title: t('playlistView.col_title'),
     key: 'title',
-    width: nw ? titleMin : undefined,
-    minWidth: titleMin,
+    minWidth: 200,
     ellipsis: { tooltip: true },
     render: (row) => row.title || '-',
   },
   {
     title: t('playlistView.col_artist'),
     key: 'artist',
-    width: nw ? artistMin : undefined,
-    minWidth: artistMin,
+    minWidth: 160,
     ellipsis: { tooltip: true },
     render: (row) => row.artist || '-',
   },
@@ -299,7 +320,7 @@ const columns = computed<DataTableColumns<any>>(() => {
     },
   },
   {
-    title: t('playlistView.col_genres'), key: 'genres', width: genreW,
+    title: t('playlistView.col_genres'), key: 'genres', width: 180,
     render: (row) => {
       if (!row.genres?.length) return '-'
       return h(NSpace, { size: 4, wrap: true }, {
@@ -314,7 +335,7 @@ const columns = computed<DataTableColumns<any>>(() => {
     }
   },
   {
-    title: t('playlistView.col_labels'), key: 'labels', width: labelW,
+    title: t('playlistView.col_labels'), key: 'labels', width: 180,
     render: (row) => {
       if (!row.labels?.length) return '-'
       return h(NSpace, { size: 4, wrap: true }, {
@@ -329,7 +350,7 @@ const columns = computed<DataTableColumns<any>>(() => {
     }
   },
   {
-    title: t('playlistView.col_rating'), key: 'rating', width: ratingW,
+    title: t('playlistView.col_rating'), key: 'rating', width: 120,
     render: (row) => {
       const l = row.likes ?? 0
       const d = row.dislikes ?? 0
@@ -340,38 +361,19 @@ const columns = computed<DataTableColumns<any>>(() => {
     }
   },
   {
-    title: t('playlistView.col_played'), key: 'playedByBrandCount', width: playedW,
+    title: t('playlistView.col_played'), key: 'playedByBrandCount', width: 80,
     render: (row) => row.playedByBrandCount ?? 0,
   },
   {
     key: 'boost',
     width: 110,
     title: 'Boost',
-    render: (row) => {
-      const boost = row.boost ?? 0
-      const busy = boostingId.value === row.slugName
-      const upBtn = h(NButton, {
-        text: true, size: 'tiny',
-        disabled: busy || boost >= 2,
-        onClick: (e: MouseEvent) => changeBoost(row, 1, e),
-      }, { icon: () => h(NIcon, { size: 16 }, { default: () => h(ArrowUpOutline) }) })
-      const leds = h('span', { style: 'display:flex;flex-direction:row;align-items:center;gap:2px' }, [
-        h(LedIndicator, { active: boost === 2, color: '#f59e0b', size: 12 }),
-        h(LedIndicator, { active: boost === 1, color: '#22c55e', size: 12 }),
-        h(LedIndicator, { active: boost === -1, color: '#ef4444', size: 12 }),
-      ])
-      const downBtn = h(NButton, {
-        text: true, size: 'tiny',
-        disabled: busy || boost <= -1,
-        onClick: (e: MouseEvent) => changeBoost(row, -1, e),
-      }, { icon: () => h(NIcon, { size: 16 }, { default: () => h(ArrowDownOutline) }) })
-      return h('span', { style: 'display:flex;align-items:center;gap:3px', onMousedown: (e: MouseEvent) => e.stopPropagation(), onClick: (e: MouseEvent) => e.stopPropagation() }, [upBtn, leds, downBtn])
-    },
+    render: (row) => renderBoostControls(row),
   },
   {
     title: '',
     key: 'shared',
-    width: sharedW,
+    width: 72,
     align: 'center',
     render: (row) => row.shared
       ? h(NIcon, { size: 18, color: 'var(--vt-c-primary)' }, { default: () => h(ShareSocialOutline) })
@@ -436,24 +438,6 @@ function onShareDialogDone() {
   void fetchData()
 }
 
-const boostingId = ref<string | null>(null)
-
-async function changeBoost(row: any, delta: number, e: MouseEvent) {
-  e.stopPropagation()
-  const cur = row.boost ?? 0
-  const next = Math.min(2, Math.max(-1, cur + delta))
-  if (next === cur) return
-  boostingId.value = row.slugName
-  try {
-    await datanestApiService.patchSoundFragmentBoost(row.slugName, route.params.slug as string, next, row.shared ? 'shared' : 'brand')
-    row.boost = next
-  } catch (err: any) {
-    handleApiError(err, message)
-  } finally {
-    boostingId.value = null
-  }
-}
-
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 function onSearchChange() {
   if (searchTimer) clearTimeout(searchTimer)
@@ -461,12 +445,6 @@ function onSearchChange() {
 }
 
 onMounted(() => {
-  playlistTableMql = window.matchMedia('(max-width: 1100px)')
-  narrowPlaylistTable.value = playlistTableMql.matches
-  playlistTableMql.addEventListener('change', syncPlaylistTableNarrow)
-  mobileMql = window.matchMedia('(max-width: 640px)')
-  isMobile.value = mobileMql.matches
-  mobileMql.addEventListener('change', syncMobile)
   ensureBrandLoaded()
 })
 
@@ -475,10 +453,6 @@ onUnmounted(() => {
   detachSeekListeners()
   blobUrlCache.forEach(url => URL.revokeObjectURL(url))
   blobUrlCache.clear()
-  playlistTableMql?.removeEventListener('change', syncPlaylistTableNarrow)
-  playlistTableMql = null
-  mobileMql?.removeEventListener('change', syncMobile)
-  mobileMql = null
 })
 
 watch(
@@ -557,6 +531,7 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
       </div>
     </div>
     <NDataTable
+      :class="{ 'n-data-table--stacked-rows': stackedRows }"
       :columns="columns"
       :data="entries"
       :loading="loading"
@@ -564,7 +539,10 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
       v-model:checked-row-keys="selectedIds"
       :pagination="pagination"
       remote
-      :row-props="(row: any) => ({ style: 'cursor:pointer;height:48px', onClick: (e: MouseEvent) => { if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return; router.push({ path: `/brands/${route.params.slug}/playlist/${row.slugName}`, query: { returnTo: route.fullPath } }) } })"
+      :row-props="(row: any) => ({
+        style: stackedRows ? 'cursor:pointer' : 'cursor:pointer;height:48px',
+        onClick: (e: MouseEvent) => { if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return; router.push({ path: `/brands/${route.params.slug}/playlist/${row.slugName}`, query: { returnTo: route.fullPath } }) }
+      })"
       @update:page="(p) => { pageNum = p; fetchData(p) }"
       @update:page-size="(s) => { pageSize = s; fetchData(1, s) }"
     >
@@ -631,15 +609,6 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
   border-color: rgba(220, 38, 38, 0.5);
   box-shadow: 0 0 7px 2px rgba(220, 38, 38, 0.25);
 }
-.mob-card { display: flex; flex-direction: column; gap: 4px; padding: 2px 0; }
-.mob-r1 { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.mob-title { font-weight: 500; }
-.mob-sep { opacity: 0.35; }
-.mob-artist { opacity: 0.65; font-size: 0.9em; }
-.mob-r2 { display: flex; flex-wrap: wrap; gap: 4px; padding-left: 2px; }
-.mob-r3 { display: flex; flex-wrap: wrap; gap: 8px; font-size: 0.8em; opacity: 0.55; padding-left: 2px; }
-.mob-meta-item { white-space: nowrap; display: flex; align-items: center; gap: 3px; }
-.mob-desc { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .playlist-action-row {
   display: flex;
   align-items: center;

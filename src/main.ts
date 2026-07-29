@@ -1,4 +1,5 @@
 import './assets/main.css'
+import './assets/data-table-stacked.css'
 
 // Reload once on chunk load failures caused by a stale deployment
 window.addEventListener('vite:preloadError', () => {

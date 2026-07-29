@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, h, onMounted, onUnmounted } from 'vue'
+import { ref, computed, h, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import {
@@ -14,6 +14,9 @@ import ActionBar from '@/components/ActionBar.vue'
 import GsapButton from '@/components/GsapButton.vue'
 import GsapLoader from '@/components/GsapLoader.vue'
 import { handleApiError } from '@/utils/notificationService'
+import { useStackedDataTable } from '@/composables/useStackedDataTable'
+
+const { stackedRows } = useStackedDataTable()
 
 const { t } = useI18n()
 const pageTitle = computed(() => `${t('menu.my_sounds')} / ${t('menu.sound_assets')}`)
@@ -28,10 +31,6 @@ const pageNum = ref(1)
 const pageSize = ref(10)
 const selectedIds = ref<string[]>([])
 const searchTerm = ref('')
-
-const isMobile = ref(false)
-let mobileMql: MediaQueryList | null = null
-function syncMobile() { isMobile.value = mobileMql?.matches ?? false }
 
 const genreMap = ref<Map<string, { name: string; color?: string; fontColor?: string }>>(new Map())
 const labelMap = ref<Map<string, { name: string; color?: string; fontColor?: string }>>(new Map())
@@ -72,7 +71,7 @@ const pagination = computed(() => ({
 }))
 
 const columns = computed<DataTableColumns<any>>(() => {
-  if (isMobile.value) {
+  if (stackedRows.value) {
     return [
       { type: 'selection', multiple: true },
       {
@@ -171,16 +170,8 @@ async function handleBulkDelete() {
 }
 
 onMounted(async () => {
-  mobileMql = window.matchMedia('(max-width: 640px)')
-  isMobile.value = mobileMql.matches
-  mobileMql.addEventListener('change', syncMobile)
   await loadDictionaries()
   await fetchData(1)
-})
-
-onUnmounted(() => {
-  mobileMql?.removeEventListener('change', syncMobile)
-  mobileMql = null
 })
 </script>
 
@@ -215,6 +206,7 @@ onUnmounted(() => {
       </div>
     </ActionBar>
     <NDataTable
+      :class="{ 'n-data-table--stacked-rows': stackedRows }"
       :columns="columns"
       :data="entries"
       :loading="loading"

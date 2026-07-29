@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, h, onMounted, onUnmounted } from 'vue'
+import { ref, computed, h, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import {
@@ -15,6 +15,9 @@ import ActionBar from '@/components/ActionBar.vue'
 import GsapButton from '@/components/GsapButton.vue'
 import GsapLoader from '@/components/GsapLoader.vue'
 import { handleApiError } from '@/utils/notificationService'
+import { useStackedDataTable } from '@/composables/useStackedDataTable'
+
+const { stackedRows } = useStackedDataTable()
 
 const { t } = useI18n()
 const message = useMessage()
@@ -46,9 +49,6 @@ async function changeBoost(row: any, delta: number, e: MouseEvent) {
   }
 }
 
-const isMobile = ref(false)
-let mobileMql: MediaQueryList | null = null
-function syncMobile() { isMobile.value = mobileMql?.matches ?? false }
 
 const genreMap = ref<Map<string, { name: string; color?: string; fontColor?: string }>>(new Map())
 const labelMap = ref<Map<string, { name: string; color?: string; fontColor?: string }>>(new Map())
@@ -107,8 +107,33 @@ function statusTag(row: any) {
   return { text: t('playlistView.status_accepted'), type: 'success' as const }
 }
 
+function renderBoostControls(row: any) {
+  const boost = row.boost ?? 0
+  const busy = boostingId.value === row.id
+  const upBtn = h(NButton, {
+    text: true, size: 'tiny',
+    disabled: busy || boost >= 2,
+    onClick: (e: MouseEvent) => changeBoost(row, 1, e),
+  }, { icon: () => h(NIcon, { size: 16 }, { default: () => h(ArrowUpOutline) }) })
+  const leds = h('span', { style: 'display:flex;flex-direction:row;align-items:center;gap:2px' }, [
+    h(LedIndicator, { active: boost === 2, color: '#f59e0b', size: 12 }),
+    h(LedIndicator, { active: boost === 1, color: '#22c55e', size: 12 }),
+    h(LedIndicator, { active: boost === -1, color: '#ef4444', size: 12 }),
+  ])
+  const downBtn = h(NButton, {
+    text: true, size: 'tiny',
+    disabled: busy || boost <= -1,
+    onClick: (e: MouseEvent) => changeBoost(row, -1, e),
+  }, { icon: () => h(NIcon, { size: 16 }, { default: () => h(ArrowDownOutline) }) })
+  return h('span', {
+    style: 'display:flex;align-items:center;gap:3px',
+    onMousedown: (e: MouseEvent) => e.stopPropagation(),
+    onClick: (e: MouseEvent) => e.stopPropagation(),
+  }, [upBtn, leds, downBtn])
+}
+
 const columns = computed<DataTableColumns<any>>(() => {
-  if (isMobile.value) {
+  if (stackedRows.value) {
     return [
       { type: 'selection', multiple: true },
       {
@@ -135,8 +160,13 @@ const columns = computed<DataTableColumns<any>>(() => {
             ? h('div', { class: 'mob-r2' }, [...genreTags, ...labelTags])
             : null
 
-          const row3 = row.sharerUserName
-            ? h('div', { class: 'mob-r3' }, [h('span', { class: 'mob-meta-item' }, `${t('profile.sharer')}: ${row.sharerUserName}`)])
+          const row3Items: any[] = []
+          if (row.sharerUserName) {
+            row3Items.push(h('span', { class: 'mob-meta-item' }, `${t('profile.sharer')}: ${row.sharerUserName}`))
+          }
+          row3Items.push(h('span', { class: 'mob-meta-item', style: 'opacity:1' }, ['Boost: ', renderBoostControls(row)]))
+          const row3 = row3Items.length
+            ? h('div', { class: 'mob-r3' }, row3Items)
             : null
 
           return h('div', { class: 'mob-card', style: isRejectedRow(row) ? 'opacity:0.45' : '' }, [row1, row2, row3].filter(Boolean))
@@ -191,26 +221,7 @@ const columns = computed<DataTableColumns<any>>(() => {
       key: 'boost',
       width: 110,
       title: 'Boost',
-      render: (row) => {
-        const boost = row.boost ?? 0
-        const busy = boostingId.value === row.id
-        const upBtn = h(NButton, {
-          text: true, size: 'tiny',
-          disabled: busy || boost >= 2,
-          onClick: (e: MouseEvent) => changeBoost(row, 1, e),
-        }, { icon: () => h(NIcon, { size: 16 }, { default: () => h(ArrowUpOutline) }) })
-        const leds = h('span', { style: 'display:flex;flex-direction:row;align-items:center;gap:2px' }, [
-          h(LedIndicator, { active: boost === 2, color: '#f59e0b', size: 12 }),
-          h(LedIndicator, { active: boost === 1, color: '#22c55e', size: 12 }),
-          h(LedIndicator, { active: boost === -1, color: '#ef4444', size: 12 }),
-        ])
-        const downBtn = h(NButton, {
-          text: true, size: 'tiny',
-          disabled: busy || boost <= -1,
-          onClick: (e: MouseEvent) => changeBoost(row, -1, e),
-        }, { icon: () => h(NIcon, { size: 16 }, { default: () => h(ArrowDownOutline) }) })
-        return h('span', { style: 'display:flex;align-items:center;gap:3px', onMousedown: (e: MouseEvent) => e.stopPropagation(), onClick: (e: MouseEvent) => e.stopPropagation() }, [upBtn, leds, downBtn])
-      },
+      render: (row) => renderBoostControls(row),
     },
   ]
 })
@@ -258,16 +269,8 @@ async function handleBulkDelete() {
 }
 
 onMounted(async () => {
-  mobileMql = window.matchMedia('(max-width: 640px)')
-  isMobile.value = mobileMql.matches
-  mobileMql.addEventListener('change', syncMobile)
   await loadDictionaries()
   await fetchData(1)
-})
-
-onUnmounted(() => {
-  mobileMql?.removeEventListener('change', syncMobile)
-  mobileMql = null
 })
 </script>
 
@@ -299,6 +302,7 @@ onUnmounted(() => {
       </div>
     </ActionBar>
     <NDataTable
+      :class="{ 'n-data-table--stacked-rows': stackedRows }"
       :columns="columns"
       :data="entries"
       :loading="loading"
