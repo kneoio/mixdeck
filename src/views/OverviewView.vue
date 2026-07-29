@@ -13,7 +13,7 @@
         <template #header>
           <div class="brand-head">
             <span class="brand-name" @click="goPlaylist(brand)">{{ brandLabel(brand) }}</span>
-            <span class="brand-status">{{ ledState(brand).label }}</span>
+            <span v-if="dashboardSnapshotReceived" class="brand-status">{{ ledState(brand).label }}</span>
           </div>
         </template>
 
@@ -39,8 +39,11 @@
           </div>
         </template>
 
+        <div v-if="!dashboardSnapshotReceived" class="brand-card-loading">
+          <GsapLoader :size="32" />
+        </div>
         <AivoxCard
-          v-if="brand.slugName"
+          v-else-if="brand.slugName"
           :brand-slug="brand.slugName"
           :timezone="brand.timeZone"
           :status="brand.status"
@@ -594,6 +597,13 @@ onBeforeUnmount(() => {
 }
 .brand-card {
   border-color: var(--brand-color);
+}
+.brand-card-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 8px 0;
 }
 .ots-add-strip {
   display: flex;
