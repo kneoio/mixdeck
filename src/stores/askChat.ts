@@ -52,8 +52,11 @@ export const useAskChatStore = defineStore('askChat', () => {
   const connected = ref(false)
   const processing = ref('')
   const username = ref('')
+  /** In-flight assistant bubble id while CHUNKs are appending; cleared on BOT finalize / ERROR. */
   const streamingMessageId = ref<string | number | null>(null)
   const currentStreamContent = ref('')
+  /** True from sendMessage until BOT finalize or ERROR — keeps composer locked across gaps. */
+  const replyInFlight = ref(false)
   const sessionToken = ref<string | null>(localStorage.getItem(SESSION_TOKEN_KEY))
 
   let ws: WebSocket | null = null
@@ -61,7 +64,9 @@ export const useAskChatStore = defineStore('askChat', () => {
   let reconnectDelay = RECONNECT_BASE_DELAY_MS
   let intentionalDisconnect = false
 
-  const isBusy = computed(() => !!processing.value || streamingMessageId.value != null)
+  const isBusy = computed(
+    () => replyInFlight.value || !!processing.value || streamingMessageId.value != null,
+  )
 
   function clearReconnectTimer() {
     if (reconnectTimer !== null) {
@@ -131,10 +136,69 @@ export const useAskChatStore = defineStore('askChat', () => {
     connected.value = false
   }
 
-  function resetStreamState() {
+  function endTurn() {
     processing.value = ''
     streamingMessageId.value = null
     currentStreamContent.value = ''
+    replyInFlight.value = false
+  }
+
+  function appendChunk(content: string, chunkUsername?: string) {
+    const fragment = content || ''
+    if (streamingMessageId.value == null) {
+      const newMessage: AskChatMessage = {
+        id: `streaming-${Date.now()}`,
+        type: 'BOT',
+        username: chunkUsername || 'Mixpla Ask',
+        content: fragment,
+        timestamp: Date.now(),
+      }
+      messages.value.push(newMessage)
+      streamingMessageId.value = newMessage.id
+      currentStreamContent.value = fragment
+      return
+    }
+
+    const streamingMsg = messages.value.find((m) => m.id === streamingMessageId.value)
+    if (!streamingMsg) return
+    currentStreamContent.value += fragment
+    streamingMsg.content = currentStreamContent.value
+  }
+
+  /** Finalize the in-flight assistant bubble with canonical BOT text — never append on top of CHUNKs. */
+  function finalizeBot(data: {
+    id?: string
+    username?: string
+    content?: string
+    timestamp?: number
+    connectionId?: string
+  }) {
+    const canonical = data.content ?? ''
+    const finalized: AskChatMessage = {
+      id: data.id || Date.now(),
+      type: 'BOT',
+      username: data.username || 'Mixpla Ask',
+      content: canonical,
+      timestamp: data.timestamp,
+      connectionId: data.connectionId,
+    }
+
+    if (streamingMessageId.value != null) {
+      const idx = messages.value.findIndex((m) => m.id === streamingMessageId.value)
+      if (idx !== -1) {
+        // Prefer server canonical text; keep streamed text only if BOT body is empty.
+        if (canonical === '' && currentStreamContent.value) {
+          finalized.content = currentStreamContent.value
+        }
+        messages.value[idx] = finalized
+      } else {
+        messages.value.push(finalized)
+      }
+    } else {
+      messages.value.push(finalized)
+    }
+
+    endTurn()
   }
 
   function handleIncoming(raw: string) {
@@ -145,36 +209,21 @@ export const useAskChatStore = defineStore('askChat', () => {
       return
     }
 
+    // Non-empty = tool / typing status; empty content = clear status (turn still in flight).
     if (data.type === 'PROCESSING') {
-      processing.value = data.content || ''
+      processing.value = typeof data.content === 'string' ? data.content : ''
       return
     }
 
+    // Each CHUNK is a delta — append to the single in-flight assistant bubble.
     if (data.type === 'CHUNK') {
-      processing.value = ''
-      if (streamingMessageId.value == null) {
-        const newMessage: AskChatMessage = {
-          id: `streaming-${Date.now()}`,
-          type: 'BOT',
-          username: data.username || 'Mixpla Ask',
-          content: data.content || '',
-          timestamp: Date.now(),
-        }
-        messages.value.push(newMessage)
-        streamingMessageId.value = newMessage.id
-        currentStreamContent.value = data.content || ''
-      } else {
-        const streamingMsg = messages.value.find((m) => m.id === streamingMessageId.value)
-        if (streamingMsg) {
-          currentStreamContent.value += data.content || ''
-          streamingMsg.content = currentStreamContent.value
-        }
-      }
+      if (processing.value) processing.value = ''
+      appendChunk(data.content || '', data.username)
       return
     }
 
     if (data.type === 'history') {
-      resetStreamState()
+      endTurn()
       messages.value = (data.messages || []).map((m: any, i: number) => ({
         id: m.data?.id || i,
         type: (m.data?.type || 'BOT') as AskMessageType,
@@ -187,31 +236,20 @@ export const useAskChatStore = defineStore('askChat', () => {
     }
 
     if (data.type === 'message' && data.data) {
-      processing.value = ''
-      if (streamingMessageId.value != null && data.data.type === 'BOT') {
-        const idx = messages.value.findIndex((m) => m.id === streamingMessageId.value)
-        const finalized: AskChatMessage = {
-          id: data.data.id || Date.now(),
-          type: data.data.type,
-          username: data.data.username || 'Mixpla Ask',
-          content: data.data.content || '',
-          timestamp: data.data.timestamp,
-          connectionId: data.data.connectionId,
-        }
-        if (idx !== -1) messages.value[idx] = finalized
-        else messages.value.push(finalized)
-        streamingMessageId.value = null
-        currentStreamContent.value = ''
-      } else {
-        messages.value.push({
-          id: data.data.id || Date.now(),
-          type: data.data.type,
-          username: data.data.username || '',
-          content: data.data.content || '',
-          timestamp: data.data.timestamp,
-          connectionId: data.data.connectionId,
-        })
+      if (data.data.type === 'BOT') {
+        finalizeBot(data.data)
+        return
       }
+
+      // USER echo (and any other message wrappers)
+      messages.value.push({
+        id: data.data.id || Date.now(),
+        type: data.data.type,
+        username: data.data.username || '',
+        content: data.data.content || '',
+        timestamp: data.data.timestamp,
+        connectionId: data.data.connectionId,
+      })
       return
     }
 
@@ -238,7 +276,7 @@ export const useAskChatStore = defineStore('askChat', () => {
     }
 
     if (data.type === 'ERROR') {
-      resetStreamState()
+      endTurn()
       messages.value.push({
         id: Date.now(),
         type: 'ERROR',
@@ -264,6 +302,7 @@ export const useAskChatStore = defineStore('askChat', () => {
       payload.username = displayName
     }
     ws.send(JSON.stringify(payload))
+    replyInFlight.value = true
     return true
   }
 
@@ -279,6 +318,7 @@ export const useAskChatStore = defineStore('askChat', () => {
     processing,
     username,
     streamingMessageId,
+    replyInFlight,
     sessionToken,
     isBusy,
     connect,

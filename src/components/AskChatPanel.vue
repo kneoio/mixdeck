@@ -124,9 +124,11 @@ function scrollToBottom() {
 }
 
 watch(messages, () => scrollToBottom(), { deep: true })
-watch(processing, (val) => {
-  if (val) scrollToBottom()
-})
+watch(processing, () => scrollToBottom())
+watch(
+  () => askStore.streamingMessageId,
+  () => scrollToBottom(),
+)
 
 watch(
   () => messages.value.filter((m) => m.type === 'ERROR').length,
