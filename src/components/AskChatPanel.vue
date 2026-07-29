@@ -398,10 +398,11 @@ onBeforeUnmount(() => {
 }
 
 .ask-subtitle {
-  margin: 6px 0 0;
-  font-size: 0.85rem;
-  color: #b0b0b0;
+  margin: 4px 0 0;
+  font-size: 0.7rem;
+  color: #666;
   font-weight: 400;
+  letter-spacing: 0.02em;
 }
 
 .ask-messages {
