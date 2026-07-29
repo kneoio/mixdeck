@@ -21,6 +21,10 @@
               <n-button size="large" @click="router.push('/submission')">{{ t('welcome.cta_submit') }}</n-button>
               <span class="cta-hint">{{ t('welcome.cta_submit_hint') }}</span>
             </div>
+            <div class="cta-item">
+              <n-button size="large" @click="router.push('/ask')">{{ t('welcome.cta_ask') }}</n-button>
+              <span class="cta-hint">{{ t('welcome.cta_ask_hint') }}</span>
+            </div>
           </div>
         </div>
         <div class="waveform" aria-hidden="true">

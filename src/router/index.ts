@@ -29,6 +29,12 @@ const router = createRouter({
       meta: { requiresAuth: false }
     },
     {
+      path: '/ask',
+      name: 'ask',
+      component: () => import('../views/AskView.vue'),
+      meta: { requiresAuth: false }
+    },
+    {
       // Layout shell — children use absolute paths, URL stays at top level
       path: '/app',
       component: DashboardView,
