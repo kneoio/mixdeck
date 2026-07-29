@@ -11,9 +11,24 @@
 
     <section class="ask-shell">
       <div class="ask-header">
-        <p class="eyebrow neon-motto">{{ t('ask.eyebrow') }}</p>
-        <h1>{{ t('ask.title') }}</h1>
-        <p class="ask-subtitle">{{ t('ask.subtitle') }}</p>
+        <div class="ask-header-text">
+          <p class="eyebrow neon-motto">{{ t('ask.eyebrow') }}</p>
+          <h1>
+            <span class="ask-title-prefix">{{ t('ask.title_prefix') }}</span>
+            <span class="ask-title-name">{{ t('ask.title_name') }}</span>
+          </h1>
+          <p class="ask-subtitle">{{ t('ask.subtitle') }}</p>
+        </div>
+        <button
+          type="button"
+          class="ask-copy-btn"
+          :disabled="messages.length === 0"
+          :title="t('ask.copy_last_json')"
+          @click="copyLastMessages"
+        >
+          <NIcon :component="CopyOutline" size="14" />
+          <span v-if="copied" class="ask-copy-tooltip">{{ t('ask.copied') }}</span>
+        </button>
       </div>
 
       <div ref="messagesEl" class="ask-messages" role="log" aria-live="polite">
@@ -80,7 +95,8 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import MarkdownIt from 'markdown-it'
-import { NInput, useMessage } from 'naive-ui'
+import { NIcon, NInput, useMessage } from 'naive-ui'
+import { CopyOutline } from '@vicons/ionicons5'
 import GsapButton from '@/components/GsapButton.vue'
 import { useAskChatStore, type AskChatMessage } from '@/stores/askChat'
 
@@ -93,6 +109,7 @@ const messageApi = useMessage()
 const md = new MarkdownIt({ linkify: true, breaks: true })
 const draft = ref('')
 const messagesEl = ref<HTMLElement | null>(null)
+const copied = ref(false)
 
 const suggestedPrompts = computed(() => [
   t('ask.suggestion_1'),
@@ -140,6 +157,18 @@ watch(
     }
   },
 )
+
+async function copyLastMessages() {
+  const lastFive = messages.value.slice(-5)
+  if (lastFive.length === 0) return
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(lastFive, null, 2))
+    copied.value = true
+    window.setTimeout(() => { copied.value = false }, 1500)
+  } catch {
+    messageApi.error(t('ask.copy_failed'))
+  }
+}
 
 function sendDraft() {
   const text = draft.value.trim()
@@ -260,9 +289,56 @@ onBeforeUnmount(() => {
 }
 
 .ask-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
   padding: 16px 20px 12px;
   border-bottom: 1px solid #1a1a1a;
   flex-shrink: 0;
+}
+
+.ask-header-text {
+  min-width: 0;
+}
+
+.ask-copy-btn {
+  position: relative;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-top: 2px;
+  padding: 0;
+  border: 1px solid #2a2a2a;
+  border-radius: 6px;
+  background: #141414;
+  color: #888;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.ask-copy-btn:hover:not(:disabled) {
+  border-color: #ff7a18;
+  color: #ddd;
+  background: #1a1210;
+}
+
+.ask-copy-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.ask-copy-tooltip {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  white-space: nowrap;
+  font-size: 0.7rem;
+  color: #68ffba;
+  pointer-events: none;
 }
 
 .eyebrow {
@@ -280,8 +356,22 @@ onBeforeUnmount(() => {
 
 .ask-header h1 {
   margin: 0;
-  font-size: clamp(1rem, 1.8vw, 1.25rem);
-  font-weight: 600;
+  font-size: clamp(0.8rem, 1.4vw, 0.95rem);
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.ask-title-prefix {
+  color: #888;
+  font-weight: 500;
+  margin-right: 0.35em;
+}
+
+.ask-title-name {
+  color: #fff6a9;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 8px rgba(255, 165, 0, 0.45);
 }
 
 .ask-subtitle {

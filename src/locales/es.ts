@@ -44,7 +44,8 @@ export default {
   },
   ask: {
     eyebrow: 'Mixpla Ask',
-    title: 'Ask Mixplaclone',
+    title_prefix: 'Ask',
+    title_name: 'Mixplaclone',
     subtitle: 'your assitant in Mixpla',
     empty_welcome: 'Pregunta lo que quieras sobre Mixpla: streams, Mixdeck, envíos y más.',
     placeholder: 'Mensaje a Mixpla…',
