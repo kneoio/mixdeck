@@ -1,3 +1,8 @@
+.data-table-wrap {
+  min-width: 0;
+  width: 100%;
+}
+
 .mob-card {
   display: flex;
   flex-direction: column;
@@ -38,6 +43,9 @@
   font-size: 0.8em;
   opacity: 0.55;
   padding-left: 2px;
+}
+.mob-r3 .mob-meta-item--emphasis {
+  opacity: 1;
 }
 .mob-meta-item {
   white-space: nowrap;

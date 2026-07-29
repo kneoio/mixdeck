@@ -17,7 +17,7 @@ import { handleApiError } from '@/utils/notificationService'
 import { useBrandsStore } from '@/stores/brands'
 import { useStackedDataTable } from '@/composables/useStackedDataTable'
 
-const { stackedRows } = useStackedDataTable()
+const { stackedRows, tableWrapRef } = useStackedDataTable()
 
 const { t } = useI18n()
 const pageTitle = computed(() => `${t('menu.my_sounds')} / ${t('menu.songs')}`)
@@ -268,21 +268,23 @@ onMounted(async () => {
         />
       </div>
     </ActionBar>
-    <NDataTable
-      :class="{ 'n-data-table--stacked-rows': stackedRows }"
-      :columns="columns"
-      :data="entries"
-      :loading="loading"
-      :row-key="(row: any) => row.slugName"
-      v-model:checked-row-keys="selectedIds"
-      :pagination="pagination"
-      remote
-      :row-props="rowProps"
-      @update:page="(p) => { pageNum = p; fetchData(p) }"
-      @update:page-size="(s) => { pageSize = s; fetchData(1, s) }"
-    >
-      <template #loading><GsapLoader :size="32" /></template>
-    </NDataTable>
+    <div ref="tableWrapRef" class="data-table-wrap">
+      <NDataTable
+        :class="{ 'n-data-table--stacked-rows': stackedRows }"
+        :columns="columns"
+        :data="entries"
+        :loading="loading"
+        :row-key="(row: any) => row.slugName"
+        v-model:checked-row-keys="selectedIds"
+        :pagination="pagination"
+        remote
+        :row-props="rowProps"
+        @update:page="(p) => { pageNum = p; fetchData(p) }"
+        @update:page-size="(s) => { pageSize = s; fetchData(1, s) }"
+      >
+        <template #loading><GsapLoader :size="32" /></template>
+      </NDataTable>
+    </div>
   </div>
 </template>
 

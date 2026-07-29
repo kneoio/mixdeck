@@ -17,7 +17,7 @@ import GsapLoader from '@/components/GsapLoader.vue'
 import { handleApiError } from '@/utils/notificationService'
 import { useStackedDataTable } from '@/composables/useStackedDataTable'
 
-const { stackedRows } = useStackedDataTable()
+const { stackedRows, tableWrapRef } = useStackedDataTable()
 
 const { t } = useI18n()
 const message = useMessage()
@@ -164,7 +164,7 @@ const columns = computed<DataTableColumns<any>>(() => {
           if (row.sharerUserName) {
             row3Items.push(h('span', { class: 'mob-meta-item' }, `${t('profile.sharer')}: ${row.sharerUserName}`))
           }
-          row3Items.push(h('span', { class: 'mob-meta-item', style: 'opacity:1' }, ['Boost: ', renderBoostControls(row)]))
+          row3Items.push(h('span', { class: 'mob-meta-item mob-meta-item--emphasis' }, ['Boost: ', renderBoostControls(row)]))
           const row3 = row3Items.length
             ? h('div', { class: 'mob-r3' }, row3Items)
             : null
@@ -301,27 +301,29 @@ onMounted(async () => {
         />
       </div>
     </ActionBar>
-    <NDataTable
-      :class="{ 'n-data-table--stacked-rows': stackedRows }"
-      :columns="columns"
-      :data="entries"
-      :loading="loading"
-      :row-key="(row: any) => row.id || row.slugName"
-      v-model:checked-row-keys="selectedIds"
-      :pagination="pagination"
-      remote
-      :row-props="(row: any) => ({
-        style: isRejectedRow(row) ? 'cursor:pointer;opacity:0.45' : 'cursor:pointer',
-        onClick: (e: MouseEvent) => {
-          if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return
-          router.push(`/sound-library/received/${row.id}`)
-        }
-      })"
-      @update:page="(p) => { pageNum = p; fetchData(p) }"
-      @update:page-size="(s) => { pageSize = s; fetchData(1, s) }"
-    >
-      <template #loading><GsapLoader :size="32" /></template>
-    </NDataTable>
+    <div ref="tableWrapRef" class="data-table-wrap">
+      <NDataTable
+        :class="{ 'n-data-table--stacked-rows': stackedRows }"
+        :columns="columns"
+        :data="entries"
+        :loading="loading"
+        :row-key="(row: any) => row.id || row.slugName"
+        v-model:checked-row-keys="selectedIds"
+        :pagination="pagination"
+        remote
+        :row-props="(row: any) => ({
+          style: isRejectedRow(row) ? 'cursor:pointer;opacity:0.45' : 'cursor:pointer',
+          onClick: (e: MouseEvent) => {
+            if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return
+            router.push(`/sound-library/received/${row.id}`)
+          }
+        })"
+        @update:page="(p) => { pageNum = p; fetchData(p) }"
+        @update:page-size="(s) => { pageSize = s; fetchData(1, s) }"
+      >
+        <template #loading><GsapLoader :size="32" /></template>
+      </NDataTable>
+    </div>
   </div>
 </template>
 

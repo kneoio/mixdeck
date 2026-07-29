@@ -135,7 +135,7 @@ async function toggleRowPlay(row: any, e: MouseEvent) {
 }
 
 /** When true, use multi-line row cards instead of squeezed columns (see STACKED_TABLE_MAX_WIDTH). */
-const { stackedRows } = useStackedDataTable()
+const { stackedRows, tableWrapRef } = useStackedDataTable()
 
 // Lookup maps for resolving IDs → display names
 const genreMap = ref<Map<string, { name: string; color?: string; fontColor?: string }>>(new Map())
@@ -270,10 +270,10 @@ const columns = computed<DataTableColumns<any>>(() => {
           const likesBadge = h('span', { class: ['stat-badge', l > 0 ? 'stat-badge--likes' : ''] }, `+${l}`)
           const dislikesBadge = h('span', { class: ['stat-badge', d > 0 ? 'stat-badge--dislikes' : ''] }, `-${d}`)
           const metaItems: any[] = [
-            h('span', { class: 'mob-meta-item' }, `${t('playlistView.col_played')}: ${played}`),
-            h('span', { class: 'mob-meta-item' }, [t('playlistView.col_rating') + ': ', dislikesBadge, ' ', likesBadge]),
+            h('span', { class: 'mob-meta-item mob-meta-item--emphasis' }, `${t('playlistView.col_played')}: ${played}`),
+            h('span', { class: 'mob-meta-item mob-meta-item--emphasis' }, [t('playlistView.col_rating') + ': ', dislikesBadge, ' ', likesBadge]),
+            h('span', { class: 'mob-meta-item mob-meta-item--emphasis' }, ['Boost: ', renderBoostControls(row)]),
           ]
-          metaItems.push(h('span', { class: 'mob-meta-item', style: 'opacity:1' }, ['Boost: ', renderBoostControls(row)]))
           if (row.shared) metaItems.push(h('span', { class: 'mob-meta-item' }, [h(NIcon, { size: 14, color: 'var(--vt-c-primary)' }, { default: () => h(ShareSocialOutline) })]))
           if (row.description) metaItems.push(h('span', { class: 'mob-meta-item mob-desc' }, row.description))
           const row3 = h('div', { class: 'mob-r3' }, metaItems)
@@ -530,24 +530,26 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
         <div ref="seekBarRef" class="playlist-seek-hit" @mousedown="onSeekMouseDown" />
       </div>
     </div>
-    <NDataTable
-      :class="{ 'n-data-table--stacked-rows': stackedRows }"
-      :columns="columns"
-      :data="entries"
-      :loading="loading"
-      :row-key="(row: any) => row.slugName"
-      v-model:checked-row-keys="selectedIds"
-      :pagination="pagination"
-      remote
-      :row-props="(row: any) => ({
-        style: stackedRows ? 'cursor:pointer' : 'cursor:pointer;height:48px',
-        onClick: (e: MouseEvent) => { if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return; router.push({ path: `/brands/${route.params.slug}/playlist/${row.slugName}`, query: { returnTo: route.fullPath } }) }
-      })"
-      @update:page="(p) => { pageNum = p; fetchData(p) }"
-      @update:page-size="(s) => { pageSize = s; fetchData(1, s) }"
-    >
-      <template #loading><GsapLoader :size="32" /></template>
-    </NDataTable>
+    <div ref="tableWrapRef" class="data-table-wrap">
+      <NDataTable
+        :class="{ 'n-data-table--stacked-rows': stackedRows }"
+        :columns="columns"
+        :data="entries"
+        :loading="loading"
+        :row-key="(row: any) => row.slugName"
+        v-model:checked-row-keys="selectedIds"
+        :pagination="pagination"
+        remote
+        :row-props="(row: any) => ({
+          style: stackedRows ? 'cursor:pointer' : 'cursor:pointer;height:48px',
+          onClick: (e: MouseEvent) => { if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return; router.push({ path: `/brands/${route.params.slug}/playlist/${row.slugName}`, query: { returnTo: route.fullPath } }) }
+        })"
+        @update:page="(p) => { pageNum = p; fetchData(p) }"
+        @update:page-size="(s) => { pageSize = s; fetchData(1, s) }"
+      >
+        <template #loading><GsapLoader :size="32" /></template>
+      </NDataTable>
+    </div>
   </div>
 </template>
 
