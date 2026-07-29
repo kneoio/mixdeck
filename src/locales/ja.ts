@@ -44,7 +44,8 @@ export default {
   },
   ask: {
     eyebrow: 'Mixpla Ask',
-    title: 'Mixplaに聞く',
+    title: 'Ask Mixplaclone',
+    subtitle: 'your assitant in Mixpla',
     empty_welcome: 'Mixplaについて何でも聞いてください — ストリーム、Mixdeck、投稿など。',
     placeholder: 'Mixplaへのメッセージ…',
     send: '送信',

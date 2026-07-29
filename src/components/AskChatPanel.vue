@@ -13,6 +13,7 @@
       <div class="ask-header">
         <p class="eyebrow neon-motto">{{ t('ask.eyebrow') }}</p>
         <h1>{{ t('ask.title') }}</h1>
+        <p class="ask-subtitle">{{ t('ask.subtitle') }}</p>
       </div>
 
       <div ref="messagesEl" class="ask-messages" role="log" aria-live="polite">
@@ -279,8 +280,15 @@ onBeforeUnmount(() => {
 
 .ask-header h1 {
   margin: 0;
-  font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+  font-size: clamp(1rem, 1.8vw, 1.25rem);
   font-weight: 600;
+}
+
+.ask-subtitle {
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  color: #b0b0b0;
+  font-weight: 400;
 }
 
 .ask-messages {
