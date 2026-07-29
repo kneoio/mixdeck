@@ -69,10 +69,11 @@
 
       <div class="ask-composer">
         <n-input
+          ref="composerRef"
           v-model:value="draft"
           type="textarea"
           :placeholder="connected ? t('ask.placeholder') : t('ask.connecting')"
-          :disabled="!connected || isBusy"
+          :disabled="!connected"
           :autosize="{ minRows: 1, maxRows: 5 }"
           @keydown="onComposerKeydown"
         />
@@ -95,7 +96,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import MarkdownIt from 'markdown-it'
-import { NIcon, NInput, useMessage } from 'naive-ui'
+import { NIcon, NInput, useMessage, type InputInst } from 'naive-ui'
 import { CopyOutline } from '@vicons/ionicons5'
 import GsapButton from '@/components/GsapButton.vue'
 import { useAskChatStore, type AskChatMessage } from '@/stores/askChat'
@@ -109,6 +110,7 @@ const messageApi = useMessage()
 const md = new MarkdownIt({ linkify: true, breaks: true })
 const draft = ref('')
 const messagesEl = ref<HTMLElement | null>(null)
+const composerRef = ref<InputInst | null>(null)
 const copied = ref(false)
 
 const suggestedPrompts = computed(() => [
@@ -148,6 +150,20 @@ watch(
   () => scrollToBottom(),
 )
 
+function focusComposer() {
+  nextTick(() => {
+    composerRef.value?.focus()
+  })
+}
+
+watch(isBusy, (busy, wasBusy) => {
+  if (wasBusy && !busy) focusComposer()
+})
+
+watch(connected, (ok) => {
+  if (ok) focusComposer()
+})
+
 watch(
   () => messages.value.filter((m) => m.type === 'ERROR').length,
   (count, prev) => {
@@ -173,11 +189,17 @@ async function copyLastMessages() {
 function sendDraft() {
   const text = draft.value.trim()
   if (!text) return
-  if (askStore.send(text)) draft.value = ''
+  if (askStore.send(text)) {
+    draft.value = ''
+    focusComposer()
+  }
 }
 
 function sendSuggested(prompt: string) {
-  if (askStore.send(prompt)) draft.value = ''
+  if (askStore.send(prompt)) {
+    draft.value = ''
+    focusComposer()
+  }
 }
 
 function onComposerKeydown(e: KeyboardEvent) {
@@ -189,6 +211,7 @@ function onComposerKeydown(e: KeyboardEvent) {
 
 onMounted(() => {
   askStore.connect()
+  focusComposer()
 })
 
 onBeforeUnmount(() => {
