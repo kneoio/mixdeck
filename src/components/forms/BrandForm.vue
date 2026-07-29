@@ -507,7 +507,7 @@ function formatBitRateTooltip(value: number) {
 
 const selectedScript = computed(() =>
   formData.value.scriptId
-    ? scriptsStore.scripts.find(s => s.id === formData.value.scriptId)
+    ? scriptsStore.scripts.find(s => s.slugName === formData.value.scriptId)
     : null
 )
 
@@ -781,7 +781,7 @@ async function handleSave() {
       profileId: formData.value.profileId || undefined,
       aiOverriding: formData.value.aiOverriding.enabled ? { name: formData.value.aiOverriding.name, prompt: formData.value.aiOverriding.prompt } : undefined,
       scriptIds: scriptMode.value === 'predefined' && formData.value.scriptId
-        ? [{ scriptId: formData.value.scriptId, userVariables: userVariables.value }]
+        ? [{ slugName: formData.value.scriptId, userVariables: userVariables.value }]
         : undefined,
       customScriptId: scriptMode.value === 'custom' ? formData.value.scriptId || undefined : undefined,
       scriptMode: scriptMode.value.toUpperCase(),
@@ -993,10 +993,8 @@ function applyBrandToForm(brand: any) {
   if (!localizedNames.value.length) localizedNames.value = [{ lang: 'en', name: '' }]
 
   const isCustomMode = brand.scriptMode?.toLowerCase() === 'custom'
-  const firstScript = isCustomMode
-    ? (brand.customScriptId ? { scriptId: brand.customScriptId } : null)
-    : (brand.scriptIds?.[0] ?? (brand.scriptId ? { scriptId: brand.scriptId } : null))
-  console.log('[BrandForm] load | scriptMode:', brand.scriptMode, '| scriptIds:', brand.scriptIds, '| customScriptId:', brand.customScriptId, '| resolved scriptId:', firstScript?.scriptId)
+  const firstScript = isCustomMode ? null : brand.scriptIds?.[0]
+  console.log('[BrandForm] load | scriptMode:', brand.scriptMode, '| scriptIds:', brand.scriptIds, '| customScriptId:', brand.customScriptId, '| resolved slugName:', firstScript?.slugName)
   formData.value = {
     country: brand.country || null,
     description: brand.description || '',
@@ -1012,7 +1010,7 @@ function applyBrandToForm(brand: any) {
       STORE_PROMO: brand.chatFeatureFlags?.STORE_PROMO ?? false,
     },
     aiOverriding: { enabled: !!(brand.aiOverriding?.name || brand.aiOverriding?.prompt), name: brand.aiOverriding?.name || '', prompt: brand.aiOverriding?.prompt || '' },
-    scriptId: firstScript?.scriptId || null,
+    scriptId: isCustomMode ? (brand.customScriptId || null) : (firstScript?.slugName || null),
     profileOverriding: {
       name: brand.profileOverriding?.name || '',
       description: brand.profileOverriding?.description || ''
@@ -1189,7 +1187,7 @@ watch(activeTab, async (tab) => {
     await scriptsStore.loadScripts(1, 200)
     scriptOptions.value = scriptsStore.scripts.map((s: any) => {
       const tags: AgentLabel[] = Array.isArray(s.tags) ? s.tags : []
-      return { label: s.name || s.id, value: s.id, tags, disabled: !isFree(tags) }
+      return { label: s.name || s.slugName, value: s.slugName, tags, disabled: !isFree(tags) }
     }).sort((a, b) => {
       if (isFree(a.tags ?? []) && !isFree(b.tags ?? [])) return -1
       if (!isFree(a.tags ?? []) && isFree(b.tags ?? [])) return 1
