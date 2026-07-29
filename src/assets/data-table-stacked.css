@@ -63,8 +63,17 @@
 .n-data-table--stacked-rows .n-data-table-tr {
   height: auto !important;
 }
+.n-data-table--stacked-rows .n-data-table-th {
+  height: auto !important;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
 .n-data-table--stacked-rows .n-data-table-td {
   vertical-align: top;
   padding-top: 8px;
   padding-bottom: 8px;
+}
+.n-data-table--stacked-rows .n-data-table-th--selection,
+.n-data-table--stacked-rows .n-data-table-td--selection {
+  vertical-align: middle;
 }
