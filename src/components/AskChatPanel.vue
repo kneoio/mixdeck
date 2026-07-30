@@ -28,7 +28,6 @@
       <div class="ask-header">
         <div class="ask-header-text">
           <h1>
-            <span class="ask-title-prefix">{{ t('ask.title_prefix') }}</span>
             <span class="ask-title-name">{{ t('ask.title_name') }}</span>
           </h1>
           <p class="ask-subtitle">{{ t('ask.subtitle') }}</p>
@@ -470,12 +469,6 @@ onBeforeUnmount(() => {
   font-size: clamp(0.8rem, 1.4vw, 0.95rem);
   font-weight: 500;
   line-height: 1.3;
-}
-
-.ask-title-prefix {
-  color: #888;
-  font-weight: 500;
-  margin-right: 0.35em;
 }
 
 .ask-title-name {

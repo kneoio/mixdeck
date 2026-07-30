@@ -44,7 +44,6 @@ export default {
   },
   ask: {
     eyebrow: 'Mixpla Ask',
-    title_prefix: 'Ask',
     title_name: 'Mixplaclone',
     subtitle: 'your assitant in Mixpla',
     empty_welcome: 'იკითხე ნებისმიერი რამ Mixpla-ზე — სტრიმები, Mixdeck, ატვირთვები და სხვა.',

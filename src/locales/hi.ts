@@ -44,7 +44,6 @@ export default {
   },
   ask: {
     eyebrow: 'Mixpla Ask',
-    title_prefix: 'Ask',
     title_name: 'Mixplaclone',
     subtitle: 'your assitant in Mixpla',
     empty_welcome: 'Mixpla के बारे में कुछ भी पूछें — स्ट्रीम, Mixdeck, सबमिशन और अधिक।',
