@@ -1,7 +1,12 @@
 <template>
   <div class="ask-page">
+    <div class="side-label neon-motto">{{ t('ask.eyebrow') }}</div>
+
     <header class="nav">
-      <div class="logo" role="link" tabindex="0" @click="router.push('/')" @keydown.enter="router.push('/')">MIXPLA</div>
+      <div class="nav-left">
+        <div class="logo" role="link" tabindex="0" @click="router.push('/')" @keydown.enter="router.push('/')">MIXPLA</div>
+        <div class="side-label-mobile neon-motto">{{ t('ask.eyebrow') }}</div>
+      </div>
       <div class="nav-meta">
         <span class="status-dot" :class="connected ? 'online' : 'offline'" />
         <span class="status-label">{{ connected ? t('ask.connected') : t('ask.connecting') }}</span>
@@ -17,7 +22,6 @@
     <section class="ask-shell">
       <div class="ask-header">
         <div class="ask-header-text">
-          <p class="eyebrow neon-motto">{{ t('ask.eyebrow') }}</p>
           <h1>
             <span class="ask-title-prefix">{{ t('ask.title_prefix') }}</span>
             <span class="ask-title-name">{{ t('ask.title_name') }}</span>
@@ -263,6 +267,13 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
 }
 
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
 .logo {
   font-family: 'Kaylon', 'Inter', sans-serif;
   font-weight: 700;
@@ -270,6 +281,38 @@ onBeforeUnmount(() => {
   font-size: clamp(1.1rem, 2vw, 1.6rem);
   color: #c0c0c0;
   cursor: pointer;
+}
+
+.side-label {
+  position: fixed;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%) rotate(-90deg);
+  transform-origin: center center;
+  font-size: 0.75rem;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.side-label-mobile {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .side-label {
+    display: none;
+  }
+
+  .side-label-mobile {
+    display: inline-block;
+    font-size: 0.7rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
 }
 
 .nav-meta {
@@ -395,17 +438,10 @@ onBeforeUnmount(() => {
   pointer-events: none;
 }
 
-.eyebrow {
-  letter-spacing: 0.4em;
-  text-transform: uppercase;
-  color: #888;
-  font-size: 0.75rem;
-  margin: 0 0 8px;
-}
-
 .neon-motto {
-  text-shadow: 0 0 5px #ffa500, 0 0 15px #ffa500, 0 0 20px #ffa500;
+  text-shadow: 0 0 5px #ffa500, 0 0 15px #ffa500, 0 0 20px #ffa500, 0 0 40px #ffa500, 0 0 60px #ff0000, 0 0 10px #ff8d00, 0 0 98px #ff0000;
   color: #fff6a9;
+  animation: blink 12s infinite;
 }
 
 .ask-header h1 {
