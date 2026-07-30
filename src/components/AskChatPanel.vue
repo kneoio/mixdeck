@@ -13,7 +13,12 @@
         <div v-if="username" class="user-block">
           <span class="user-label">{{ username }}</span>
           <div v-if="userLabels.length" class="user-pills">
-            <span v-for="label in userLabels" :key="label" class="user-pill">{{ label }}</span>
+            <span
+              v-for="label in userLabels"
+              :key="label"
+              class="user-pill"
+              :class="`user-pill--${label}`"
+            >{{ label }}</span>
           </div>
         </div>
       </div>
@@ -370,6 +375,21 @@ onBeforeUnmount(() => {
   border-radius: 3px;
   padding: 0 4px;
   line-height: 1.4;
+}
+
+.user-pill--developer {
+  color: #ff6b6b;
+  border-color: rgba(255, 107, 107, 0.5);
+}
+
+.user-pill--owner {
+  color: #f0a500;
+  border-color: rgba(240, 165, 0, 0.5);
+}
+
+.user-pill--artist {
+  color: #22c55e;
+  border-color: rgba(34, 197, 94, 0.5);
 }
 
 .ask-shell {
