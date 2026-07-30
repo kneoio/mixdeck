@@ -5,7 +5,12 @@
       <div class="nav-meta">
         <span class="status-dot" :class="connected ? 'online' : 'offline'" />
         <span class="status-label">{{ connected ? t('ask.connected') : t('ask.connecting') }}</span>
-        <span v-if="username" class="user-label">{{ username }}</span>
+        <div v-if="username" class="user-block">
+          <span class="user-label">{{ username }}</span>
+          <div v-if="userLabels.length" class="user-pills">
+            <span v-for="label in userLabels" :key="label" class="user-pill">{{ label }}</span>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -104,7 +109,7 @@ import { useAskChatStore, type AskChatMessage } from '@/stores/askChat'
 const { t } = useI18n()
 const router = useRouter()
 const askStore = useAskChatStore()
-const { messages, connected, processing, username, isBusy } = storeToRefs(askStore)
+const { messages, connected, processing, username, userLabels, isBusy } = storeToRefs(askStore)
 const messageApi = useMessage()
 
 const md = new MarkdownIt({ linkify: true, breaks: true })
@@ -293,8 +298,34 @@ onBeforeUnmount(() => {
 
 .user-label {
   color: #b0b0b0;
+}
+
+.user-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
   padding-left: 8px;
   border-left: 1px solid #2a2a2a;
+}
+
+.user-pills {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.user-pill {
+  font-size: 0.65rem;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+  color: #d8d8d8;
+  background: rgba(255, 122, 24, 0.12);
+  border: 1px solid rgba(255, 122, 24, 0.35);
+  border-radius: 999px;
+  padding: 1px 8px;
+  line-height: 1.4;
 }
 
 .ask-shell {

@@ -28,6 +28,20 @@ function createAnonId(): string {
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
 
+function normalizeUserLabels(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return []
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const item of raw) {
+    if (typeof item !== 'string') continue
+    const label = item.trim().toLowerCase()
+    if (!label || seen.has(label)) continue
+    seen.add(label)
+    out.push(label)
+  }
+  return out
+}
+
 function getOrCreateAnonId(): string {
   let anonId = localStorage.getItem(ANON_SESSION_KEY)
   if (!anonId) {
@@ -52,6 +66,8 @@ export const useAskChatStore = defineStore('askChat', () => {
   const connected = ref(false)
   const processing = ref('')
   const username = ref('')
+  /** Listener role labels from jesoos session_token (e.g. artist, owner). */
+  const userLabels = ref<string[]>([])
   /** In-flight assistant bubble id while CHUNKs are appending; cleared on BOT finalize / ERROR. */
   const streamingMessageId = ref<string | number | null>(null)
   const currentStreamContent = ref('')
@@ -258,10 +274,12 @@ export const useAskChatStore = defineStore('askChat', () => {
         localStorage.setItem(SESSION_TOKEN_KEY, data.token)
         sessionToken.value = data.token
         if (data.userName) username.value = data.userName
+        userLabels.value = normalizeUserLabels(data.labels ?? data.userLabels)
       } else {
         localStorage.removeItem(SESSION_TOKEN_KEY)
         sessionToken.value = null
         username.value = ''
+        userLabels.value = []
         // Reconnect anonymously so the next session uses anonId
         if (connected.value || ws) {
           intentionalDisconnect = true
@@ -310,6 +328,7 @@ export const useAskChatStore = defineStore('askChat', () => {
     localStorage.removeItem(SESSION_TOKEN_KEY)
     sessionToken.value = null
     username.value = ''
+    userLabels.value = []
   }
 
   return {
@@ -317,6 +336,7 @@ export const useAskChatStore = defineStore('askChat', () => {
     connected,
     processing,
     username,
+    userLabels,
     streamingMessageId,
     replyInFlight,
     sessionToken,
