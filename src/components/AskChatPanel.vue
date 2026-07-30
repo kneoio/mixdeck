@@ -347,27 +347,28 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 4px;
+  gap: 3px;
   padding-left: 8px;
   border-left: 1px solid #2a2a2a;
 }
 
 .user-pills {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 4px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
 }
 
 .user-pill {
-  font-size: 0.65rem;
-  letter-spacing: 0.04em;
-  text-transform: lowercase;
-  color: #d8d8d8;
-  background: rgba(255, 122, 24, 0.12);
-  border: 1px solid rgba(255, 122, 24, 0.35);
-  border-radius: 999px;
-  padding: 1px 8px;
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  padding: 0 4px;
   line-height: 1.4;
 }
 
