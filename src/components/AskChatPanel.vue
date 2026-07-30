@@ -113,6 +113,7 @@ import { NIcon, NInput, useMessage, type InputInst } from 'naive-ui'
 import { CopyOutline } from '@vicons/ionicons5'
 import GsapButton from '@/components/GsapButton.vue'
 import { useAskChatStore, type AskChatMessage } from '@/stores/askChat'
+import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -222,7 +223,11 @@ function onComposerKeydown(e: KeyboardEvent) {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  const authStore = useAuthStore()
+  if (authStore.isLoading) {
+    await authStore.initializeAuth()
+  }
   askStore.connect()
   focusComposer()
 })

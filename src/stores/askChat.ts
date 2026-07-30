@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { appConfig } from '@/config/appConfig'
+import { authService } from '@/services/auth'
 
 const SESSION_TOKEN_KEY = 'mixdeck_ask_token'
 const ANON_SESSION_KEY = 'mixdeck_ask_anon_id'
@@ -53,7 +54,9 @@ function getOrCreateAnonId(): string {
 
 function buildAskWsUrl(): string {
   const wsBase = appConfig.jesoosServer.replace(/^http/, 'ws')
-  const token = localStorage.getItem(SESSION_TOKEN_KEY)
+  // Mixdeck OIDC first so a logged-in user opens Ask already authenticated;
+  // else Ask session (OTP / minted); else anonymous.
+  const token = authService.getToken() || localStorage.getItem(SESSION_TOKEN_KEY)
   if (token) {
     return `${wsBase}/ws/ask?token=${encodeURIComponent(token)}`
   }
