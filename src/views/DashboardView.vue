@@ -221,9 +221,9 @@ const brandLabel = (brand: any) =>
 
 const menuOptions = computed<MenuOption[]>(() => [
   {
-    label: () => h('span', { style: 'font-weight: 700;' }, t('menu.overview')),
+    label: () => h('span', { style: 'font-weight: 700; text-transform: uppercase;' }, t('menu.overview')),
     key: 'overview',
-    icon: () => h(NIcon, { color: 'var(--vt-c-primary)' }, { default: () => h(OverviewIcon) }),
+    icon: () => h(NIcon, { color: '#FF2D95' }, { default: () => h(OverviewIcon) }),
   },
   {
     label: () => h('span', { style: 'font-weight: 700;' }, t('menu.my_brands')),
