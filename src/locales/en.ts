@@ -158,6 +158,7 @@ export default {
   },
   userMenu: {
     profile: 'Profile',
+    talk_to_mixplaclone: 'Talk to Mixplaclone',
     logout: 'Logout',
   },
   theme: {

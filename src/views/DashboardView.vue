@@ -25,6 +25,7 @@ import {
   MenuOutline as HamburgerIcon,
   AddOutline as AddIcon,
   PersonOutline as ProfileIcon,
+  ChatbubbleEllipsesOutline as AskIcon,
 } from '@vicons/ionicons5'
 
 const { t } = useI18n()
@@ -327,6 +328,12 @@ const userMenuOptions = computed(() => [
     icon: () => h(NIcon, null, { default: () => h(ProfileIcon) }),
   },
   {
+    label: () =>
+      h('span', { style: { fontWeight: 600 } }, t('userMenu.talk_to_mixplaclone')),
+    key: 'ask',
+    icon: () => h(NIcon, null, { default: () => h(AskIcon) }),
+  },
+  {
     label: t('userMenu.logout'),
     key: 'logout',
     icon: () => h(NIcon, null, { default: () => h(LogoutIcon) }),
@@ -335,6 +342,7 @@ const userMenuOptions = computed(() => [
 
 const handleUserMenuSelect = async (key: string) => {
   if (key === 'profile') router.push('/profile')
+  if (key === 'ask') window.open('/ask', '_blank')
   if (key === 'logout') await authStore.logout()
 }
 </script>
