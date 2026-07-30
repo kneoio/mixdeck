@@ -146,13 +146,13 @@ async function loadDictionaries() {
     dictionaryStore.loadGenres(),
     dictionaryStore.loadSoundFragmentLabels(),
   ])
-  genreMap.value = new Map(dictionaryStore.genres.map(g => [g.id, {
-    name: g.localizedName?.en || Object.values(g.localizedName || {})[0] || g.identifier || g.id,
+  genreMap.value = new Map(dictionaryStore.genres.map(g => [g.identifier, {
+    name: g.localizedName?.en || Object.values(g.localizedName || {})[0] || g.identifier,
     color: g.color,
     fontColor: g.fontColor,
   }]))
-  labelMap.value = new Map(dictionaryStore.soundFragmentLabels.map(l => [l.id, {
-    name: l.localizedName?.en || l.identifier || l.id,
+  labelMap.value = new Map(dictionaryStore.soundFragmentLabels.map(l => [l.identifier, {
+    name: l.localizedName?.en || l.name || l.identifier,
     color: l.color,
     fontColor: l.fontColor,
   }]))
@@ -160,12 +160,12 @@ async function loadDictionaries() {
 
 function resolveGenre(g: any) {
   if (typeof g === 'string') return genreMap.value.get(g) ?? { name: g }
-  return { name: g.identifier || g.id, color: g.color, fontColor: g.fontColor }
+  return { name: g.identifier, color: g.color, fontColor: g.fontColor }
 }
 
 function resolveLabel(l: any) {
   if (typeof l === 'string') return labelMap.value.get(l) ?? { name: l }
-  return { name: l.identifier || l.id, color: l.color, fontColor: l.fontColor }
+  return { name: l.identifier, color: l.color, fontColor: l.fontColor }
 }
 
 const brand = computed(() => brandsStore.brands.find(b => b.slugName === route.params.slug))

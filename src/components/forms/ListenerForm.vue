@@ -106,8 +106,8 @@ onMounted(async () => {
     try {
       await dictionaryStore.loadListenerLabels()
       labelOptions.value = dictionaryStore.listenerLabels.map(l => ({
-        label: l.localizedName?.en || l.identifier || l.id,
-        value: l.id,
+        label: l.localizedName?.en || l.name || l.identifier,
+        value: l.identifier,
       }))
     } catch {}
 

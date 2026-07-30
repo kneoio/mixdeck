@@ -3,7 +3,6 @@ import { ref } from 'vue'
 import datanestApiService from '@/services/datanestApi'
 
 export interface Script {
-  id: string
   author?: string
   regDate?: string
   lastModifier?: string
@@ -11,19 +10,19 @@ export interface Script {
   name: string
   description: string
   color?: string
-  defaultProfileId?: string
+  defaultProfileSlug?: string
   labels?: string[]
   tags?: Array<{
-    id: string
+    identifier: string
     name: string
-    identifier?: string
     color?: string
     fontColor?: string
     category?: string
   }>
   languageTag?: string
   timingMode?: string
-  slugName?: string
+  custom?: boolean
+  slugName: string
   requiredVariables?: Array<{ name: string; type: string; description: string; required?: boolean }>
 }
 

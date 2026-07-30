@@ -118,15 +118,15 @@ const isPrerecorded = computed(() =>
 
 const labelOptions = computed(() =>
   dictionaryStore.soundFragmentLabels.map(l => ({
-    label: l.localizedName?.en || l.identifier || l.id,
-    value: l.id,
+    label: l.localizedName?.en || l.name || l.identifier,
+    value: l.identifier,
   }))
 )
 
 const brandOptions = computed(() =>
   brandsStore.brands.map(b => ({
-    label: b.localizedName?.['en'] || b.title || b.slugName || b.id,
-    value: b.id,
+    label: b.localizedName?.['en'] || b.title || b.slugName || '',
+    value: b.slugName!,
   }))
 )
 

@@ -32,8 +32,8 @@ const pagination = computed(() => ({
   itemCount: otsDefinitionsStore.totalCount,
 }))
 
-function scriptName(scriptId: string): string {
-  return scriptsStore.scripts.find((s) => s.id === scriptId)?.name || scriptId
+function scriptName(scriptSlug: string): string {
+  return scriptsStore.scripts.find((s) => s.slugName === scriptSlug)?.name || scriptSlug
 }
 
 function renderScriptOptionLabel(option: SelectOption) {
@@ -60,8 +60,8 @@ function renderScriptOptionLabel(option: SelectOption) {
 
 const newStreamOptions = computed<DropdownOption[]>(() =>
   scriptsStore.scripts.map((script) => ({
-    key: script.id,
-    label: () => renderScriptOptionLabel({ label: script.name, value: script.id, tags: script.tags || [] } as unknown as SelectOption),
+    key: script.slugName,
+    label: () => renderScriptOptionLabel({ label: script.name, value: script.slugName, tags: script.tags || [] } as unknown as SelectOption),
   }))
 )
 

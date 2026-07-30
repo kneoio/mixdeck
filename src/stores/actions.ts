@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import datanestApiService from '@/services/datanestApi'
 
 export interface ActionOption {
-  id: string
+  slugName: string
   name: string | null
   localizedOptionName: Record<string, string>
 }
@@ -16,7 +16,7 @@ export const useActionsStore = defineStore('actions', () => {
   const selectOptions = computed(() =>
     options.value.map(o => ({
       label: o.localizedOptionName.en,
-      value: o.id,
+      value: o.slugName,
     }))
   )
 
@@ -32,9 +32,9 @@ export const useActionsStore = defineStore('actions', () => {
     }
   }
 
-  function findById(id: string): ActionOption | undefined {
-    return options.value.find(o => o.id === id)
+  function findBySlug(slugName: string): ActionOption | undefined {
+    return options.value.find(o => o.slugName === slugName)
   }
 
-  return { options, loading, loaded, selectOptions, loadOptions, findById }
+  return { options, loading, loaded, selectOptions, loadOptions, findBySlug }
 })

@@ -42,13 +42,13 @@ async function loadDictionaries() {
     dictionaryStore.loadGenres(),
     dictionaryStore.loadSoundFragmentLabels(),
   ])
-  genreMap.value = new Map(dictionaryStore.genres.map(g => [g.id, {
-    name: g.localizedName?.en || Object.values(g.localizedName || {})[0] || g.identifier || g.id,
+  genreMap.value = new Map(dictionaryStore.genres.map(g => [g.identifier, {
+    name: g.localizedName?.en || Object.values(g.localizedName || {})[0] || g.identifier,
     color: g.color,
     fontColor: g.fontColor,
   }]))
-  labelMap.value = new Map(dictionaryStore.soundFragmentLabels.map(l => [l.id, {
-    name: l.localizedName?.en || l.identifier || l.id,
+  labelMap.value = new Map(dictionaryStore.soundFragmentLabels.map(l => [l.identifier, {
+    name: l.localizedName?.en || l.name || l.identifier,
     color: l.color,
     fontColor: l.fontColor,
   }]))
@@ -56,12 +56,12 @@ async function loadDictionaries() {
 
 function resolveGenre(g: any) {
   if (typeof g === 'string') return genreMap.value.get(g) ?? { name: g }
-  return { name: g.identifier || g.id, color: g.color, fontColor: g.fontColor }
+  return { name: g.identifier, color: g.color, fontColor: g.fontColor }
 }
 
 function resolveLabel(l: any) {
   if (typeof l === 'string') return labelMap.value.get(l) ?? { name: l }
-  return { name: l.identifier || l.id, color: l.color, fontColor: l.fontColor }
+  return { name: l.identifier, color: l.color, fontColor: l.fontColor }
 }
 
 const pagination = computed(() => ({
@@ -188,24 +188,24 @@ async function handleBulkUnshare() {
 function representedBrandIds(row: any): string[] {
   const rb = row?.representedInBrands
   if (!Array.isArray(rb)) return []
-  return rb.map((x: any) => (typeof x === 'string' ? x : x?.id)).filter(Boolean)
+  return rb.map((x: any) => (typeof x === 'string' ? x : x?.slugName)).filter(Boolean)
 }
 
 function resolveBrandIdForRow(row: any): string | null {
-  const src = row?.sourceBrandId ?? row?.sourceBrand?.id
+  const src = row?.sourceBrandSlug ?? row?.sourceBrand?.slugName
   if (src) return String(src)
-  const owned = new Set(brandsStore.brands.map(b => b.id))
+  const owned = new Set(brandsStore.brands.map(b => b.slugName).filter(Boolean) as string[])
   const fromRow = representedBrandIds(row).find(id => owned.has(id))
   if (fromRow) return fromRow
   const anyBrand = representedBrandIds(row)[0]
   if (anyBrand) return anyBrand
-  return brandsStore.brands[0]?.id ?? null
+  return brandsStore.brands[0]?.slugName ?? null
 }
 
 function resolveBrandSlug(brandId: string | null, row?: any): string | null {
   if (row?.sourceBrandSlug) return String(row.sourceBrandSlug)
   if (brandId) {
-    const slug = brandsStore.brands.find(b => b.id === brandId)?.slugName
+    const slug = brandsStore.brands.find(b => b.slugName === brandId)?.slugName
     if (slug) return slug
   }
   return null
@@ -216,9 +216,9 @@ function resolveBrandSlugForRow(row: any): string | null {
 }
 
 function resolveBrandSlugFromFragment(frag: any): string | null {
-  const owned = new Set(brandsStore.brands.map(b => b.id))
+  const owned = new Set(brandsStore.brands.map(b => b.slugName).filter(Boolean) as string[])
   const brandId = (Array.isArray(frag?.representedInBrands) ? frag.representedInBrands : [])
-    .map((x: any) => (typeof x === 'string' ? x : x?.id))
+    .map((x: any) => (typeof x === 'string' ? x : x?.slugName))
     .find((id: string) => owned.has(id))
   return resolveBrandSlug(brandId ?? null, frag)
 }

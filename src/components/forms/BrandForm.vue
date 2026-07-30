@@ -74,14 +74,14 @@ const aiAgentFieldRef = ref<HTMLElement | null>(null)
 const scriptFieldRef = ref<HTMLElement | null>(null)
 const genresFieldRef = ref<HTMLElement | null>(null)
 
-type ValidationField = 'localizedNames' | 'country' | 'timeZone' | 'genres' | 'aiAgentId' | 'scriptId'
+type ValidationField = 'localizedNames' | 'country' | 'timeZone' | 'genres' | 'aiAgentSlug' | 'scriptId'
 
 const fieldErrors = ref<Record<ValidationField, string>>({
   localizedNames: '',
   country: '',
   timeZone: '',
   genres: '',
-  aiAgentId: '',
+  aiAgentSlug: '',
   scriptId: '',
 })
 
@@ -104,8 +104,8 @@ const formData = ref({
   timeZone: null as string | null,
   publicBrand: 0,
   bitRate: 64_000,
-  aiAgentId: null as string | null,
-  profileId: null as string | null,
+  aiAgentSlug: null as string | null,
+  profileSlug: null as string | null,
   submissionPolicy: 'NOT_ALLOWED' as SubmissionPolicy,
   messagingPolicy: 'NOT_ALLOWED' as SubmissionPolicy,
   chatFeatureFlags: { CREATE_AD: false, STORE_PROMO: false },
@@ -221,6 +221,7 @@ async function testInstruction(scene: Scene) {
 
 const scriptMode = ref<'predefined' | 'custom'>('predefined')
 const customScriptTitle = ref('')
+const customScriptColor = ref<string | undefined>()
 
 let _sceneId = 0
 const scenes = ref<Scene[]>([])
@@ -240,26 +241,10 @@ function serializePlaylist(sp: any) {
 
 function normalizePlaylist(sp: any) {
   const sourcing = Array.isArray(sp?.sourcing) ? sp.sourcing : [sp?.sourcing ?? 'RANDOM']
-  return { sourcing, labels: sp?.labels ?? [], genres: sp?.genres ?? [] }
-}
-
-function resolveToUuid(values: string[], list: { id: string; identifier?: string; name?: string; localizedName?: Record<string, string> }[]): string[] {
-  return values.map(v => {
-    if (list.find(e => e.id === v)) return v
-    const match = list.find(e =>
-      e.name === v ||
-      e.identifier === v ||
-      (e.localizedName && Object.values(e.localizedName).includes(v))
-    )
-    return match?.id ?? v
-  })
-}
-
-function normalizeScenePlaylistIds() {
-  for (const scene of scenes.value) {
-    const sp = scene.stagePlaylist
-    if (sp.genres?.length) sp.genres = resolveToUuid(sp.genres, dictionaryStore.genres as any[])
-    if (sp.labels?.length) sp.labels = resolveToUuid(sp.labels, dictionaryStore.soundFragmentLabels as any[])
+  return {
+    sourcing,
+    labels: normalizeIdList(sp?.labels),
+    genres: normalizeIdList(sp?.genres),
   }
 }
 
@@ -415,9 +400,8 @@ function sceneActionOptions(scene: Scene) {
 
 
 type AgentLabel = {
-  id: string
+  identifier: string
   name: string
-  identifier?: string
   color?: string
   fontColor?: string
   category?: string
@@ -442,14 +426,14 @@ function isFree(labels: AgentLabel[]) {
 
 const agentOptions = ref<AgentOption[]>([])
 /** Raw agent rows from API (like scripts in scriptsStore) — used for description under DJ select. */
-const agentsList = ref<Array<{ id: string; description?: string; labels?: AgentLabel[]; name?: string }>>([])
+const agentsList = ref<Array<{ slugName: string; description?: string; labels?: AgentLabel[]; name?: string }>>([])
 const profileOptions = ref<{ label: string; value: string }[]>([])
 const scriptOptions = ref<ScriptOption[]>([])
 const genreTreeOptions = computed(() => toGenreTreeOptions(dictionaryStore.genres))
 const fragmentLabelOptions = computed(() =>
   dictionaryStore.soundFragmentLabels.map(l => ({
-    label: l.localizedName?.en || l.identifier || l.id,
-    value: l.id,
+    label: l.localizedName?.en || l.name || l.identifier,
+    value: l.identifier,
   }))
 )
 
@@ -517,8 +501,8 @@ const renderedDescription = computed(() =>
 )
 
 const selectedAgent = computed(() =>
-  formData.value.aiAgentId
-    ? agentsList.value.find(a => a.id === formData.value.aiAgentId) ?? null
+  formData.value.aiAgentSlug
+    ? agentsList.value.find(a => a.slugName === formData.value.aiAgentSlug) ?? null
     : null
 )
 
@@ -590,7 +574,7 @@ function getFieldRef(field: ValidationField) {
   if (field === 'country') return countryFieldRef.value
   if (field === 'timeZone') return timeZoneFieldRef.value
   if (field === 'genres') return genresFieldRef.value
-  if (field === 'aiAgentId') return aiAgentFieldRef.value
+  if (field === 'aiAgentSlug') return aiAgentFieldRef.value
   return scriptFieldRef.value
 }
 
@@ -599,13 +583,13 @@ function getFieldLabel(field: ValidationField) {
   if (field === 'country') return t('brandForm.country')
   if (field === 'timeZone') return t('brandForm.time_zone')
   if (field === 'genres') return t('fragmentForm.genres')
-  if (field === 'aiAgentId') return t('brandForm.ai_agent')
+  if (field === 'aiAgentSlug') return t('brandForm.ai_agent')
   return t('brandForm.script')
 }
 
 function getFieldTab(field: ValidationField) {
   if (field === 'localizedNames' || field === 'country' || field === 'timeZone' || field === 'genres') return 'properties'
-  if (field === 'aiAgentId') return 'onAir'
+  if (field === 'aiAgentSlug') return 'onAir'
   return 'script'
 }
 
@@ -623,7 +607,7 @@ function clearFieldError(field: ValidationField) {
 }
 
 function clearAllFieldErrors() {
-  const allFields: ValidationField[] = ['localizedNames', 'country', 'timeZone', 'genres', 'aiAgentId', 'scriptId']
+  const allFields: ValidationField[] = ['localizedNames', 'country', 'timeZone', 'genres', 'aiAgentSlug', 'scriptId']
   for (const field of allFields) {
     clearFieldError(field)
   }
@@ -650,8 +634,7 @@ async function handleServerValidation(error: any): Promise<boolean> {
     country: 'country',
     timeZone: 'timeZone',
     genres: 'genres',
-    aiAgentId: 'aiAgentId',
-    scriptId: 'scriptId',
+    aiAgentSlug: 'aiAgentSlug',
     scripts: 'scriptId',
   }
   const toShow: { field: ValidationField; msg: string }[] = []
@@ -676,10 +659,17 @@ async function validateBeforeSave() {
   if (!formData.value.country) invalidFields.push('country')
   if (!formData.value.timeZone) invalidFields.push('timeZone')
   if (!Array.isArray(formData.value.genres) || formData.value.genres.length === 0) invalidFields.push('genres')
-  if (!formData.value.aiAgentId) invalidFields.push('aiAgentId')
-  if (!formData.value.scriptId) invalidFields.push('scriptId')
+  if (!formData.value.aiAgentSlug) invalidFields.push('aiAgentSlug')
+  if (scriptMode.value === 'predefined' && !formData.value.scriptId) invalidFields.push('scriptId')
+  if (
+    scriptMode.value === 'custom'
+    && !formData.value.scriptId
+    && !scenes.value.some(s => s.actions.length > 0)
+  ) {
+    invalidFields.push('scriptId')
+  }
 
-  const allFields: ValidationField[] = ['localizedNames', 'country', 'timeZone', 'genres', 'aiAgentId', 'scriptId']
+  const allFields: ValidationField[] = ['localizedNames', 'country', 'timeZone', 'genres', 'aiAgentSlug', 'scriptId']
   for (const field of allFields) {
     if (!invalidFields.includes(field)) clearFieldError(field)
   }
@@ -771,22 +761,23 @@ async function handleSave() {
   if (!valid) return
   try {
     loading.value = true
-    console.log('[BrandForm] save | scriptMode:', scriptMode.value, '| scriptId:', formData.value.scriptId, '| customScriptId will be:', scriptMode.value === 'custom' ? formData.value.scriptId || undefined : undefined)
+    const { scriptId: selectedScriptSlug, aiOverriding, ...formFields } = formData.value
     const savedBrand = await store.saveBrand(isEditing.value ? brandSlug.value : null, {
-      ...formData.value,
+      ...formFields,
       localizedName: buildLocalizedName(),
       country: formData.value.country || undefined,
       timeZone: formData.value.timeZone || undefined,
-      aiAgentId: formData.value.aiAgentId || undefined,
-      profileId: formData.value.profileId || undefined,
-      aiOverriding: formData.value.aiOverriding.enabled ? { name: formData.value.aiOverriding.name, prompt: formData.value.aiOverriding.prompt } : undefined,
-      scriptIds: scriptMode.value === 'predefined' && formData.value.scriptId
-        ? [{ slugName: formData.value.scriptId, userVariables: userVariables.value }]
+      aiAgentSlug: formData.value.aiAgentSlug || undefined,
+      profileSlug: formData.value.profileSlug || undefined,
+      aiOverriding: aiOverriding.enabled ? { name: aiOverriding.name, prompt: aiOverriding.prompt } : undefined,
+      scripts: scriptMode.value === 'predefined' && selectedScriptSlug
+        ? [{ slugName: selectedScriptSlug, userVariables: userVariables.value }]
         : undefined,
-      customScriptId: scriptMode.value === 'custom' ? formData.value.scriptId || undefined : undefined,
+      customScriptSlug: scriptMode.value === 'custom' ? selectedScriptSlug || undefined : undefined,
       scriptMode: scriptMode.value.toUpperCase(),
       customScript: scriptMode.value === 'custom' ? {
         title: customScriptTitle.value || undefined,
+        color: customScriptColor.value || undefined,
         scenes: scenes.value.map(s => ({
           name: s.name,
           startTime: msToTimeString(s.startTime),
@@ -795,7 +786,7 @@ async function handleSave() {
             const def = s.customActionDefs[a]
             return def
               ? { type: 'custom', name: a, instruction: def.instruction }
-              : { type: 'predefined', actionId: a }
+              : { type: 'predefined', actionSlug: a }
           }),
           allowJingles: s.allowJingles,
           allowAds: s.allowAds,
@@ -810,6 +801,8 @@ async function handleSave() {
       owner: (formData.value.owner.name || formData.value.owner.email || coOwners.value.length)
         ? { ...formData.value.owner, coOwners: coOwners.value.filter(o => o.email).map(o => ({ email: o.email })) }
         : undefined,
+      genres: formData.value.genres,
+      labels: formData.value.labels,
     } as any)
     saveAttempted.value = false
     message.success(t('brandForm.saved'))
@@ -899,6 +892,7 @@ const scriptImportRef = ref<HTMLInputElement>()
 function exportScript() {
   const payload = {
     title: customScriptTitle.value || undefined,
+    color: customScriptColor.value || undefined,
     scenes: scenes.value.map(s => ({
       name: s.name,
       startTime: msToTimeString(s.startTime),
@@ -910,7 +904,7 @@ function exportScript() {
         const def = s.customActionDefs[a]
         return def
           ? { type: 'custom', name: a, instruction: def.instruction }
-          : { type: 'predefined', actionId: a }
+          : { type: 'predefined', actionSlug: a }
       }),
     })),
   }
@@ -945,6 +939,7 @@ function onScriptFileChange(e: Event) {
         return
       }
       customScriptTitle.value = json.title ?? customScriptTitle.value
+      customScriptColor.value = json.color ?? customScriptColor.value
       scenes.value = []
       _sceneId = 0
       for (const s of json.scenes) {
@@ -953,7 +948,7 @@ function onScriptFileChange(e: Event) {
         const actions: string[] = []
         for (const a of s.actions ?? []) {
           if (typeof a === 'string') { actions.push(a) }
-          else if (a.type === 'predefined' && a.actionId) { actions.push(a.actionId) }
+          else if (a.type === 'predefined' && a.actionSlug) { actions.push(a.actionSlug) }
           else if (a.name) {
             actions.push(a.name)
             customActionDefs[a.name] = { title: a.name, instruction: a.instruction ?? '', contextVars: a.contextVars ?? [] }
@@ -964,7 +959,6 @@ function onScriptFileChange(e: Event) {
         customActionDraft.value[id] = emptyDraft()
         customActionEditingTitle.value[id] = null
       }
-      normalizeScenePlaylistIds()
     } catch {
       message.error('Failed to import script — unexpected error.')
     }
@@ -993,16 +987,15 @@ function applyBrandToForm(brand: any) {
   if (!localizedNames.value.length) localizedNames.value = [{ lang: 'en', name: '' }]
 
   const isCustomMode = brand.scriptMode?.toLowerCase() === 'custom'
-  const firstScript = isCustomMode ? null : brand.scriptIds?.[0]
-  console.log('[BrandForm] load | scriptMode:', brand.scriptMode, '| scriptIds:', brand.scriptIds, '| customScriptId:', brand.customScriptId, '| resolved slugName:', firstScript?.slugName)
+  const firstScript = isCustomMode ? null : brand.scripts?.[0]
   formData.value = {
     country: brand.country || null,
     description: brand.description || '',
     timeZone: brand.timeZone || null,
     publicBrand: brand.publicBrand ?? 0,
     bitRate: snapBrandBitRate(normalizeBitRateFromServer(brand.bitRate)),
-    aiAgentId: brand.aiAgentId || null,
-    profileId: brand.profileId || null,
+    aiAgentSlug: brand.aiAgentSlug || null,
+    profileSlug: brand.profileSlug || null,
     submissionPolicy: brand.submissionPolicy || 'NOT_ALLOWED',
     messagingPolicy: isEditing.value ? (brand.messagingPolicy || 'NOT_ALLOWED') : 'NO_RESTRICTIONS',
     chatFeatureFlags: {
@@ -1010,7 +1003,7 @@ function applyBrandToForm(brand: any) {
       STORE_PROMO: brand.chatFeatureFlags?.STORE_PROMO ?? false,
     },
     aiOverriding: { enabled: !!(brand.aiOverriding?.name || brand.aiOverriding?.prompt), name: brand.aiOverriding?.name || '', prompt: brand.aiOverriding?.prompt || '' },
-    scriptId: isCustomMode ? (brand.customScriptId || null) : (firstScript?.slugName || null),
+    scriptId: isCustomMode ? (brand.customScriptSlug || null) : (firstScript?.slugName || null),
     profileOverriding: {
       name: brand.profileOverriding?.name || '',
       description: brand.profileOverriding?.description || ''
@@ -1022,7 +1015,7 @@ function applyBrandToForm(brand: any) {
     mixplaUrl: brand.mixplaUrl || '',
     owner: { name: brand.owner?.name || '', email: brand.owner?.email || '', exposeWhileSharing: (brand.owner as any)?.exposeWhileSharing ?? false, actionDebugEnabled: (brand.owner as any)?.actionDebugEnabled ?? false },
     genres: normalizeIdList((brand as any).genres),
-    labels: (brand as any).labels || [],
+    labels: normalizeIdList((brand as any).labels),
   }
   coOwners.value = Array.isArray((brand.owner as any)?.coOwners)
     ? (brand.owner as any).coOwners.map((o: any) => ({ name: o.name || '', email: o.email || '' }))
@@ -1030,6 +1023,7 @@ function applyBrandToForm(brand: any) {
   userVariables.value = firstScript?.userVariables ? { ...firstScript.userVariables } : {}
   scriptMode.value = brand.scriptMode?.toLowerCase() === 'custom' ? 'custom' : 'predefined'
   customScriptTitle.value = brand.customScript?.title ?? ''
+  customScriptColor.value = brand.customScript?.color
   scenes.value = []
   _sceneId = 0
   for (const s of brand.customScript?.scenes ?? []) {
@@ -1040,8 +1034,8 @@ function applyBrandToForm(brand: any) {
       if (typeof a === 'string') {
         actions.push(a)
       } else if (a && typeof a === 'object') {
-        if (a.type === 'predefined' && a.actionId) {
-          actions.push(a.actionId)
+        if (a.type === 'predefined' && a.actionSlug) {
+          actions.push(a.actionSlug)
         } else if (a.name) {
           actions.push(a.name)
           if (!customActionDefs[a.name]) {
@@ -1049,10 +1043,6 @@ function applyBrandToForm(brand: any) {
           }
         }
       }
-    }
-    for (const p of s.introPrompts ?? []) {
-      const id = typeof p === 'string' ? p : p.promptId
-      if (id) actions.push(id)
     }
     scenes.value.push({ id, name: s.name ?? s.title ?? '', startTime: timeStringToMs(s.startTime), actions, customActionDefs, allowJingles: s.allowJingles ?? true, allowAds: s.allowAds ?? false, talkActivity: s.talkativity ?? 0.5, stagePlaylist: normalizePlaylist(s.stagePlaylist) })
     customActionFormVisible.value[id] = false
@@ -1063,7 +1053,8 @@ function applyBrandToForm(brand: any) {
   const logoSlug = (brand as any).logoFiles?.[0]?.slugName
   if (logoSlug) {
     logoSlugName.value = logoSlug
-    loadLogoPreview(route.params.slug as string, logoSlug)  } else {
+    loadLogoPreview(route.params.slug as string, logoSlug)
+  } else {
     logoSlugName.value = null
     logoPreviewUrl.value = null
   }
@@ -1079,11 +1070,9 @@ onMounted(async () => {
     if (isEditing.value) {
       const brand = await store.fetchBrand(route.params.slug as string)
       applyBrandToForm(brand)
-      normalizeScenePlaylistIds()
     } else {
       const template = await store.fetchBrand('new')
       applyBrandToForm(template)
-      normalizeScenePlaylistIds()
     }
     loadAgents()
   } catch (error: any) {
@@ -1107,7 +1096,6 @@ watch(
       loading.value = true
       const brand = await store.fetchBrand(newSlug as string)
       applyBrandToForm(brand)
-      normalizeScenePlaylistIds()
     } catch (error: any) {
       message.error(error?.message || t('brandForm.load_failed'))
       router.push(backRoute.value)
@@ -1143,8 +1131,8 @@ watch(() => formData.value.genres, (value) => {
   }
 }, { deep: true })
 
-watch(() => formData.value.aiAgentId, (value) => {
-  if (value) clearFieldError('aiAgentId')
+watch(() => formData.value.aiAgentSlug, (value) => {
+  if (value) clearFieldError('aiAgentSlug')
 })
 
 watch(() => formData.value.scriptId, (value) => {
@@ -1164,11 +1152,11 @@ async function loadAgents() {
       const top = typeof a.description === 'string' ? a.description.trim() : ''
       const nested = typeof a.docData?.description === 'string' ? a.docData.description.trim() : ''
       const description = top || nested
-      return { id: a.id, name: a.name, labels: Array.isArray(a.labels) ? a.labels : [], ...(description ? { description } : {}) }
+      return { slugName: a.slugName, name: a.name, labels: Array.isArray(a.labels) ? a.labels : [], ...(description ? { description } : {}) }
     })
     agentOptions.value = entries.map((a: any) => {
       const labels: AgentLabel[] = Array.isArray(a.labels) ? a.labels : []
-      return { label: a.name || a.id, value: a.id, labels, preferredLang: Array.isArray(a.preferredLang) ? a.preferredLang : [] }
+      return { label: a.name || a.slugName, value: a.slugName, labels, preferredLang: Array.isArray(a.preferredLang) ? a.preferredLang : [] }
     })
     agentsLoaded.value = true
   } catch (error: any) {
@@ -1198,7 +1186,7 @@ watch(activeTab, async (tab) => {
   if (tab === 'onAir' && !audienceLoaded.value) {
     try {
       const profiles = await datanestApiService.getPagedDictionary<any>('/dictionary/profiles', 1, 100)
-      profileOptions.value = profiles.entries.map((p: any) => ({ label: p.name || p.id, value: p.id }))
+      profileOptions.value = profiles.entries.map((p: any) => ({ label: p.name || p.slugName, value: p.slugName }))
     } catch (error: any) {
       message.error(error?.message || t('brandForm.load_failed'))
     }
@@ -1339,14 +1327,14 @@ watch(activeTab, async (tab) => {
                   <div
                     ref="aiAgentFieldRef"
                     class="field-error-shell"
-                    :class="{ 'field-error-shell--active': !!fieldErrors.aiAgentId }"
+                    :class="{ 'field-error-shell--active': !!fieldErrors.aiAgentSlug }"
                   >
                     <NSkeleton v-if="!agentsLoaded" text style="width: 100%; height: 34px; border-radius: 3px;" />
-                    <NSelect v-else v-model:value="formData.aiAgentId" :options="agentOptions"
+                    <NSelect v-else v-model:value="formData.aiAgentSlug" :options="agentOptions"
                       :render-label="renderAgentOptionLabel" style="width: 100%" />
                   </div>
-                  <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.aiAgentId }">
-                    {{ fieldErrors.aiAgentId || '\u00A0' }}
+                  <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.aiAgentSlug }">
+                    {{ fieldErrors.aiAgentSlug || '\u00A0' }}
                   </div>
                 </div>
               </NFormItem>
@@ -1384,14 +1372,14 @@ watch(activeTab, async (tab) => {
                 <div class="field-stack">
                   <div class="field-error-shell">
                     <NSkeleton v-if="!audienceLoaded" text style="width: 100%; max-width: 500px; height: 34px; border-radius: 3px;" />
-                    <NSelect v-else v-model:value="formData.profileId" :options="profileOptions"
+                    <NSelect v-else v-model:value="formData.profileSlug" :options="profileOptions"
                       filterable clearable style="width: 100%; max-width: 500px" />
                   </div>
                   <div class="field-error-label"></div>
                 </div>
               </NFormItem>
 
-              <NFormItem v-if="formData.profileId" :label="t('brandForm.local_name')">
+              <NFormItem v-if="formData.profileSlug" :label="t('brandForm.local_name')">
                 <div class="field-stack">
                   <div class="field-error-shell">
                     <NInput v-model:value="formData.profileOverriding.name"
@@ -1401,7 +1389,7 @@ watch(activeTab, async (tab) => {
                 </div>
               </NFormItem>
 
-              <NFormItem v-if="formData.profileId" :label="t('brandForm.additional_info')">
+              <NFormItem v-if="formData.profileSlug" :label="t('brandForm.additional_info')">
                 <div class="field-stack">
                   <div class="field-error-shell">
                     <NInput v-model:value="formData.profileOverriding.description"

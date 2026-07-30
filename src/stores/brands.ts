@@ -8,7 +8,6 @@ export type SubmissionPolicy = 'NOT_ALLOWED' | 'REVIEW_REQUIRED' | 'NO_RESTRICTI
 export type AiAgentMode = 'BASIC' | 'SCRIPT_FOLLOWING'
 
 export interface Brand {
-  id?: string
   author: string
   regDate: string
   lastModifier: string
@@ -23,19 +22,25 @@ export interface Brand {
   url?: string
   hlsUrl?: string
   timeZone?: string
-  aiAgentId?: string
-  profileId?: string
+  aiAgentSlug?: string
+  profileSlug?: string
   managedBy?: ManagedBy
   aiAgentMode?: AiAgentMode
   oneTimeStreamPolicy?: SubmissionPolicy
   submissionPolicy?: SubmissionPolicy
   messagingPolicy?: SubmissionPolicy
   aiOverriding?: { prompt?: string; talkativity?: number }
-  scriptIds?: Array<{ slugName: string; userVariables?: Record<string, any> }>
-  customScriptId?: string
+  scripts?: Array<{ slugName: string; userVariables?: Record<string, any> }>
+  customScriptSlug?: string
   profileOverriding?: { name?: string; description?: string }
   titleFont?: string
-  owner?: { name?: string; email?: string; coOwners?: Array<{ name: string; email: string }> }
+  owner?: {
+    name?: string
+    email?: string
+    exposeWhileSharing?: boolean
+    actionDebugEnabled?: boolean
+    coOwners?: Array<{ name?: string; email: string }>
+  }
   publicBrand?: number
   bitRate?: number
   mixplaUrl?: string
@@ -43,6 +48,13 @@ export interface Brand {
   streamingOptions?: { codecs?: string[] }
   genres?: string[]
   labels?: string[]
+  logoFiles?: Array<{
+    slugName: string
+    fileOriginalName?: string
+    mimeType?: string
+    fileType?: string
+    contentLength?: number
+  }>
 }
 
 export const SUBMISSION_POLICY_OPTIONS: { label: string; value: SubmissionPolicy }[] = [
@@ -80,7 +92,7 @@ export const useBrandsStore = defineStore('brands', () => {
   }
 
   async function saveBrand(slug: string | null, data: Partial<Brand>) {
-    const { id: _id, author: _a, regDate: _r, lastModifier: _lm, lastModifiedDate: _lmd, status: _s, ...payload } = data as Brand
+    const { author: _a, regDate: _r, lastModifier: _lm, lastModifiedDate: _lmd, status: _s, ...payload } = data as Brand
     if (slug) return datanestApiService.updateDictionaryItem<Brand>('/public/brands', slug, payload)
     return datanestApiService.createDictionaryItem<Brand>('/public/brands', payload)
   }

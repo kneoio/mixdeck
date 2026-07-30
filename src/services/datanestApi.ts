@@ -77,8 +77,8 @@ class DatanestApiService extends ApiClient {
     return this.getDocument<any>('/public/soundfragments', id)
   }
 
-  async getScriptDetail(id: string): Promise<any> {
-    return this.getDocument<any>('/public/scripts', id)
+  async getScriptDetail(slugName: string): Promise<any> {
+    return this.getDocument<any>('/public/scripts', slugName)
   }
 
   async getOtsDefinitions(

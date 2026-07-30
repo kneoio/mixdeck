@@ -2,20 +2,20 @@ import { ApiClient } from './base'
 import { appConfig } from '@/config/appConfig'
 
 export interface GenreEntry {
-  id: string
   identifier: string
   name?: string
   localizedName?: Record<string, string>
+  rank?: number
   color?: string
   fontColor?: string
-  parent?: string | null
+  parentIdentifier?: string | null
   children?: GenreEntry[]
 }
 
 export interface LabelEntry {
-  id: string
   identifier: string
-  localizedName: Record<string, string>
+  name?: string
+  localizedName?: Record<string, string>
   color?: string
   fontColor?: string
   category?: string

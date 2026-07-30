@@ -98,8 +98,8 @@ const genreTreeOptions = computed(() => toGenreTreeOptions(dictionaryStore.genre
 
 const labelOptions = computed(() =>
   dictionaryStore.soundFragmentLabels.map(label => ({
-    label: label.localizedName?.en || label.identifier || label.id,
-    value: label.id,
+    label: label.localizedName?.en || label.name || label.identifier,
+    value: label.identifier,
   }))
 )
 
