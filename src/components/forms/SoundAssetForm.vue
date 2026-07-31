@@ -138,12 +138,12 @@ function isKnownBrand(id: string) {
 const renderBrandTag: SelectRenderTag = ({ option, handleClose }) => {
   const id = String(option.value ?? '')
   const known = isKnownBrand(id)
-  const label = option.label ?? option.value
   return h(NTag, {
     closable: known,
     onClose: known ? handleClose : undefined,
+    class: known ? undefined : 'brand-tag--inaccessible',
   }, {
-    default: () => known ? label : `🔒 ${label}`,
+    default: () => option.label ?? option.value,
   })
 }
 
@@ -737,6 +737,10 @@ watch(activeTab, (tab) => {
 :deep(.n-form-item .n-form-item-feedback-wrapper) { min-height: 12px; line-height: 1.1; }
 :deep(.n-form-item) { margin-bottom: 8px; }
 :deep(.n-form-item:last-child) { margin-bottom: 0; }
+.brand-tag--inaccessible {
+  opacity: 0.45;
+  pointer-events: none;
+}
 @media (max-width: 768px) {
   :deep(.n-form-item-label) { padding-left: 10px !important; }
   .field-stack { padding-right: 10px; }

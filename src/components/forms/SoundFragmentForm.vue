@@ -365,11 +365,6 @@ function isKnownBrand(id: string) {
   return brandOptions.value.some(o => o.value === id)
 }
 
-function brandDisplayText(id: string) {
-  const label = brandLabelById(id)
-  return isKnownBrand(id) ? label : `🔒 ${label}`
-}
-
 function removeBrand(id: string) {
   if (!isKnownBrand(id)) return
   formData.value.representedInBrands = formData.value.representedInBrands.filter(x => x !== id)
@@ -809,10 +804,11 @@ watch([activeTab, genreRows], async () => {
                   <NTag
                     v-for="id in formData.representedInBrands"
                     :key="id"
+                    :class="{ 'brand-tag--inaccessible': !isKnownBrand(id) }"
                     :closable="isKnownBrand(id)"
                     @close="removeBrand(id)"
                   >
-                    {{ brandDisplayText(id) }}
+                    {{ brandLabelById(id) }}
                   </NTag>
                   <NPopselect :options="availableBrandOptions" trigger="click" filterable
                     @update:value="addBrand">
@@ -1204,5 +1200,10 @@ watch([activeTab, genreRows], async () => {
 
 .add-info-negative {
   opacity: 0.55;
+}
+
+.brand-tag--inaccessible {
+  opacity: 0.45;
+  pointer-events: none;
 }
 </style>
