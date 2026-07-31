@@ -94,7 +94,7 @@ watch(
       selectedBrandIds.value = []
       stayIncognito.value = false
       pageNum.value = 1
-      void fetchBrands(1)
+      void openDialog()
     }
   }
 )
@@ -108,6 +108,8 @@ const totalCount = ref(0)
 const selectedBrandIds = ref<string[]>([])
 const stayIncognito = ref(false)
 const submitting = ref(false)
+/** Brand slugNames / ids already on the song(s) — hide from share list. */
+const excludedBrandKeys = ref<Set<string>>(new Set())
 
 const modalTitle = computed(() =>
   props.fragmentIds.length > 1
@@ -124,11 +126,46 @@ function displayName(row: any) {
   )
 }
 
+function isAlreadyAssigned(brand: any): boolean {
+  const keys = excludedBrandKeys.value
+  return keys.has(String(brand?.id ?? '')) || keys.has(String(brand?.slugName ?? ''))
+}
+
+async function loadExcludedBrands() {
+  const keys = new Set<string>()
+  if (props.brandSlug) keys.add(props.brandSlug)
+  await Promise.all(
+    props.fragmentIds.map(async (id) => {
+      try {
+        const raw: any = await datanestApiService.getDocument<any>('/public/soundfragments', id)
+        const frag = raw?.payload?.docData ?? raw?.docData ?? raw
+        const assigned = Array.isArray(frag?.representedInBrands) ? frag.representedInBrands : []
+        for (const b of assigned) {
+          if (b != null && b !== '') keys.add(String(b))
+        }
+      } catch {
+        // ignore — still show discover list
+      }
+    })
+  )
+  excludedBrandKeys.value = keys
+}
+
+async function openDialog() {
+  loading.value = true
+  try {
+    await loadExcludedBrands()
+    await fetchBrands(1)
+  } finally {
+    loading.value = false
+  }
+}
+
 async function fetchBrands(page = 1, size = pageSize.value) {
   loading.value = true
   try {
     const r = await datanestApiService.getBrandsForOpenContribution(page, size)
-    entries.value = r.entries
+    entries.value = (r.entries ?? []).filter((b: any) => !isAlreadyAssigned(b))
     totalCount.value = r.count
     pageNum.value = r.pageNum
     pageSize.value = r.pageSize
