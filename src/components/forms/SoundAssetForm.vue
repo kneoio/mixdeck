@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick, h } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { gsap } from 'gsap'
 import {
-  NSpace, NForm, NFormItem, NInput, NSelect,
+  NSpace, NForm, NFormItem, NInput, NSelect, NTag,
   NTabs, NTabPane, NUpload, NProgress, useMessage,
   NCheckbox, NCheckboxGroup, NButton, NButtonGroup, NSlider, NInputNumber, NText, NDynamicInput,
 } from 'naive-ui'
+import type { SelectRenderTag } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
 import type { UploadCustomRequestOptions } from 'naive-ui'
 import FormWrapper from '@/components/FormWrapper.vue'
@@ -129,6 +130,39 @@ const brandOptions = computed(() =>
     value: b.slugName!,
   }))
 )
+
+function isKnownBrand(id: string) {
+  return brandOptions.value.some(o => o.value === id)
+}
+
+const renderBrandTag: SelectRenderTag = ({ option, handleClose }) => {
+  const id = String(option.value ?? '')
+  const known = isKnownBrand(id)
+  const label = option.label ?? option.value
+  return h(NTag, {
+    closable: known,
+    onClose: known ? handleClose : undefined,
+  }, {
+    default: () => known ? label : `🔒 ${label}`,
+  })
+}
+
+function onBrandsUpdate(value: string[]) {
+  const protectedIds = formData.value.representedInBrands.filter(id => !isKnownBrand(id))
+  const nextKnown = value.filter(id => isKnownBrand(id))
+  const next: string[] = []
+  const seen = new Set<string>()
+  for (const id of formData.value.representedInBrands) {
+    if (protectedIds.includes(id) || nextKnown.includes(id)) {
+      next.push(id)
+      seen.add(id)
+    }
+  }
+  for (const id of nextKnown) {
+    if (!seen.has(id)) next.push(id)
+  }
+  formData.value.representedInBrands = next
+}
 
 const backRoute = '/sound-library/sound-assets'
 const formLabelPlacement = computed(() => (isMobile.value ? 'top' : 'left'))
@@ -437,7 +471,15 @@ watch(activeTab, (tab) => {
                 class="field-error-shell"
                 :class="{ 'field-error-shell--active': !!fieldErrors.representedInBrands }"
               >
-                <NSelect v-model:value="formData.representedInBrands" :options="brandOptions" multiple filterable style="width: 100%" />
+                <NSelect
+                  :value="formData.representedInBrands"
+                  :options="brandOptions"
+                  :render-tag="renderBrandTag"
+                  multiple
+                  filterable
+                  style="width: 100%"
+                  @update:value="onBrandsUpdate"
+                />
               </div>
               <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.representedInBrands }">
                 {{ fieldErrors.representedInBrands || ' ' }}

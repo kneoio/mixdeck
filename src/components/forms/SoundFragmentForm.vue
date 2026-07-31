@@ -361,7 +361,17 @@ function brandLabelById(id: string) {
   return brandOptions.value.find(o => o.value === id)?.label || id
 }
 
+function isKnownBrand(id: string) {
+  return brandOptions.value.some(o => o.value === id)
+}
+
+function brandDisplayText(id: string) {
+  const label = brandLabelById(id)
+  return isKnownBrand(id) ? label : `🔒 ${label}`
+}
+
 function removeBrand(id: string) {
+  if (!isKnownBrand(id)) return
   formData.value.representedInBrands = formData.value.representedInBrands.filter(x => x !== id)
 }
 
@@ -796,8 +806,13 @@ watch([activeTab, genreRows], async () => {
             <div class="field-stack">
               <div class="field-error-shell">
                 <NSpace size="small" align="center" style="width: 100%">
-                  <NTag v-for="id in formData.representedInBrands" :key="id" closable @close="removeBrand(id)">
-                    {{ brandLabelById(id) }}
+                  <NTag
+                    v-for="id in formData.representedInBrands"
+                    :key="id"
+                    :closable="isKnownBrand(id)"
+                    @close="removeBrand(id)"
+                  >
+                    {{ brandDisplayText(id) }}
                   </NTag>
                   <NPopselect :options="availableBrandOptions" trigger="click" filterable
                     @update:value="addBrand">
