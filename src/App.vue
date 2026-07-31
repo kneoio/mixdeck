@@ -51,6 +51,7 @@ const themeOverrides = computed<GlobalThemeOverrides>(() => {
   const primary = themeStore.isDark ? accent.light : accent.base
   return {
   common: {
+    fontFamily: "'Oxanium', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
     primaryColor: primary,
     primaryColorHover: accent.hover,
     primaryColorPressed: accent.pressed,
