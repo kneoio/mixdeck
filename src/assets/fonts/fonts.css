@@ -1,4 +1,20 @@
 @font-face {
+  font-family: 'Exo 2';
+  src: url('./Exo2-Variable.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Exo 2';
+  src: url('./Exo2-Italic-Variable.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
   font-family: 'Goldman';
   src: url('./Goldman-Regular.ttf') format('truetype');
   font-weight: normal;
