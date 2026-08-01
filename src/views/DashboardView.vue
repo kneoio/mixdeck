@@ -10,6 +10,7 @@ import { useUserSubscriptionStore } from '@/stores/userSubscription'
 import { useServiceWorker } from '@/composables/useServiceWorker'
 import ThemeAccentPicker from '@/components/ThemeAccentPicker.vue'
 import AskChatDock from '@/components/AskChatDock.vue'
+import { useAskChatStore } from '@/stores/askChat'
 import {
   NLayout, NLayoutSider, NLayoutHeader, NLayoutContent,
   NMenu, NButton, NDropdown, NAvatar, NSpace, NFlex, NIcon,
@@ -60,6 +61,7 @@ const isMobile = computed(() => windowWidth.value < 768)
 const mobileDrawerOpen = ref(false)
 const askDrawerOpen = ref(false)
 const askDockRef = ref<{ activate: () => void } | null>(null)
+const askChatStore = useAskChatStore()
 
 function onAskDrawerEntered() {
   askDockRef.value?.activate()
@@ -511,6 +513,95 @@ html.dark .update-pill--glow {
   color: rgba(255, 255, 255, 0.92);
 }
 
+.ask-drawer-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  min-width: 0;
+  padding-right: 8px;
+}
+
+.ask-drawer-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.ask-drawer-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  min-width: 0;
+}
+
+.ask-drawer-user {
+  font-size: 0.72rem;
+  font-weight: 500;
+  opacity: 0.65;
+}
+
+.ask-drawer-pill {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(128, 128, 128, 0.85);
+  border: 1px solid rgba(128, 128, 128, 0.35);
+  border-radius: 3px;
+  padding: 0 4px;
+  line-height: 1.4;
+}
+
+.ask-drawer-pill--developer {
+  color: #ff6b6b;
+  border-color: rgba(255, 107, 107, 0.5);
+}
+
+.ask-drawer-pill--owner {
+  color: #f0a500;
+  border-color: rgba(240, 165, 0, 0.5);
+}
+
+.ask-drawer-pill--artist {
+  color: #22c55e;
+  border-color: rgba(34, 197, 94, 0.5);
+}
+
+</style>
+
+<style>
+/* Drawer teleports to body — needs unscoped selectors. */
+.ask-chat-drawer .n-drawer-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.ask-chat-drawer .n-drawer-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.ask-chat-drawer .n-drawer-body-content-wrapper {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ask-chat-drawer .n-drawer-header__main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
 </style>
 
 <template>
@@ -556,11 +647,31 @@ html.dark .update-pill--glow {
     <!-- Ask chat drawer — stays on the deck, shares the authenticated session -->
     <NDrawer
       v-model:show="askDrawerOpen"
+      class="ask-chat-drawer"
       placement="right"
       :width="isMobile ? 320 : 440"
       @after-enter="onAskDrawerEntered"
     >
-      <NDrawerContent :title="t('userMenu.talk_to_mixplaclone')" closable :native-scrollbar="false">
+      <NDrawerContent
+        closable
+        :native-scrollbar="false"
+        :body-style="{ overflow: 'hidden', display: 'flex', flexDirection: 'column', flex: '1 1 auto', height: '100%' }"
+        :body-content-style="{ flex: '1 1 auto', minHeight: 0, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxSizing: 'border-box' }"
+      >
+        <template #header>
+          <div class="ask-drawer-header">
+            <span class="ask-drawer-title">{{ t('userMenu.talk_to_mixplaclone') }}</span>
+            <div v-if="askChatStore.username || askChatStore.userLabels.length" class="ask-drawer-meta">
+              <span v-if="askChatStore.username" class="ask-drawer-user">{{ askChatStore.username }}</span>
+              <span
+                v-for="label in askChatStore.userLabels"
+                :key="label"
+                class="ask-drawer-pill"
+                :class="`ask-drawer-pill--${label}`"
+              >{{ label }}</span>
+            </div>
+          </div>
+        </template>
         <AskChatDock ref="askDockRef" />
       </NDrawerContent>
     </NDrawer>

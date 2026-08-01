@@ -1,17 +1,5 @@
 <template>
   <div class="dock">
-    <div v-if="username || userLabels.length" class="dock-user">
-      <span v-if="username" class="dock-user-name">{{ username }}</span>
-      <div v-if="userLabels.length" class="dock-user-pills">
-        <span
-          v-for="label in userLabels"
-          :key="label"
-          class="dock-user-pill"
-          :class="`dock-user-pill--${label}`"
-        >{{ label }}</span>
-      </div>
-    </div>
-
     <div ref="messagesEl" class="dock-messages" role="log" aria-live="polite">
       <div v-if="messages.length === 0 && !processing" class="dock-empty">
         <p class="dock-welcome">{{ t('ask.empty_welcome') }}</p>
@@ -41,6 +29,8 @@
           {{ processing }}
         </div>
       </div>
+
+      <div ref="bottomEl" class="dock-bottom" aria-hidden="true" />
     </div>
 
     <div class="dock-composer">
@@ -70,11 +60,12 @@ import { useAskChatStore, type AskChatMessage } from '@/stores/askChat'
 
 const { t } = useI18n()
 const askStore = useAskChatStore()
-const { messages, connected, processing, isBusy, username, userLabels } = storeToRefs(askStore)
+const { messages, connected, processing, isBusy } = storeToRefs(askStore)
 
 const md = new MarkdownIt({ linkify: true, breaks: true })
 const draft = ref('')
 const messagesEl = ref<HTMLElement | null>(null)
+const bottomEl = ref<HTMLElement | null>(null)
 const composerRef = ref<InputInst | null>(null)
 
 const suggestedPrompts = computed(() => [
@@ -102,14 +93,25 @@ function renderContent(msg: AskChatMessage): string {
 
 function scrollToBottom() {
   nextTick(() => {
-    const el = messagesEl.value
-    if (el) el.scrollTop = el.scrollHeight
+    requestAnimationFrame(() => {
+      const el = messagesEl.value
+      if (el) el.scrollTop = el.scrollHeight
+      bottomEl.value?.scrollIntoView({ block: 'end' })
+    })
   })
 }
 
 watch(messages, () => scrollToBottom(), { deep: true })
 watch(processing, () => scrollToBottom())
 watch(() => askStore.streamingMessageId, () => scrollToBottom())
+watch(
+  () => {
+    const id = askStore.streamingMessageId
+    if (id == null) return ''
+    return messages.value.find((m) => m.id === id)?.content ?? ''
+  },
+  () => scrollToBottom(),
+)
 
 function focusComposer() {
   nextTick(() => composerRef.value?.focus())
@@ -118,13 +120,19 @@ function focusComposer() {
 /** Scroll to latest messages and focus the composer (e.g. when the drawer opens). */
 function activate() {
   scrollToBottom()
+  // Layout settles after drawer animation — scroll again once height is final.
+  window.setTimeout(() => scrollToBottom(), 50)
+  window.setTimeout(() => scrollToBottom(), 200)
   focusComposer()
 }
 
 defineExpose({ activate })
 
 watch(connected, (ok) => {
-  if (ok) focusComposer()
+  if (ok) {
+    scrollToBottom()
+    focusComposer()
+  }
 })
 
 function sendDraft() {
@@ -133,6 +141,7 @@ function sendDraft() {
   if (askStore.send(text)) {
     draft.value = ''
     focusComposer()
+    scrollToBottom()
   }
 }
 
@@ -140,6 +149,7 @@ function sendSuggested(prompt: string) {
   if (askStore.send(prompt)) {
     draft.value = ''
     focusComposer()
+    scrollToBottom()
   }
 }
 
@@ -166,63 +176,15 @@ onBeforeUnmount(() => {
 .dock {
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
   height: 100%;
   min-height: 0;
-}
-
-.dock-user {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-  padding-bottom: 10px;
-  margin-bottom: 4px;
-  border-bottom: 1px solid var(--n-divider-color, rgba(128, 128, 128, 0.2));
-  flex-shrink: 0;
-}
-
-.dock-user-name {
-  font-size: 0.8rem;
-  opacity: 0.7;
-}
-
-.dock-user-pills {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 4px;
-}
-
-.dock-user-pill {
-  display: inline-block;
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: rgba(128, 128, 128, 0.8);
-  border: 1px solid rgba(128, 128, 128, 0.35);
-  border-radius: 3px;
-  padding: 0 4px;
-  line-height: 1.4;
-}
-
-.dock-user-pill--developer {
-  color: #ff6b6b;
-  border-color: rgba(255, 107, 107, 0.5);
-}
-
-.dock-user-pill--owner {
-  color: #f0a500;
-  border-color: rgba(240, 165, 0, 0.5);
-}
-
-.dock-user-pill--artist {
-  color: #22c55e;
-  border-color: rgba(34, 197, 94, 0.5);
+  max-height: 100%;
+  overflow: hidden;
 }
 
 .dock-messages {
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
@@ -230,6 +192,13 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: 12px;
   padding-bottom: 12px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.dock-bottom {
+  width: 100%;
+  height: 1px;
+  flex-shrink: 0;
 }
 
 .dock-empty {
