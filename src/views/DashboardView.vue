@@ -59,6 +59,11 @@ const windowWidth = ref(window.innerWidth)
 const isMobile = computed(() => windowWidth.value < 768)
 const mobileDrawerOpen = ref(false)
 const askDrawerOpen = ref(false)
+const askDockRef = ref<{ activate: () => void } | null>(null)
+
+function onAskDrawerEntered() {
+  askDockRef.value?.activate()
+}
 
 /** The header stripe's "purple" follows the user's chosen accent color. */
 const headerStripePurple = computed(() => themeStore.accentPalette.base)
@@ -554,9 +559,10 @@ html.dark .update-pill--glow {
       v-model:show="askDrawerOpen"
       placement="right"
       :width="isMobile ? 320 : 440"
+      @after-enter="onAskDrawerEntered"
     >
       <NDrawerContent :title="t('userMenu.talk_to_mixplaclone')" closable :native-scrollbar="false">
-        <AskChatDock />
+        <AskChatDock ref="askDockRef" />
       </NDrawerContent>
     </NDrawer>
 

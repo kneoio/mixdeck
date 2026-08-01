@@ -103,6 +103,14 @@ function focusComposer() {
   nextTick(() => composerRef.value?.focus())
 }
 
+/** Scroll to latest messages and focus the composer (e.g. when the drawer opens). */
+function activate() {
+  scrollToBottom()
+  focusComposer()
+}
+
+defineExpose({ activate })
+
 watch(connected, (ok) => {
   if (ok) focusComposer()
 })
@@ -134,7 +142,7 @@ function onComposerKeydown(e: KeyboardEvent) {
 // the OIDC token straight away — no auth init to wait on here.
 onMounted(() => {
   askStore.connect()
-  focusComposer()
+  activate()
 })
 
 onBeforeUnmount(() => {
