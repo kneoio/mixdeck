@@ -9,6 +9,7 @@ import { useBrandsStore } from '@/stores/brands'
 import { useUserSubscriptionStore } from '@/stores/userSubscription'
 import { useServiceWorker } from '@/composables/useServiceWorker'
 import ThemeAccentPicker from '@/components/ThemeAccentPicker.vue'
+import AskChatDock from '@/components/AskChatDock.vue'
 import {
   NLayout, NLayoutSider, NLayoutHeader, NLayoutContent,
   NMenu, NButton, NDropdown, NAvatar, NSpace, NFlex, NIcon,
@@ -57,6 +58,7 @@ const collapsed = ref(false)
 const windowWidth = ref(window.innerWidth)
 const isMobile = computed(() => windowWidth.value < 768)
 const mobileDrawerOpen = ref(false)
+const askDrawerOpen = ref(false)
 
 /** The header stripe's "purple" follows the user's chosen accent color. */
 const headerStripePurple = computed(() => themeStore.accentPalette.base)
@@ -342,7 +344,9 @@ const userMenuOptions = computed(() => [
 
 const handleUserMenuSelect = async (key: string) => {
   if (key === 'profile') router.push('/profile')
-  if (key === 'ask') window.open('/ask', '_blank')
+  // Drawer, not a new tab: the OIDC token lives in memory only, so a fresh tab
+  // would open Ask before silent check-sso returns and connect anonymously.
+  if (key === 'ask') askDrawerOpen.value = true
   if (key === 'logout') await authStore.logout()
 }
 </script>
@@ -544,6 +548,17 @@ html.dark .update-pill--glow {
     >
       {{ needRefresh ? t('app.update_available') : t('app.latest_version') }}
     </span>
+
+    <!-- Ask chat drawer — stays on the deck, shares the authenticated session -->
+    <NDrawer
+      v-model:show="askDrawerOpen"
+      placement="left"
+      :width="isMobile ? 320 : 440"
+    >
+      <NDrawerContent :title="t('userMenu.talk_to_mixplaclone')" closable :native-scrollbar="false">
+        <AskChatDock />
+      </NDrawerContent>
+    </NDrawer>
 
     <!-- Mobile drawer -->
     <NDrawer

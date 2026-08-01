@@ -25,6 +25,8 @@ interface AuthState {
 
 let globalKeycloakInstance: Keycloak | null = null
 let globalInitialized = false
+/** In-flight init, shared by every caller — keycloak.init() may only run once per instance. */
+let globalInitPromise: Promise<boolean> | null = null
 let globalAuthState: AuthState = {
   isAuthenticated: false,
   token: null,
@@ -54,7 +56,20 @@ class AuthService {
     if (globalInitialized) {
       return this.state.isAuthenticated
     }
+    // Callers can overlap (router guard fires init unawaited on public routes,
+    // then a view awaits it on mount). They must share one run, or the second
+    // keycloak.init() throws and resolves that caller with a null token.
+    if (globalInitPromise) {
+      return globalInitPromise
+    }
 
+    globalInitPromise = this.runInit().finally(() => {
+      globalInitPromise = null
+    })
+    return globalInitPromise
+  }
+
+  private async runInit(): Promise<boolean> {
     const originalFetch = window.fetch
     let has502Error = false
     window.fetch = async (...args) => {

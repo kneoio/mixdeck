@@ -4,7 +4,7 @@
 
     <header class="nav">
       <div class="nav-left">
-        <div class="logo" role="link" tabindex="0" @click="router.push('/')" @keydown.enter="router.push('/')">MIXPLA</div>
+        <div class="logo" role="link" tabindex="0" @click="goHome" @keydown.enter="goHome">MIXPLA</div>
         <div class="side-label-mobile neon-motto">{{ t('ask.eyebrow') }}</div>
       </div>
       <div class="nav-meta">
@@ -98,7 +98,7 @@
 
     <footer class="footer">
       <div class="copyright">© Mixpla</div>
-      <a class="back-link" href="#" @click.prevent="router.push('/')">{{ t('ask.back_home') }}</a>
+      <a class="back-link" href="#" @click.prevent="goHome">{{ t('ask.back_home') }}</a>
     </footer>
   </div>
 </template>
@@ -117,7 +117,14 @@ import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n()
 const router = useRouter()
+const authStore = useAuthStore()
 const askStore = useAskChatStore()
+
+/** Ask is public but reachable from the dashboard — send members back to the
+ *  deck they left, and anonymous visitors to the public landing page. */
+function goHome() {
+  router.push(authStore.isAuthenticated ? '/mixdeck' : '/')
+}
 const { messages, connected, processing, username, userLabels, isBusy } = storeToRefs(askStore)
 const messageApi = useMessage()
 
@@ -224,7 +231,6 @@ function onComposerKeydown(e: KeyboardEvent) {
 }
 
 onMounted(async () => {
-  const authStore = useAuthStore()
   if (authStore.isLoading) {
     await authStore.initializeAuth()
   }

@@ -10,20 +10,30 @@ export const useAuthStore = defineStore('auth', () => {
   const userName = computed(() => userProfile.value?.username || '')
   const userEmail = computed(() => userProfile.value?.email || '')
 
+  /** Shared across overlapping callers so a second call awaits the first run. */
+  let inFlight: Promise<void> | null = null
+
   async function initializeAuth() {
+    if (inFlight) return inFlight
+
     isLoading.value = true
-    try {
-      const authenticated = await authService.init()
-      isAuthenticated.value = authenticated
-      if (authenticated) {
-        userProfile.value = authService.getUserProfile()
+    inFlight = (async () => {
+      try {
+        const authenticated = await authService.init()
+        isAuthenticated.value = authenticated
+        if (authenticated) {
+          userProfile.value = authService.getUserProfile()
+        }
+      } catch (error) {
+        console.error('Auth initialization failed:', error)
+        isAuthenticated.value = false
+      } finally {
+        isLoading.value = false
+        inFlight = null
       }
-    } catch (error) {
-      console.error('Auth initialization failed:', error)
-      isAuthenticated.value = false
-    } finally {
-      isLoading.value = false
-    }
+    })()
+
+    return inFlight
   }
 
   async function login(redirectUri?: string) {
