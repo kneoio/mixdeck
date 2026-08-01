@@ -1,5 +1,17 @@
 <template>
   <div class="dock">
+    <div v-if="username || userLabels.length" class="dock-user">
+      <span v-if="username" class="dock-user-name">{{ username }}</span>
+      <div v-if="userLabels.length" class="dock-user-pills">
+        <span
+          v-for="label in userLabels"
+          :key="label"
+          class="dock-user-pill"
+          :class="`dock-user-pill--${label}`"
+        >{{ label }}</span>
+      </div>
+    </div>
+
     <div ref="messagesEl" class="dock-messages" role="log" aria-live="polite">
       <div v-if="messages.length === 0 && !processing" class="dock-empty">
         <p class="dock-welcome">{{ t('ask.empty_welcome') }}</p>
@@ -58,7 +70,7 @@ import { useAskChatStore, type AskChatMessage } from '@/stores/askChat'
 
 const { t } = useI18n()
 const askStore = useAskChatStore()
-const { messages, connected, processing, isBusy } = storeToRefs(askStore)
+const { messages, connected, processing, isBusy, username, userLabels } = storeToRefs(askStore)
 
 const md = new MarkdownIt({ linkify: true, breaks: true })
 const draft = ref('')
@@ -156,6 +168,57 @@ onBeforeUnmount(() => {
   flex-direction: column;
   height: 100%;
   min-height: 0;
+}
+
+.dock-user {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  padding-bottom: 10px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--n-divider-color, rgba(128, 128, 128, 0.2));
+  flex-shrink: 0;
+}
+
+.dock-user-name {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.dock-user-pills {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.dock-user-pill {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(128, 128, 128, 0.8);
+  border: 1px solid rgba(128, 128, 128, 0.35);
+  border-radius: 3px;
+  padding: 0 4px;
+  line-height: 1.4;
+}
+
+.dock-user-pill--developer {
+  color: #ff6b6b;
+  border-color: rgba(255, 107, 107, 0.5);
+}
+
+.dock-user-pill--owner {
+  color: #f0a500;
+  border-color: rgba(240, 165, 0, 0.5);
+}
+
+.dock-user-pill--artist {
+  color: #22c55e;
+  border-color: rgba(34, 197, 94, 0.5);
 }
 
 .dock-messages {

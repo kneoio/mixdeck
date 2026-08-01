@@ -29,9 +29,9 @@ const router = createRouter({
       meta: { requiresAuth: false }
     },
     {
-      path: '/ask',
-      name: 'ask',
-      component: () => import('../views/AskView.vue'),
+      path: '/help',
+      name: 'help',
+      component: () => import('../views/HelpView.vue'),
       meta: { requiresAuth: false }
     },
     {

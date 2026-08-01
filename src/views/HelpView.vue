@@ -1,7 +1,7 @@
 <template>
-  <n-config-provider class="ask-view-root" :theme="darkTheme" :theme-overrides="themeOverrides">
+  <n-config-provider class="help-view-root" :theme="darkTheme" :theme-overrides="themeOverrides">
     <n-message-provider>
-      <AskChatPanel />
+      <HelpChatPanel />
     </n-message-provider>
   </n-config-provider>
 </template>
@@ -9,7 +9,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { NConfigProvider, NMessageProvider, darkTheme, type GlobalThemeOverrides } from 'naive-ui'
-import AskChatPanel from '@/components/AskChatPanel.vue'
+import HelpChatPanel from '@/components/HelpChatPanel.vue'
 import { useThemeStore } from '@/stores/theme'
 
 const themeStore = useThemeStore()
@@ -35,7 +35,7 @@ const themeOverrides = computed<GlobalThemeOverrides>(() => ({
 </script>
 
 <style scoped>
-.ask-view-root {
+.help-view-root {
   display: block;
   height: 100vh;
   height: 100dvh;

@@ -349,8 +349,7 @@ const userMenuOptions = computed(() => [
 
 const handleUserMenuSelect = async (key: string) => {
   if (key === 'profile') router.push('/profile')
-  // Drawer, not a new tab: the OIDC token lives in memory only, so a fresh tab
-  // would open Ask before silent check-sso returns and connect anonymously.
+  // Ask drawer uses OIDC token only — no anonymous fallback.
   if (key === 'ask') askDrawerOpen.value = true
   if (key === 'logout') await authStore.logout()
 }

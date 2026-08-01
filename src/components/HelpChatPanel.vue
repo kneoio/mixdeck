@@ -1,52 +1,41 @@
 <template>
-  <div class="ask-page">
-    <div class="side-label neon-motto">{{ t('ask.eyebrow') }}</div>
+  <div class="help-page">
+    <div class="side-label neon-motto">{{ t('help.eyebrow') }}</div>
 
     <header class="nav">
       <div class="nav-left">
         <div class="logo" role="link" tabindex="0" @click="goHome" @keydown.enter="goHome">MIXPLA</div>
-        <div class="side-label-mobile neon-motto">{{ t('ask.eyebrow') }}</div>
+        <div class="side-label-mobile neon-motto">{{ t('help.eyebrow') }}</div>
       </div>
       <div class="nav-meta">
         <span class="status-dot" :class="connected ? 'online' : 'offline'" />
-        <span class="status-label">{{ connected ? t('ask.connected') : t('ask.connecting') }}</span>
-        <div v-if="username" class="user-block">
-          <span class="user-label">{{ username }}</span>
-          <div v-if="userLabels.length" class="user-pills">
-            <span
-              v-for="label in userLabels"
-              :key="label"
-              class="user-pill"
-              :class="`user-pill--${label}`"
-            >{{ label }}</span>
-          </div>
-        </div>
+        <span class="status-label">{{ connected ? t('help.connected') : t('help.connecting') }}</span>
       </div>
     </header>
 
-    <section class="ask-shell">
-      <div class="ask-header">
-        <div class="ask-header-text">
+    <section class="help-shell">
+      <div class="help-header">
+        <div class="help-header-text">
           <h1>
-            <span class="ask-title-name">{{ t('ask.title_name') }}</span>
+            <span class="help-title-name">{{ t('help.title_name') }}</span>
           </h1>
-          <p class="ask-subtitle">{{ t('ask.subtitle') }}</p>
+          <p class="help-subtitle">{{ t('help.subtitle') }}</p>
         </div>
         <button
           type="button"
-          class="ask-copy-btn"
+          class="help-copy-btn"
           :disabled="messages.length === 0"
-          :title="t('ask.copy_last_json')"
+          :title="t('help.copy_last_json')"
           @click="copyLastMessages"
         >
           <NIcon :component="CopyOutline" size="14" />
-          <span v-if="copied" class="ask-copy-tooltip">{{ t('ask.copied') }}</span>
+          <span v-if="copied" class="help-copy-tooltip">{{ t('help.copied') }}</span>
         </button>
       </div>
 
-      <div ref="messagesEl" class="ask-messages" role="log" aria-live="polite">
-        <div v-if="messages.length === 0 && !processing" class="ask-empty">
-          <p class="empty-welcome">{{ t('ask.empty_welcome') }}</p>
+      <div ref="messagesEl" class="help-messages" role="log" aria-live="polite">
+        <div v-if="messages.length === 0 && !processing" class="help-empty">
+          <p class="empty-welcome">{{ t('help.empty_welcome') }}</p>
           <div class="suggestions">
             <button
               v-for="(prompt, i) in suggestedPrompts"
@@ -64,41 +53,42 @@
         <div
           v-for="msg in messages"
           :key="msg.id"
-          class="ask-msg"
+          class="help-msg"
           :class="msg.type"
         >
-          <span class="ask-msg-user">{{ msg.username }}</span>
-          <div class="ask-msg-bubble" v-html="renderContent(msg)" />
+          <span class="help-msg-user">{{ msg.username }}</span>
+          <div class="help-msg-bubble" v-html="renderContent(msg)" />
         </div>
 
-        <div v-if="processing" class="ask-msg PROCESSING">
-          <span class="ask-msg-user">system</span>
-          <div class="ask-msg-bubble">
+        <div v-if="processing" class="help-msg PROCESSING">
+          <span class="help-msg-user">system</span>
+          <div class="help-msg-bubble">
             <span class="processing-dot" />
             {{ processing }}
           </div>
         </div>
       </div>
 
-      <div class="ask-composer">
+      <div class="help-composer">
         <n-input
           ref="composerRef"
           v-model:value="draft"
           type="textarea"
-          :placeholder="connected ? t('ask.placeholder') : t('ask.connecting')"
+          :placeholder="connected ? t('help.placeholder') : t('help.connecting')"
           :disabled="!connected"
+          :maxlength="HELP_CONTENT_MAX_LENGTH"
           :autosize="{ minRows: 1, maxRows: 5 }"
           @keydown="onComposerKeydown"
         />
         <GsapButton type="primary" size="large" :disabled="!canSend" @click="sendDraft">
-          <span>{{ t('ask.send') }}</span>
+          <span>{{ t('help.send') }}</span>
         </GsapButton>
       </div>
     </section>
 
     <footer class="footer">
       <div class="copyright">© Mixpla</div>
-      <a class="back-link" href="#" @click.prevent="goHome">{{ t('ask.back_home') }}</a>
+      <a class="back-link" href="#" @click.prevent="goHome">{{ t('help.back_home') }}</a>
     </footer>
   </div>
 </template>
@@ -112,20 +102,20 @@ import MarkdownIt from 'markdown-it'
 import { NIcon, NInput, useMessage, type InputInst } from 'naive-ui'
 import { CopyOutline } from '@vicons/ionicons5'
 import GsapButton from '@/components/GsapButton.vue'
-import { useAskChatStore, type AskChatMessage } from '@/stores/askChat'
+import { HELP_CONTENT_MAX_LENGTH, useHelpChatStore, type HelpChatMessage } from '@/stores/helpChat'
 import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
-const askStore = useAskChatStore()
+const helpStore = useHelpChatStore()
 
-/** Ask is public but reachable from the dashboard — send members back to the
+/** Help is public but reachable from the dashboard — send members back to the
  *  deck they left, and anonymous visitors to the public landing page. */
 function goHome() {
   router.push(authStore.isAuthenticated ? '/mixdeck' : '/')
 }
-const { messages, connected, processing, username, userLabels, isBusy } = storeToRefs(askStore)
+const { messages, connected, processing, isBusy } = storeToRefs(helpStore)
 const messageApi = useMessage()
 
 const md = new MarkdownIt({ linkify: true, breaks: true })
@@ -135,9 +125,9 @@ const composerRef = ref<InputInst | null>(null)
 const copied = ref(false)
 
 const suggestedPrompts = computed(() => [
-  t('ask.suggestion_1'),
-  t('ask.suggestion_2'),
-  t('ask.suggestion_3'),
+  t('help.suggestion_1'),
+  t('help.suggestion_2'),
+  t('help.suggestion_3'),
 ])
 
 const canSend = computed(() => connected.value && !isBusy.value && !!draft.value.trim())
@@ -150,7 +140,7 @@ function escapeHtml(text: string): string {
     .replace(/"/g, '&quot;')
 }
 
-function renderContent(msg: AskChatMessage): string {
+function renderContent(msg: HelpChatMessage): string {
   if (msg.type === 'ERROR' || msg.type === 'SYSTEM' || msg.type === 'USER') {
     return escapeHtml(msg.content)
   }
@@ -167,7 +157,7 @@ function scrollToBottom() {
 watch(messages, () => scrollToBottom(), { deep: true })
 watch(processing, () => scrollToBottom())
 watch(
-  () => askStore.streamingMessageId,
+  () => helpStore.streamingMessageId,
   () => scrollToBottom(),
 )
 
@@ -203,21 +193,21 @@ async function copyLastMessages() {
     copied.value = true
     window.setTimeout(() => { copied.value = false }, 1500)
   } catch {
-    messageApi.error(t('ask.copy_failed'))
+    messageApi.error(t('help.copy_failed'))
   }
 }
 
 function sendDraft() {
   const text = draft.value.trim()
   if (!text) return
-  if (askStore.send(text)) {
+  if (helpStore.send(text)) {
     draft.value = ''
     focusComposer()
   }
 }
 
 function sendSuggested(prompt: string) {
-  if (askStore.send(prompt)) {
+  if (helpStore.send(prompt)) {
     draft.value = ''
     focusComposer()
   }
@@ -230,16 +220,13 @@ function onComposerKeydown(e: KeyboardEvent) {
   }
 }
 
-onMounted(async () => {
-  if (authStore.isLoading) {
-    await authStore.initializeAuth()
-  }
-  askStore.connect()
+onMounted(() => {
+  helpStore.connect()
   focusComposer()
 })
 
 onBeforeUnmount(() => {
-  askStore.disconnect()
+  helpStore.disconnect()
 })
 </script>
 
@@ -258,7 +245,7 @@ onBeforeUnmount(() => {
   background: #050505;
 }
 
-.ask-page {
+.help-page {
   height: 100vh;
   height: 100dvh;
   max-height: 100vh;
@@ -354,55 +341,7 @@ onBeforeUnmount(() => {
   background: #ff6b6b;
 }
 
-.user-label {
-  color: #b0b0b0;
-}
-
-.user-block {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 3px;
-  padding-left: 8px;
-  border-left: 1px solid #2a2a2a;
-}
-
-.user-pills {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 3px;
-}
-
-.user-pill {
-  display: inline-block;
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 3px;
-  padding: 0 4px;
-  line-height: 1.4;
-}
-
-.user-pill--developer {
-  color: #ff6b6b;
-  border-color: rgba(255, 107, 107, 0.5);
-}
-
-.user-pill--owner {
-  color: #f0a500;
-  border-color: rgba(240, 165, 0, 0.5);
-}
-
-.user-pill--artist {
-  color: #22c55e;
-  border-color: rgba(34, 197, 94, 0.5);
-}
-
-.ask-shell {
+.help-shell {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -416,7 +355,7 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 
-.ask-header {
+.help-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -426,11 +365,11 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
 }
 
-.ask-header-text {
+.help-header-text {
   min-width: 0;
 }
 
-.ask-copy-btn {
+.help-copy-btn {
   position: relative;
   flex-shrink: 0;
   display: inline-flex;
@@ -448,18 +387,18 @@ onBeforeUnmount(() => {
   transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
 }
 
-.ask-copy-btn:hover:not(:disabled) {
+.help-copy-btn:hover:not(:disabled) {
   border-color: #ff7a18;
   color: #ddd;
   background: #1a1210;
 }
 
-.ask-copy-btn:disabled {
+.help-copy-btn:disabled {
   opacity: 0.35;
   cursor: not-allowed;
 }
 
-.ask-copy-tooltip {
+.help-copy-tooltip {
   position: absolute;
   top: calc(100% + 4px);
   right: 0;
@@ -475,21 +414,21 @@ onBeforeUnmount(() => {
   animation: blink 12s infinite;
 }
 
-.ask-header h1 {
+.help-header h1 {
   margin: 0;
   font-size: clamp(0.8rem, 1.4vw, 0.95rem);
   font-weight: 500;
   line-height: 1.3;
 }
 
-.ask-title-name {
+.help-title-name {
   color: #fff6a9;
   font-weight: 700;
   letter-spacing: 0.02em;
   text-shadow: 0 0 8px rgba(255, 165, 0, 0.45);
 }
 
-.ask-subtitle {
+.help-subtitle {
   margin: 4px 0 0;
   font-size: 0.7rem;
   color: #666;
@@ -497,7 +436,7 @@ onBeforeUnmount(() => {
   letter-spacing: 0.02em;
 }
 
-.ask-messages {
+.help-messages {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -508,7 +447,7 @@ onBeforeUnmount(() => {
   gap: 14px;
 }
 
-.ask-empty {
+.help-empty {
   margin: auto 0;
   text-align: center;
   padding: 24px 8px;
@@ -548,34 +487,34 @@ onBeforeUnmount(() => {
   cursor: not-allowed;
 }
 
-.ask-msg {
+.help-msg {
   display: flex;
   flex-direction: column;
   gap: 4px;
   max-width: min(85%, 560px);
 }
 
-.ask-msg.USER {
+.help-msg.USER {
   align-self: flex-end;
   align-items: flex-end;
 }
 
-.ask-msg.BOT,
-.ask-msg.ERROR,
-.ask-msg.SYSTEM,
-.ask-msg.PROCESSING {
+.help-msg.BOT,
+.help-msg.ERROR,
+.help-msg.SYSTEM,
+.help-msg.PROCESSING {
   align-self: flex-start;
   align-items: flex-start;
 }
 
-.ask-msg-user {
+.help-msg-user {
   font-size: 0.7rem;
   color: #666;
   letter-spacing: 0.04em;
   text-transform: lowercase;
 }
 
-.ask-msg-bubble {
+.help-msg-bubble {
   font-size: 0.92rem;
   line-height: 1.45;
   padding: 10px 14px;
@@ -584,27 +523,27 @@ onBeforeUnmount(() => {
   white-space: pre-wrap;
 }
 
-.ask-msg.USER .ask-msg-bubble {
+.help-msg.USER .help-msg-bubble {
   background: linear-gradient(120deg, #ff7a18, #af002d 70%);
   color: #fff;
   border-bottom-right-radius: 4px;
   white-space: pre-wrap;
 }
 
-.ask-msg.BOT .ask-msg-bubble {
+.help-msg.BOT .help-msg-bubble {
   background: rgba(255, 255, 255, 0.06);
   color: rgba(255, 255, 255, 0.88);
   border-bottom-left-radius: 4px;
   white-space: normal;
 }
 
-.ask-msg.ERROR .ask-msg-bubble {
+.help-msg.ERROR .help-msg-bubble {
   background: rgba(255, 71, 87, 0.12);
   color: #ff6b6b;
   border-bottom-left-radius: 4px;
 }
 
-.ask-msg.PROCESSING .ask-msg-bubble {
+.help-msg.PROCESSING .help-msg-bubble {
   background: transparent;
   color: rgba(255, 255, 255, 0.4);
   font-size: 0.8rem;
@@ -625,21 +564,21 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
 }
 
-.ask-msg-bubble :deep(p) {
+.help-msg-bubble :deep(p) {
   margin: 0 0 6px;
 }
 
-.ask-msg-bubble :deep(p:last-child) {
+.help-msg-bubble :deep(p:last-child) {
   margin-bottom: 0;
 }
 
-.ask-msg-bubble :deep(ul),
-.ask-msg-bubble :deep(ol) {
+.help-msg-bubble :deep(ul),
+.help-msg-bubble :deep(ol) {
   margin: 4px 0;
   padding-left: 18px;
 }
 
-.ask-msg-bubble :deep(code) {
+.help-msg-bubble :deep(code) {
   font-family: ui-monospace, monospace;
   font-size: 0.85em;
   background: rgba(0, 0, 0, 0.35);
@@ -647,11 +586,11 @@ onBeforeUnmount(() => {
   border-radius: 3px;
 }
 
-.ask-msg-bubble :deep(a) {
+.help-msg-bubble :deep(a) {
   color: #58d6ff;
 }
 
-.ask-composer {
+.help-composer {
   display: flex;
   gap: 10px;
   align-items: flex-end;
@@ -661,7 +600,7 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
 }
 
-.ask-composer :deep(.n-input) {
+.help-composer :deep(.n-input) {
   flex: 1;
 }
 
@@ -693,19 +632,19 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 640px) {
-  .ask-page {
+  .help-page {
     padding: 12px 12px 8px;
   }
 
-  .ask-messages {
+  .help-messages {
     padding: 14px;
   }
 
-  .ask-msg {
+  .help-msg {
     max-width: 92%;
   }
 
-  .ask-composer {
+  .help-composer {
     flex-direction: column;
     align-items: stretch;
   }

@@ -22,8 +22,8 @@
               <span class="cta-hint">{{ t('welcome.cta_submit_hint') }}</span>
             </div>
             <div class="cta-item">
-              <n-button size="large" @click="router.push('/ask')">{{ t('welcome.cta_ask') }}</n-button>
-              <span class="cta-hint">{{ t('welcome.cta_ask_hint') }}</span>
+              <n-button size="large" @click="router.push('/help')">{{ t('welcome.cta_help') }}</n-button>
+              <span class="cta-hint">{{ t('welcome.cta_help_hint') }}</span>
             </div>
           </div>
         </div>
