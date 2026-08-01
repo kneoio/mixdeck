@@ -31,6 +31,8 @@ export default defineConfig({
         // After skip-waiting the new SW must claim this tab, otherwise
         // controllerchange never fires and the update click can't reload.
         clientsClaim: true,
+        // Main bundle exceeds the default 2 MiB precache limit (~2.17 MB).
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
       },
       manifest: {
         name: 'Mixdeck',
