@@ -210,6 +210,10 @@ const columns = computed<DataTableColumns<any>>(() => {
       }
     },
     {
+      title: t('playlistView.col_target'), key: 'targetBrandName', minWidth: 140,
+      render: (row) => row.targetBrandName?.en || Object.values(row.targetBrandName || {})[0] || '-'
+    },
+    {
       title: t('playlistView.col_status'), key: 'status', width: 120,
       render: (row) => {
         const tag = statusTag(row)

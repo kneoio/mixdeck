@@ -481,6 +481,7 @@ export default {
     received_remove_btn: 'Remove ({count})',
     received_remove_confirm: 'Remove {count} shared song(s) from received?',
     received_removed: 'Removed {count} shared song(s) from received',
+    col_target: 'Target',
     col_status: 'Status',
     status_pending: 'Pending',
     status_accepted: 'Accepted',
