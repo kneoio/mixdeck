@@ -552,7 +552,7 @@ html.dark .update-pill--glow {
     <!-- Ask chat drawer — stays on the deck, shares the authenticated session -->
     <NDrawer
       v-model:show="askDrawerOpen"
-      placement="left"
+      placement="right"
       :width="isMobile ? 320 : 440"
     >
       <NDrawerContent :title="t('userMenu.talk_to_mixplaclone')" closable :native-scrollbar="false">
