@@ -61,27 +61,6 @@
         <div>{{ t('welcome.highlight4') }}</div>
       </section>
 
-      <section class="creator-portal" id="creators">
-        <div>
-          <p class="eyebrow">{{ t('welcome.portal_eyebrow') }}</p>
-          <h2>{{ t('welcome.portal_headline') }}</h2>
-          <p>{{ t('welcome.portal_body') }}</p>
-          <span class="badge">{{ t('welcome.portal_badge') }}</span>
-        </div>
-        <div class="portal-access">
-          <n-button type="primary" size="large" @click="goToBrands">{{ t('welcome.cta_portal') }}</n-button>
-          <p class="portal-note">{{ t('welcome.portal_note') }}</p>
-        </div>
-      </section>
-
-      <section class="register" id="register">
-        <div class="section-header">
-          <p class="eyebrow">{{ t('welcome.register_eyebrow') }}</p>
-          <h2>{{ t('welcome.register_headline') }}</h2>
-          <p>{{ t('welcome.register_body') }}</p>
-        </div>
-      </section>
-
       <footer class="footer">
         <div class="logo">MIXPLA</div>
         <div class="status">{{ t('welcome.footer_status') }}</div>
@@ -304,42 +283,6 @@ h1 {
   border-radius: 12px;
 }
 
-.creator-portal {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 24px;
-  align-items: center;
-  justify-content: space-between;
-  padding: 48px 0;
-  border-top: 1px solid #1a1a1a;
-}
-
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.85rem;
-  color: #ffdf6b;
-}
-
-.portal-access {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.portal-note {
-  margin: 0;
-  color: #b0b0b0;
-  font-size: 0.9rem;
-}
-
-.register {
-  padding: 48px 0 64px;
-  border-top: 1px solid #1a1a1a;
-}
-
 .footer {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -404,10 +347,6 @@ h1 {
 @media (max-width: 768px) {
   .nav {
     flex-direction: column;
-  }
-  .creator-portal {
-    flex-direction: column;
-    align-items: flex-start;
   }
   .waveform {
     gap: 8px;
