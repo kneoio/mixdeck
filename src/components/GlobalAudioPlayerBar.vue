@@ -233,18 +233,17 @@ onBeforeUnmount(() => {
         quaternary
         size="tiny"
         class="global-audio-bar__btn"
-        :class="{ 'global-audio-bar__btn--playing': player.isPlaying }"
         :disabled="player.isLoading"
         :aria-label="player.isPlaying ? 'Pause' : 'Play'"
         @click="player.toggle()"
       >
         <template #icon>
-          <LoaderProgress v-if="player.isLoading" :size="12" />
+          <LoaderProgress v-if="player.isLoading" :size="16" />
           <span
             v-else
             :class="player.isPlaying ? 'play-icon--playing' : ''"
           >
-            <NIcon :size="13">
+            <NIcon :size="16">
               <PauseOutline v-if="player.isPlaying" />
               <PlayOutline v-else />
             </NIcon>
@@ -334,28 +333,9 @@ onBeforeUnmount(() => {
 }
 .global-audio-bar__btn {
   flex-shrink: 0;
-  display: inline-flex !important;
-  align-items: center;
-  justify-content: center;
-  width: 42px !important;
-  min-width: 42px !important;
-  height: 16px !important;
-  padding: 0 10px !important;
-  border-radius: 2px !important;
-  border: 1px solid currentColor !important;
-  opacity: 0.65;
-  box-sizing: border-box;
-}
-.global-audio-bar__btn:hover {
-  opacity: 0.9;
-}
-.global-audio-bar__btn--playing {
-  color: #00FF3C;
-  border-color: #00FF3C !important;
-  opacity: 0.85;
-}
-.global-audio-bar__btn :deep(.n-button__icon) {
-  margin: 0 !important;
+  padding: 0 2px !important;
+  min-width: auto !important;
+  height: 22px !important;
 }
 .global-audio-bar__meta {
   display: flex;
