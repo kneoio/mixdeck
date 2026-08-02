@@ -37,6 +37,12 @@ const partialFill = computed(() => {
   return progressUnits.value - filledCount.value
 })
 
+/** Current filling box + the next one (border drawn before that next starts filling). */
+function isBoxArmed(index: number) {
+  if (index < filledCount.value || index >= boxCount.value) return false
+  return index === filledCount.value || index === filledCount.value + 1
+}
+
 function formatDuration(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds <= 0) return ''
   const m = Math.floor(seconds / 60)
@@ -239,6 +245,7 @@ onBeforeUnmount(() => {
             :key="i"
             :ref="(el) => setBoxRef(el, i - 1)"
             class="global-audio-bar__box"
+            :class="{ 'global-audio-bar__box--armed': isBoxArmed(i - 1) }"
             :style="{ backgroundColor: railColor }"
           >
             <span
@@ -351,6 +358,10 @@ onBeforeUnmount(() => {
   border-radius: 1px;
   overflow: hidden;
   transform-origin: center center;
+  box-sizing: border-box;
+}
+.global-audio-bar__box--armed {
+  box-shadow: inset 0 0 0 1px #eff605;
 }
 .global-audio-bar__box-fill {
   position: absolute;
