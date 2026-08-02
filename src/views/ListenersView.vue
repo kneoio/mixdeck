@@ -14,6 +14,7 @@ import ActionBar from '@/components/ActionBar.vue'
 import GsapButton from '@/components/GsapButton.vue'
 import GsapLoader from '@/components/GsapLoader.vue'
 import { handleApiError } from '@/utils/notificationService'
+import { useRoutePagination } from '@/composables/useRoutePagination'
 
 const { t } = useI18n()
 
@@ -27,8 +28,7 @@ const deleting = ref(false)
 const entries = ref<any[]>([])
 const loading = ref(true)
 const totalCount = ref(0)
-const pageNum = ref(1)
-const pageSize = ref(10)
+const { pageNum, pageSize, setPage, setPageSize, syncToQuery } = useRoutePagination()
 const maxPage = ref(1)
 const selectedIds = ref<string[]>([])
 
@@ -77,6 +77,7 @@ async function fetchData(page = pageNum.value, size = pageSize.value) {
     pageNum.value = result.pageNum
     pageSize.value = result.pageSize
     maxPage.value = result.maxPage
+    syncToQuery()
   } catch (e: any) {
     handleApiError(e, message)
   } finally {
@@ -91,7 +92,7 @@ async function handleDelete() {
     await Promise.all(selectedIds.value.map(id => listenersStore.deleteListener(id)))
     message.success(t('listenersView.deleted', { count: selectedIds.value.length }))
     selectedIds.value = []
-    await fetchData(1)
+    await fetchData()
   } catch (e: any) {
     handleApiError(e, message)
   } finally {
@@ -100,7 +101,7 @@ async function handleDelete() {
 }
 
 // Fetch when slugName becomes available (brand loaded from store)
-watch(slugName, (val) => { if (val) fetchData(1) }, { immediate: true })
+watch(slugName, (val) => { if (val) fetchData() }, { immediate: true })
 </script>
 
 <template>
@@ -108,7 +109,7 @@ watch(slugName, (val) => { if (val) fetchData(1) }, { immediate: true })
     <PageHeader :title="brandName" :subtitle="t('listenersView.subtitle')" :count="totalCount" />
     <ActionBar>
       <div class="gsap-row">
-        <GsapButton type="primary" @click="router.push(`/brands/${route.params.slug}/listeners/new`)">
+        <GsapButton type="primary" @click="router.push({ path: `/brands/${route.params.slug}/listeners/new`, query: { returnTo: route.fullPath } })">
           <span>{{ t('listenersView.new_listener') }}</span>
         </GsapButton>
         <NPopconfirm @positive-click="handleDelete">
@@ -132,9 +133,9 @@ watch(slugName, (val) => { if (val) fetchData(1) }, { immediate: true })
       v-model:checked-row-keys="selectedIds"
       :pagination="pagination"
       remote
-      :row-props="(row: any) => ({ style: 'cursor:pointer', onClick: (e: MouseEvent) => { if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return; router.push(`/brands/${route.params.slug}/listeners/${row.id || row.listener?.id}`) } })"
-      @update:page="(p) => { pageNum = p; fetchData(p) }"
-      @update:page-size="(s) => { pageSize = s; fetchData(1, s) }"
+      :row-props="(row: any) => ({ style: 'cursor:pointer', onClick: (e: MouseEvent) => { if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return; router.push({ path: `/brands/${route.params.slug}/listeners/${row.id || row.listener?.id}`, query: { returnTo: route.fullPath } }) } })"
+      @update:page="(p) => { setPage(p); fetchData(p) }"
+      @update:page-size="(s) => { setPageSize(s); fetchData(1, s) }"
     >
       <template #loading><GsapLoader :size="32" /></template>
     </NDataTable>

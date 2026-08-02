@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, h, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import {
   NDataTable, NSpace, NPopconfirm, NTag, NButton, NIcon, NInput,
   type DataTableColumns, useMessage
@@ -15,6 +15,7 @@ import GsapButton from '@/components/GsapButton.vue'
 import GsapLoader from '@/components/GsapLoader.vue'
 import { handleApiError } from '@/utils/notificationService'
 import { useStackedDataTable } from '@/composables/useStackedDataTable'
+import { useRoutePagination } from '@/composables/useRoutePagination'
 
 const { stackedRows, tableWrapRef } = useStackedDataTable()
 
@@ -22,13 +23,13 @@ const { t } = useI18n()
 const pageTitle = computed(() => `${t('menu.my_sounds')} / ${t('menu.sound_assets')}`)
 const message = useMessage()
 const router = useRouter()
+const route = useRoute()
 const dictionaryStore = useDictionaryStore()
 
 const entries = ref<any[]>([])
 const loading = ref(true)
 const totalCount = ref(0)
-const pageNum = ref(1)
-const pageSize = ref(10)
+const { pageNum, pageSize, setPage, setPageSize, resetPage, syncToQuery } = useRoutePagination()
 const selectedIds = ref<string[]>([])
 const searchTerm = ref('')
 
@@ -137,7 +138,10 @@ const columns = computed<DataTableColumns<any>>(() => {
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 function onSearchChange() {
   if (searchTimer) clearTimeout(searchTimer)
-  searchTimer = setTimeout(() => fetchData(1), 400)
+  searchTimer = setTimeout(() => {
+    resetPage()
+    void fetchData(1)
+  }, 400)
 }
 
 async function fetchData(page = pageNum.value, size = pageSize.value) {
@@ -148,6 +152,7 @@ async function fetchData(page = pageNum.value, size = pageSize.value) {
     totalCount.value = result.count
     pageNum.value = result.pageNum
     pageSize.value = result.pageSize
+    syncToQuery()
   } catch (e: any) {
     handleApiError(e, message)
   } finally {
@@ -171,7 +176,7 @@ async function handleBulkDelete() {
 
 onMounted(async () => {
   await loadDictionaries()
-  await fetchData(1)
+  await fetchData()
 })
 </script>
 
@@ -181,7 +186,7 @@ onMounted(async () => {
     <ActionBar>
       <div class="playlist-action-row">
         <div class="gsap-row" style="padding-left:0">
-          <GsapButton type="primary" @click="router.push('/sound-library/sound-assets/new')">
+          <GsapButton type="primary" @click="router.push({ path: '/sound-library/sound-assets/new', query: { returnTo: route.fullPath } })">
             <span>{{ t('menu.sound_assets_new') }}</span>
           </GsapButton>
           <NPopconfirm @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
@@ -219,11 +224,11 @@ onMounted(async () => {
           style: 'cursor:pointer',
           onClick: (e: MouseEvent) => {
             if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return
-            router.push(`/sound-library/sound-assets/${row.slugName}`)
+            router.push({ path: `/sound-library/sound-assets/${row.slugName}`, query: { returnTo: route.fullPath } })
           }
         })"
-        @update:page="(p) => { pageNum = p; fetchData(p) }"
-        @update:page-size="(s) => { pageSize = s; fetchData(1, s) }"
+        @update:page="(p) => { setPage(p); fetchData(p) }"
+        @update:page-size="(s) => { setPageSize(s); fetchData(1, s) }"
       >
         <template #loading><GsapLoader :size="32" /></template>
       </NDataTable>

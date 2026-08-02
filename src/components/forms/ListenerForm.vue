@@ -24,7 +24,11 @@ const brandSlug = computed(() => route.params.slug as string)
 const listenerId = computed(() => route.params.listenerId as string)
 const isEditing = computed(() => !!listenerId.value && listenerId.value !== 'new')
 const pageTitle = computed(() => isEditing.value ? t('listenerForm.edit_title') : t('listenerForm.create_title'))
-const backRoute = computed(() => `/brands/${brandSlug.value}/listeners`)
+const returnToRoute = computed(() => {
+  const value = route.query.returnTo
+  return typeof value === 'string' && value ? value : null
+})
+const backRoute = computed(() => returnToRoute.value ?? `/brands/${brandSlug.value}/listeners`)
 const formLabelPlacement = computed(() => (isMobile.value ? 'top' : 'left'))
 
 const loading = ref(false)

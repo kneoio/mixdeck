@@ -25,7 +25,11 @@ const loading = ref(false)
 const isMobile = ref(false)
 const activeTab = ref('variables')
 const isTabChangeFromValidation = ref(false)
-const backRoute = '/one-time-streams'
+const returnToRoute = computed(() => {
+  const value = route.query.returnTo
+  return typeof value === 'string' && value ? value : null
+})
+const backRoute = computed(() => returnToRoute.value ?? '/one-time-streams')
 
 type ValidationField = 'source'
 const sourceFieldRef = ref<HTMLElement | null>(null)
@@ -213,7 +217,7 @@ async function handleSave() {
       await otsDefinitionsStore.createOtsDefinition(payload)
     }
     message.success(t('otsForm.saved'))
-    router.push(backRoute)
+    router.push(backRoute.value)
   } catch (error: any) {
     handleApiError(error, message)
   } finally {
@@ -222,7 +226,7 @@ async function handleSave() {
 }
 
 function navigateBack() {
-  router.push(backRoute)
+  router.push(backRoute.value)
 }
 
 watch(() => formData.value.brandSlug, (value) => { if (value) clearFieldError('source') })
@@ -252,7 +256,7 @@ onMounted(async () => {
     } else {
       const queryScriptSlug = route.query.scriptSlug
       if (typeof queryScriptSlug !== 'string') {
-        router.push('/one-time-streams')
+        router.push(backRoute.value)
         return
       }
       formData.value.scriptSlug = queryScriptSlug

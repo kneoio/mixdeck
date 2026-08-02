@@ -57,8 +57,13 @@ const formSubtitle = computed(() => {
   return parts.join(' - ')
 })
 
+const returnToRoute = computed(() => {
+  const value = route.query.returnTo
+  return typeof value === 'string' && value ? value : null
+})
+
 function handleClose() {
-  router.push('/sound-library/received')
+  router.push(returnToRoute.value ?? '/sound-library/received')
 }
 
 async function handleApprove() {

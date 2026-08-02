@@ -164,7 +164,11 @@ function onBrandsUpdate(value: string[]) {
   formData.value.representedInBrands = next
 }
 
-const backRoute = '/sound-library/sound-assets'
+const returnToRoute = computed(() => {
+  const value = route.query.returnTo
+  return typeof value === 'string' && value ? value : null
+})
+const backRoute = computed(() => returnToRoute.value ?? '/sound-library/sound-assets')
 const formLabelPlacement = computed(() => (isMobile.value ? 'top' : 'left'))
 
 function updateIsMobile() {
@@ -298,7 +302,7 @@ async function handleSave() {
     }
     await store.saveFragment(id, payload)
     message.success(t('fragmentForm.saved'))
-    router.push(backRoute)
+    router.push(backRoute.value)
   } catch (error: any) {
     handleApiError(error, message)
   } finally {
@@ -307,7 +311,7 @@ async function handleSave() {
 }
 
 function navigateBack() {
-  router.push(backRoute)
+  router.push(backRoute.value)
 }
 
 onBeforeUnmount(() => {

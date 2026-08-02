@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, h, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { NDataTable, NDropdown, NPopconfirm, NPopover, NButton, NIcon, NInput, NSpace, NTag, type DataTableColumns, type DropdownOption, type SelectOption, useMessage } from 'naive-ui'
 import { RefreshOutline } from '@vicons/ionicons5'
 import QRCode from 'qrcode'
@@ -12,21 +12,24 @@ import ActionBar from '@/components/ActionBar.vue'
 import GsapButton from '@/components/GsapButton.vue'
 import GsapLoader from '@/components/GsapLoader.vue'
 import { handleApiError } from '@/utils/notificationService'
+import { useRoutePagination } from '@/composables/useRoutePagination'
 
 const { t } = useI18n()
 const pageTitle = computed(() => `${t('menu.my_sounds')} / ${t('menu.one_time_stream')}`)
 const message = useMessage()
 const router = useRouter()
+const route = useRoute()
 const otsDefinitionsStore = useOtsDefinitionsStore()
 const scriptsStore = useScriptsStore()
+const { pageNum, pageSize, setPage, setPageSize, resetPage, syncToQuery } = useRoutePagination()
 
 const loading = ref(true)
 const selectedSlugs = ref<string[]>([])
 const searchTerm = ref('')
 
 const pagination = computed(() => ({
-  page: otsDefinitionsStore.pageNum,
-  pageSize: otsDefinitionsStore.pageSize,
+  page: pageNum.value,
+  pageSize: pageSize.value,
   pageSizes: [10, 20, 50],
   showSizePicker: true,
   itemCount: otsDefinitionsStore.totalCount,
@@ -66,7 +69,7 @@ const newStreamOptions = computed<DropdownOption[]>(() =>
 )
 
 function onNewStreamScriptSelect(key: string) {
-  router.push({ path: '/one-time-streams/new', query: { scriptSlug: key } })
+  router.push({ path: '/one-time-streams/new', query: { scriptSlug: key, returnTo: route.fullPath } })
 }
 
 const OTS_PLAYER_THEMES = ['hitachi', 'akai', '']
@@ -156,13 +159,19 @@ const columns = computed<DataTableColumns<OtsDefinition>>(() => [
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 function onSearchChange() {
   if (searchTimer) clearTimeout(searchTimer)
-  searchTimer = setTimeout(() => fetchData(1), 400)
+  searchTimer = setTimeout(() => {
+    resetPage()
+    void fetchData(1)
+  }, 400)
 }
 
-async function fetchData(page = otsDefinitionsStore.pageNum, size = otsDefinitionsStore.pageSize) {
+async function fetchData(page = pageNum.value, size = pageSize.value) {
   loading.value = true
   try {
     await otsDefinitionsStore.loadOtsDefinitions(page, size, searchTerm.value ? { searchTerm: searchTerm.value } : {})
+    pageNum.value = otsDefinitionsStore.pageNum
+    pageSize.value = otsDefinitionsStore.pageSize
+    syncToQuery()
   } catch (e: any) {
     handleApiError(e, message)
   } finally {
@@ -186,7 +195,7 @@ async function handleBulkDelete() {
 
 onMounted(async () => {
   if (!scriptsStore.scripts.length) scriptsStore.loadScripts(1, scriptsStore.pageSize, 'timingMode=RELATIVE_TO_STREAM_START')
-  await fetchData(1)
+  await fetchData()
 })
 </script>
 
@@ -235,11 +244,11 @@ onMounted(async () => {
         onClick: (e: MouseEvent) => {
           if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return
           if ((e.target as HTMLElement).closest('.ots-link-cell')) return
-          router.push(`/one-time-streams/${row.slugName}`)
+          router.push({ path: `/one-time-streams/${row.slugName}`, query: { returnTo: route.fullPath } })
         }
       })"
-      @update:page="(p) => fetchData(p)"
-      @update:page-size="(s) => fetchData(1, s)"
+      @update:page="(p) => { setPage(p); fetchData(p) }"
+      @update:page-size="(s) => { setPageSize(s); fetchData(1, s) }"
     >
       <template #loading><GsapLoader :size="32" /></template>
     </NDataTable>

@@ -20,6 +20,7 @@ import BulkUploadDialog from '@/components/forms/BulkUploadDialog.vue'
 import ShareToBrandsDialog from '@/components/forms/ShareToBrandsDialog.vue'
 import { handleApiError } from '@/utils/notificationService'
 import { useStackedDataTable } from '@/composables/useStackedDataTable'
+import { useRoutePagination } from '@/composables/useRoutePagination'
 
 const { t } = useI18n()
 
@@ -33,8 +34,7 @@ const audioPlayer = useAudioPlayerStore()
 const entries = ref<any[]>([])
 const loading = ref(true)
 const totalCount = ref(0)
-const pageNum = ref(1)
-const pageSize = ref(10)
+const { pageNum, pageSize, setPage, setPageSize, resetPage, syncToQuery } = useRoutePagination()
 const selectedIds = ref<string[]>([])
 const searchTerm = ref('')
 type PlaylistSortBy = 'BOOST' | 'PLAYED' | 'RATE'
@@ -366,6 +366,7 @@ function handleSorterChange(sorter: DataTableSortState | DataTableSortState[] | 
     sortDesc.value = state.order === 'descend'
   }
   syncSortToQuery()
+  resetPage()
   void fetchData(1)
 }
 
@@ -381,6 +382,7 @@ async function fetchData(page = pageNum.value, size = pageSize.value) {
     totalCount.value = result.count
     pageNum.value = result.pageNum
     pageSize.value = result.pageSize
+    syncToQuery()
   } catch (e: any) {
     handleApiError(e, message)
   } finally {
@@ -428,7 +430,10 @@ function onShareDialogDone() {
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 function onSearchChange() {
   if (searchTimer) clearTimeout(searchTimer)
-  searchTimer = setTimeout(() => fetchData(1), 400)
+  searchTimer = setTimeout(() => {
+    resetPage()
+    void fetchData(1)
+  }, 400)
 }
 
 onMounted(() => {
@@ -448,9 +453,9 @@ watch(
   { immediate: true }
 )
 
-watch(slugName, (val) => { if (val) { loadDictionaries(); fetchData(1) } }, { immediate: true })
+watch(slugName, (val) => { if (val) { loadDictionaries(); fetchData() } }, { immediate: true })
 watch(showBulkUpload, (isOpen, wasOpen) => {
-  if (wasOpen && !isOpen) fetchData(1)
+  if (wasOpen && !isOpen) fetchData()
 })
 </script>
 
@@ -512,8 +517,8 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
           style: stackedRows ? 'cursor:pointer' : 'cursor:pointer;height:48px',
           onClick: (e: MouseEvent) => { if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return; router.push({ path: `/brands/${route.params.slug}/playlist/${row.slugName}`, query: { returnTo: route.fullPath } }) }
         })"
-        @update:page="(p) => { pageNum = p; fetchData(p) }"
-        @update:page-size="(s) => { pageSize = s; fetchData(1, s) }"
+        @update:page="(p) => { setPage(p); fetchData(p) }"
+        @update:page-size="(s) => { setPageSize(s); fetchData(1, s) }"
         @update:sorter="handleSorterChange"
       >
         <template #loading><GsapLoader :size="32" /></template>
