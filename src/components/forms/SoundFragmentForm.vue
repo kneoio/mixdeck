@@ -889,6 +889,8 @@ watch([activeTab, genreRows], async () => {
                     :title="formData.title"
                     :artist="formData.artist"
                     :track-id="fragmentSlug || existingUrl"
+                    :tempo="tempoInfo"
+                    :musical-key="keyInfo"
                   />
                   <NUpload
                     :max="1"

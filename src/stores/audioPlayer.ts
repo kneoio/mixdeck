@@ -8,6 +8,35 @@ export type AudioPlayRequest = {
   title?: string
   artist?: string
   filename?: string
+  tempo?: string
+  key?: string
+  addInfo?: Record<string, unknown> | null
+}
+
+function tempoBand(bpm: number): string {
+  if (bpm < 70) return 'slow'
+  if (bpm < 100) return 'mid-tempo'
+  if (bpm < 130) return 'upbeat'
+  return 'fast'
+}
+
+/** Same formatting as SoundFragmentForm Vibe tab. */
+export function formatTempoFromAddInfo(addInfo: Record<string, unknown> | null | undefined): string {
+  if (!addInfo || addInfo.bpm === undefined || addInfo.bpm === null) return ''
+  const bpm = Number(addInfo.bpm)
+  if (Number.isNaN(bpm)) return ''
+  return `${tempoBand(bpm)} (${Math.round(bpm)} BPM)`
+}
+
+export function formatKeyFromAddInfo(addInfo: Record<string, unknown> | null | undefined): string {
+  if (!addInfo) return ''
+  const key = addInfo.key
+  const scale = addInfo.scale
+  const parts = [
+    typeof key === 'string' && key.trim() ? key.trim() : '',
+    typeof scale === 'string' && scale.trim() ? scale.trim() : '',
+  ].filter(Boolean)
+  return parts.length ? parts.join(' ') : ''
 }
 
 export const useAudioPlayerStore = defineStore('audioPlayer', () => {
@@ -16,6 +45,8 @@ export const useAudioPlayerStore = defineStore('audioPlayer', () => {
   const title = ref('')
   const artist = ref('')
   const filename = ref('')
+  const tempo = ref('')
+  const key = ref('')
   const isPlaying = ref(false)
   const isLoading = ref(false)
   const loadingId = ref<string | null>(null)
@@ -24,6 +55,7 @@ export const useAudioPlayerStore = defineStore('audioPlayer', () => {
   const duration = ref(0)
 
   const hasTrack = computed(() => !!trackId.value)
+  const hasVibeMeta = computed(() => !!(tempo.value || key.value))
 
   let audio: HTMLAudioElement | null = null
   let playRequestId = 0
@@ -96,6 +128,13 @@ export const useAudioPlayerStore = defineStore('audioPlayer', () => {
       title.value = req.title?.trim() || req.filename || 'Audio'
       artist.value = req.artist?.trim() || ''
       filename.value = req.filename || ''
+      if (req.tempo !== undefined || req.key !== undefined) {
+        tempo.value = req.tempo?.trim() || ''
+        key.value = req.key?.trim() || ''
+      } else {
+        tempo.value = formatTempoFromAddInfo(req.addInfo)
+        key.value = formatKeyFromAddInfo(req.addInfo)
+      }
       playbackPercent.value = 0
       currentTime.value = 0
       duration.value = 0
@@ -145,6 +184,9 @@ export const useAudioPlayerStore = defineStore('audioPlayer', () => {
       title.value = opts.title?.trim() || doc?.title || fileEntry?.name || 'Audio'
       artist.value = opts.artist?.trim() || doc?.artist || ''
       filename.value = fileEntry?.name || ''
+      const addInfo = doc?.addInfo && typeof doc.addInfo === 'object' ? doc.addInfo as Record<string, unknown> : null
+      tempo.value = formatTempoFromAddInfo(addInfo)
+      key.value = formatKeyFromAddInfo(addInfo)
       playbackPercent.value = 0
       currentTime.value = 0
       duration.value = 0
@@ -189,6 +231,8 @@ export const useAudioPlayerStore = defineStore('audioPlayer', () => {
     title.value = ''
     artist.value = ''
     filename.value = ''
+    tempo.value = ''
+    key.value = ''
     isPlaying.value = false
     isLoading.value = false
     loadingId.value = null
@@ -211,6 +255,8 @@ export const useAudioPlayerStore = defineStore('audioPlayer', () => {
     title,
     artist,
     filename,
+    tempo,
+    key,
     isPlaying,
     isLoading,
     loadingId,
@@ -218,6 +264,7 @@ export const useAudioPlayerStore = defineStore('audioPlayer', () => {
     currentTime,
     duration,
     hasTrack,
+    hasVibeMeta,
     play,
     playFragment,
     toggle,

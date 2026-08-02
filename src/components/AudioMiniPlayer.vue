@@ -13,6 +13,8 @@ const props = defineProps<{
   title?: string
   artist?: string
   trackId?: string
+  tempo?: string
+  musicalKey?: string
 }>()
 const emit = defineEmits<{ (e: 'playing-change', value: boolean): void }>()
 
@@ -36,6 +38,8 @@ async function togglePlay() {
       title: props.title,
       artist: props.artist,
       filename: props.filename,
+      tempo: props.tempo,
+      key: props.musicalKey,
     })
   } catch (e: any) {
     handleApiError(e, message)

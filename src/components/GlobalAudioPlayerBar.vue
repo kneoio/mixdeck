@@ -37,6 +37,16 @@ const partialFill = computed(() => {
   return progressUnits.value - filledCount.value
 })
 
+function formatDuration(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds <= 0) return ''
+  const m = Math.floor(seconds / 60)
+  const s = Math.floor(seconds % 60)
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
+const durationLabel = computed(() => formatDuration(player.duration))
+const showMetaTrail = computed(() => !!(durationLabel.value || player.hasVibeMeta))
+
 function setBoxRef(el: unknown, i: number) {
   if (el instanceof HTMLElement) boxEls.value[i] = el
   else boxEls.value[i] = null
@@ -241,6 +251,14 @@ onBeforeUnmount(() => {
         </span>
       </div>
 
+      <div v-if="showMetaTrail" class="global-audio-bar__vibe">
+        <span v-if="durationLabel" class="global-audio-bar__vibe-item">{{ durationLabel }}</span>
+        <span v-if="durationLabel && player.tempo" class="global-audio-bar__vibe-sep">·</span>
+        <span v-if="player.tempo" class="global-audio-bar__vibe-item">{{ player.tempo }}</span>
+        <span v-if="player.tempo && player.key" class="global-audio-bar__vibe-sep">·</span>
+        <span v-if="player.key" class="global-audio-bar__vibe-item">{{ player.key }}</span>
+      </div>
+
       <NButton
         text
         quaternary
@@ -331,6 +349,27 @@ onBeforeUnmount(() => {
   transform: scaleX(0);
   transform-origin: left center;
   pointer-events: none;
+}
+.global-audio-bar__vibe {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  flex-shrink: 0;
+  max-width: 28%;
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.7;
+}
+.global-audio-bar__vibe-item {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.global-audio-bar__vibe-sep {
+  opacity: 0.5;
+  flex-shrink: 0;
 }
 .global-audio-bar__close {
   flex-shrink: 0;
