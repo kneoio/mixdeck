@@ -239,12 +239,12 @@ onBeforeUnmount(() => {
         @click="player.toggle()"
       >
         <template #icon>
-          <LoaderProgress v-if="player.isLoading" :size="16" />
+          <LoaderProgress v-if="player.isLoading" :size="12" />
           <span
             v-else
             :class="player.isPlaying ? 'play-icon--playing' : ''"
           >
-            <NIcon :size="16">
+            <NIcon :size="13">
               <PauseOutline v-if="player.isPlaying" />
               <PlayOutline v-else />
             </NIcon>
@@ -337,11 +337,11 @@ onBeforeUnmount(() => {
   display: inline-flex !important;
   align-items: center;
   justify-content: center;
-  width: 34px !important;
-  min-width: 34px !important;
-  height: 20px !important;
-  padding: 0 8px !important;
-  border-radius: 5px !important;
+  width: 42px !important;
+  min-width: 42px !important;
+  height: 16px !important;
+  padding: 0 10px !important;
+  border-radius: 2px !important;
   border: 1px solid currentColor !important;
   opacity: 0.65;
   box-sizing: border-box;
