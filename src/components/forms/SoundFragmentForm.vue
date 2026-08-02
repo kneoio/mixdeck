@@ -891,6 +891,7 @@ watch([activeTab, genreRows], async () => {
                     :track-id="fragmentSlug || existingUrl"
                     :tempo="tempoInfo"
                     :musical-key="keyInfo"
+                    :ai-suspected="hasAiCheckData ? isAiGenerated : null"
                   />
                   <NUpload
                     :max="1"

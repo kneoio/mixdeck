@@ -2,6 +2,9 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import datanestApiService from '@/services/datanestApi'
 
+/** null = no AI check data available */
+export type AiCheckStatus = boolean | null
+
 export type AudioPlayRequest = {
   id: string
   url: string
@@ -10,6 +13,7 @@ export type AudioPlayRequest = {
   filename?: string
   tempo?: string
   key?: string
+  aiSuspected?: AiCheckStatus
   addInfo?: Record<string, unknown> | null
 }
 
@@ -39,6 +43,13 @@ export function formatKeyFromAddInfo(addInfo: Record<string, unknown> | null | u
   return parts.length ? parts.join(' ') : ''
 }
 
+export function aiStatusFromAddInfo(addInfo: Record<string, unknown> | null | undefined): AiCheckStatus {
+  if (!addInfo) return null
+  const check = addInfo.ai_generated_metadata_check
+  if (!check || typeof check !== 'object') return null
+  return (check as { suspected_ai_generated?: unknown }).suspected_ai_generated === true
+}
+
 export const useAudioPlayerStore = defineStore('audioPlayer', () => {
   const trackId = ref<string | null>(null)
   const url = ref('')
@@ -47,6 +58,7 @@ export const useAudioPlayerStore = defineStore('audioPlayer', () => {
   const filename = ref('')
   const tempo = ref('')
   const key = ref('')
+  const aiSuspected = ref<AiCheckStatus>(null)
   const isPlaying = ref(false)
   const isLoading = ref(false)
   const loadingId = ref<string | null>(null)
@@ -55,7 +67,29 @@ export const useAudioPlayerStore = defineStore('audioPlayer', () => {
   const duration = ref(0)
 
   const hasTrack = computed(() => !!trackId.value)
-  const hasVibeMeta = computed(() => !!(tempo.value || key.value))
+  const hasVibeMeta = computed(() => !!(tempo.value || key.value || aiSuspected.value !== null))
+  const aiLabel = computed(() => {
+    if (aiSuspected.value === null) return ''
+    return aiSuspected.value ? 'AI' : 'NO AI'
+  })
+
+  function applyVibeFromRequest(req: AudioPlayRequest) {
+    if (req.tempo !== undefined || req.key !== undefined || req.aiSuspected !== undefined) {
+      tempo.value = req.tempo?.trim() || ''
+      key.value = req.key?.trim() || ''
+      aiSuspected.value = req.aiSuspected !== undefined ? req.aiSuspected : null
+      return
+    }
+    tempo.value = formatTempoFromAddInfo(req.addInfo)
+    key.value = formatKeyFromAddInfo(req.addInfo)
+    aiSuspected.value = aiStatusFromAddInfo(req.addInfo)
+  }
+
+  function applyVibeFromAddInfo(addInfo: Record<string, unknown> | null) {
+    tempo.value = formatTempoFromAddInfo(addInfo)
+    key.value = formatKeyFromAddInfo(addInfo)
+    aiSuspected.value = aiStatusFromAddInfo(addInfo)
+  }
 
   let audio: HTMLAudioElement | null = null
   let playRequestId = 0
@@ -128,13 +162,7 @@ export const useAudioPlayerStore = defineStore('audioPlayer', () => {
       title.value = req.title?.trim() || req.filename || 'Audio'
       artist.value = req.artist?.trim() || ''
       filename.value = req.filename || ''
-      if (req.tempo !== undefined || req.key !== undefined) {
-        tempo.value = req.tempo?.trim() || ''
-        key.value = req.key?.trim() || ''
-      } else {
-        tempo.value = formatTempoFromAddInfo(req.addInfo)
-        key.value = formatKeyFromAddInfo(req.addInfo)
-      }
+      applyVibeFromRequest(req)
       playbackPercent.value = 0
       currentTime.value = 0
       duration.value = 0
@@ -185,8 +213,7 @@ export const useAudioPlayerStore = defineStore('audioPlayer', () => {
       artist.value = opts.artist?.trim() || doc?.artist || ''
       filename.value = fileEntry?.name || ''
       const addInfo = doc?.addInfo && typeof doc.addInfo === 'object' ? doc.addInfo as Record<string, unknown> : null
-      tempo.value = formatTempoFromAddInfo(addInfo)
-      key.value = formatKeyFromAddInfo(addInfo)
+      applyVibeFromAddInfo(addInfo)
       playbackPercent.value = 0
       currentTime.value = 0
       duration.value = 0
@@ -233,6 +260,7 @@ export const useAudioPlayerStore = defineStore('audioPlayer', () => {
     filename.value = ''
     tempo.value = ''
     key.value = ''
+    aiSuspected.value = null
     isPlaying.value = false
     isLoading.value = false
     loadingId.value = null
@@ -257,6 +285,8 @@ export const useAudioPlayerStore = defineStore('audioPlayer', () => {
     filename,
     tempo,
     key,
+    aiSuspected,
+    aiLabel,
     isPlaying,
     isLoading,
     loadingId,

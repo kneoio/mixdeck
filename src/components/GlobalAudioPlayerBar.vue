@@ -258,6 +258,11 @@ onBeforeUnmount(() => {
           <span v-if="player.tempo" class="global-audio-bar__vibe-item">{{ player.tempo }}</span>
           <span v-if="player.tempo && player.key" class="global-audio-bar__vibe-sep">·</span>
           <span v-if="player.key" class="global-audio-bar__vibe-item">{{ player.key }}</span>
+          <span
+            v-if="player.aiLabel"
+            class="global-audio-bar__ai-badge"
+            :class="{ 'global-audio-bar__ai-badge--ai': player.aiSuspected === true }"
+          >{{ player.aiLabel }}</span>
         </div>
       </div>
 
@@ -379,6 +384,23 @@ onBeforeUnmount(() => {
 .global-audio-bar__vibe-sep {
   opacity: 0.5;
   flex-shrink: 0;
+}
+.global-audio-bar__ai-badge {
+  display: inline-block;
+  flex-shrink: 0;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: currentColor;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  padding: 0 4px;
+  opacity: 0.35;
+  line-height: 1.4;
+}
+.global-audio-bar__ai-badge--ai {
+  opacity: 0.55;
 }
 .global-audio-bar__close {
   flex-shrink: 0;
