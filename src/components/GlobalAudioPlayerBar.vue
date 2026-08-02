@@ -2,7 +2,7 @@
 import { ref, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import gsap from 'gsap'
 import { NButton, NIcon } from 'naive-ui'
-import { PlayOutline, PauseOutline } from '@vicons/ionicons5'
+import { PlayOutline, PauseOutline, CloseOutline } from '@vicons/ionicons5'
 import LoaderProgress from '@/components/LoaderProgress.vue'
 import { useAudioPlayerStore } from '@/stores/audioPlayer'
 import { useThemeStore } from '@/stores/theme'
@@ -19,10 +19,8 @@ const shellRef = ref<HTMLElement | null>(null)
 const mounted = ref(false)
 
 const seekBarRef = ref<HTMLElement | null>(null)
-const boxEls = ref<(HTMLElement | null)[]>([])
 const boxCount = ref(BOX_MIN)
 let resizeObserver: ResizeObserver | null = null
-let lastFilled = -1
 
 let seekDocMove: ((e: MouseEvent) => void) | null = null
 let seekDocUp: (() => void) | null = null
@@ -37,11 +35,6 @@ const partialFill = computed(() => {
   if (filledCount.value >= boxCount.value) return 0
   return progressUnits.value - filledCount.value
 })
-
-function setBoxRef(el: unknown, i: number) {
-  if (el instanceof HTMLElement) boxEls.value[i] = el
-  else boxEls.value[i] = null
-}
 
 function updateBoxCount(width: number) {
   if (width <= 0) return
@@ -59,28 +52,6 @@ function attachResizeObserver() {
     updateBoxCount(w)
   })
   resizeObserver.observe(el)
-}
-
-function pulseBox(index: number) {
-  const el = boxEls.value[index]
-  if (!el) return
-  gsap.killTweensOf(el)
-  gsap.fromTo(
-    el,
-    {
-      filter: 'drop-shadow(0 0 0px #eff605)',
-      scale: 1,
-    },
-    {
-      filter: 'drop-shadow(0 0 5px #eff605) drop-shadow(0 0 10px #eff605)',
-      scale: 1.35,
-      duration: 0.14,
-      yoyo: true,
-      repeat: 1,
-      ease: 'power2.out',
-      clearProps: 'filter,transform',
-    },
-  )
 }
 
 function detachSeekListeners() {
@@ -113,7 +84,6 @@ watch(
   async (show) => {
     if (show) {
       mounted.value = true
-      lastFilled = -1
       await nextTick()
       const el = shellRef.value
       if (!el) return
@@ -152,32 +122,11 @@ watch(
   },
 )
 
-watch(filledCount, (n, prev) => {
-  if (!mounted.value || boxCount.value <= 0) return
-  if (prev == null) {
-    lastFilled = n
-    return
-  }
-  if (n > lastFilled) {
-    // Pulse each newly completed box (usually +1; seek can jump)
-    const from = Math.max(0, lastFilled)
-    const to = Math.min(n - 1, boxCount.value - 1)
-    for (let i = from; i <= to; i++) pulseBox(i)
-  }
-  lastFilled = n
-})
-
-watch(boxCount, () => {
-  boxEls.value = Array.from({ length: boxCount.value }, () => null)
-  lastFilled = filledCount.value
-})
-
 onBeforeUnmount(() => {
   detachSeekListeners()
   resizeObserver?.disconnect()
   resizeObserver = null
   if (shellRef.value) gsap.killTweensOf(shellRef.value)
-  boxEls.value.forEach((el) => { if (el) gsap.killTweensOf(el) })
 })
 </script>
 
@@ -229,7 +178,6 @@ onBeforeUnmount(() => {
         <span
           v-for="i in boxCount"
           :key="i"
-          :ref="(el) => setBoxRef(el, i - 1)"
           class="global-audio-bar__box"
           :style="{ backgroundColor: railColor }"
         >
@@ -243,6 +191,19 @@ onBeforeUnmount(() => {
           />
         </span>
       </div>
+
+      <NButton
+        text
+        quaternary
+        size="tiny"
+        class="global-audio-bar__close"
+        aria-label="Close player"
+        @click="player.stop()"
+      >
+        <template #icon>
+          <NIcon :size="14"><CloseOutline /></NIcon>
+        </template>
+      </NButton>
     </div>
   </div>
 </template>
@@ -312,7 +273,6 @@ onBeforeUnmount(() => {
   height: 6px;
   border-radius: 1px;
   overflow: hidden;
-  transform-origin: center center;
 }
 .global-audio-bar__box-fill {
   position: absolute;
@@ -320,7 +280,16 @@ onBeforeUnmount(() => {
   background: #eff605;
   transform: scaleX(0);
   transform-origin: left center;
-  will-change: transform;
+}
+.global-audio-bar__close {
+  flex-shrink: 0;
+  padding: 0 2px !important;
+  min-width: auto !important;
+  height: 22px !important;
+  opacity: 0.55;
+}
+.global-audio-bar__close:hover {
+  opacity: 1;
 }
 
 .play-icon--playing {
