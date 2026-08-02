@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
   NDataTable, NSpace, NPopconfirm, NInput, NTag, NIcon, NButton, NProgress,
-  type DataTableColumns, useMessage
+  type DataTableColumns, type DataTableSortState, useMessage
 } from 'naive-ui'
 import { ShareSocialOutline, PlayOutline, PauseOutline, RefreshOutline, ArrowUpOutline, ArrowDownOutline } from '@vicons/ionicons5'
 import LedIndicator from '@/components/LedIndicator.vue'
@@ -35,6 +35,14 @@ const pageNum = ref(1)
 const pageSize = ref(10)
 const selectedIds = ref<string[]>([])
 const searchTerm = ref('')
+type PlaylistSortBy = 'BOOST' | 'PLAYED' | 'RATE'
+const sortBy = ref<PlaylistSortBy | null>(null)
+const sortDesc = ref(true)
+const COLUMN_SORT_MAP: Record<string, PlaylistSortBy> = {
+  boost: 'BOOST',
+  playedByBrandCount: 'PLAYED',
+  rating: 'RATE',
+}
 const showBulkUpload = ref(false)
 const showShareDialog = ref(false)
 const shareFragmentIds = ref<string[]>([])
@@ -351,6 +359,8 @@ const columns = computed<DataTableColumns<any>>(() => {
   },
   {
     title: t('playlistView.col_rating'), key: 'rating', width: 100,
+    sorter: true,
+    sortOrder: sortBy.value === 'RATE' ? (sortDesc.value ? 'descend' : 'ascend') : false,
     render: (row) => {
       const l = row.likes ?? 0
       const d = row.dislikes ?? 0
@@ -362,12 +372,16 @@ const columns = computed<DataTableColumns<any>>(() => {
   },
   {
     title: t('playlistView.col_played'), key: 'playedByBrandCount', width: 72,
+    sorter: true,
+    sortOrder: sortBy.value === 'PLAYED' ? (sortDesc.value ? 'descend' : 'ascend') : false,
     render: (row) => row.playedByBrandCount ?? 0,
   },
   {
     key: 'boost',
     width: 100,
     title: 'Boost',
+    sorter: true,
+    sortOrder: sortBy.value === 'BOOST' ? (sortDesc.value ? 'descend' : 'ascend') : false,
     render: (row) => renderBoostControls(row),
   },
   {
@@ -382,13 +396,40 @@ const columns = computed<DataTableColumns<any>>(() => {
 ]
 })
 
+function buildPlaylistFilters() {
+  const filters: {
+    searchTerm?: string
+    sortBy?: PlaylistSortBy
+    sortDesc?: boolean
+  } = {}
+  if (searchTerm.value) filters.searchTerm = searchTerm.value
+  if (sortBy.value) {
+    filters.sortBy = sortBy.value
+    filters.sortDesc = sortDesc.value
+  }
+  return filters
+}
+
+function handleSorterChange(sorter: DataTableSortState | DataTableSortState[] | null) {
+  const state = Array.isArray(sorter) ? sorter[0] : sorter
+  const mapped = state?.columnKey != null ? COLUMN_SORT_MAP[String(state.columnKey)] : undefined
+  if (!state?.order || !mapped) {
+    sortBy.value = null
+    sortDesc.value = true
+  } else {
+    sortBy.value = mapped
+    sortDesc.value = state.order === 'descend'
+  }
+  void fetchData(1)
+}
+
 async function fetchData(page = pageNum.value, size = pageSize.value) {
   if (!slugName.value) return
   loading.value = true
   try {
     const result = await datanestApiService.getBrandPlaylist(
       slugName.value, page, size,
-      searchTerm.value ? { searchTerm: searchTerm.value } : {}
+      buildPlaylistFilters()
     )
     entries.value = result.entries
     totalCount.value = result.count
@@ -546,6 +587,7 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
         })"
         @update:page="(p) => { pageNum = p; fetchData(p) }"
         @update:page-size="(s) => { pageSize = s; fetchData(1, s) }"
+        @update:sorter="handleSorterChange"
       >
         <template #loading><GsapLoader :size="32" /></template>
       </NDataTable>

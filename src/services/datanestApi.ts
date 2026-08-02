@@ -31,7 +31,15 @@ class DatanestApiService extends ApiClient {
     brandSlug: string,
     page = 1,
     pageSize = 10,
-    filters: { searchTerm?: string; genre?: string[]; labels?: string[]; type?: string[]; source?: string[] } = {}
+    filters: {
+      searchTerm?: string
+      genre?: string[]
+      labels?: string[]
+      type?: string[]
+      source?: string[]
+      sortBy?: 'BOOST' | 'PLAYED' | 'RATE'
+      sortDesc?: boolean
+    } = {}
   ): Promise<PagedResult<any>> {
     const params = new URLSearchParams()
     params.set('brand', brandSlug)
@@ -43,6 +51,10 @@ class DatanestApiService extends ApiClient {
     if (filters.labels?.length) cleanFilters.labels = filters.labels
     if (filters.type?.length) cleanFilters.type = filters.type
     if (filters.source?.length) cleanFilters.source = filters.source
+    if (filters.sortBy) {
+      cleanFilters.sortBy = filters.sortBy
+      cleanFilters.sortDesc = filters.sortDesc !== false
+    }
     if (Object.keys(cleanFilters).length) params.set('filter', JSON.stringify(cleanFilters))
     const response = await this.request<any>(`/public/soundfragments/available-soundfragments?${params}`)
     const viewData = response?.payload?.viewData ?? response?.viewData
