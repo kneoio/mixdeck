@@ -1024,6 +1024,12 @@ watch([activeTab, genreRows], async () => {
 </template>
 
 <style scoped>
+/* Same solid success look as Approve on ReceivedForm — default GsapButton success is near-black. */
+:deep(.gsap-btn--success) {
+  background: #18A058;
+  color: #fff;
+}
+
 .field-stack {
   width: 100%;
   display: block;
