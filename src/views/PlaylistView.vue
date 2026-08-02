@@ -36,12 +36,35 @@ const pageSize = ref(10)
 const selectedIds = ref<string[]>([])
 const searchTerm = ref('')
 type PlaylistSortBy = 'BOOST' | 'PLAYED' | 'RATE'
-const sortBy = ref<PlaylistSortBy | null>(null)
-const sortDesc = ref(true)
+const VALID_SORT_BY: PlaylistSortBy[] = ['BOOST', 'PLAYED', 'RATE']
 const COLUMN_SORT_MAP: Record<string, PlaylistSortBy> = {
   boost: 'BOOST',
   playedByBrandCount: 'PLAYED',
   rating: 'RATE',
+}
+
+function parseSortFromQuery() {
+  const by = typeof route.query.sortBy === 'string' ? route.query.sortBy : null
+  const sortByVal = by && VALID_SORT_BY.includes(by as PlaylistSortBy) ? (by as PlaylistSortBy) : null
+  const descRaw = route.query.sortDesc
+  const sortDescVal = descRaw === 'false' ? false : true
+  return { sortBy: sortByVal, sortDesc: sortDescVal }
+}
+
+const initialSort = parseSortFromQuery()
+const sortBy = ref<PlaylistSortBy | null>(initialSort.sortBy)
+const sortDesc = ref(initialSort.sortDesc)
+
+function syncSortToQuery() {
+  const query = { ...route.query }
+  if (sortBy.value) {
+    query.sortBy = sortBy.value
+    query.sortDesc = String(sortDesc.value)
+  } else {
+    delete query.sortBy
+    delete query.sortDesc
+  }
+  void router.replace({ query })
 }
 const showBulkUpload = ref(false)
 const showShareDialog = ref(false)
@@ -371,7 +394,7 @@ const columns = computed<DataTableColumns<any>>(() => {
     }
   },
   {
-    title: t('playlistView.col_played'), key: 'playedByBrandCount', width: 72,
+    title: t('playlistView.col_played'), key: 'playedByBrandCount', width: 96,
     sorter: true,
     sortOrder: sortBy.value === 'PLAYED' ? (sortDesc.value ? 'descend' : 'ascend') : false,
     render: (row) => row.playedByBrandCount ?? 0,
@@ -420,6 +443,7 @@ function handleSorterChange(sorter: DataTableSortState | DataTableSortState[] | 
     sortBy.value = mapped
     sortDesc.value = state.order === 'descend'
   }
+  syncSortToQuery()
   void fetchData(1)
 }
 
@@ -499,6 +523,9 @@ onUnmounted(() => {
 watch(
   () => route.params.slug,
   () => {
+    const parsed = parseSortFromQuery()
+    sortBy.value = parsed.sortBy
+    sortDesc.value = parsed.sortDesc
     brandDoc.value = null
     ensureBrandLoaded()
   },
@@ -653,6 +680,21 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
   border-color: rgba(220, 38, 38, 0.5);
   box-shadow: 0 0 7px 2px rgba(220, 38, 38, 0.25);
 }
+.data-table-wrap .n-data-table-sorter {
+  color: var(--n-th-icon-color);
+  opacity: 0.55;
+  transition: color 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
+}
+.data-table-wrap .n-data-table-sorter.n-data-table-sorter--asc,
+.data-table-wrap .n-data-table-sorter.n-data-table-sorter--desc {
+  color: var(--vt-c-primary);
+  opacity: 1;
+  transform: scale(1.35);
+}
+.data-table-wrap .n-data-table-th--sorting .n-data-table-th__title {
+  color: var(--vt-c-primary);
+}
+
 .playlist-action-row {
   display: flex;
   align-items: center;
