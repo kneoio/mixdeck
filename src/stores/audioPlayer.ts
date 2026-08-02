@@ -67,11 +67,8 @@ export const useAudioPlayerStore = defineStore('audioPlayer', () => {
   const duration = ref(0)
 
   const hasTrack = computed(() => !!trackId.value)
-  const hasVibeMeta = computed(() => !!(tempo.value || key.value || aiSuspected.value !== null))
-  const aiLabel = computed(() => {
-    if (aiSuspected.value === null) return ''
-    return aiSuspected.value ? 'AI' : 'NO AI'
-  })
+  const hasVibeMeta = computed(() => !!(tempo.value || key.value || aiSuspected.value === true))
+  const showAiBadge = computed(() => aiSuspected.value === true)
 
   function applyVibeFromRequest(req: AudioPlayRequest) {
     if (req.tempo !== undefined || req.key !== undefined || req.aiSuspected !== undefined) {
@@ -286,7 +283,7 @@ export const useAudioPlayerStore = defineStore('audioPlayer', () => {
     tempo,
     key,
     aiSuspected,
-    aiLabel,
+    showAiBadge,
     isPlaying,
     isLoading,
     loadingId,
