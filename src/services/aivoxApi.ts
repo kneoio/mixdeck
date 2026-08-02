@@ -63,22 +63,6 @@ class AivoxApiService extends ApiClient {
       headers: { 'X-Client-ID': 'mixpla-web' },
     })
   }
-
-  async deleteOtsDefinition(id: string): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/ots-definitions/${encodeURIComponent(id)}`, {
-      method: 'DELETE',
-      headers: { 'X-Client-ID': 'mixpla-web' },
-    })
-    if (response.status === 404) return
-    if (!response.ok) {
-      let message = `HTTP error! status: ${response.status}`
-      try {
-        const data = await response.json()
-        if (data && typeof (data as any).error === 'string') message = (data as any).error
-      } catch { /* ignore */ }
-      throw new Error(message)
-    }
-  }
 }
 
 export const aivoxApiService = new AivoxApiService()

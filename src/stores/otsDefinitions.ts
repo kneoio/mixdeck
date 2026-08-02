@@ -1,22 +1,26 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import datanestApiService from '@/services/datanestApi'
-import aivoxApiService from '@/services/aivoxApi'
 
+/** Mixdeck public OTS definition — keyed by slugName; no document UUID. */
 export interface OtsDefinition {
-  id: string
+  slugName: string
+  name?: string
+  scriptSlug: string
+  userVariables: Record<string, any>
+  brandSlug: string | null
+  agentSlug: string | null
+  status?: string
+  statusHistory?: unknown
+  type?: string
+  estimatedDurationMin?: number
+  chatContext?: unknown
+  color?: string
+  requiredVariables?: unknown
   author?: string
   regDate?: string
   lastModifier?: string
   lastModifiedDate?: string
-  name?: string
-  slugName?: string
-  scriptId: string
-  userVariables: Record<string, any>
-  brandId: string | null
-  agentId: string | null
-  status?: string
-  type?: string
 }
 
 export const useOtsDefinitionsStore = defineStore('otsDefinitions', () => {
@@ -30,7 +34,7 @@ export const useOtsDefinitionsStore = defineStore('otsDefinitions', () => {
   async function loadOtsDefinitions(
     page = pageNum.value,
     size = pageSize.value,
-    filter?: { brandId?: string; searchTerm?: string; activated?: boolean }
+    filter?: { brandSlug?: string; searchTerm?: string; activated?: boolean }
   ) {
     loading.value = true
     try {
@@ -45,21 +49,31 @@ export const useOtsDefinitionsStore = defineStore('otsDefinitions', () => {
     }
   }
 
-  async function fetchOtsDefinition(id: string) {
-    return datanestApiService.getOtsDefinition(id)
+  async function fetchOtsDefinition(slugName: string) {
+    return datanestApiService.getOtsDefinition(slugName)
   }
 
-  async function createOtsDefinition(data: Pick<OtsDefinition, 'name' | 'scriptId' | 'userVariables' | 'brandId' | 'agentId'>) {
+  async function createOtsDefinition(
+    data: Pick<OtsDefinition, 'name' | 'scriptSlug' | 'userVariables' | 'brandSlug' | 'agentSlug'>
+  ) {
     return datanestApiService.createOtsDefinition(data)
   }
 
-  async function updateOtsDefinition(id: string, data: Partial<OtsDefinition>) {
-    const { id: _id, author: _a, regDate: _r, lastModifier: _lm, lastModifiedDate: _lmd, slugName: _s, ...payload } = data as OtsDefinition
-    return datanestApiService.updateOtsDefinition(id, payload)
+  async function updateOtsDefinition(slugName: string, data: Partial<OtsDefinition>) {
+    const {
+      author: _a,
+      regDate: _r,
+      lastModifier: _lm,
+      lastModifiedDate: _lmd,
+      slugName: _s,
+      statusHistory: _sh,
+      ...payload
+    } = data as OtsDefinition
+    return datanestApiService.updateOtsDefinition(slugName, payload)
   }
 
-  async function deleteOtsDefinition(id: string) {
-    return aivoxApiService.deleteOtsDefinition(id)
+  async function deleteOtsDefinition(slugName: string) {
+    return datanestApiService.deleteOtsDefinition(slugName)
   }
 
   return {

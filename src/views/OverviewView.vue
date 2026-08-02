@@ -64,7 +64,7 @@
 
       <NCard
         v-for="wizard in otsWizards"
-        :key="wizard.id"
+        :key="wizard.slugName"
         class="ots-card"
       >
         <template #header>
@@ -196,16 +196,15 @@ function copyUrl(brand: Brand) {
 }
 
 interface OtsStatusEntry {
-  id: string
+  slugName: string
   scope: 'brand' | 'default'
-  brandId: string | null
+  brandSlug: string | null
   link: string
   linkCopied: boolean
   qrDataUrl: string | null
   name?: string
   status?: string
   type?: string
-  slugName?: string
   heartbeatAlive: boolean
   stopping: boolean
   queue: AivoxQueueEntry[]
@@ -225,16 +224,15 @@ function otsPlayerLink(slugName?: string | null): string {
 
 function buildOtsWizard(def: OtsDefinition): OtsStatusEntry {
   return reactive({
-    id: def.id,
-    scope: def.brandId ? 'brand' : 'default',
-    brandId: def.brandId,
+    slugName: def.slugName,
+    scope: def.brandSlug ? 'brand' : 'default',
+    brandSlug: def.brandSlug,
     link: otsPlayerLink(def.slugName),
     linkCopied: false,
     qrDataUrl: null,
     name: def.name,
     status: def.status,
     type: def.type,
-    slugName: def.slugName,
     heartbeatAlive: false,
     stopping: false,
     queue: [],

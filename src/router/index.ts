@@ -192,7 +192,7 @@ const router = createRouter({
           meta: { requiresAuth: true }
         },
         {
-          path: '/one-time-streams/:otsId',
+          path: '/one-time-streams/:slugName',
           name: 'ots-edit',
           component: () => import('../components/forms/OtsForm.vue'),
           meta: { requiresAuth: true }

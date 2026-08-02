@@ -96,27 +96,37 @@ class DatanestApiService extends ApiClient {
   async getOtsDefinitions(
     page = 1,
     pageSize = 10,
-    filter?: { brandId?: string; searchTerm?: string; activated?: boolean }
+    filter?: { brandSlug?: string; searchTerm?: string; activated?: boolean }
   ): Promise<PagedResult<any>> {
-    return this.getPagedDictionary<any>('/ots-definitions', page, pageSize, filter)
+    return this.getPagedDictionary<any>('/public/ots-definitions', page, pageSize, filter)
   }
 
-  async getOtsDefinition(id: string): Promise<any> {
-    return this.getDocument<any>('/ots-definitions', id)
+  async getOtsDefinition(slugName: string): Promise<any> {
+    return this.getDocument<any>('/public/ots-definitions', slugName)
   }
 
-  /** Prefilled OtsDefinitionDTO (name/color/requiredVariables/scriptId) derived server-side from the chosen script, for the create flow. */
-  async getOtsDefinitionTemplate(scriptId: string): Promise<any> {
-    const response = await this.request<any>(`/ots-definitions/new?scriptId=${encodeURIComponent(scriptId)}`)
+  /** Prefill OtsDefinitionMixdeckDTO from the chosen script (`scriptSlug`) for the create flow. */
+  async getOtsDefinitionTemplate(scriptSlug: string): Promise<any> {
+    const response = await this.request<any>(
+      `/public/ots-definitions/new?scriptSlug=${encodeURIComponent(scriptSlug)}`
+    )
     return response?.payload?.docData ?? response?.docData ?? response
   }
 
   async createOtsDefinition(data: Record<string, any>): Promise<any> {
-    return this.createDictionaryItem<any>('/ots-definitions', data)
+    return this.createDictionaryItem<any>('/public/ots-definitions', data)
   }
 
-  async updateOtsDefinition(id: string, data: Record<string, any>): Promise<any> {
-    return this.updateDictionaryItem<any>('/ots-definitions', id, data)
+  /** Update by slugName path key — do not inject document `id` into the Mixdeck DTO body. */
+  async updateOtsDefinition(slugName: string, data: Record<string, any>): Promise<any> {
+    return this.request<any>(`/public/ots-definitions/${encodeURIComponent(slugName)}`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteOtsDefinition(slugName: string): Promise<void> {
+    await this.deleteDictionaryItem('/public/ots-definitions', slugName)
   }
 
   /** PATCH body matches backend `SharedSoundFragmentPatchDTO`: `addTargetBrandIds`, `removeTargetBrandIds`, `stayIncognito` (UUID strings). */

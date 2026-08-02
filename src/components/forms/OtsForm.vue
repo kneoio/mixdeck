@@ -20,7 +20,7 @@ const message = useMessage()
 const brandsStore = useBrandsStore()
 const otsDefinitionsStore = useOtsDefinitionsStore()
 
-const isEditing = computed(() => !!route.params.otsId && route.params.otsId !== 'new')
+const isEditing = computed(() => !!route.params.slugName && route.params.slugName !== 'new')
 const loading = ref(false)
 const isMobile = ref(false)
 const activeTab = ref('variables')
@@ -41,10 +41,10 @@ const formSubtitle = computed(() => (isEditing.value ? t('otsForm.edit_subtitle'
 
 const formData = ref({
   name: '',
-  scriptId: null as string | null,
+  scriptSlug: null as string | null,
   scope: 'default' as 'brand' | 'default',
-  brandId: null as string | null,
-  agentId: null as string | null,
+  brandSlug: null as string | null,
+  agentSlug: null as string | null,
 })
 const scriptDetail = ref<Script | null>(null)
 const otsStatus = ref<string | null>(null)
@@ -64,19 +64,19 @@ function renderScriptDescription(description: string) {
 }
 
 async function loadScriptDetail() {
-  if (!formData.value.scriptId) return
-  scriptDetail.value = await datanestApiService.getScriptDetail(formData.value.scriptId)
+  if (!formData.value.scriptSlug) return
+  scriptDetail.value = await datanestApiService.getScriptDetail(formData.value.scriptSlug)
 }
 
 /**
- * Prefill name/scriptId/requiredVariables/color from the datanest "new" doc endpoint (derived
+ * Prefill name/scriptSlug/requiredVariables/color from the datanest "new" doc endpoint (derived
  * server-side from the script), then fall back to getScriptDetail only for the description text,
  * which the template endpoint doesn't return.
  */
-async function loadOtsTemplate(scriptId: string) {
-  const template = await datanestApiService.getOtsDefinitionTemplate(scriptId)
+async function loadOtsTemplate(scriptSlug: string) {
+  const template = await datanestApiService.getOtsDefinitionTemplate(scriptSlug)
   formData.value.name = template?.name ?? ''
-  formData.value.scriptId = template?.scriptId ?? scriptId
+  formData.value.scriptSlug = template?.scriptSlug ?? scriptSlug
   await loadScriptDetail()
   if (scriptDetail.value) {
     scriptDetail.value = {
@@ -131,33 +131,36 @@ async function loadAgents() {
   loadingAgents.value = true
   try {
     let endpoint = '/dictionary/agents'
-    if (formData.value.scope === 'brand' && formData.value.brandId) {
-      const brand = brandsStore.brands.find((b) => b.slugName === formData.value.brandId)
+    if (formData.value.scope === 'brand' && formData.value.brandSlug) {
+      const brand = brandsStore.brands.find((b) => b.slugName === formData.value.brandSlug)
       endpoint = `/dictionary/agents?brand=${encodeURIComponent(brand?.slugName ?? '')}`
     }
     const result = await datanestApiService.getPagedDictionary<any>(endpoint, 1, 100)
-    agentOptions.value = result.entries.map((a: any) => ({ label: a.name || a.id, value: a.id }))
+    agentOptions.value = result.entries.map((a: any) => ({
+      label: a.name || a.slugName,
+      value: a.slugName,
+    }))
   } finally {
     loadingAgents.value = false
   }
 }
 
 function onScopeChange() {
-  formData.value.brandId = null
-  formData.value.agentId = null
+  formData.value.brandSlug = null
+  formData.value.agentSlug = null
   agentOptions.value = []
   clearFieldError('source')
   if (formData.value.scope === 'default') loadAgents()
 }
 
 function onBrandChange() {
-  formData.value.agentId = null
+  formData.value.agentSlug = null
   agentOptions.value = []
   loadAgents()
 }
 
 function scopeValid(): boolean {
-  return formData.value.scope === 'brand' ? !!formData.value.brandId : !!formData.value.agentId
+  return formData.value.scope === 'brand' ? !!formData.value.brandSlug : !!formData.value.agentSlug
 }
 
 function validateVariables(): boolean {
@@ -199,13 +202,13 @@ async function handleSave() {
   try {
     const payload = {
       name: formData.value.name || undefined,
-      scriptId: formData.value.scriptId!,
+      scriptSlug: formData.value.scriptSlug!,
       userVariables: { ...variables },
-      brandId: formData.value.scope === 'brand' ? formData.value.brandId : null,
-      agentId: formData.value.agentId || null,
+      brandSlug: formData.value.scope === 'brand' ? formData.value.brandSlug : null,
+      agentSlug: formData.value.agentSlug || null,
     }
     if (isEditing.value) {
-      await otsDefinitionsStore.updateOtsDefinition(route.params.otsId as string, payload)
+      await otsDefinitionsStore.updateOtsDefinition(route.params.slugName as string, payload)
     } else {
       await otsDefinitionsStore.createOtsDefinition(payload)
     }
@@ -222,8 +225,8 @@ function navigateBack() {
   router.push(backRoute)
 }
 
-watch(() => formData.value.brandId, (value) => { if (value) clearFieldError('source') })
-watch(() => formData.value.agentId, (value) => { if (value) clearFieldError('source') })
+watch(() => formData.value.brandSlug, (value) => { if (value) clearFieldError('source') })
+watch(() => formData.value.agentSlug, (value) => { if (value) clearFieldError('source') })
 watch(activeTab, () => {
   if (isTabChangeFromValidation.value) return
   clearAllFieldErrors()
@@ -235,25 +238,25 @@ onMounted(async () => {
   loading.value = true
   try {
     if (isEditing.value) {
-      const def = await otsDefinitionsStore.fetchOtsDefinition(route.params.otsId as string)
+      const def = await otsDefinitionsStore.fetchOtsDefinition(route.params.slugName as string)
       formData.value.name = def.name ?? ''
-      formData.value.scriptId = def.scriptId
+      formData.value.scriptSlug = def.scriptSlug
       Object.assign(variables, def.userVariables || {})
-      formData.value.scope = def.brandId ? 'brand' : 'default'
-      formData.value.brandId = def.brandId
-      formData.value.agentId = def.agentId
+      formData.value.scope = def.brandSlug ? 'brand' : 'default'
+      formData.value.brandSlug = def.brandSlug
+      formData.value.agentSlug = def.agentSlug
       otsStatus.value = def.status ?? null
       otsType.value = def.type ?? null
       await loadScriptDetail()
       await loadAgents()
     } else {
-      const queryScriptId = route.query.scriptId
-      if (typeof queryScriptId !== 'string') {
+      const queryScriptSlug = route.query.scriptSlug
+      if (typeof queryScriptSlug !== 'string') {
         router.push('/one-time-streams')
         return
       }
-      formData.value.scriptId = queryScriptId
-      await loadOtsTemplate(queryScriptId)
+      formData.value.scriptSlug = queryScriptSlug
+      await loadOtsTemplate(queryScriptSlug)
       await loadAgents()
     }
   } catch (error: any) {
@@ -294,7 +297,7 @@ onMounted(async () => {
               </div>
             </NFormItem>
           </template>
-          <p v-else class="ots-no-variables">{{ formData.scriptId ? t('overview.ots_no_variables') : t('overview.ots_pick_script_first') }}</p>
+          <p v-else class="ots-no-variables">{{ formData.scriptSlug ? t('overview.ots_no_variables') : t('overview.ots_pick_script_first') }}</p>
         </NForm>
       </NTabPane>
 
@@ -341,7 +344,7 @@ onMounted(async () => {
             <div class="field-stack">
               <div ref="sourceFieldRef" class="field-error-shell" :class="{ 'field-error-shell--active': !!fieldErrors.source }">
                 <NSelect
-                  v-model:value="formData.brandId"
+                  v-model:value="formData.brandSlug"
                   :options="brandOptions"
                   :placeholder="t('overview.ots_pick_brand')"
                   filterable
@@ -359,7 +362,7 @@ onMounted(async () => {
             <div class="field-stack">
               <div ref="sourceFieldRef" class="field-error-shell" :class="{ 'field-error-shell--active': !!fieldErrors.source }">
                 <NSelect
-                  v-model:value="formData.agentId"
+                  v-model:value="formData.agentSlug"
                   :options="agentOptions"
                   :loading="loadingAgents"
                   :placeholder="t('overview.ots_pick_dj')"

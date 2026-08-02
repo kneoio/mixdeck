@@ -21,7 +21,7 @@ const otsDefinitionsStore = useOtsDefinitionsStore()
 const scriptsStore = useScriptsStore()
 
 const loading = ref(true)
-const selectedIds = ref<string[]>([])
+const selectedSlugs = ref<string[]>([])
 const searchTerm = ref('')
 
 const pagination = computed(() => ({
@@ -66,36 +66,36 @@ const newStreamOptions = computed<DropdownOption[]>(() =>
 )
 
 function onNewStreamScriptSelect(key: string) {
-  router.push({ path: '/one-time-streams/new', query: { scriptId: key } })
+  router.push({ path: '/one-time-streams/new', query: { scriptSlug: key } })
 }
 
 const OTS_PLAYER_THEMES = ['hitachi', 'akai', '']
 const otsLinks = reactive<Record<string, string>>({})
 function getOtsLink(row: OtsDefinition): string {
   if (!row.slugName) return ''
-  if (!otsLinks[row.id]) {
+  if (!otsLinks[row.slugName]) {
     const base = `https://mixpla.online/${row.slugName}`
     const theme = OTS_PLAYER_THEMES[Math.floor(Math.random() * OTS_PLAYER_THEMES.length)]
-    otsLinks[row.id] = theme ? `${base}?theme=${theme}` : base
+    otsLinks[row.slugName] = theme ? `${base}?theme=${theme}` : base
   }
-  return otsLinks[row.id]
+  return otsLinks[row.slugName]
 }
 
-const copiedLinkId = ref<string | null>(null)
+const copiedLinkSlug = ref<string | null>(null)
 function copyLink(row: OtsDefinition) {
   const link = getOtsLink(row)
   if (!link) return
   navigator.clipboard.writeText(link)
-  copiedLinkId.value = row.id
-  setTimeout(() => { copiedLinkId.value = null }, 2000)
+  copiedLinkSlug.value = row.slugName
+  setTimeout(() => { copiedLinkSlug.value = null }, 2000)
 }
 
 const qrDataUrls = reactive<Record<string, string>>({})
 async function loadQr(row: OtsDefinition) {
   const link = getOtsLink(row)
-  if (!link || qrDataUrls[row.id]) return
+  if (!link || qrDataUrls[row.slugName]) return
   try {
-    qrDataUrls[row.id] = await QRCode.toDataURL(link, { width: 160, margin: 1 })
+    qrDataUrls[row.slugName] = await QRCode.toDataURL(link, { width: 160, margin: 1 })
   } catch {
     /* leave unset; popover keeps showing the spinner */
   }
@@ -104,7 +104,7 @@ async function loadQr(row: OtsDefinition) {
 function renderLinkCell(row: OtsDefinition) {
   const link = getOtsLink(row)
   if (!link) return null
-  const copied = copiedLinkId.value === row.id
+  const copied = copiedLinkSlug.value === row.slugName
   return h('div', { class: 'ots-link-cell', onClick: (e: MouseEvent) => e.stopPropagation() }, [
     h('a', { href: link, target: '_blank', rel: 'noopener noreferrer', class: 'ots-link-cell__link' }, link),
     h('div', { class: 'ots-link-cell__actions' }, [
@@ -127,8 +127,8 @@ function renderLinkCell(row: OtsDefinition) {
             h('path', { d: 'M17 20h4' }),
           ]),
         ]),
-        default: () => h('div', { class: 'ots-qr-popover' }, qrDataUrls[row.id]
-          ? h('img', { src: qrDataUrls[row.id], alt: link, width: 160, height: 160 })
+        default: () => h('div', { class: 'ots-qr-popover' }, qrDataUrls[row.slugName]
+          ? h('img', { src: qrDataUrls[row.slugName], alt: link, width: 160, height: 160 })
           : h('div', { style: 'width: 160px; height: 160px; display: flex; align-items: center; justify-content: center;' }, [h(GsapLoader, { size: 36 })])
         ),
       }),
@@ -147,8 +147,8 @@ function renderFlagsCell(row: OtsDefinition) {
 
 const columns = computed<DataTableColumns<OtsDefinition>>(() => [
   { type: 'selection', multiple: true },
-  { title: t('otsListView.col_name'), key: 'name', minWidth: 200, render: (row) => row.name || scriptName(row.scriptId) },
-  { title: t('otsListView.col_script'), key: 'script', minWidth: 160, render: (row) => scriptName(row.scriptId) },
+  { title: t('otsListView.col_name'), key: 'name', minWidth: 200, render: (row) => row.name || scriptName(row.scriptSlug) },
+  { title: t('otsListView.col_script'), key: 'script', minWidth: 160, render: (row) => scriptName(row.scriptSlug) },
   { title: t('otsListView.col_flags'), key: 'flags', width: 110, render: renderFlagsCell },
   { title: t('otsListView.col_link'), key: 'link', minWidth: 320, render: renderLinkCell },
 ])
@@ -173,9 +173,9 @@ async function fetchData(page = otsDefinitionsStore.pageNum, size = otsDefinitio
 async function handleBulkDelete() {
   try {
     loading.value = true
-    await Promise.all(selectedIds.value.map((id) => otsDefinitionsStore.deleteOtsDefinition(id)))
-    message.success(t('otsListView.deleted', { count: selectedIds.value.length }))
-    selectedIds.value = []
+    await Promise.all(selectedSlugs.value.map((slug) => otsDefinitionsStore.deleteOtsDefinition(slug)))
+    message.success(t('otsListView.deleted', { count: selectedSlugs.value.length }))
+    selectedSlugs.value = []
     await fetchData()
   } catch (e: any) {
     handleApiError(e, message)
@@ -201,13 +201,13 @@ onMounted(async () => {
               <span>{{ t('otsListView.new_btn') }}</span>
             </GsapButton>
           </NDropdown>
-          <NPopconfirm @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
+          <NPopconfirm @positive-click="handleBulkDelete" :disabled="selectedSlugs.length === 0">
             <template #trigger>
-              <GsapButton type="error" :disabled="selectedIds.length === 0">
-                <span>{{ t('otsListView.delete_btn', { count: selectedIds.length }) }}</span>
+              <GsapButton type="error" :disabled="selectedSlugs.length === 0">
+                <span>{{ t('otsListView.delete_btn', { count: selectedSlugs.length }) }}</span>
               </GsapButton>
             </template>
-            {{ t('otsListView.delete_confirm', { count: selectedIds.length }) }}
+            {{ t('otsListView.delete_confirm', { count: selectedSlugs.length }) }}
           </NPopconfirm>
           <NButton quaternary circle size="small" style="opacity:0.5" @click="fetchData()">
             <template #icon><NIcon :component="RefreshOutline" /></template>
@@ -226,8 +226,8 @@ onMounted(async () => {
       :columns="columns"
       :data="otsDefinitionsStore.otsDefinitions"
       :loading="loading"
-      :row-key="(row: OtsDefinition) => row.id"
-      v-model:checked-row-keys="selectedIds"
+      :row-key="(row: OtsDefinition) => row.slugName"
+      v-model:checked-row-keys="selectedSlugs"
       :pagination="pagination"
       remote
       :row-props="(row: OtsDefinition) => ({
@@ -235,7 +235,7 @@ onMounted(async () => {
         onClick: (e: MouseEvent) => {
           if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return
           if ((e.target as HTMLElement).closest('.ots-link-cell')) return
-          router.push(`/one-time-streams/${row.id}`)
+          router.push(`/one-time-streams/${row.slugName}`)
         }
       })"
       @update:page="(p) => fetchData(p)"
