@@ -9,6 +9,7 @@ import { useBrandsStore } from '@/stores/brands'
 import { useUserSubscriptionStore } from '@/stores/userSubscription'
 import { useServiceWorker } from '@/composables/useServiceWorker'
 import ThemeAccentPicker from '@/components/ThemeAccentPicker.vue'
+import GlobalAudioPlayerBar from '@/components/GlobalAudioPlayerBar.vue'
 import AskChatDock from '@/components/AskChatDock.vue'
 import { useAskChatStore } from '@/stores/askChat'
 import {
@@ -791,6 +792,8 @@ html.dark .update-pill--glow {
           </NFlex>
         </div>
       </NLayoutHeader>
+
+      <GlobalAudioPlayerBar />
 
       <NLayoutContent class="dashboard-content" :style="isMobile ? 'padding: 8px 4px' : 'padding: 24px'">
         <router-view :key="$route.fullPath" />

@@ -14,6 +14,7 @@ import AudioMiniPlayer from '@/components/AudioMiniPlayer.vue'
 import LedIndicator from '@/components/LedIndicator.vue'
 import ShareToBrandsDialog from '@/components/forms/ShareToBrandsDialog.vue'
 import { useSoundFragmentsStore, FRAGMENT_TYPE_VALUES } from '@/stores/soundFragments'
+import { useAudioPlayerStore } from '@/stores/audioPlayer'
 import { useBrandsStore } from '@/stores/brands'
 import { useDictionaryStore } from '@/stores/dictionary'
 import type { Label } from '@/stores/labels'
@@ -36,6 +37,7 @@ const router = useRouter()
 const store = useSoundFragmentsStore()
 const brandsStore = useBrandsStore()
 const dictionaryStore = useDictionaryStore()
+const audioPlayer = useAudioPlayerStore()
 const message = useMessage()
 
 
@@ -218,7 +220,10 @@ function normalizeSharedWith(raw: unknown): SharedWithEntry[] {
 const existingUrl = ref('')
 const existingFileName = ref('')
 const isOpusPreview = ref(false)
-const isPlayerPlaying = ref(false)
+const isPlayerPlaying = computed(() => {
+  const id = fragmentSlug.value || existingUrl.value
+  return !!id && audioPlayer.isTrackPlaying(id)
+})
 const uploadProgress = ref(0)
 const isUploading = ref(false)
 const uploadedFileNames = ref<string[]>([])  // newly uploaded during this session
@@ -877,7 +882,14 @@ watch([activeTab, genreRows], async () => {
                 :class="{ 'field-error-shell--active': !!fieldErrors.audioFile }"
               >
                 <NSpace vertical style="width: 100%">
-                  <AudioMiniPlayer v-if="existingUrl" :url="existingUrl" :filename="existingFileName" @playing-change="isPlayerPlaying = $event" />
+                  <AudioMiniPlayer
+                    v-if="existingUrl"
+                    :url="existingUrl"
+                    :filename="existingFileName"
+                    :title="formData.title"
+                    :artist="formData.artist"
+                    :track-id="fragmentSlug || existingUrl"
+                  />
                   <NUpload
                     :max="1"
                     :custom-request="handleFileCapture"

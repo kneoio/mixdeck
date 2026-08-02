@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, watch, h, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, h, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
-  NDataTable, NSpace, NPopconfirm, NInput, NTag, NIcon, NButton, NProgress,
+  NDataTable, NSpace, NPopconfirm, NInput, NTag, NIcon, NButton,
   type DataTableColumns, type DataTableSortState, useMessage
 } from 'naive-ui'
 import { ShareSocialOutline, PlayOutline, PauseOutline, RefreshOutline, ArrowUpOutline, ArrowDownOutline } from '@vicons/ionicons5'
@@ -11,6 +11,7 @@ import LedIndicator from '@/components/LedIndicator.vue'
 import datanestApiService from '@/services/datanestApi'
 import { useBrandsStore } from '@/stores/brands'
 import { useDictionaryStore } from '@/stores/dictionary'
+import { useAudioPlayerStore } from '@/stores/audioPlayer'
 import PageHeader from '@/components/PageHeader.vue'
 import ActionBar from '@/components/ActionBar.vue'
 import GsapButton from '@/components/GsapButton.vue'
@@ -27,6 +28,7 @@ const router = useRouter()
 const brandsStore = useBrandsStore()
 const message = useMessage()
 const dictionaryStore = useDictionaryStore()
+const audioPlayer = useAudioPlayerStore()
 
 const entries = ref<any[]>([])
 const loading = ref(true)
@@ -71,98 +73,13 @@ const showShareDialog = ref(false)
 const shareFragmentIds = ref<string[]>([])
 const brandDoc = ref<any | null>(null)
 
-const playingId = ref<string | null>(null)
-const loadingPlayId = ref<string | null>(null)
-const playbackPercent = ref(0)
-let currentAudio: HTMLAudioElement | null = null
-const currentTrackId = ref<string | null>(null)
-let playRequestId = 0
-const blobUrlCache = new Map<string, string>()
-
-const seekBarRef = ref<HTMLElement | null>(null)
-let seekDocMove: ((e: MouseEvent) => void) | null = null
-let seekDocUp: (() => void) | null = null
-
-function detachSeekListeners() {
-  if (seekDocMove) { document.removeEventListener('mousemove', seekDocMove); seekDocMove = null }
-  if (seekDocUp)   { document.removeEventListener('mouseup',  seekDocUp);   seekDocUp = null }
-}
-
-function applySeekClientX(clientX: number) {
-  const bar = seekBarRef.value
-  const a = currentAudio
-  if (!bar || !a || !Number.isFinite(a.duration) || a.duration <= 0) return
-  const rect = bar.getBoundingClientRect()
-  if (rect.width <= 0) return
-  const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
-  a.currentTime = ratio * a.duration
-  playbackPercent.value = ratio * 100
-}
-
-function onSeekMouseDown(e: MouseEvent) {
-  if (e.button !== 0) return
-  e.preventDefault()
-  let done = false
-  function onUp() { if (done) return; done = true; detachSeekListeners() }
-  seekDocMove = (ev) => { if (!done) applySeekClientX(ev.clientX) }
-  seekDocUp   = onUp
-  document.addEventListener('mousemove', seekDocMove)
-  document.addEventListener('mouseup', onUp, { once: true })
-  applySeekClientX(e.clientX)
-}
-
-function stopCurrentAudio() {
-  if (currentAudio) { currentAudio.pause(); currentAudio.src = ''; currentAudio = null }
-  currentTrackId.value = null
-  playingId.value = null
-  playbackPercent.value = 0
-}
-
 async function toggleRowPlay(row: any, e: MouseEvent) {
   e.stopPropagation()
-  const id = row.slugName
-  if (playingId.value === id) {
-    currentAudio?.pause()
-    playingId.value = null
-    return
-  }
-  if (currentTrackId.value === id && currentAudio) {
-    await currentAudio.play()
-    playingId.value = id
-    return
-  }
-  stopCurrentAudio()
-  loadingPlayId.value = id
-  const reqId = ++playRequestId
-  try {
-    const frag: any = await datanestApiService.getDocument<any>('/public/soundfragments', id)
-    if (reqId !== playRequestId) return
-    const doc = frag?.payload?.docData ?? frag?.docData ?? frag
-    const opusFile = doc?.uploadedFiles?.find((f: any) => f.type === 'opus')
-    const fileEntry = opusFile || doc?.uploadedFiles?.[0]
-    console.log('[AudioPlayer] playing file type:', fileEntry?.type ?? 'unknown')
-    const rawUrl = fileEntry?.url || doc?.url || ''
-    if (!rawUrl) return
-    let blobUrl = blobUrlCache.get(id)
-    if (!blobUrl) {
-      const url = rawUrl
-      blobUrl = await datanestApiService.fetchBlobUrl(url)
-      if (reqId !== playRequestId) { URL.revokeObjectURL(blobUrl); return }
-      blobUrlCache.set(id, blobUrl)
-    }
-    if (reqId !== playRequestId) return
-    const audio = new Audio(blobUrl)
-    currentAudio = audio
-    currentTrackId.value = id
-    audio.ontimeupdate = () => {
-      if (audio.duration > 0) playbackPercent.value = (audio.currentTime / audio.duration) * 100
-    }
-    audio.onended = () => { playingId.value = null; playbackPercent.value = 0 }
-    await audio.play()
-    playingId.value = id
-  } catch { /* silent */ } finally {
-    if (reqId === playRequestId) loadingPlayId.value = null
-  }
+  await audioPlayer.playFragment({
+    id: row.slugName,
+    title: row.title,
+    artist: row.artist,
+  })
 }
 
 /** When true, use multi-line row cards instead of squeezed columns (see STACKED_TABLE_MAX_WIDTH). */
@@ -261,6 +178,11 @@ function renderBoostControls(row: any) {
 }
 
 const columns = computed<DataTableColumns<any>>(() => {
+  // Track player state so row play icons re-render
+  void audioPlayer.isPlaying
+  void audioPlayer.trackId
+  void audioPlayer.loadingId
+
   if (stackedRows.value) {
     return [
       { type: 'selection', multiple: true },
@@ -268,8 +190,8 @@ const columns = computed<DataTableColumns<any>>(() => {
         key: 'mob',
         title: '',
         render: (row) => {
-          const isRowPlaying = playingId.value === row.slugName
-          const isRowLoading = loadingPlayId.value === row.slugName
+          const isRowPlaying = audioPlayer.isTrackPlaying(row.slugName)
+          const isRowLoading = audioPlayer.isTrackLoading(row.slugName)
           const iconClass = isRowLoading ? 'play-icon--loading' : isRowPlaying ? 'play-icon--playing' : ''
           const playBtn = h(NButton, {
             text: true, disabled: isRowLoading, style: 'flex-shrink:0',
@@ -336,8 +258,8 @@ const columns = computed<DataTableColumns<any>>(() => {
     width: 40,
     title: '',
     render: (row) => {
-      const isRowPlaying = playingId.value === row.slugName
-      const isRowLoading = loadingPlayId.value === row.slugName
+      const isRowPlaying = audioPlayer.isTrackPlaying(row.slugName)
+      const isRowLoading = audioPlayer.isTrackLoading(row.slugName)
       const iconClass = isRowLoading ? 'play-icon--loading' : isRowPlaying ? 'play-icon--playing' : ''
       return h(NButton, {
         text: true,
@@ -513,12 +435,6 @@ onMounted(() => {
   ensureBrandLoaded()
 })
 
-onUnmounted(() => {
-  stopCurrentAudio()
-  detachSeekListeners()
-  blobUrlCache.forEach(url => URL.revokeObjectURL(url))
-  blobUrlCache.clear()
-})
 
 watch(
   () => route.params.slug,
@@ -582,22 +498,6 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
       :brand-slug="slugName"
       @shared="onShareDialogDone"
     />
-    <div class="playlist-dl-bar-wrap">
-      <div v-if="loadingPlayId" class="playlist-dl-bar" />
-      <div v-else-if="playingId || currentTrackId" style="position:relative;">
-        <NProgress
-          type="line"
-          :percentage="playbackPercent"
-          :show-indicator="false"
-          :height="2"
-          :border-radius="1"
-          :fill-border-radius="1"
-          color="#eff605"
-          rail-color="rgba(255,255,255,0.12)"
-        />
-        <div ref="seekBarRef" class="playlist-seek-hit" @mousedown="onSeekMouseDown" />
-      </div>
-    </div>
     <div ref="tableWrapRef" class="data-table-wrap">
       <NDataTable
         :class="{ 'n-data-table--stacked-rows': stackedRows }"
@@ -636,26 +536,6 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
   35%           { filter: drop-shadow(0 0 1px #00FF3C); opacity: 0.2; }
 }
 
-.playlist-dl-bar-wrap {
-  height: 2px;
-  overflow: hidden;
-}
-.playlist-dl-bar {
-  height: 100%;
-  background: #eff605;
-  box-shadow: 0 0 4px #eff605;
-  animation: playlist-dl-slide 1.4s ease-in-out infinite;
-}
-@keyframes playlist-dl-slide {
-  0%   { margin-left: -40%; width: 40%; }
-  50%  { margin-left: 60%; width: 40%; }
-  100% { margin-left: 110%; width: 40%; }
-}
-.playlist-seek-hit {
-  position: absolute;
-  inset: -6px 0;
-  cursor: pointer;
-}
 .stat-badge {
   display: inline-block;
   font-size: 9px;
