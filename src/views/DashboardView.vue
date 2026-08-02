@@ -544,7 +544,9 @@ html.dark .update-pill--glow {
 }
 
 .ask-drawer-pill {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.07em;
@@ -552,8 +554,8 @@ html.dark .update-pill--glow {
   color: rgba(128, 128, 128, 0.85);
   border: 1px solid rgba(128, 128, 128, 0.35);
   border-radius: 3px;
-  padding: 0 4px;
-  line-height: 1.4;
+  padding: 2px 4px 1px;
+  line-height: 1;
 }
 
 .ask-drawer-pill--developer {
