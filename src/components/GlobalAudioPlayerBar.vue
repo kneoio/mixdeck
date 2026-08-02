@@ -43,6 +43,23 @@ function isBoxArmed(index: number) {
   return index === filledCount.value || index === filledCount.value + 1
 }
 
+function syncArmedBorders() {
+  for (let i = 0; i < boxCount.value; i++) {
+    const box = boxEls.value[i]
+    if (!box) continue
+    const ring = box.querySelector('.global-audio-bar__box-ring') as HTMLElement | null
+    if (!ring) continue
+    const armed = isBoxArmed(i)
+    gsap.killTweensOf(ring)
+    gsap.to(ring, {
+      opacity: armed ? 1 : 0,
+      duration: armed ? 0.35 : 0.14,
+      ease: armed ? 'power2.out' : 'power1.in',
+      overwrite: true,
+    })
+  }
+}
+
 function formatDuration(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds <= 0) return ''
   const m = Math.floor(seconds / 60)
@@ -183,6 +200,15 @@ watch(
 
 watch(boxCount, (n) => {
   boxEls.value = Array.from({ length: n }, () => null)
+  void nextTick().then(syncArmedBorders)
+})
+
+watch(filledCount, () => {
+  void nextTick().then(syncArmedBorders)
+})
+
+watch(mounted, (v) => {
+  if (v) void nextTick().then(syncArmedBorders)
 })
 
 onBeforeUnmount(() => {
@@ -190,7 +216,12 @@ onBeforeUnmount(() => {
   resizeObserver?.disconnect()
   resizeObserver = null
   if (shellRef.value) gsap.killTweensOf(shellRef.value)
-  boxEls.value.forEach((el) => { if (el) gsap.killTweensOf(el) })
+  boxEls.value.forEach((el) => {
+    if (!el) return
+    gsap.killTweensOf(el)
+    const ring = el.querySelector('.global-audio-bar__box-ring')
+    if (ring) gsap.killTweensOf(ring)
+  })
 })
 </script>
 
@@ -245,9 +276,9 @@ onBeforeUnmount(() => {
             :key="i"
             :ref="(el) => setBoxRef(el, i - 1)"
             class="global-audio-bar__box"
-            :class="{ 'global-audio-bar__box--armed': isBoxArmed(i - 1) }"
             :style="{ backgroundColor: railColor }"
           >
+            <span class="global-audio-bar__box-ring" aria-hidden="true" />
             <span
               class="global-audio-bar__box-fill"
               :style="{
@@ -360,8 +391,15 @@ onBeforeUnmount(() => {
   transform-origin: center center;
   box-sizing: border-box;
 }
-.global-audio-bar__box--armed {
-  box-shadow: inset 0 0 0 1px #eff605;
+.global-audio-bar__box-ring {
+  position: absolute;
+  inset: 0;
+  border: 0.5px solid rgba(239, 246, 5, 0.45);
+  border-radius: 1px;
+  opacity: 0;
+  pointer-events: none;
+  box-sizing: border-box;
+  z-index: 1;
 }
 .global-audio-bar__box-fill {
   position: absolute;
@@ -370,6 +408,7 @@ onBeforeUnmount(() => {
   transform: scaleX(0);
   transform-origin: left center;
   pointer-events: none;
+  z-index: 0;
 }
 .global-audio-bar__vibe {
   display: flex;
