@@ -233,6 +233,7 @@ onBeforeUnmount(() => {
         quaternary
         size="tiny"
         class="global-audio-bar__btn"
+        :class="{ 'global-audio-bar__btn--playing': player.isPlaying }"
         :disabled="player.isLoading"
         :aria-label="player.isPlaying ? 'Pause' : 'Play'"
         @click="player.toggle()"
@@ -333,9 +334,28 @@ onBeforeUnmount(() => {
 }
 .global-audio-bar__btn {
   flex-shrink: 0;
-  padding: 0 2px !important;
-  min-width: auto !important;
-  height: 22px !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 34px !important;
+  min-width: 34px !important;
+  height: 20px !important;
+  padding: 0 8px !important;
+  border-radius: 5px !important;
+  border: 1px solid currentColor !important;
+  opacity: 0.65;
+  box-sizing: border-box;
+}
+.global-audio-bar__btn:hover {
+  opacity: 0.9;
+}
+.global-audio-bar__btn--playing {
+  color: #00FF3C;
+  border-color: #00FF3C !important;
+  opacity: 0.85;
+}
+.global-audio-bar__btn :deep(.n-button__icon) {
+  margin: 0 !important;
 }
 .global-audio-bar__meta {
   display: flex;
