@@ -8,17 +8,17 @@
     <n-space vertical :size="16">
       <p class="share-hint">{{ t('playlistView.share_dialog_hint') }}</p>
 
-      <n-spin :show="loading" :size="'small'">
+      <GsapSpin :show="loading" :size="32">
         <div class="brand-list">
           <template v-if="!loading && entries.length === 0">
             <span class="brand-empty">{{ t('playlistView.share_dialog_empty') }}</span>
           </template>
-          <n-checkbox-group v-else v-model:value="selectedBrandIds">
-            <div v-for="brand in entries" :key="brand.id" class="brand-row">
-              <n-checkbox :value="brand.id">
+          <n-checkbox-group v-else v-model:value="selectedBrandSlugs">
+            <div v-for="brand in entries" :key="brand.slugName" class="brand-row">
+              <n-checkbox :value="brand.slugName">
                 <span class="brand-name">{{ displayName(brand) }}</span>
               </n-checkbox>
-              <span v-if="brand.country" class="brand-country">{{ brand.country }}</span>
+              <span v-if="brand.genres?.length" class="brand-genres">{{ brand.genres.join(', ') }}</span>
             </div>
           </n-checkbox-group>
         </div>
@@ -30,7 +30,7 @@
           class="share-pagination"
           @update:page="onPageChange"
         />
-      </n-spin>
+      </GsapSpin>
 
       <n-checkbox v-model:checked="stayIncognito" class="share-incognito">
         {{ t('playlistView.share_dialog_stay_incognito') }}
@@ -42,7 +42,7 @@
         <GsapButton @click="handleCancel"><span>{{ t('common.close') }}</span></GsapButton>
         <GsapButton
           type="primary"
-          :disabled="fragmentIds.length === 0 || selectedBrandIds.length === 0"
+          :disabled="fragmentIds.length === 0 || selectedBrandSlugs.length === 0"
           @click="handleSubmit"
         >
           <span>{{ t('playlistView.share_dialog_submit') }}</span>
@@ -57,9 +57,9 @@ import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NModal, NSpace, NCheckbox, NCheckboxGroup, NPagination, useMessage } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
+import GsapSpin from '@/components/GsapSpin.vue'
 import datanestApiService from '@/services/datanestApi'
 import { handleApiError } from '@/utils/notificationService'
-import LoaderProgress from '@/components/LoaderProgress.vue'
 
 const props = defineProps<{
   show: boolean
@@ -91,7 +91,7 @@ watch(
   (v) => {
     showDialog.value = v
     if (v && props.fragmentIds.length > 0) {
-      selectedBrandIds.value = []
+      selectedBrandSlugs.value = []
       stayIncognito.value = false
       pageNum.value = 1
       void openDialog()
@@ -100,15 +100,21 @@ watch(
 )
 watch(showDialog, (v) => emit('update:show', v))
 
-const entries = ref<any[]>([])
+type ShareTargetBrand = {
+  slugName: string
+  localizedName?: Record<string, string>
+  genres?: string[]
+}
+
+const entries = ref<ShareTargetBrand[]>([])
 const loading = ref(false)
 const pageNum = ref(1)
 const pageSize = ref(20)
 const totalCount = ref(0)
-const selectedBrandIds = ref<string[]>([])
+const selectedBrandSlugs = ref<string[]>([])
 const stayIncognito = ref(false)
 const submitting = ref(false)
-/** Brand slugNames / ids already on the song(s) — hide from share list. */
+/** Brand slugNames already on the song(s) — hide from share list. */
 const excludedBrandKeys = ref<Set<string>>(new Set())
 
 const modalTitle = computed(() =>
@@ -117,18 +123,17 @@ const modalTitle = computed(() =>
     : t('playlistView.share_dialog_title')
 )
 
-function displayName(row: any) {
+function displayName(brand: ShareTargetBrand) {
   return (
-    row.localizedName?.en
-    || Object.values(row.localizedName || {})[0]
-    || row.slugName
+    brand.localizedName?.en
+    || Object.values(brand.localizedName || {})[0]
+    || brand.slugName
     || '—'
   )
 }
 
-function isAlreadyAssigned(brand: any): boolean {
-  const keys = excludedBrandKeys.value
-  return keys.has(String(brand?.id ?? '')) || keys.has(String(brand?.slugName ?? ''))
+function isAlreadyAssigned(brand: ShareTargetBrand): boolean {
+  return excludedBrandKeys.value.has(String(brand?.slugName ?? ''))
 }
 
 async function loadExcludedBrands() {
@@ -165,7 +170,7 @@ async function fetchBrands(page = 1, size = pageSize.value) {
   loading.value = true
   try {
     const r = await datanestApiService.getBrandsForOpenContribution(page, size)
-    entries.value = (r.entries ?? []).filter((b: any) => !isAlreadyAssigned(b))
+    entries.value = (r.entries ?? []).filter((b) => !isAlreadyAssigned(b))
     totalCount.value = r.count
     pageNum.value = r.pageNum
     pageSize.value = r.pageSize
@@ -182,7 +187,7 @@ function onPageChange(p: number) {
 }
 
 async function handleSubmit() {
-  if (selectedBrandIds.value.length === 0) {
+  if (selectedBrandSlugs.value.length === 0) {
     message.warning(t('playlistView.share_dialog_select_brands'))
     return
   }
@@ -192,7 +197,7 @@ async function handleSubmit() {
     await datanestApiService.shareSoundFragmentsWithBrands(
       props.brandSlug,
       props.fragmentIds,
-      selectedBrandIds.value as string[],
+      selectedBrandSlugs.value,
       { stayIncognito: stayIncognito.value }
     )
     message.success(
@@ -242,7 +247,7 @@ function handleCancel() {
   font-size: 14px;
 }
 
-.brand-country {
+.brand-genres {
   font-size: 12px;
   opacity: 0.5;
   margin-left: 8px;

@@ -12,6 +12,7 @@ import type { UploadCustomRequestOptions } from 'naive-ui'
 import FormWrapper from '@/components/FormWrapper.vue'
 import AudioMiniPlayer from '@/components/AudioMiniPlayer.vue'
 import LedIndicator from '@/components/LedIndicator.vue'
+import ShareToBrandsDialog from '@/components/forms/ShareToBrandsDialog.vue'
 import { useSoundFragmentsStore, FRAGMENT_TYPE_VALUES } from '@/stores/soundFragments'
 import { useBrandsStore } from '@/stores/brands'
 import { useDictionaryStore } from '@/stores/dictionary'
@@ -40,7 +41,9 @@ const message = useMessage()
 
 const brandSlug = computed(() => route.params.slug as string)
 const isEditing = computed(() => !!route.params.fragmentId && route.params.fragmentId !== 'new')
+const fragmentSlug = computed(() => (isEditing.value ? String(route.params.fragmentId) : ''))
 const loading = ref(false)
+const showShareDialog = ref(false)
 const activeTab = ref('properties')
 const isTabChangeFromValidation = ref(false)
 const isMobile = ref(false)
@@ -549,6 +552,23 @@ function navigateBack() {
   router.push(backRoute.value)
 }
 
+async function reloadSharedWith() {
+  if (!fragmentSlug.value) return
+  try {
+    const frag = (isSharedRoute.value || route.path.startsWith('/sound-library/archived'))
+      ? await datanestApiService.getSharedFragment(fragmentSlug.value)
+      : await store.fetchFragment(fragmentSlug.value)
+    sharedWith.value = normalizeSharedWith(frag.sharedWith)
+  } catch {
+    // keep existing sharing list
+  }
+}
+
+function openShareDialog() {
+  if (!fragmentSlug.value) return
+  showShareDialog.value = true
+}
+
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
 })
@@ -667,6 +687,14 @@ watch([activeTab, genreRows], async () => {
     <template #actions>
       <div class="gsap-row">
         <GsapButton @click="navigateBack"><span>{{ t('common.close') }}</span></GsapButton>
+        <GsapButton
+          v-if="isEditing"
+          type="success"
+          :disabled="loading"
+          @click="openShareDialog"
+        >
+          <span>{{ t('playlistView.share_dialog_submit') }}</span>
+        </GsapButton>
         <GsapButton type="primary" @click="handleSave"><span>{{ t('common.save') }}</span></GsapButton>
       </div>
     </template>
@@ -985,6 +1013,14 @@ watch([activeTab, genreRows], async () => {
       </NTabPane>
     </NTabs>
   </FormWrapper>
+
+  <ShareToBrandsDialog
+    v-if="isEditing"
+    v-model:show="showShareDialog"
+    :fragment-ids="[fragmentSlug]"
+    :brand-slug="brandSlug || undefined"
+    @shared="reloadSharedWith"
+  />
 </template>
 
 <style scoped>

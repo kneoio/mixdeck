@@ -129,10 +129,15 @@ class DatanestApiService extends ApiClient {
     await this.deleteDictionaryItem('/public/ots-definitions', slugName)
   }
 
-  /** PATCH body matches backend `SharedSoundFragmentPatchDTO`: `addTargetBrandIds`, `removeTargetBrandIds`, `stayIncognito` (UUID strings). */
-  async patchShared(slug: string, fragmentId: string, body: unknown): Promise<void> {
+  /**
+   * PATCH `/public/shared-sound-fragments/shared/:slug/:fragmentSlug`
+   * Body: `addTargetBrandSlugs` / `removeTargetBrandSlugs`, `stayIncognito`
+   * (legacy `addTargetBrandIds` / `removeTargetBrandIds` still accepted by BE).
+   * Path uses fragment slug, not UUID.
+   */
+  async patchShared(slug: string, fragmentSlug: string, body: unknown): Promise<void> {
     await this.request<void>(
-      `/shared-sound-fragments/shared/${encodeURIComponent(slug)}/${encodeURIComponent(fragmentId)}`,
+      `/public/shared-sound-fragments/shared/${encodeURIComponent(slug)}/${encodeURIComponent(fragmentSlug)}`,
       {
         method: 'PATCH',
         body: JSON.stringify(body ?? {}),
@@ -168,43 +173,49 @@ class DatanestApiService extends ApiClient {
     return [...out]
   }
 
-  async unshare(slug: string, fragmentId: string, targetBrandIds: string[]): Promise<void> {
-    await this.patchShared(slug, fragmentId, { removeTargetBrandIds: targetBrandIds })
+  async unshare(slug: string, fragmentSlug: string, targetBrandSlugs: string[]): Promise<void> {
+    await this.patchShared(slug, fragmentSlug, { removeTargetBrandSlugs: targetBrandSlugs })
   }
 
-  async shareSoundFragmentWithLibrary(slug: string, fragmentId: string, brandId: string): Promise<void> {
-    await this.shareSoundFragmentsWithBrands(slug, [fragmentId], [brandId])
+  async shareSoundFragmentWithLibrary(slug: string, fragmentSlug: string, brandSlug: string): Promise<void> {
+    await this.shareSoundFragmentsWithBrands(slug, [fragmentSlug], [brandSlug])
   }
 
   /**
    * Brands open for submission (share dialog).
-   * GET `/brands/discover?page=&size=` — same paged DTO as `/brands`.
+   * GET `/public/shared-sound-fragments/discover?page=&size=`
+   * Entries are `ShareTargetBrandDTO`: `{ slugName, genres }` (genre identifiers only).
    */
-  async getBrandsForOpenContribution(page = 1, pageSize = 20): Promise<PagedResult<any>> {
-    return this.getPagedDictionary('/brands/discover', page, pageSize)
+  async getBrandsForOpenContribution(page = 1, pageSize = 20): Promise<PagedResult<{
+    slugName: string
+    localizedName?: Record<string, string>
+    genres?: string[]
+  }>> {
+    return this.getPagedDictionary('/public/shared-sound-fragments/discover', page, pageSize)
   }
 
   /**
-   * Add share targets (brand document UUIDs) via `SharedSoundFragmentPatchDTO.addTargetBrandIds`.
+   * Add share targets (brand slugNames) via `SharedSoundFragmentPatchDTO.addTargetBrandSlugs`.
    * `slug` is the source station sharing the fragment - omit it for a fragment with no brand
    * association (e.g. the "unassigned to brands" page), which has no source station to slug;
    * this sends the NO_BRAND sentinel the backend expects
    * (must match SharedSoundFragmentService.NO_BRAND_SLUG in datanest).
+   * Path fragment param is the fragment slug, not UUID.
    */
   async shareSoundFragmentsWithBrands(
     slug: string | null | undefined,
-    fragmentIds: string[],
-    brandIds: string[],
+    fragmentSlugs: string[],
+    brandSlugs: string[],
     options?: { stayIncognito?: boolean }
   ): Promise<void> {
-    const ids = [...new Set(brandIds.filter(Boolean))]
-    if (ids.length === 0) return
+    const slugs = [...new Set(brandSlugs.filter(Boolean))]
+    if (slugs.length === 0) return
     const body = {
-      addTargetBrandIds: ids,
+      addTargetBrandSlugs: slugs,
       stayIncognito: options?.stayIncognito ?? false,
     }
     await Promise.all(
-      fragmentIds.map(id => this.patchShared(slug || 'NO_BRAND', id, body))
+      fragmentSlugs.map(fragmentSlug => this.patchShared(slug || 'NO_BRAND', fragmentSlug, body))
     )
   }
 
