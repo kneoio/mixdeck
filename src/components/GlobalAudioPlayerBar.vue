@@ -222,41 +222,43 @@ onBeforeUnmount(() => {
         </template>
       </div>
 
-      <div
-        ref="seekBarRef"
-        class="global-audio-bar__progress"
-        role="slider"
-        tabindex="-1"
-        aria-label="Seek audio"
-        :aria-valuenow="Math.round(player.playbackPercent)"
-        aria-valuemin="0"
-        aria-valuemax="100"
-        @mousedown="onSeekMouseDown"
-      >
-        <span
-          v-for="i in boxCount"
-          :key="i"
-          :ref="(el) => setBoxRef(el, i - 1)"
-          class="global-audio-bar__box"
-          :style="{ backgroundColor: railColor }"
+      <div class="global-audio-bar__track">
+        <div
+          ref="seekBarRef"
+          class="global-audio-bar__progress"
+          role="slider"
+          tabindex="-1"
+          aria-label="Seek audio"
+          :aria-valuenow="Math.round(player.playbackPercent)"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          @mousedown="onSeekMouseDown"
         >
           <span
-            class="global-audio-bar__box-fill"
-            :style="{
-              transform: `scaleX(${
-                i - 1 < filledCount ? 1 : i - 1 === filledCount ? partialFill : 0
-              })`,
-            }"
-          />
-        </span>
-      </div>
+            v-for="i in boxCount"
+            :key="i"
+            :ref="(el) => setBoxRef(el, i - 1)"
+            class="global-audio-bar__box"
+            :style="{ backgroundColor: railColor }"
+          >
+            <span
+              class="global-audio-bar__box-fill"
+              :style="{
+                transform: `scaleX(${
+                  i - 1 < filledCount ? 1 : i - 1 === filledCount ? partialFill : 0
+                })`,
+              }"
+            />
+          </span>
+        </div>
 
-      <div v-if="showMetaTrail" class="global-audio-bar__vibe">
-        <span v-if="durationLabel" class="global-audio-bar__vibe-item">{{ durationLabel }}</span>
-        <span v-if="durationLabel && player.tempo" class="global-audio-bar__vibe-sep">·</span>
-        <span v-if="player.tempo" class="global-audio-bar__vibe-item">{{ player.tempo }}</span>
-        <span v-if="player.tempo && player.key" class="global-audio-bar__vibe-sep">·</span>
-        <span v-if="player.key" class="global-audio-bar__vibe-item">{{ player.key }}</span>
+        <div v-if="showMetaTrail" class="global-audio-bar__vibe">
+          <span v-if="durationLabel" class="global-audio-bar__vibe-item">{{ durationLabel }}</span>
+          <span v-if="durationLabel && player.tempo" class="global-audio-bar__vibe-sep">·</span>
+          <span v-if="player.tempo" class="global-audio-bar__vibe-item">{{ player.tempo }}</span>
+          <span v-if="player.tempo && player.key" class="global-audio-bar__vibe-sep">·</span>
+          <span v-if="player.key" class="global-audio-bar__vibe-item">{{ player.key }}</span>
+        </div>
       </div>
 
       <NButton
@@ -323,9 +325,16 @@ onBeforeUnmount(() => {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.global-audio-bar__progress {
+.global-audio-bar__track {
   flex: 1;
   min-width: 80px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.global-audio-bar__progress {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 2px;
@@ -355,7 +364,7 @@ onBeforeUnmount(() => {
   align-items: baseline;
   gap: 5px;
   flex-shrink: 0;
-  max-width: 28%;
+  max-width: 40%;
   font-size: 11px;
   line-height: 1.2;
   white-space: nowrap;
@@ -390,11 +399,42 @@ onBeforeUnmount(() => {
 
 @media (max-width: 600px) {
   .global-audio-bar {
-    padding: 4px 8px;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'btn meta close'
+      'track track track';
+    align-items: center;
+    column-gap: 8px;
+    row-gap: 2px;
+    padding: 6px 8px 4px;
   }
+  .global-audio-bar__btn { grid-area: btn; }
   .global-audio-bar__meta {
-    max-width: 36%;
+    grid-area: meta;
+    max-width: none;
+  }
+  .global-audio-bar__close { grid-area: close; }
+  .global-audio-bar__track {
+    grid-area: track;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    min-width: 0;
+  }
+  .global-audio-bar__progress {
+    width: 100%;
+  }
+  .global-audio-bar__vibe {
+    max-width: none;
+    width: 100%;
+    overflow: visible;
+    text-overflow: unset;
+    white-space: normal;
+    flex-wrap: wrap;
+    font-size: 10px;
+    line-height: 1.3;
+    padding: 0 1px 2px;
   }
 }
 </style>
