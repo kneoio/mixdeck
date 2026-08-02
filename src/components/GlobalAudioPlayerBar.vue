@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onBeforeUnmount } from 'vue'
+import { ref, watch, nextTick, onBeforeUnmount } from 'vue'
+import gsap from 'gsap'
 import { NButton, NProgress, NIcon } from 'naive-ui'
 import { PlayOutline, PauseOutline } from '@vicons/ionicons5'
 import LoaderProgress from '@/components/LoaderProgress.vue'
@@ -8,6 +9,9 @@ import { useThemeStore } from '@/stores/theme'
 
 const player = useAudioPlayerStore()
 const themeStore = useThemeStore()
+
+const shellRef = ref<HTMLElement | null>(null)
+const mounted = ref(false)
 
 const seekBarRef = ref<HTMLElement | null>(null)
 let seekDocMove: ((e: MouseEvent) => void) | null = null
@@ -38,12 +42,48 @@ function onSeekMouseDown(e: MouseEvent) {
   applySeekClientX(e.clientX)
 }
 
-onBeforeUnmount(() => detachSeekListeners())
+watch(
+  () => player.hasTrack,
+  async (show) => {
+    if (show) {
+      mounted.value = true
+      await nextTick()
+      const el = shellRef.value
+      if (!el) return
+      gsap.killTweensOf(el)
+      gsap.fromTo(
+        el,
+        { height: 0, opacity: 0 },
+        { height: 'auto', opacity: 1, duration: 0.38, ease: 'power2.out', overwrite: true },
+      )
+      return
+    }
+    const el = shellRef.value
+    if (!el) {
+      mounted.value = false
+      return
+    }
+    gsap.killTweensOf(el)
+    gsap.to(el, {
+      height: 0,
+      opacity: 0,
+      duration: 0.3,
+      ease: 'power2.in',
+      overwrite: true,
+      onComplete: () => { mounted.value = false },
+    })
+  },
+)
+
+onBeforeUnmount(() => {
+  detachSeekListeners()
+  if (shellRef.value) gsap.killTweensOf(shellRef.value)
+})
 </script>
 
 <template>
-  <Transition name="global-audio-bar">
-    <div v-if="player.hasTrack" class="global-audio-bar">
+  <div v-if="mounted" ref="shellRef" class="global-audio-bar-shell">
+    <div class="global-audio-bar">
       <NButton
         text
         quaternary
@@ -103,10 +143,16 @@ onBeforeUnmount(() => detachSeekListeners())
         </div>
       </div>
     </div>
-  </Transition>
+  </div>
 </template>
 
 <style scoped>
+.global-audio-bar-shell {
+  overflow: hidden;
+  flex-shrink: 0;
+  height: 0;
+  opacity: 0;
+}
 .global-audio-bar {
   display: flex;
   align-items: center;
@@ -114,8 +160,6 @@ onBeforeUnmount(() => detachSeekListeners())
   padding: 4px 16px;
   min-height: 28px;
   background: var(--n-color, transparent);
-  flex-shrink: 0;
-  overflow: hidden;
 }
 .global-audio-bar__btn {
   flex-shrink: 0;
@@ -186,24 +230,6 @@ onBeforeUnmount(() => detachSeekListeners())
   color: #00FF3C;
   filter: drop-shadow(0 0 4px #00FF3C) drop-shadow(0 0 10px #00FF3C);
   display: inline-flex;
-}
-
-.global-audio-bar-enter-active,
-.global-audio-bar-leave-active {
-  transition:
-    opacity 0.28s ease,
-    transform 0.28s ease,
-    max-height 0.28s ease,
-    padding 0.28s ease;
-  max-height: 40px;
-}
-.global-audio-bar-enter-from,
-.global-audio-bar-leave-to {
-  opacity: 0;
-  transform: translateY(-6px);
-  max-height: 0;
-  padding-top: 0;
-  padding-bottom: 0;
 }
 
 @media (max-width: 600px) {
