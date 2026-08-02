@@ -1,11 +1,16 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import gsap from 'gsap'
-import { NButton, NProgress, NIcon } from 'naive-ui'
+import { NButton, NIcon } from 'naive-ui'
 import { PlayOutline, PauseOutline } from '@vicons/ionicons5'
 import LoaderProgress from '@/components/LoaderProgress.vue'
 import { useAudioPlayerStore } from '@/stores/audioPlayer'
 import { useThemeStore } from '@/stores/theme'
+
+const BOX_SIZE = 6
+const BOX_GAP = 2
+const BOX_MIN = 24
+const BOX_MAX = 48
 
 const player = useAudioPlayerStore()
 const themeStore = useThemeStore()
@@ -14,8 +19,69 @@ const shellRef = ref<HTMLElement | null>(null)
 const mounted = ref(false)
 
 const seekBarRef = ref<HTMLElement | null>(null)
+const boxEls = ref<(HTMLElement | null)[]>([])
+const boxCount = ref(BOX_MIN)
+let resizeObserver: ResizeObserver | null = null
+let lastFilled = -1
+
 let seekDocMove: ((e: MouseEvent) => void) | null = null
 let seekDocUp: (() => void) | null = null
+
+const railColor = computed(() =>
+  themeStore.isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)',
+)
+
+const progressUnits = computed(() => (player.playbackPercent / 100) * boxCount.value)
+const filledCount = computed(() => Math.min(boxCount.value, Math.floor(progressUnits.value)))
+const partialFill = computed(() => {
+  if (filledCount.value >= boxCount.value) return 0
+  return progressUnits.value - filledCount.value
+})
+
+function setBoxRef(el: unknown, i: number) {
+  if (el instanceof HTMLElement) boxEls.value[i] = el
+  else boxEls.value[i] = null
+}
+
+function updateBoxCount(width: number) {
+  if (width <= 0) return
+  const n = Math.floor((width + BOX_GAP) / (BOX_SIZE + BOX_GAP))
+  boxCount.value = Math.min(BOX_MAX, Math.max(BOX_MIN, n))
+}
+
+function attachResizeObserver() {
+  resizeObserver?.disconnect()
+  const el = seekBarRef.value
+  if (!el) return
+  updateBoxCount(el.clientWidth)
+  resizeObserver = new ResizeObserver((entries) => {
+    const w = entries[0]?.contentRect.width ?? 0
+    updateBoxCount(w)
+  })
+  resizeObserver.observe(el)
+}
+
+function pulseBox(index: number) {
+  const el = boxEls.value[index]
+  if (!el) return
+  gsap.killTweensOf(el)
+  gsap.fromTo(
+    el,
+    {
+      filter: 'drop-shadow(0 0 0px #eff605)',
+      scale: 1,
+    },
+    {
+      filter: 'drop-shadow(0 0 5px #eff605) drop-shadow(0 0 10px #eff605)',
+      scale: 1.35,
+      duration: 0.14,
+      yoyo: true,
+      repeat: 1,
+      ease: 'power2.out',
+      clearProps: 'filter,transform',
+    },
+  )
+}
 
 function detachSeekListeners() {
   if (seekDocMove) { document.removeEventListener('mousemove', seekDocMove); seekDocMove = null }
@@ -47,6 +113,7 @@ watch(
   async (show) => {
     if (show) {
       mounted.value = true
+      lastFilled = -1
       await nextTick()
       const el = shellRef.value
       if (!el) return
@@ -54,10 +121,20 @@ watch(
       gsap.fromTo(
         el,
         { height: 0, opacity: 0 },
-        { height: 'auto', opacity: 1, duration: 0.38, ease: 'power2.out', overwrite: true },
+        {
+          height: 'auto',
+          opacity: 1,
+          duration: 0.38,
+          ease: 'power2.out',
+          overwrite: true,
+          onComplete: () => attachResizeObserver(),
+        },
       )
+      attachResizeObserver()
       return
     }
+    resizeObserver?.disconnect()
+    resizeObserver = null
     const el = shellRef.value
     if (!el) {
       mounted.value = false
@@ -75,9 +152,32 @@ watch(
   },
 )
 
+watch(filledCount, (n, prev) => {
+  if (!mounted.value || boxCount.value <= 0) return
+  if (prev == null) {
+    lastFilled = n
+    return
+  }
+  if (n > lastFilled) {
+    // Pulse each newly completed box (usually +1; seek can jump)
+    const from = Math.max(0, lastFilled)
+    const to = Math.min(n - 1, boxCount.value - 1)
+    for (let i = from; i <= to; i++) pulseBox(i)
+  }
+  lastFilled = n
+})
+
+watch(boxCount, () => {
+  boxEls.value = Array.from({ length: boxCount.value }, () => null)
+  lastFilled = filledCount.value
+})
+
 onBeforeUnmount(() => {
   detachSeekListeners()
+  resizeObserver?.disconnect()
+  resizeObserver = null
   if (shellRef.value) gsap.killTweensOf(shellRef.value)
+  boxEls.value.forEach((el) => { if (el) gsap.killTweensOf(el) })
 })
 </script>
 
@@ -115,32 +215,33 @@ onBeforeUnmount(() => {
         </template>
       </div>
 
-      <div class="global-audio-bar__progress">
-        <div class="global-audio-bar__bar-wrap">
-          <div class="global-audio-bar__bar-layer" aria-hidden="true">
-            <NProgress
-              type="line"
-              :percentage="player.playbackPercent"
-              :show-indicator="false"
-              :height="2"
-              :border-radius="1"
-              :fill-border-radius="1"
-              color="#eff605"
-              :rail-color="themeStore.isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'"
-            />
-          </div>
-          <div
-            ref="seekBarRef"
-            class="global-audio-bar__seek-hit"
-            role="slider"
-            tabindex="-1"
-            aria-label="Seek audio"
-            :aria-valuenow="Math.round(player.playbackPercent)"
-            aria-valuemin="0"
-            aria-valuemax="100"
-            @mousedown="onSeekMouseDown"
+      <div
+        ref="seekBarRef"
+        class="global-audio-bar__progress"
+        role="slider"
+        tabindex="-1"
+        aria-label="Seek audio"
+        :aria-valuenow="Math.round(player.playbackPercent)"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        @mousedown="onSeekMouseDown"
+      >
+        <span
+          v-for="i in boxCount"
+          :key="i"
+          :ref="(el) => setBoxRef(el, i - 1)"
+          class="global-audio-bar__box"
+          :style="{ backgroundColor: railColor }"
+        >
+          <span
+            class="global-audio-bar__box-fill"
+            :style="{
+              transform: `scaleX(${
+                i - 1 < filledCount ? 1 : i - 1 === filledCount ? partialFill : 0
+              })`,
+            }"
           />
-        </div>
+        </span>
       </div>
     </div>
   </div>
@@ -197,33 +298,29 @@ onBeforeUnmount(() => {
 .global-audio-bar__progress {
   flex: 1;
   min-width: 80px;
-}
-.global-audio-bar__bar-wrap {
-  position: relative;
-  width: 100%;
-  min-height: 18px;
   display: flex;
   align-items: center;
-}
-.global-audio-bar__bar-layer {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 0;
-  pointer-events: none;
-}
-.global-audio-bar__seek-hit {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  gap: 2px;
   height: 18px;
-  z-index: 1;
   cursor: pointer;
   user-select: none;
+}
+.global-audio-bar__box {
+  position: relative;
+  flex: 0 0 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  overflow: hidden;
+  transform-origin: center center;
+}
+.global-audio-bar__box-fill {
+  position: absolute;
+  inset: 0;
+  background: #eff605;
+  transform: scaleX(0);
+  transform-origin: left center;
+  will-change: transform;
 }
 
 .play-icon--playing {
