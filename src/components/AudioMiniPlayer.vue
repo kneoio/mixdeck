@@ -72,11 +72,15 @@ defineExpose({ stop, isPlaying })
         @click="togglePlay"
       >
         <template #icon>
-          <LoaderProgress v-if="isFetchingAudio" :size="22" />
-          <NIcon v-else :size="22">
-            <PauseOutline v-if="isPlaying" />
-            <PlayOutline v-else />
-          </NIcon>
+          <span
+            :class="isFetchingAudio ? 'play-icon--loading' : isPlaying ? 'play-icon--playing' : ''"
+          >
+            <LoaderProgress v-if="isFetchingAudio" :size="22" />
+            <NIcon v-else :size="22">
+              <PauseOutline v-if="isPlaying" />
+              <PlayOutline v-else />
+            </NIcon>
+          </span>
         </template>
       </NButton>
       <NButton
@@ -98,4 +102,18 @@ defineExpose({ stop, isPlaying })
 .audio-mini-player__row { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; }
 .audio-mini-player__play-icon-btn { padding: 2px !important; min-width: auto !important; }
 .audio-mini-player__play-icon-btn :deep(.n-icon) { color: inherit; }
+.play-icon--loading {
+  color: #00FF3C;
+  animation: play-pulse 0.8s ease-in-out infinite;
+  display: inline-flex;
+}
+.play-icon--playing {
+  color: #00FF3C;
+  filter: drop-shadow(0 0 4px #00FF3C) drop-shadow(0 0 10px #00FF3C);
+  display: inline-flex;
+}
+@keyframes play-pulse {
+  0%, 60%, 100% { filter: drop-shadow(0 0 4px #00FF3C) drop-shadow(0 0 10px #00FF3C); opacity: 1; }
+  35%           { filter: drop-shadow(0 0 1px #00FF3C); opacity: 0.2; }
+}
 </style>

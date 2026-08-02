@@ -42,61 +42,68 @@ onBeforeUnmount(() => detachSeekListeners())
 </script>
 
 <template>
-  <div v-if="player.hasTrack" class="global-audio-bar">
-    <NButton
-      text
-      quaternary
-      size="tiny"
-      class="global-audio-bar__btn"
-      :disabled="player.isLoading"
-      :aria-label="player.isPlaying ? 'Pause' : 'Play'"
-      @click="player.toggle()"
-    >
-      <template #icon>
-        <LoaderProgress v-if="player.isLoading" :size="16" />
-        <NIcon v-else :size="16">
-          <PauseOutline v-if="player.isPlaying" />
-          <PlayOutline v-else />
-        </NIcon>
-      </template>
-    </NButton>
+  <Transition name="global-audio-bar">
+    <div v-if="player.hasTrack" class="global-audio-bar">
+      <NButton
+        text
+        quaternary
+        size="tiny"
+        class="global-audio-bar__btn"
+        :disabled="player.isLoading"
+        :aria-label="player.isPlaying ? 'Pause' : 'Play'"
+        @click="player.toggle()"
+      >
+        <template #icon>
+          <LoaderProgress v-if="player.isLoading" :size="16" />
+          <span
+            v-else
+            :class="player.isPlaying ? 'play-icon--playing' : ''"
+          >
+            <NIcon :size="16">
+              <PauseOutline v-if="player.isPlaying" />
+              <PlayOutline v-else />
+            </NIcon>
+          </span>
+        </template>
+      </NButton>
 
-    <div class="global-audio-bar__meta">
-      <span class="global-audio-bar__title">{{ player.title }}</span>
-      <template v-if="player.artist">
-        <span class="global-audio-bar__sep">—</span>
-        <span class="global-audio-bar__artist">{{ player.artist }}</span>
-      </template>
-    </div>
+      <div class="global-audio-bar__meta">
+        <span class="global-audio-bar__title">{{ player.title }}</span>
+        <template v-if="player.artist">
+          <span class="global-audio-bar__sep">—</span>
+          <span class="global-audio-bar__artist">{{ player.artist }}</span>
+        </template>
+      </div>
 
-    <div class="global-audio-bar__progress">
-      <div class="global-audio-bar__bar-wrap">
-        <div class="global-audio-bar__bar-layer" aria-hidden="true">
-          <NProgress
-            type="line"
-            :percentage="player.playbackPercent"
-            :show-indicator="false"
-            :height="2"
-            :border-radius="1"
-            :fill-border-radius="1"
-            color="#eff605"
-            :rail-color="themeStore.isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'"
+      <div class="global-audio-bar__progress">
+        <div class="global-audio-bar__bar-wrap">
+          <div class="global-audio-bar__bar-layer" aria-hidden="true">
+            <NProgress
+              type="line"
+              :percentage="player.playbackPercent"
+              :show-indicator="false"
+              :height="2"
+              :border-radius="1"
+              :fill-border-radius="1"
+              color="#eff605"
+              :rail-color="themeStore.isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'"
+            />
+          </div>
+          <div
+            ref="seekBarRef"
+            class="global-audio-bar__seek-hit"
+            role="slider"
+            tabindex="-1"
+            aria-label="Seek audio"
+            :aria-valuenow="Math.round(player.playbackPercent)"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            @mousedown="onSeekMouseDown"
           />
         </div>
-        <div
-          ref="seekBarRef"
-          class="global-audio-bar__seek-hit"
-          role="slider"
-          tabindex="-1"
-          aria-label="Seek audio"
-          :aria-valuenow="Math.round(player.playbackPercent)"
-          aria-valuemin="0"
-          aria-valuemax="100"
-          @mousedown="onSeekMouseDown"
-        />
       </div>
     </div>
-  </div>
+  </Transition>
 </template>
 
 <style scoped>
@@ -106,9 +113,9 @@ onBeforeUnmount(() => detachSeekListeners())
   gap: 10px;
   padding: 4px 16px;
   min-height: 28px;
-  border-bottom: 1px solid rgba(127, 127, 127, 0.18);
   background: var(--n-color, transparent);
   flex-shrink: 0;
+  overflow: hidden;
 }
 .global-audio-bar__btn {
   flex-shrink: 0;
@@ -174,6 +181,31 @@ onBeforeUnmount(() => detachSeekListeners())
   cursor: pointer;
   user-select: none;
 }
+
+.play-icon--playing {
+  color: #00FF3C;
+  filter: drop-shadow(0 0 4px #00FF3C) drop-shadow(0 0 10px #00FF3C);
+  display: inline-flex;
+}
+
+.global-audio-bar-enter-active,
+.global-audio-bar-leave-active {
+  transition:
+    opacity 0.28s ease,
+    transform 0.28s ease,
+    max-height 0.28s ease,
+    padding 0.28s ease;
+  max-height: 40px;
+}
+.global-audio-bar-enter-from,
+.global-audio-bar-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
 @media (max-width: 600px) {
   .global-audio-bar {
     padding: 4px 8px;
