@@ -19,6 +19,7 @@ const shellRef = ref<HTMLElement | null>(null)
 const mounted = ref(false)
 
 const seekBarRef = ref<HTMLElement | null>(null)
+const boxEls = ref<(HTMLElement | null)[]>([])
 const boxCount = ref(BOX_MIN)
 let resizeObserver: ResizeObserver | null = null
 
@@ -35,6 +36,11 @@ const partialFill = computed(() => {
   if (filledCount.value >= boxCount.value) return 0
   return progressUnits.value - filledCount.value
 })
+
+function setBoxRef(el: unknown, i: number) {
+  if (el instanceof HTMLElement) boxEls.value[i] = el
+  else boxEls.value[i] = null
+}
 
 function updateBoxCount(width: number) {
   if (width <= 0) return
@@ -54,17 +60,54 @@ function attachResizeObserver() {
   resizeObserver.observe(el)
 }
 
+function flashBoxAtRatio(ratio: number) {
+  if (boxCount.value <= 0) return
+  const i = Math.min(boxCount.value - 1, Math.max(0, Math.floor(ratio * boxCount.value)))
+  const el = boxEls.value[i]
+  if (!el) return
+  gsap.killTweensOf(el)
+  gsap.fromTo(
+    el,
+    { filter: 'drop-shadow(0 0 0px #eff605)', scale: 1 },
+    {
+      filter: 'drop-shadow(0 0 5px #eff605) drop-shadow(0 0 10px #eff605)',
+      scale: 1.45,
+      duration: 0.14,
+      yoyo: true,
+      repeat: 1,
+      ease: 'power2.out',
+      clearProps: 'filter,transform',
+    },
+  )
+}
+
 function detachSeekListeners() {
   if (seekDocMove) { document.removeEventListener('mousemove', seekDocMove); seekDocMove = null }
   if (seekDocUp) { document.removeEventListener('mouseup', seekDocUp); seekDocUp = null }
 }
 
-function applySeekClientX(clientX: number) {
-  const bar = seekBarRef.value
-  if (!bar) return
-  const rect = bar.getBoundingClientRect()
-  if (rect.width <= 0) return
-  player.seekRatio((clientX - rect.left) / rect.width)
+/** Map X to progress using the actual first→last box span (not the full flex track). */
+function ratioFromClientX(clientX: number): number | null {
+  const boxes = boxEls.value.filter((el): el is HTMLElement => !!el)
+  if (!boxes.length) {
+    const bar = seekBarRef.value
+    if (!bar) return null
+    const rect = bar.getBoundingClientRect()
+    if (rect.width <= 0) return null
+    return Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
+  }
+  const left = boxes[0]!.getBoundingClientRect().left
+  const right = boxes[boxes.length - 1]!.getBoundingClientRect().right
+  const width = right - left
+  if (width <= 0) return null
+  return Math.min(1, Math.max(0, (clientX - left) / width))
+}
+
+function applySeekClientX(clientX: number, flash: boolean) {
+  const ratio = ratioFromClientX(clientX)
+  if (ratio == null) return
+  player.seekRatio(ratio, true)
+  if (flash) flashBoxAtRatio(ratio)
 }
 
 function onSeekMouseDown(e: MouseEvent) {
@@ -72,11 +115,11 @@ function onSeekMouseDown(e: MouseEvent) {
   e.preventDefault()
   let done = false
   function onUp() { if (done) return; done = true; detachSeekListeners() }
-  seekDocMove = (ev) => { if (!done) applySeekClientX(ev.clientX) }
+  seekDocMove = (ev) => { if (!done) applySeekClientX(ev.clientX, false) }
   seekDocUp = onUp
   document.addEventListener('mousemove', seekDocMove)
   document.addEventListener('mouseup', onUp, { once: true })
-  applySeekClientX(e.clientX)
+  applySeekClientX(e.clientX, true)
 }
 
 watch(
@@ -122,11 +165,16 @@ watch(
   },
 )
 
+watch(boxCount, (n) => {
+  boxEls.value = Array.from({ length: n }, () => null)
+})
+
 onBeforeUnmount(() => {
   detachSeekListeners()
   resizeObserver?.disconnect()
   resizeObserver = null
   if (shellRef.value) gsap.killTweensOf(shellRef.value)
+  boxEls.value.forEach((el) => { if (el) gsap.killTweensOf(el) })
 })
 </script>
 
@@ -178,6 +226,7 @@ onBeforeUnmount(() => {
         <span
           v-for="i in boxCount"
           :key="i"
+          :ref="(el) => setBoxRef(el, i - 1)"
           class="global-audio-bar__box"
           :style="{ backgroundColor: railColor }"
         >
@@ -268,11 +317,12 @@ onBeforeUnmount(() => {
 }
 .global-audio-bar__box {
   position: relative;
-  flex: 0 0 6px;
-  width: 6px;
+  flex: 1 1 0;
+  min-width: 3px;
   height: 6px;
   border-radius: 1px;
   overflow: hidden;
+  transform-origin: center center;
 }
 .global-audio-bar__box-fill {
   position: absolute;
@@ -280,6 +330,7 @@ onBeforeUnmount(() => {
   background: #eff605;
   transform: scaleX(0);
   transform-origin: left center;
+  pointer-events: none;
 }
 .global-audio-bar__close {
   flex-shrink: 0;

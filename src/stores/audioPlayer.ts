@@ -169,11 +169,12 @@ export const useAudioPlayerStore = defineStore('audioPlayer', () => {
     audio?.pause()
   }
 
-  function seekRatio(ratio: number) {
+  function seekRatio(ratio: number, resume = false) {
     if (!audio || !Number.isFinite(audio.duration) || audio.duration <= 0) return
     const r = Math.min(1, Math.max(0, ratio))
     audio.currentTime = r * audio.duration
     syncProgress()
+    if (resume && audio.paused) void audio.play()
   }
 
   function stop() {
