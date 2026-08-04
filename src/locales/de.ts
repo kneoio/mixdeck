@@ -377,8 +377,6 @@ export default {
     scene_duration_inherited: 'Standard: {n}',
     scene_duration_overridden: 'Überschrieben',
     scene_duration_reset: 'Standard verwenden',
-    scene_one_time_hint: 'Läuft so lange wie der Inhalt',
-    scene_one_time_label: 'Inhaltslänge',
     scene_duration_seconds: '{n}s',
     scene_no_scenes: 'Dieses Skript hat keine Szenen',
   },

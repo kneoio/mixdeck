@@ -339,8 +339,6 @@ export default {
     scene_duration_inherited: 'Padrão: {n}',
     scene_duration_overridden: 'Substituído',
     scene_duration_reset: 'Usar padrão',
-    scene_one_time_hint: 'Dura o tempo do conteúdo',
-    scene_one_time_label: 'Duração do conteúdo',
     scene_duration_seconds: '{n}s',
     scene_no_scenes: 'Este roteiro não tem cenas',
   },

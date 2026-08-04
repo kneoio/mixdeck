@@ -338,8 +338,6 @@ export default {
     scene_duration_inherited: 'За замовчуванням: {n}',
     scene_duration_overridden: 'Перевизначено',
     scene_duration_reset: 'За замовчуванням',
-    scene_one_time_hint: 'Триває стільки, скільки триває контент',
-    scene_one_time_label: 'Довжина контенту',
     scene_duration_seconds: '{n} с',
     scene_no_scenes: 'У цьому сценарії немає сцен',
   },

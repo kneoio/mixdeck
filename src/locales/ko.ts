@@ -376,8 +376,6 @@ export default {
     scene_duration_inherited: '기본값: {n}',
     scene_duration_overridden: '재정의됨',
     scene_duration_reset: '기본값 사용',
-    scene_one_time_hint: '콘텐츠 길이만큼 재생됩니다',
-    scene_one_time_label: '콘텐츠 길이',
     scene_duration_seconds: '{n}초',
     scene_no_scenes: '이 스크립트에는 장면이 없습니다',
   },

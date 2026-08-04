@@ -338,8 +338,6 @@ export default {
     scene_duration_inherited: 'デフォルト: {n}',
     scene_duration_overridden: '上書き',
     scene_duration_reset: 'デフォルトを使用',
-    scene_one_time_hint: 'コンテンツの長さ分だけ再生されます',
-    scene_one_time_label: 'コンテンツの長さ',
     scene_duration_seconds: '{n}秒',
     scene_no_scenes: 'このスクリプトにはシーンがありません',
   },

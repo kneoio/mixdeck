@@ -338,8 +338,6 @@ export default {
     scene_duration_inherited: 'Әдепкі: {n}',
     scene_duration_overridden: 'Қайта анықталған',
     scene_duration_reset: 'Әдепкіні қолдану',
-    scene_one_time_hint: 'Контент ұзақтығына дейін ойнайды',
-    scene_one_time_label: 'Контент ұзақтығы',
     scene_duration_seconds: '{n} с',
     scene_no_scenes: 'Бұл сценарийде сахна жоқ',
   },

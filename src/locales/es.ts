@@ -338,8 +338,6 @@ export default {
     scene_duration_inherited: 'Predeterminado: {n}',
     scene_duration_overridden: 'Anulado',
     scene_duration_reset: 'Usar predeterminado',
-    scene_one_time_hint: 'Dura lo que dure el contenido',
-    scene_one_time_label: 'Duración del contenido',
     scene_duration_seconds: '{n}s',
     scene_no_scenes: 'Este guion no tiene escenas',
   },

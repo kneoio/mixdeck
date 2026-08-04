@@ -338,8 +338,6 @@ export default {
     scene_duration_inherited: 'ნაგულისხმევი: {n}',
     scene_duration_overridden: 'გადაფარული',
     scene_duration_reset: 'ნაგულისხმევის გამოყენება',
-    scene_one_time_hint: 'გრძელდება კონტენტის ხანგრძლივობამდე',
-    scene_one_time_label: 'კონტენტის სიგრძე',
     scene_duration_seconds: '{n}წმ',
     scene_no_scenes: 'ამ სკრიპტს სცენები არ აქვს',
   },

@@ -399,8 +399,6 @@ export default {
     scene_duration_inherited: 'Default: {n}',
     scene_duration_overridden: 'Override',
     scene_duration_reset: 'Use default',
-    scene_one_time_hint: 'Runs for as long as its content lasts',
-    scene_one_time_label: 'Content length',
     scene_duration_seconds: '{n}s',
     scene_no_scenes: 'This script has no scenes',
   },

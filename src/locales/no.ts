@@ -376,8 +376,6 @@ export default {
     scene_duration_inherited: 'Standard: {n}',
     scene_duration_overridden: 'Overstyrt',
     scene_duration_reset: 'Bruk standard',
-    scene_one_time_hint: 'Varer så lenge innholdet varer',
-    scene_one_time_label: 'Innholdslengde',
     scene_duration_seconds: '{n}s',
     scene_no_scenes: 'Dette skriptet har ingen scener',
   },

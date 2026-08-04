@@ -481,13 +481,7 @@ onMounted(async () => {
               >{{ t('otsForm.scene_duration_overridden') }}</span>
             </div>
 
-            <template v-if="isOneTimeScene(scene)">
-              <div class="ots-scene-row__one-time">
-                <span class="ots-scene-row__readonly">{{ t('otsForm.scene_one_time_label') }}</span>
-                <span class="ots-scene-row__hint">{{ t('otsForm.scene_one_time_hint') }}</span>
-              </div>
-            </template>
-            <template v-else-if="scene.id">
+            <template v-if="!isOneTimeScene(scene) && scene.id">
               <div class="ots-scene-row__controls">
                 <NSlider
                   :value="sceneDurationValues[scene.id]"
@@ -625,19 +619,6 @@ onMounted(async () => {
 }
 .ots-scene-row__inherited {
   margin-top: 6px;
-  font-size: 11px;
-  color: #888;
-}
-.ots-scene-row__one-time {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.ots-scene-row__readonly {
-  font-size: 12px;
-  color: #bbb;
-}
-.ots-scene-row__hint {
   font-size: 11px;
   color: #888;
 }

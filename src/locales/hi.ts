@@ -338,8 +338,6 @@ export default {
     scene_duration_inherited: 'डिफ़ॉल्ट: {n}',
     scene_duration_overridden: 'ओवरराइड',
     scene_duration_reset: 'डिफ़ॉल्ट उपयोग करें',
-    scene_one_time_hint: 'कंटेंट जितनी देर चले उतनी देर चलता है',
-    scene_one_time_label: 'कंटेंट की लंबाई',
     scene_duration_seconds: '{n}से',
     scene_no_scenes: 'इस स्क्रिप्ट में कोई दृश्य नहीं है',
   },

@@ -337,8 +337,6 @@ export default {
     scene_duration_inherited: 'Par défaut : {n}',
     scene_duration_overridden: 'Remplacé',
     scene_duration_reset: 'Utiliser la valeur par défaut',
-    scene_one_time_hint: 'Dure aussi longtemps que le contenu',
-    scene_one_time_label: 'Durée du contenu',
     scene_duration_seconds: '{n}s',
     scene_no_scenes: 'Ce script n’a aucune scène',
   },
