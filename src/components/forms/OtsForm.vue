@@ -3,7 +3,7 @@ import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { gsap } from 'gsap'
-import { NForm, NFormItem, NInput, NInputNumber, NSelect, NSwitch, NRadioGroup, NRadioButton, NSlider, NButton, NTabs, NTabPane, useMessage, type SelectOption } from 'naive-ui'
+import { NForm, NFormItem, NInput, NInputNumber, NSelect, NSwitch, NRadioGroup, NRadioButton, NSlider, NTabs, NTabPane, useMessage, type SelectOption } from 'naive-ui'
 import MarkdownIt from 'markdown-it'
 import GsapButton from '@/components/GsapButton.vue'
 import FormWrapper from '@/components/FormWrapper.vue'
@@ -122,8 +122,14 @@ function buildSceneDurationsPayload(): Record<string, number> | undefined {
 }
 
 function formatDurationLabel(seconds: number): string {
-  if (seconds >= 60 && seconds % 60 === 0) return `${seconds / 60} min`
-  return `${seconds}s`
+  const total = Math.max(0, Math.round(seconds))
+  const h = Math.floor(total / 3600)
+  const m = Math.floor((total % 3600) / 60)
+  const s = total % 60
+  if (h > 0) {
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  }
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
 const brandOptions = computed(() =>
@@ -493,16 +499,16 @@ onMounted(async () => {
                   @update:value="(v) => { sceneDurationValues[scene.id!] = typeof v === 'number' ? v : sceneInheritedSeconds(scene) }"
                 />
                 <span class="ots-scene-row__value">{{ formatDurationLabel(sceneDurationValues[scene.id] ?? sceneInheritedSeconds(scene)) }}</span>
-                <NButton
+                <button
                   v-if="isSceneOverridden(scene)"
-                  size="tiny"
-                  quaternary
+                  type="button"
+                  class="ots-scene-row__reset"
                   :disabled="loading"
                   @click="resetSceneDuration(scene)"
-                >{{ t('otsForm.scene_duration_reset') }}</NButton>
+                >{{ t('otsForm.scene_duration_reset') }}</button>
               </div>
               <div class="ots-scene-row__inherited">
-                {{ t('otsForm.scene_duration_inherited', { n: sceneInheritedSeconds(scene) }) }}
+                {{ t('otsForm.scene_duration_inherited', { n: formatDurationLabel(sceneInheritedSeconds(scene)) }) }}
               </div>
             </template>
           </div>
@@ -555,12 +561,15 @@ onMounted(async () => {
 .ots-scenes {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   margin-bottom: 8px;
 }
 .ots-scene-row {
-  padding: 10px 12px;
-  border-left: 2px solid transparent;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 2px solid #2a2a2a;
 }
 .ots-scene-row--overridden {
   border-left-color: rgba(64, 158, 255, 0.85);
@@ -571,7 +580,7 @@ onMounted(async () => {
   gap: 8px;
   font-size: 13px;
   color: #ddd;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 .ots-scene-row__badge {
   font-size: 10px;
@@ -587,14 +596,35 @@ onMounted(async () => {
   width: 100%;
 }
 .ots-scene-row__value {
-  min-width: 56px;
+  min-width: 64px;
   text-align: right;
   font-size: 12px;
   color: #bbb;
   font-variant-numeric: tabular-nums;
 }
+.ots-scene-row__reset {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  font-size: 11px;
+  color: #888;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}
+.ots-scene-row__reset:hover:not(:disabled) {
+  color: #bbb;
+}
+.ots-scene-row__reset:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
 .ots-scene-row__inherited {
-  margin-top: 4px;
+  margin-top: 6px;
   font-size: 11px;
   color: #888;
 }

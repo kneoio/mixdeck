@@ -396,7 +396,7 @@ export default {
     tab_scenes: 'Scene durations',
     status_label: 'Status',
     type_label: 'Type',
-    scene_duration_inherited: 'Default: {n}s',
+    scene_duration_inherited: 'Default: {n}',
     scene_duration_overridden: 'Override',
     scene_duration_reset: 'Use default',
     scene_one_time_hint: 'Runs for as long as its content lasts',
