@@ -3,15 +3,19 @@ import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { gsap } from 'gsap'
-import { NForm, NFormItem, NInput, NInputNumber, NSelect, NSwitch, NRadioGroup, NRadioButton, NTabs, NTabPane, useMessage, type SelectOption } from 'naive-ui'
+import { NForm, NFormItem, NInput, NInputNumber, NSelect, NSwitch, NRadioGroup, NRadioButton, NSlider, NButton, NTabs, NTabPane, useMessage, type SelectOption } from 'naive-ui'
 import MarkdownIt from 'markdown-it'
 import GsapButton from '@/components/GsapButton.vue'
 import FormWrapper from '@/components/FormWrapper.vue'
 import { useBrandsStore } from '@/stores/brands'
-import type { Script } from '@/stores/scripts'
+import type { Script, ScriptScene } from '@/stores/scripts'
 import { useOtsDefinitionsStore } from '@/stores/otsDefinitions'
 import datanestApiService from '@/services/datanestApi'
 import { handleApiError } from '@/utils/notificationService'
+
+const DURATION_SLIDER_MIN = 1
+const DURATION_SLIDER_MAX = 7200
+const DURATION_SLIDER_STEP = 1
 
 const { t } = useI18n()
 const route = useRoute()
@@ -57,6 +61,70 @@ const variables = reactive<Record<string, any>>({})
 const varErrors = reactive<Record<string, string>>({})
 const agentOptions = ref<SelectOption[]>([])
 const loadingAgents = ref(false)
+/** Current duration values shown in the UI (loop scenes only). */
+const sceneDurationValues = reactive<Record<string, number>>({})
+/** Stored overrides loaded from the definition (loop scenes only). */
+const storedSceneDurations = ref<Record<string, number>>({})
+
+function isOneTimeScene(scene: ScriptScene): boolean {
+  return scene.sceneType === 'ONE_TIME' || scene.oneTimeRun === true
+}
+
+const orderedScenes = computed(() => scriptDetail.value?.scenes ?? [])
+
+function sceneInheritedSeconds(scene: ScriptScene): number {
+  return scene.durationSeconds && scene.durationSeconds > 0 ? scene.durationSeconds : DURATION_SLIDER_MIN
+}
+
+function isSceneOverridden(scene: ScriptScene): boolean {
+  if (isOneTimeScene(scene) || !scene.id) return false
+  const current = sceneDurationValues[scene.id]
+  if (current === undefined) return false
+  return current !== sceneInheritedSeconds(scene)
+}
+
+function clampDuration(seconds: number): number {
+  return Math.min(DURATION_SLIDER_MAX, Math.max(DURATION_SLIDER_MIN, Math.round(seconds)))
+}
+
+function initSceneDurationValues(overrides: Record<string, number> = {}) {
+  Object.keys(sceneDurationValues).forEach((key) => delete sceneDurationValues[key])
+  const nextStored: Record<string, number> = {}
+  for (const scene of orderedScenes.value) {
+    if (!scene.id || isOneTimeScene(scene)) continue
+    const inherited = sceneInheritedSeconds(scene)
+    const override = overrides[scene.id]
+    if (override != null && override > 0) {
+      sceneDurationValues[scene.id] = clampDuration(override)
+      nextStored[scene.id] = override
+    } else {
+      sceneDurationValues[scene.id] = clampDuration(inherited)
+    }
+  }
+  storedSceneDurations.value = nextStored
+}
+
+function resetSceneDuration(scene: ScriptScene) {
+  if (!scene.id || isOneTimeScene(scene)) return
+  sceneDurationValues[scene.id] = clampDuration(sceneInheritedSeconds(scene))
+}
+
+function buildSceneDurationsPayload(): Record<string, number> | undefined {
+  const map: Record<string, number> = {}
+  for (const scene of orderedScenes.value) {
+    if (!scene.id || isOneTimeScene(scene)) continue
+    const value = sceneDurationValues[scene.id]
+    if (value == null || value <= 0) continue
+    if (value === sceneInheritedSeconds(scene)) continue
+    map[scene.id] = Math.round(value)
+  }
+  return Object.keys(map).length ? map : undefined
+}
+
+function formatDurationLabel(seconds: number): string {
+  if (seconds >= 60 && seconds % 60 === 0) return `${seconds / 60} min`
+  return `${seconds}s`
+}
 
 const brandOptions = computed(() =>
   brandsStore.brands.map((brand) => ({ label: brand.localizedName?.['en'] || brand.title || brand.slugName || '', value: brand.slugName! }))
@@ -70,6 +138,7 @@ function renderScriptDescription(description: string) {
 async function loadScriptDetail() {
   if (!formData.value.scriptSlug) return
   scriptDetail.value = await datanestApiService.getScriptDetail(formData.value.scriptSlug)
+  initSceneDurationValues(storedSceneDurations.value)
 }
 
 /**
@@ -210,6 +279,7 @@ async function handleSave() {
       userVariables: { ...variables },
       brandSlug: formData.value.scope === 'brand' ? formData.value.brandSlug : null,
       agentSlug: formData.value.agentSlug || null,
+      sceneDurations: buildSceneDurationsPayload() ?? {},
     }
     if (isEditing.value) {
       await otsDefinitionsStore.updateOtsDefinition(route.params.slugName as string, payload)
@@ -251,6 +321,13 @@ onMounted(async () => {
       formData.value.agentSlug = def.agentSlug
       otsStatus.value = def.status ?? null
       otsType.value = def.type ?? null
+      const loadedOverrides: Record<string, number> = {}
+      if (def.sceneDurations && typeof def.sceneDurations === 'object') {
+        for (const [sceneId, seconds] of Object.entries(def.sceneDurations as Record<string, number>)) {
+          if (typeof seconds === 'number' && seconds > 0) loadedOverrides[sceneId] = seconds
+        }
+      }
+      storedSceneDurations.value = loadedOverrides
       await loadScriptDetail()
       await loadAgents()
     } else {
@@ -382,6 +459,57 @@ onMounted(async () => {
         </NForm>
       </NTabPane>
 
+      <NTabPane name="scenes" :tab="t('otsForm.tab_scenes')">
+        <div v-if="orderedScenes.length" class="ots-scenes">
+          <div
+            v-for="scene in orderedScenes"
+            :key="scene.id"
+            class="ots-scene-row"
+            :class="{ 'ots-scene-row--overridden': isSceneOverridden(scene) }"
+          >
+            <div class="ots-scene-row__title">
+              <span>{{ scene.title || scene.id }}</span>
+              <span
+                v-if="isSceneOverridden(scene)"
+                class="ots-scene-row__badge"
+              >{{ t('otsForm.scene_duration_overridden') }}</span>
+            </div>
+
+            <template v-if="isOneTimeScene(scene)">
+              <div class="ots-scene-row__one-time">
+                <span class="ots-scene-row__readonly">{{ t('otsForm.scene_one_time_label') }}</span>
+                <span class="ots-scene-row__hint">{{ t('otsForm.scene_one_time_hint') }}</span>
+              </div>
+            </template>
+            <template v-else-if="scene.id">
+              <div class="ots-scene-row__controls">
+                <NSlider
+                  :value="sceneDurationValues[scene.id]"
+                  :min="DURATION_SLIDER_MIN"
+                  :max="DURATION_SLIDER_MAX"
+                  :step="DURATION_SLIDER_STEP"
+                  :disabled="loading"
+                  style="flex: 1"
+                  @update:value="(v) => { sceneDurationValues[scene.id!] = typeof v === 'number' ? v : sceneInheritedSeconds(scene) }"
+                />
+                <span class="ots-scene-row__value">{{ formatDurationLabel(sceneDurationValues[scene.id] ?? sceneInheritedSeconds(scene)) }}</span>
+                <NButton
+                  v-if="isSceneOverridden(scene)"
+                  size="tiny"
+                  quaternary
+                  :disabled="loading"
+                  @click="resetSceneDuration(scene)"
+                >{{ t('otsForm.scene_duration_reset') }}</NButton>
+              </div>
+              <div class="ots-scene-row__inherited">
+                {{ t('otsForm.scene_duration_inherited', { n: sceneInheritedSeconds(scene) }) }}
+              </div>
+            </template>
+          </div>
+        </div>
+        <p v-else class="ots-no-variables">{{ t('otsForm.scene_no_scenes') }}</p>
+      </NTabPane>
+
       <NTabPane name="description" :tab="t('otsForm.tab_description')">
         <p v-if="scriptDetail?.description" class="script-description" v-html="renderScriptDescription(scriptDetail.description)" />
       </NTabPane>
@@ -423,6 +551,65 @@ onMounted(async () => {
   opacity: 0.55;
   font-size: 13px;
   margin: 0 0 16px;
+}
+.ots-scenes {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+.ots-scene-row {
+  padding: 10px 12px;
+  border-left: 2px solid transparent;
+}
+.ots-scene-row--overridden {
+  border-left-color: rgba(64, 158, 255, 0.85);
+}
+.ots-scene-row__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #ddd;
+  margin-bottom: 8px;
+}
+.ots-scene-row__badge {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #409eff;
+  opacity: 0.9;
+}
+.ots-scene-row__controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+.ots-scene-row__value {
+  min-width: 56px;
+  text-align: right;
+  font-size: 12px;
+  color: #bbb;
+  font-variant-numeric: tabular-nums;
+}
+.ots-scene-row__inherited {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #888;
+}
+.ots-scene-row__one-time {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ots-scene-row__readonly {
+  font-size: 12px;
+  color: #bbb;
+}
+.ots-scene-row__hint {
+  font-size: 11px;
+  color: #888;
 }
 .script-description {
   font-size: 13px;

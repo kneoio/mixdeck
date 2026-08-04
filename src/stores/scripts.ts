@@ -2,6 +2,15 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import datanestApiService from '@/services/datanestApi'
 
+export interface ScriptScene {
+  id: string
+  title?: string
+  durationSeconds?: number
+  seqNum?: number
+  oneTimeRun?: boolean
+  sceneType?: 'LOOP' | 'ONE_TIME' | string
+}
+
 export interface Script {
   author?: string
   regDate?: string
@@ -24,6 +33,7 @@ export interface Script {
   custom?: boolean
   slugName: string
   requiredVariables?: Array<{ name: string; type: string; description: string; required?: boolean }>
+  scenes?: ScriptScene[]
 }
 
 export const useScriptsStore = defineStore('scripts', () => {
