@@ -1,14 +1,15 @@
 <template>
-  <div class="login-page">
+  <!-- n-layout paints the themed background; a plain div would leak the white body through. -->
+  <n-layout class="login-page">
     <div class="login-panel">
       <div class="login-brand">MIXPLA</div>
-      <h1 class="login-title">{{ step === 'email' ? t('auth.email_title') : t('auth.code_title') }}</h1>
+      <h1 class="login-title">{{ codeSent ? t('auth.code_title') : t('auth.email_title') }}</h1>
       <p class="login-subtitle">
-        <template v-if="step === 'email'">{{ t('auth.email_subtitle') }}</template>
-        <template v-else>{{ t('auth.code_subtitle', { email }) }}</template>
+        <template v-if="codeSent">{{ t('auth.code_subtitle', { email }) }}</template>
+        <template v-else>{{ t('auth.email_subtitle') }}</template>
       </p>
 
-      <form v-if="step === 'email'" class="login-form" @submit.prevent="onRequestCode">
+      <form class="login-form" @submit.prevent="onSubmit">
         <n-input
           v-model:value="email"
           type="text"
@@ -18,15 +19,9 @@
           autofocus
           :placeholder="t('auth.email_placeholder')"
           :disabled="loading"
-          @update:value="clearError"
+          class="login-email-input"
+          @update:value="onEmailInput"
         />
-        <p class="login-error" :class="{ 'login-error--visible': !!error }">{{ error || ' ' }}</p>
-        <GsapButton type="primary" :disabled="loading || !email.trim()" block>
-          <span>{{ loading ? t('auth.sending') : t('auth.continue') }}</span>
-        </GsapButton>
-      </form>
-
-      <form v-else class="login-form" @submit.prevent="onVerifyCode">
         <n-input
           v-model:value="code"
           type="text"
@@ -34,38 +29,30 @@
           autocomplete="one-time-code"
           maxlength="6"
           size="large"
-          autofocus
           :placeholder="t('auth.code_placeholder')"
-          :disabled="loading || codeLocked"
+          :disabled="loading || !codeSent || codeLocked"
           @update:value="onCodeInput"
         />
         <p class="login-error" :class="{ 'login-error--visible': !!error }">{{ error || ' ' }}</p>
-        <GsapButton
-          type="primary"
-          :disabled="loading || codeLocked || code.trim().length !== 6"
-          block
-        >
-          <span>{{ loading ? t('auth.verifying') : t('auth.continue') }}</span>
+        <GsapButton type="primary" :disabled="loading || !canSubmit" block>
+          <span>{{ buttonLabel }}</span>
         </GsapButton>
 
-        <div class="login-links">
+        <div class="login-links" v-if="codeSent">
           <button type="button" class="login-link" :disabled="loading || resending" @click="onResend">
             {{ resending ? t('auth.sending') : t('auth.resend_code') }}
-          </button>
-          <button type="button" class="login-link" :disabled="loading || resending" @click="goBack">
-            {{ t('auth.change_email') }}
           </button>
         </div>
       </form>
     </div>
-  </div>
+  </n-layout>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { NInput } from 'naive-ui'
+import { NInput, NLayout } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
 import authService, { AuthRequestError } from '@/services/auth'
 import { useAuthStore } from '@/stores/auth'
@@ -75,7 +62,7 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
-const step = ref<'email' | 'code'>('email')
+const codeSent = ref(false)
 const email = ref('')
 const code = ref('')
 const error = ref('')
@@ -83,6 +70,15 @@ const loading = ref(false)
 const resending = ref(false)
 const failCount = ref(0)
 const codeLocked = ref(false)
+
+const canSubmit = computed(() =>
+  codeSent.value ? code.value.trim().length === 6 && !codeLocked.value : !!email.value.trim()
+)
+
+const buttonLabel = computed(() => {
+  if (codeSent.value) return loading.value ? t('auth.verifying') : t('auth.continue')
+  return loading.value ? t('auth.sending') : t('auth.continue')
+})
 
 // Already signed in (e.g. back button onto /login) — go straight through.
 onMounted(() => {
@@ -97,10 +93,6 @@ function redirectTarget(): string {
   return authStore.loginRedirectUri || '/mixdeck'
 }
 
-function clearError() {
-  error.value = ''
-}
-
 function resetCodeStep() {
   code.value = ''
   failCount.value = 0
@@ -108,9 +100,19 @@ function resetCodeStep() {
   error.value = ''
 }
 
+function onEmailInput(value: string) {
+  email.value = value
+  error.value = ''
+  // The pending code was requested for the previous address — it's void now.
+  if (codeSent.value) {
+    codeSent.value = false
+    resetCodeStep()
+  }
+}
+
 function onCodeInput(value: string) {
   code.value = value.replace(/\D/g, '').slice(0, 6)
-  clearError()
+  error.value = ''
 }
 
 function isValidEmail(value: string): boolean {
@@ -123,6 +125,11 @@ function genericRequestError(err: unknown): string {
     return t('auth.error_send_failed')
   }
   return t('auth.error_send_failed')
+}
+
+function onSubmit() {
+  if (codeSent.value) void onVerifyCode()
+  else void onRequestCode()
 }
 
 async function onRequestCode() {
@@ -138,7 +145,7 @@ async function onRequestCode() {
     email.value = trimmed
     await authService.requestOtp(trimmed)
     resetCodeStep()
-    step.value = 'code'
+    codeSent.value = true
   } catch (err) {
     error.value = genericRequestError(err)
   } finally {
@@ -189,15 +196,12 @@ async function onResend() {
   }
 }
 
-function goBack() {
-  step.value = 'email'
-  resetCodeStep()
-}
 </script>
 
 <style scoped>
 .login-page {
   min-height: 100vh;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -238,6 +242,10 @@ function goBack() {
   gap: 4px;
 }
 
+.login-email-input {
+  margin-bottom: 10px;
+}
+
 .login-error {
   min-height: 1.35em;
   margin: 2px 0 10px;
@@ -252,7 +260,7 @@ function goBack() {
 
 .login-links {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 12px;
   margin-top: 14px;
 }
