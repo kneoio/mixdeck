@@ -39,12 +39,12 @@ onMounted(() => {
     gsap.to(boxes, {
       scale: 1,
       opacity: 1,
-      duration: 0.5,
+      duration: 1,
       ease: 'power1.inOut',
       yoyo: true,
       repeat: -1,
-      repeatDelay: 0.15,
-      stagger: { each: 0.09, from: 'random', repeat: -1 },
+      repeatDelay: 0.3,
+      stagger: { each: 0.18, from: 'random', repeat: -1 },
     })
   }, root)
 })
