@@ -4,6 +4,9 @@ const ACCESS_TOKEN_KEY = 'mixdeck_access_token'
 const REFRESH_TOKEN_KEY = 'mixdeck_refresh_token'
 const EXPIRES_AT_KEY = 'mixdeck_token_expires_at'
 
+/** Same-origin Keycloak token endpoint (proxied via mixpla.io). */
+const KEYCLOAK_TOKEN_URL = '/auth/realms/mixpla/protocol/openid-connect/token'
+
 /** Refresh this many ms before access-token expiry. */
 const REFRESH_SKEW_MS = 30_000
 const MIN_REFRESH_DELAY_MS = 5_000
@@ -103,10 +106,6 @@ class AuthService {
     }
   }
 
-  private tokenUrl(): string {
-    return `${appConfig.keycloak.url}/realms/${appConfig.keycloak.realm}/protocol/openid-connect/token`
-  }
-
   async init(): Promise<boolean> {
     if (this.initialized) {
       return this.state.isAuthenticated
@@ -179,7 +178,7 @@ class AuthService {
       scope: 'openid email profile',
     })
 
-    const response = await fetch(this.tokenUrl(), {
+    const response = await fetch(KEYCLOAK_TOKEN_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body,
@@ -217,7 +216,7 @@ class AuthService {
         refresh_token: refresh,
       })
 
-      const response = await fetch(this.tokenUrl(), {
+      const response = await fetch(KEYCLOAK_TOKEN_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body,
