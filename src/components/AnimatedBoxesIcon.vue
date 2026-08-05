@@ -42,9 +42,8 @@ onMounted(() => {
       duration: 1,
       ease: 'power1.inOut',
       yoyo: true,
-      repeat: -1,
-      repeatDelay: 0.3,
-      stagger: { each: 0.18, from: 'random', repeat: -1 },
+      repeat: 1,
+      stagger: { each: 0.18, from: 'random' },
     })
   }, root)
 })
