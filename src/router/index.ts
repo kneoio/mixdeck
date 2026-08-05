@@ -17,6 +17,12 @@ const router = createRouter({
       meta: { requiresAuth: false }
     },
     {
+      path: '/login',
+      name: 'login',
+      component: () => import('../views/LoginView.vue'),
+      meta: { requiresAuth: false }
+    },
+    {
       path: '/submission',
       name: 'submission',
       component: () => import('../views/SubmissionView.vue'),
@@ -232,8 +238,7 @@ router.beforeEach(async (to, _from, next) => {
 
   if (!authStore.isAuthenticated) {
     isRouteResolving.value = false
-    await authStore.login(to.fullPath)
-    return next(false)
+    return next({ name: 'login', query: { redirect: to.fullPath } })
   } else {
     next()
   }

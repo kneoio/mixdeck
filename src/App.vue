@@ -15,7 +15,6 @@
           <GsapLoader :size="48"/>
         </div>
         <RouterView/>
-        <LoginModal :show="authStore.showLoginModal"/>
       </NMessageProvider>
     </NLoadingBarProvider>
   </NConfigProvider>
@@ -25,7 +24,6 @@
 import { RouterView } from 'vue-router'
 import { NMessageProvider, NLoadingBarProvider, NGlobalStyle, NConfigProvider } from 'naive-ui'
 import GsapLoader from '@/components/GsapLoader.vue'
-import LoginModal from '@/components/LoginModal.vue'
 import { darkTheme, type GlobalThemeOverrides } from 'naive-ui'
 import {
   enUS, deDE, esAR, frFR, jaJP, ptBR, ruRU, ukUA, arDZ,

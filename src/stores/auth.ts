@@ -1,12 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import type { RouteLocationRaw } from 'vue-router'
 import authService from '@/services/auth'
 
 export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = ref(false)
   const userProfile = ref<any>(null)
   const isLoading = ref(true)
-  const showLoginModal = ref(false)
   const loginRedirectUri = ref<string | null>(null)
 
   const userName = computed(() => userProfile.value?.username || '')
@@ -22,11 +22,11 @@ export const useAuthStore = defineStore('auth', () => {
     authService.onAuthRequired((redirectUri) => {
       isAuthenticated.value = false
       userProfile.value = null
-      openLogin(redirectUri)
+      void login(redirectUri)
     })
   }
 
-  function openLogin(redirectUri?: string) {
+  function rememberRedirect(redirectUri?: string) {
     if (redirectUri) {
       try {
         const url = new URL(redirectUri, window.location.origin)
@@ -37,7 +37,12 @@ export const useAuthStore = defineStore('auth', () => {
     } else if (!loginRedirectUri.value) {
       loginRedirectUri.value = window.location.pathname + window.location.search + window.location.hash
     }
-    showLoginModal.value = true
+  }
+
+  /** Imported lazily — the router module imports this store, so a static import would cycle. */
+  async function navigateTo(location: RouteLocationRaw) {
+    const { default: router } = await import('@/router')
+    await router.replace(location)
   }
 
   async function initializeAuth() {
@@ -64,15 +69,19 @@ export const useAuthStore = defineStore('auth', () => {
     return inFlight
   }
 
+  /** Sends the user to the dedicated login page, remembering where to return. */
   async function login(redirectUri?: string) {
     ensureAuthRequiredListener()
-    openLogin(redirectUri)
+    rememberRedirect(redirectUri)
+    await navigateTo({
+      name: 'login',
+      query: loginRedirectUri.value ? { redirect: loginRedirectUri.value } : {},
+    })
   }
 
   function onLoginSuccess() {
     isAuthenticated.value = true
     userProfile.value = authService.getUserProfile()
-    showLoginModal.value = false
     const target = loginRedirectUri.value
     loginRedirectUri.value = null
     return target
@@ -84,6 +93,8 @@ export const useAuthStore = defineStore('auth', () => {
       await authService.logout()
       isAuthenticated.value = false
       userProfile.value = null
+      loginRedirectUri.value = null
+      await navigateTo('/')
     } catch (error) {
       console.error('Logout failed:', error)
     }
@@ -93,7 +104,6 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated,
     userProfile,
     isLoading,
-    showLoginModal,
     loginRedirectUri,
     userName,
     userEmail,

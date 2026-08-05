@@ -1,16 +1,8 @@
 <template>
-  <n-modal
-    :show="show"
-    :mask-closable="false"
-    :close-on-esc="false"
-    :closable="false"
-    :auto-focus="true"
-    transform-origin="center"
-    style="width: min(400px, 92vw)"
-  >
-    <n-card :bordered="false" size="large" role="dialog" aria-modal="true" class="login-card">
+  <div class="login-page">
+    <div class="login-panel">
       <div class="login-brand">MIXPLA</div>
-      <h2 class="login-title">{{ step === 'email' ? t('auth.email_title') : t('auth.code_title') }}</h2>
+      <h1 class="login-title">{{ step === 'email' ? t('auth.email_title') : t('auth.code_title') }}</h1>
       <p class="login-subtitle">
         <template v-if="step === 'email'">{{ t('auth.email_subtitle') }}</template>
         <template v-else>{{ t('auth.code_subtitle', { email }) }}</template>
@@ -23,6 +15,7 @@
           inputmode="email"
           autocomplete="email"
           size="large"
+          autofocus
           :placeholder="t('auth.email_placeholder')"
           :disabled="loading"
           @update:value="clearError"
@@ -41,6 +34,7 @@
           autocomplete="one-time-code"
           maxlength="6"
           size="large"
+          autofocus
           :placeholder="t('auth.code_placeholder')"
           :disabled="loading || codeLocked"
           @update:value="onCodeInput"
@@ -63,22 +57,21 @@
           </button>
         </div>
       </form>
-    </n-card>
-  </n-modal>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
-import { NModal, NCard, NInput } from 'naive-ui'
+import { useRoute, useRouter } from 'vue-router'
+import { NInput } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
 import authService, { AuthRequestError } from '@/services/auth'
 import { useAuthStore } from '@/stores/auth'
 
-const props = defineProps<{ show: boolean }>()
-
 const { t } = useI18n()
+const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
@@ -91,6 +84,19 @@ const resending = ref(false)
 const failCount = ref(0)
 const codeLocked = ref(false)
 
+// Already signed in (e.g. back button onto /login) — go straight through.
+onMounted(() => {
+  if (authStore.isAuthenticated) void router.replace(redirectTarget())
+})
+
+/** Only same-origin absolute paths are honoured, so ?redirect= can't bounce elsewhere. */
+function redirectTarget(): string {
+  const fromQuery = route.query.redirect
+  const raw = Array.isArray(fromQuery) ? fromQuery[0] : fromQuery
+  if (typeof raw === 'string' && raw.startsWith('/') && !raw.startsWith('//')) return raw
+  return authStore.loginRedirectUri || '/mixdeck'
+}
+
 function clearError() {
   error.value = ''
 }
@@ -101,21 +107,6 @@ function resetCodeStep() {
   codeLocked.value = false
   error.value = ''
 }
-
-function resetAll() {
-  step.value = 'email'
-  email.value = ''
-  resetCodeStep()
-  loading.value = false
-  resending.value = false
-}
-
-watch(
-  () => props.show,
-  (visible) => {
-    if (visible) resetAll()
-  }
-)
 
 function onCodeInput(value: string) {
   code.value = value.replace(/\D/g, '').slice(0, 6)
@@ -167,8 +158,9 @@ async function onVerifyCode() {
   error.value = ''
   try {
     await authService.verifyOtp(email.value.trim(), otp)
-    const target = authStore.onLoginSuccess()
-    await router.replace(target || '/mixdeck')
+    const target = redirectTarget()
+    authStore.onLoginSuccess()
+    await router.replace(target)
   } catch {
     failCount.value += 1
     // Never retry the same code — clear the field after any failure.
@@ -204,8 +196,16 @@ function goBack() {
 </script>
 
 <style scoped>
-.login-card {
-  border-radius: 12px;
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.login-panel {
+  width: min(400px, 100%);
 }
 
 .login-brand {
