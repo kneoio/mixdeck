@@ -6,6 +6,7 @@ const EXPIRES_AT_KEY = 'mixdeck_token_expires_at'
 
 /** Same-origin Keycloak token endpoint (proxied via mixpla.io). */
 const KEYCLOAK_TOKEN_URL = '/auth/realms/mixpla/protocol/openid-connect/token'
+const KEYCLOAK_CLIENT_ID = 'mixdeck_otp'
 
 /** Refresh this many ms before access-token expiry. */
 const REFRESH_SKEW_MS = 30_000
@@ -172,7 +173,7 @@ class AuthService {
   async verifyOtp(email: string, otp: string): Promise<void> {
     const body = new URLSearchParams({
       grant_type: 'password',
-      client_id: appConfig.keycloak.clientId,
+      client_id: KEYCLOAK_CLIENT_ID,
       username: email,
       otp,
       scope: 'openid email profile',
@@ -212,7 +213,7 @@ class AuthService {
     try {
       const body = new URLSearchParams({
         grant_type: 'refresh_token',
-        client_id: appConfig.keycloak.clientId,
+        client_id: KEYCLOAK_CLIENT_ID,
         refresh_token: refresh,
       })
 
