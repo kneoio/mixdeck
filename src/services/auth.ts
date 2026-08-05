@@ -4,8 +4,9 @@ const ACCESS_TOKEN_KEY = 'mixdeck_access_token'
 const REFRESH_TOKEN_KEY = 'mixdeck_refresh_token'
 const EXPIRES_AT_KEY = 'mixdeck_token_expires_at'
 
-/** Same-origin Keycloak token endpoint (proxied via mixpla.io). */
+/** Same-origin Keycloak endpoints (proxied via mixpla.io). */
 const KEYCLOAK_TOKEN_URL = '/auth/realms/mixpla/protocol/openid-connect/token'
+const KEYCLOAK_LOGOUT_URL = '/auth/realms/mixpla/protocol/openid-connect/logout'
 const KEYCLOAK_CLIENT_ID = 'mixdeck_otp'
 
 /** Refresh this many ms before access-token expiry. */
@@ -289,6 +290,18 @@ class AuthService {
   }
 
   async logout(): Promise<void> {
+    const refresh = this.state.refreshToken || localStorage.getItem(REFRESH_TOKEN_KEY)
+    if (refresh) {
+      // Back-channel revoke — fire and forget; local logout must not wait on it.
+      void fetch(KEYCLOAK_LOGOUT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: KEYCLOAK_CLIENT_ID,
+          refresh_token: refresh,
+        }),
+      }).catch(() => {})
+    }
     this.clearSession()
     this.notifyAuthRequired()
   }
