@@ -11,6 +11,7 @@ import { useServiceWorker } from '@/composables/useServiceWorker'
 import ThemeAccentPicker from '@/components/ThemeAccentPicker.vue'
 import GlobalAudioPlayerBar from '@/components/GlobalAudioPlayerBar.vue'
 import AskChatDock from '@/components/AskChatDock.vue'
+import AnimatedBoxesIcon from '@/components/AnimatedBoxesIcon.vue'
 import { useAskChatStore } from '@/stores/askChat'
 import {
   NLayout, NLayoutSider, NLayoutHeader, NLayoutContent,
@@ -18,7 +19,6 @@ import {
   NDrawer, NDrawerContent, type MenuOption
 } from 'naive-ui'
 import {
-  AppsSharp as OverviewIcon,
   HeadsetOutline as ListenersIcon,
   MusicalNotesOutline as PlaylistIcon,
   SettingsOutline as SettingsIcon,
@@ -234,7 +234,7 @@ const menuOptions = computed<MenuOption[]>(() => [
   {
     label: () => h('span', { style: 'font-weight: 700; text-transform: uppercase; font-style: italic;' }, t('menu.overview')),
     key: 'overview',
-    icon: () => h(NIcon, { color: '#FF2D95' }, { default: () => h(OverviewIcon) }),
+    icon: () => h(AnimatedBoxesIcon, { size: 18, color: '#FF2D95' }),
   },
   {
     label: () => h('span', { style: 'font-weight: 700;' }, t('menu.my_brands')),
