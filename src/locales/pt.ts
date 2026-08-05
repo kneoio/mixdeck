@@ -530,6 +530,7 @@ export default {
     verifying: 'A verificar…',
     resend_code: 'Reenviar código',
     change_email: 'Usar outro email',
+    paste: 'Colar',
     back_home: 'Voltar ao início',
     error_email: 'Introduza um endereço de email válido.',
     error_send_failed: 'Não foi possível enviar o código. Tente novamente.',

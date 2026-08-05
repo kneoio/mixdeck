@@ -580,6 +580,7 @@ export default {
     verifying: 'Bekrefter…',
     resend_code: 'Send kode på nytt',
     change_email: 'Bruk en annen e-post',
+    paste: 'Lim inn',
     back_home: 'Tilbake til forsiden',
     error_email: 'Skriv inn en gyldig e-postadresse.',
     error_send_failed: 'Kunne ikke sende koden. Prøv igjen.',

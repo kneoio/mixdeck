@@ -528,6 +528,7 @@ export default {
     verifying: 'Vérification…',
     resend_code: 'Renvoyer le code',
     change_email: 'Utiliser une autre adresse e-mail',
+    paste: 'Coller',
     back_home: 'Retour à l’accueil',
     error_email: 'Entrez une adresse e-mail valide.',
     error_send_failed: 'Impossible d’envoyer le code. Veuillez réessayer.',

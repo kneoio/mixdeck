@@ -45,7 +45,18 @@
           :placeholder="t('auth.code_placeholder')"
           :disabled="loading || codeLocked"
           @update:value="onCodeInput"
-        />
+        >
+          <template #suffix>
+            <button
+              type="button"
+              class="login-paste"
+              :disabled="loading || codeLocked"
+              @click="onPasteCode"
+            >
+              {{ t('auth.paste') }}
+            </button>
+          </template>
+        </n-input>
         <p class="login-error" :class="{ 'login-error--visible': !!error }">{{ error || ' ' }}</p>
         <GsapButton
           type="primary"
@@ -121,6 +132,16 @@ function resetCodeStep() {
 function onCodeInput(value: string) {
   code.value = value.replace(/\D/g, '').slice(0, 6)
   clearError()
+}
+
+async function onPasteCode() {
+  if (loading.value || codeLocked.value) return
+  try {
+    const text = await navigator.clipboard.readText()
+    onCodeInput(text)
+  } catch {
+    // Clipboard denied or unavailable — leave the field as-is.
+  }
 }
 
 function isValidEmail(value: string): boolean {
@@ -271,6 +292,29 @@ function goHome() {
   justify-content: flex-start;
   gap: 12px;
   margin-top: 14px;
+}
+
+.login-paste {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  font: inherit;
+  font-size: 12px;
+  color: inherit;
+  opacity: 0.55;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}
+
+.login-paste:hover:not(:disabled) {
+  opacity: 1;
+}
+
+.login-paste:disabled {
+  opacity: 0.3;
+  cursor: default;
 }
 
 .login-link {

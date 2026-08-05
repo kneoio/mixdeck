@@ -529,6 +529,7 @@ export default {
     verifying: '確認中…',
     resend_code: 'コードを再送信',
     change_email: '別のメールアドレスを使う',
+    paste: '貼り付け',
     back_home: 'ホームに戻る',
     error_email: '有効なメールアドレスを入力してください。',
     error_send_failed: 'コードを送信できませんでした。もう一度お試しください。',

@@ -529,6 +529,7 @@ export default {
     verifying: 'Проверка…',
     resend_code: 'Отправить код ещё раз',
     change_email: 'Использовать другой email',
+    paste: 'Вставить',
     back_home: 'На главную',
     error_email: 'Введите корректный email.',
     error_send_failed: 'Не удалось отправить код. Попробуйте ещё раз.',

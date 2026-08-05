@@ -529,6 +529,7 @@ export default {
     verifying: 'सत्यापित हो रहा है…',
     resend_code: 'कोड पुनः भेजें',
     change_email: 'दूसरा ईमेल उपयोग करें',
+    paste: 'पेस्ट',
     back_home: 'होम पर वापस',
     error_email: 'कृपया एक वैध ईमेल पता दर्ज करें।',
     error_send_failed: 'कोड नहीं भेजा जा सका। कृपया फिर से कोशिश करें।',

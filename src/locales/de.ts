@@ -580,6 +580,7 @@ export default {
     verifying: 'Wird geprüft…',
     resend_code: 'Code erneut senden',
     change_email: 'Andere E-Mail verwenden',
+    paste: 'Einfügen',
     back_home: 'Zurück zur Startseite',
     error_email: 'Gib eine gültige E-Mail-Adresse ein.',
     error_send_failed: 'Code konnte nicht gesendet werden. Bitte versuche es erneut.',

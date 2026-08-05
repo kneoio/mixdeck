@@ -530,6 +530,7 @@ export default {
     verifying: 'Перевірка…',
     resend_code: 'Надіслати код ще раз',
     change_email: 'Використати інший email',
+    paste: 'Вставити',
     back_home: 'На головну',
     error_email: 'Введіть коректну адресу email.',
     error_send_failed: 'Не вдалося надіслати код. Спробуйте ще раз.',

@@ -529,6 +529,7 @@ export default {
     verifying: 'جارٍ التحقق…',
     resend_code: 'إعادة إرسال الرمز',
     change_email: 'استخدام بريد إلكتروني آخر',
+    paste: 'لصق',
     back_home: 'العودة للرئيسية',
     error_email: 'أدخل عنوان بريد إلكتروني صحيح.',
     error_send_failed: 'تعذر إرسال الرمز. يرجى المحاولة مرة أخرى.',

@@ -580,6 +580,7 @@ export default {
     verifying: '확인 중…',
     resend_code: '코드 재전송',
     change_email: '다른 이메일 사용',
+    paste: '붙여넣기',
     back_home: '홈으로',
     error_email: '유효한 이메일 주소를 입력하세요.',
     error_send_failed: '코드를 보낼 수 없습니다. 다시 시도하세요.',

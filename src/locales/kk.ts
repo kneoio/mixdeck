@@ -530,6 +530,7 @@ export default {
     verifying: 'Тексерілуде…',
     resend_code: 'Кодты қайта жіберу',
     change_email: 'Басқа email пайдалану',
+    paste: 'Қою',
     back_home: 'Басты бетке',
     error_email: 'Жарамды email мекенжайын енгізіңіз.',
     error_send_failed: 'Кодты жіберу мүмкін болмады. Қайта көріңіз.',
