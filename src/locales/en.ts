@@ -653,6 +653,7 @@ export default {
     verifying: 'Verifying…',
     resend_code: 'Resend code',
     change_email: 'Use a different email',
+    back_home: 'Back to home',
     error_email: 'Enter a valid email address.',
     error_send_failed: 'Could not send the code. Please try again.',
     error_code_invalid: 'That code didn’t work. Try again or request a new one.',
