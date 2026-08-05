@@ -43,7 +43,7 @@ export const appConfig: AppConfig = {
   stripePublishableKey: readEnvString('VITE_STRIPE_PUBLISHABLE_KEY', ''),
   keycloak: {
     url: normalizeUrl(readEnvString('VITE_KEYCLOAK_URL', 'https://auth.semantyca.com')),
-    realm: readEnvString('VITE_KEYCLOAK_REALM', 'master'),
-    clientId: readEnvString('VITE_KEYCLOAK_CLIENT_ID', 'mixdeck'),
+    realm: readEnvString('VITE_KEYCLOAK_REALM', 'mixpla'),
+    clientId: readEnvString('VITE_KEYCLOAK_CLIENT_ID', 'mixdeck_otp'),
   }
 }

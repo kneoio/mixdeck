@@ -1,182 +1,316 @@
-import Keycloak from 'keycloak-js'
 import { appConfig } from '@/config/appConfig'
 
-function clearAuthCookies() {
-  const cookies = document.cookie.split(';')
-  for (let cookie of cookies) {
-    const eqPos = cookie.indexOf('=')
-    const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim()
-    document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`
-    const domain = window.location.hostname
-    if (domain.includes('.')) {
-      const parentDomain = domain.substring(domain.indexOf('.'))
-      document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${parentDomain}`
-    }
-  }
-  localStorage.clear()
-  sessionStorage.clear()
+const ACCESS_TOKEN_KEY = 'mixdeck_access_token'
+const REFRESH_TOKEN_KEY = 'mixdeck_refresh_token'
+const EXPIRES_AT_KEY = 'mixdeck_token_expires_at'
+
+/** Refresh this many ms before access-token expiry. */
+const REFRESH_SKEW_MS = 30_000
+const MIN_REFRESH_DELAY_MS = 5_000
+const MAX_OTP_FAILURES = 5
+
+export type UserProfile = {
+  username?: string
+  email?: string
+  firstName?: string
+  lastName?: string
+  emailVerified?: boolean
 }
 
-interface AuthState {
+type TokenResponse = {
+  access_token: string
+  refresh_token: string
+  expires_in: number
+  refresh_expires_in: number
+  token_type: string
+}
+
+type AuthState = {
   isAuthenticated: boolean
   token: string | null
-  userProfile: any
+  refreshToken: string | null
+  userProfile: UserProfile | null
+  expiresAt: number | null
 }
 
-let globalKeycloakInstance: Keycloak | null = null
-let globalInitialized = false
-/** In-flight init, shared by every caller — keycloak.init() may only run once per instance. */
-let globalInitPromise: Promise<boolean> | null = null
-let globalAuthState: AuthState = {
-  isAuthenticated: false,
-  token: null,
-  userProfile: null
+export type AuthRequiredListener = (redirectUri?: string) => void
+
+export class AuthRequestError extends Error {
+  status: number
+
+  constructor(message: string, status: number) {
+    super(message)
+    this.name = 'AuthRequestError'
+    this.status = status
+  }
+}
+
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const part = token.split('.')[1]
+    if (!part) return null
+    const base64 = part.replace(/-/g, '+').replace(/_/g, '/')
+    const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4)
+    const json = decodeURIComponent(
+      atob(padded)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    )
+    return JSON.parse(json) as Record<string, unknown>
+  } catch {
+    return null
+  }
+}
+
+function profileFromAccessToken(token: string): UserProfile | null {
+  const payload = decodeJwtPayload(token)
+  if (!payload) return null
+  return {
+    username: String(payload.preferred_username || payload.email || ''),
+    email: String(payload.email || ''),
+    firstName: String(payload.given_name || ''),
+    lastName: String(payload.family_name || ''),
+    emailVerified: Boolean(payload.email_verified),
+  }
 }
 
 class AuthService {
-  private keycloak: Keycloak
-  private state: AuthState
+  private state: AuthState = {
+    isAuthenticated: false,
+    token: null,
+    refreshToken: null,
+    userProfile: null,
+    expiresAt: null,
+  }
 
-  constructor() {
-    if (globalKeycloakInstance) {
-      this.keycloak = globalKeycloakInstance
-      this.state = globalAuthState
-    } else {
-      this.keycloak = new Keycloak({
-        url: appConfig.keycloak.url,
-        realm: appConfig.keycloak.realm,
-        clientId: appConfig.keycloak.clientId
-      })
-      globalKeycloakInstance = this.keycloak
-      this.state = globalAuthState
+  private initialized = false
+  private initPromise: Promise<boolean> | null = null
+  private refreshPromise: Promise<boolean> | null = null
+  private refreshTimer: ReturnType<typeof setTimeout> | null = null
+  private authRequiredListeners = new Set<AuthRequiredListener>()
+
+  onAuthRequired(listener: AuthRequiredListener): () => void {
+    this.authRequiredListeners.add(listener)
+    return () => {
+      this.authRequiredListeners.delete(listener)
     }
+  }
+
+  private notifyAuthRequired(redirectUri?: string) {
+    for (const listener of this.authRequiredListeners) {
+      listener(redirectUri)
+    }
+  }
+
+  private tokenUrl(): string {
+    return `${appConfig.keycloak.url}/realms/${appConfig.keycloak.realm}/protocol/openid-connect/token`
   }
 
   async init(): Promise<boolean> {
-    if (globalInitialized) {
+    if (this.initialized) {
       return this.state.isAuthenticated
     }
-    // Callers can overlap (router guard fires init unawaited on public routes,
-    // then a view awaits it on mount). They must share one run, or the second
-    // keycloak.init() throws and resolves that caller with a null token.
-    if (globalInitPromise) {
-      return globalInitPromise
+    if (this.initPromise) {
+      return this.initPromise
     }
 
-    globalInitPromise = this.runInit().finally(() => {
-      globalInitPromise = null
+    this.initPromise = this.runInit().finally(() => {
+      this.initPromise = null
     })
-    return globalInitPromise
+    return this.initPromise
   }
 
   private async runInit(): Promise<boolean> {
-    const originalFetch = window.fetch
-    let has502Error = false
-    window.fetch = async (...args) => {
-      try {
-        const response = await originalFetch(...args)
-        if (response.status === 502) has502Error = true
-        return response
-      } catch (error) {
-        if (error instanceof Error && error.message.includes('502')) has502Error = true
-        throw error
-      }
-    }
+    const access = localStorage.getItem(ACCESS_TOKEN_KEY)
+    const refresh = localStorage.getItem(REFRESH_TOKEN_KEY)
+    const expiresAtRaw = localStorage.getItem(EXPIRES_AT_KEY)
+    const expiresAt = expiresAtRaw ? Number(expiresAtRaw) : 0
 
-    try {
-      const authenticated = await this.keycloak.init({
-        onLoad: 'check-sso',
-        silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
-        checkLoginIframe: false,
-        pkceMethod: 'S256',
-        flow: 'standard'
-      })
-
-      if (has502Error) {
-        clearAuthCookies()
-        globalInitialized = false
-        globalKeycloakInstance = null
-        window.fetch = originalFetch
-        setTimeout(() => window.location.reload(), 1000)
-        return false
-      }
-
-      globalInitialized = true
-      this.state.isAuthenticated = authenticated
-      globalAuthState.isAuthenticated = authenticated
-
-      if (authenticated) {
-        this.state.token = this.keycloak.token || null
-        this.state.userProfile = await this.keycloak.loadUserProfile()
-        globalAuthState.token = this.state.token
-        globalAuthState.userProfile = this.state.userProfile
-      }
-
-      this.keycloak.onTokenExpired = async () => {
-        const refreshed = await this.refreshToken()
-        if (!refreshed) this.login()
-      }
-
-      window.fetch = originalFetch
-      return authenticated
-    } catch (error) {
-      window.fetch = originalFetch
-      if (has502Error || (error instanceof Error && error.message.includes('502'))) {
-        clearAuthCookies()
-        globalInitialized = false
-        globalKeycloakInstance = null
-        setTimeout(() => window.location.reload(), 1000)
-        return false
-      }
-      globalInitialized = false
+    if (!access || !refresh) {
+      this.initialized = true
       return false
     }
+
+    this.state.token = access
+    this.state.refreshToken = refresh
+    this.state.expiresAt = expiresAt || null
+    this.state.userProfile = profileFromAccessToken(access)
+
+    if (!expiresAt || Date.now() >= expiresAt - REFRESH_SKEW_MS) {
+      const ok = await this.refreshToken()
+      this.initialized = true
+      return ok
+    }
+
+    this.state.isAuthenticated = true
+    this.scheduleRefresh()
+    this.initialized = true
+    return true
   }
 
-  async login(redirectUri?: string): Promise<void> {
+  /** Step 1 — ask datanest to email a 6-digit code. */
+  async requestOtp(email: string): Promise<void> {
+    const response = await fetch(`${appConfig.datanestServer}/auth/otp/request`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    })
+
+    if (response.ok) return
+
+    let message = 'Could not send the code'
     try {
-      if (!globalInitialized) {
-        await this.init()
-      }
-      await this.keycloak.login({ redirectUri: redirectUri ?? window.location.origin })
-    } catch (error) {
-      console.error('Login failed:', error)
+      const data = await response.json()
+      if (typeof data?.error === 'string') message = data.error
+    } catch {
+      // keep default
     }
+    throw new AuthRequestError(message, response.status)
   }
 
-  async logout(): Promise<void> {
-    try {
-      await this.keycloak.logout({ redirectUri: window.location.origin })
-    } catch (error) {
-      console.error('Logout failed:', error)
+  /** Step 2 — exchange email + otp for Keycloak tokens. */
+  async verifyOtp(email: string, otp: string): Promise<void> {
+    const body = new URLSearchParams({
+      grant_type: 'password',
+      client_id: appConfig.keycloak.clientId,
+      username: email,
+      otp,
+      scope: 'openid email profile',
+    })
+
+    const response = await fetch(this.tokenUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body,
+    })
+
+    if (!response.ok) {
+      throw new AuthRequestError('invalid_grant', response.status)
     }
+
+    const data = (await response.json()) as TokenResponse
+    this.applyTokens(data)
   }
 
   async refreshToken(): Promise<boolean> {
-    try {
-      const refreshed = await this.keycloak.updateToken(30)
-      if (refreshed) {
-        this.state.token = this.keycloak.token || null
-        globalAuthState.token = this.state.token
-        return true
-      }
+    if (this.refreshPromise) {
+      return this.refreshPromise
+    }
+    this.refreshPromise = this.doRefresh().finally(() => {
+      this.refreshPromise = null
+    })
+    return this.refreshPromise
+  }
+
+  private async doRefresh(): Promise<boolean> {
+    const refresh = this.state.refreshToken || localStorage.getItem(REFRESH_TOKEN_KEY)
+    if (!refresh) {
+      this.clearSession()
       return false
+    }
+
+    try {
+      const body = new URLSearchParams({
+        grant_type: 'refresh_token',
+        client_id: appConfig.keycloak.clientId,
+        refresh_token: refresh,
+      })
+
+      const response = await fetch(this.tokenUrl(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body,
+      })
+
+      if (!response.ok) {
+        this.clearSession()
+        return false
+      }
+
+      const data = (await response.json()) as TokenResponse
+      this.applyTokens(data)
+      return true
     } catch {
-      this.state.isAuthenticated = false
-      this.state.token = null
-      this.state.userProfile = null
-      globalAuthState.isAuthenticated = false
-      globalAuthState.token = null
-      globalAuthState.userProfile = null
+      this.clearSession()
       return false
     }
   }
 
-  getToken(): string | null { return this.state.token }
-  getUserProfile(): any { return this.state.userProfile }
-  isAuthenticated(): boolean { return this.state.isAuthenticated }
-  getAuthHeader(): { Authorization: string } | {} {
+  private applyTokens(data: TokenResponse) {
+    const expiresAt = Date.now() + data.expires_in * 1000
+    this.state.token = data.access_token
+    this.state.refreshToken = data.refresh_token
+    this.state.expiresAt = expiresAt
+    this.state.isAuthenticated = true
+    this.state.userProfile = profileFromAccessToken(data.access_token)
+
+    localStorage.setItem(ACCESS_TOKEN_KEY, data.access_token)
+    localStorage.setItem(REFRESH_TOKEN_KEY, data.refresh_token)
+    localStorage.setItem(EXPIRES_AT_KEY, String(expiresAt))
+
+    this.scheduleRefresh()
+  }
+
+  private scheduleRefresh() {
+    if (this.refreshTimer) {
+      clearTimeout(this.refreshTimer)
+      this.refreshTimer = null
+    }
+    if (!this.state.expiresAt) return
+
+    const delay = Math.max(this.state.expiresAt - Date.now() - REFRESH_SKEW_MS, MIN_REFRESH_DELAY_MS)
+    this.refreshTimer = setTimeout(async () => {
+      const ok = await this.refreshToken()
+      if (!ok) {
+        this.notifyAuthRequired()
+      }
+    }, delay)
+  }
+
+  private clearSession() {
+    if (this.refreshTimer) {
+      clearTimeout(this.refreshTimer)
+      this.refreshTimer = null
+    }
+    this.state.isAuthenticated = false
+    this.state.token = null
+    this.state.refreshToken = null
+    this.state.userProfile = null
+    this.state.expiresAt = null
+    localStorage.removeItem(ACCESS_TOKEN_KEY)
+    localStorage.removeItem(REFRESH_TOKEN_KEY)
+    localStorage.removeItem(EXPIRES_AT_KEY)
+  }
+
+  /** Opens the in-app login modal (no Keycloak redirect). */
+  async login(redirectUri?: string): Promise<void> {
+    this.notifyAuthRequired(redirectUri)
+  }
+
+  async logout(): Promise<void> {
+    this.clearSession()
+    this.notifyAuthRequired()
+  }
+
+  getToken(): string | null {
+    return this.state.token
+  }
+
+  getUserProfile(): UserProfile | null {
+    return this.state.userProfile
+  }
+
+  isAuthenticated(): boolean {
+    return this.state.isAuthenticated
+  }
+
+  getAuthHeader(): { Authorization: string } | Record<string, never> {
     return this.state.token ? { Authorization: `Bearer ${this.state.token}` } : {}
+  }
+
+  get maxOtpFailures(): number {
+    return MAX_OTP_FAILURES
   }
 }
 

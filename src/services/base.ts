@@ -17,7 +17,7 @@ export interface PagedResult<T> {
 export class ApiClient {
   constructor(protected readonly baseUrl: string) {}
 
-  protected async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  protected async request<T>(endpoint: string, options: RequestInit = {}, retried = false): Promise<T> {
     const authHeaders = authService.getAuthHeader()
     const url = `${this.baseUrl}${endpoint}`
 
@@ -37,8 +37,14 @@ export class ApiClient {
 
     if (!response.ok) {
       if (response.status === 401) {
+        if (!retried) {
+          const refreshed = await authService.refreshToken()
+          if (refreshed) {
+            return this.request<T>(endpoint, options, true)
+          }
+        }
         void authService.login(window.location.href)
-        return new Promise<T>(() => {})
+        throw new Error('Unauthorized')
       }
 
       let errorMessage = `HTTP error! status: ${response.status}`

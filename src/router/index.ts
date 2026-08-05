@@ -231,9 +231,8 @@ router.beforeEach(async (to, _from, next) => {
   }
 
   if (!authStore.isAuthenticated) {
-    isRouteResolving.value = true
-    await authStore.login(window.location.origin + to.fullPath)
     isRouteResolving.value = false
+    await authStore.login(to.fullPath)
     return next(false)
   } else {
     next()

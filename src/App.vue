@@ -15,6 +15,7 @@
           <GsapLoader :size="48"/>
         </div>
         <RouterView/>
+        <LoginModal :show="authStore.showLoginModal"/>
       </NMessageProvider>
     </NLoadingBarProvider>
   </NConfigProvider>
@@ -24,6 +25,7 @@
 import { RouterView } from 'vue-router'
 import { NMessageProvider, NLoadingBarProvider, NGlobalStyle, NConfigProvider } from 'naive-ui'
 import GsapLoader from '@/components/GsapLoader.vue'
+import LoginModal from '@/components/LoginModal.vue'
 import { darkTheme, type GlobalThemeOverrides } from 'naive-ui'
 import {
   enUS, deDE, esAR, frFR, jaJP, ptBR, ruRU, ukUA, arDZ,
@@ -90,8 +92,7 @@ const themeOverrides = computed<GlobalThemeOverrides>(() => {
 
 const naiveTheme = computed(() => themeStore.isDark ? darkTheme : null)
 
-// Shown while a protected route is waiting on auth init / login redirect / lazy chunk
-// load, so the screen never goes blank between the Keycloak redirect and the view mounting.
+// Shown while a protected route is waiting on auth init / lazy chunk load.
 // Public routes render immediately and are unaffected (isRouteResolving stays false for them).
 const showBootOverlay = computed(() => isRouteResolving.value)
 
