@@ -389,7 +389,7 @@ const returnToRoute = computed(() => {
   return typeof value === 'string' && value ? value : null
 })
 const isSharedRoute = computed(() => route.path.startsWith('/shared'))
-const backRoute = computed(() => returnToRoute.value ?? (isSharedRoute.value ? '/shared' : (brandSlug.value ? `/brands/${brandSlug.value}/playlist` : '/sound-library/archived')))
+const backRoute = computed(() => returnToRoute.value ?? (isSharedRoute.value ? '/shared' : (brandSlug.value ? `/playlist?brand=${encodeURIComponent(brandSlug.value)}` : '/playlist')))
 const formLabelPlacement = computed(() => (isMobile.value ? 'top' : 'left'))
 
 function updateIsMobile() {

@@ -50,9 +50,7 @@ const actionsStore = useActionsStore()
 const isSettings = computed(() => route.name === 'brand-settings')
 const isEditing = computed(() => isSettings.value)
 
-const backRoute = computed(() =>
-  isSettings.value ? '/mixdeck' : '/brands'
-)
+const backRoute = computed(() => '/brands')
 
 const formTitle = computed(() => {
   if (!isEditing.value) return t('brandForm.create_title')
@@ -812,7 +810,7 @@ async function handleSave() {
         ?? (savedBrand as any)?.payload?.docData?.slugName
       if (newSlug) {
         await store.loadBrands()
-        await router.push(`/brands/${newSlug}/playlist`)
+        await router.push({ path: '/playlist', query: { brand: newSlug } })
       }
     }
   } catch (error: any) {
@@ -832,7 +830,7 @@ async function handleCloseBrand() {
     await store.loadBrands()
     const nextBrand = store.brands[0]
     if (nextBrand?.slugName) {
-      await router.push(`/brands/${nextBrand.slugName}/playlist`)
+      await router.push('/brands')
     } else {
       await router.push('/broadcaster-welcome')
     }

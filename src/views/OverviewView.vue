@@ -184,7 +184,7 @@ function ledState(brand: Brand): { active: boolean; color: string; label: string
 }
 
 function goPlaylist(brand: Brand) {
-  router.push(`/brands/${brand.slugName}/playlist`)
+  router.push({ path: '/playlist', query: { brand: brand.slugName } })
 }
 
 const copiedId = ref<string | null>(null)

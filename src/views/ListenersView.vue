@@ -3,7 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
-  NDataTable, NPopconfirm, NButton, NIcon, useMessage, type DataTableColumns
+  NDataTable, NPopconfirm, NButton, NIcon, NSelect, useMessage, type DataTableColumns
 } from 'naive-ui'
 import { useBrandsStore } from '@/stores/brands'
 import { useListenersStore } from '@/stores/listeners'
@@ -32,11 +32,35 @@ const { pageNum, pageSize, setPage, setPageSize, syncToQuery } = useRoutePaginat
 const maxPage = ref(1)
 const selectedIds = ref<string[]>([])
 
-const brand = computed(() => brandsStore.brands.find(b => b.slugName === route.params.slug))
-const slugName = computed(() => brand.value?.slugName ?? (route.params.slug as string) ?? '')
-const brandName = computed(() =>
-  brand.value?.localizedName?.['en'] || brand.value?.title || brand.value?.slugName || (route.params.slug as string)
+const selectedBrand = computed(() => typeof route.query.brand === 'string' ? route.query.brand : '')
+const slugName = computed(() => selectedBrand.value)
+const brandOptions = computed(() => [
+  { label: t('menu.filter_all_brands'), value: '', style: { fontWeight: 700 } },
+  ...brandsStore.brands.map(b => ({
+    label: b.localizedName?.['en'] || b.title || b.slugName || '',
+    value: b.slugName as string,
+  })),
+])
+
+function onBrandFilter(val: string | null) {
+  const query = { ...route.query }
+  if (val) query.brand = val
+  else delete query.brand
+  delete query.page
+  pageNum.value = 1
+  void router.replace({ query })
+}
+
+const newListenerPath = computed(() =>
+  selectedBrand.value
+    ? `/brands/${selectedBrand.value}/listeners/new`
+    : '/listeners/new'
 )
+function editListenerPath(id: string) {
+  return selectedBrand.value
+    ? `/brands/${selectedBrand.value}/listeners/${id}`
+    : `/listeners/${id}`
+}
 
 const pagination = computed(() => ({
   page: pageNum.value,
@@ -68,10 +92,9 @@ const columns = computed<DataTableColumns<any>>(() => [
 ])
 
 async function fetchData(page = pageNum.value, size = pageSize.value) {
-  if (!slugName.value) return
   loading.value = true
   try {
-    const result = await datanestApiService.getBrandListeners(slugName.value, page, size)
+    const result = await datanestApiService.getBrandListeners(selectedBrand.value || null, page, size)
     entries.value = result.entries
     totalCount.value = result.count
     pageNum.value = result.pageNum
@@ -101,15 +124,16 @@ async function handleDelete() {
 }
 
 // Fetch when slugName becomes available (brand loaded from store)
-watch(slugName, (val) => { if (val) fetchData() }, { immediate: true })
+watch(selectedBrand, () => { void fetchData() }, { immediate: true })
 </script>
 
 <template>
   <div>
-    <PageHeader :title="brandName" :subtitle="t('listenersView.subtitle')" :count="totalCount" />
+    <PageHeader :title="t('menu.listeners')" :subtitle="t('listenersView.subtitle')" :count="totalCount" />
     <ActionBar>
-      <div class="gsap-row">
-        <GsapButton type="primary" @click="router.push({ path: `/brands/${route.params.slug}/listeners/new`, query: { returnTo: route.fullPath } })">
+      <div class="listeners-action-row">
+        <div class="gsap-row">
+        <GsapButton type="primary" @click="router.push({ path: newListenerPath, query: { returnTo: route.fullPath } })">
           <span>{{ t('listenersView.new_listener') }}</span>
         </GsapButton>
         <NPopconfirm @positive-click="handleDelete">
@@ -123,6 +147,15 @@ watch(slugName, (val) => { if (val) fetchData() }, { immediate: true })
         <NButton quaternary circle size="small" style="opacity:0.5" @click="fetchData()">
           <template #icon><NIcon :component="RefreshOutline" /></template>
         </NButton>
+        </div>
+        <NSelect
+          :value="selectedBrand"
+          :options="brandOptions"
+          filterable
+          :placeholder="t('menu.my_brands')"
+          style="width: 200px"
+          @update:value="onBrandFilter"
+        />
       </div>
     </ActionBar>
     <NDataTable
@@ -133,7 +166,7 @@ watch(slugName, (val) => { if (val) fetchData() }, { immediate: true })
       v-model:checked-row-keys="selectedIds"
       :pagination="pagination"
       remote
-      :row-props="(row: any) => ({ style: 'cursor:pointer', onClick: (e: MouseEvent) => { if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return; router.push({ path: `/brands/${route.params.slug}/listeners/${row.id || row.listener?.id}`, query: { returnTo: route.fullPath } }) } })"
+      :row-props="(row: any) => ({ style: 'cursor:pointer', onClick: (e: MouseEvent) => { if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return; router.push({ path: editListenerPath(row.id || row.listener?.id), query: { returnTo: route.fullPath } }) } })"
       @update:page="(p) => { setPage(p); fetchData(p) }"
       @update:page-size="(s) => { setPageSize(s); fetchData(1, s) }"
     >
@@ -141,3 +174,13 @@ watch(slugName, (val) => { if (val) fetchData() }, { immediate: true })
     </NDataTable>
   </div>
 </template>
+
+<style>
+.listeners-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+</style>

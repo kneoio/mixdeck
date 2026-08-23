@@ -19,14 +19,10 @@ import {
   NDrawer, NDrawerContent, type MenuOption
 } from 'naive-ui'
 import {
-  HeadsetOutline as ListenersIcon,
-  MusicalNotesOutline as PlaylistIcon,
-  SettingsOutline as SettingsIcon,
   LogOutOutline as LogoutIcon,
   SunnyOutline as LightIcon,
   MoonOutline as DarkIcon,
   MenuOutline as HamburgerIcon,
-  AddOutline as AddIcon,
   PersonOutline as ProfileIcon,
   ChatbubbleEllipsesOutline as AskIcon,
 } from '@vicons/ionicons5'
@@ -180,55 +176,22 @@ watch(
 // Derive active menu key from current route
 const activeKey = computed(() => {
   const path = route.path
-  if (path === '/mixdeck' || path === '/brands') return 'overview'
+  if (path === '/mixdeck') return 'overview'
+  if (path === '/playlist' || path.startsWith('/sound-library/archived')) return 'playlist'
+  if (path === '/listeners' || path.includes('/listeners')) return 'listeners'
+  if (path === '/brands' || path === '/brands/new' || path.endsWith('/settings')) return 'brands'
   if (path === '/shared') return 'sound-library-contributed'
   if (path === '/sound-library/received') return 'sound-library-received'
-  if (path === '/sound-library/archived') return 'sound-library-archived'
   if (path === '/sound-library/sound-assets') return 'sound-library-assets'
   if (path === '/one-time-streams') return 'sound-library-ots'
-  const m = path.match(/^\/brands\/([^/]+)\/(\w+)$/)
-  if (m) return `brand-${m[1]}-${m[2]}`
-  if (path === '/brands/new') return 'brands-manage'
   return null
 })
 
-// Manually controlled expanded keys so user can expand/collapse brand rows
-const expandedKeys = ref<string[]>(['sound-library-root', 'brands-group'])
-
-watch(
-  () => brandsStore.brands,
-  (brands) => {
-    const brandKeys = brands.map(b => `brand-root-${b.slugName}`)
-    const next = [...expandedKeys.value]
-    for (const k of brandKeys) {
-      if (!next.includes(k)) next.push(k)
-    }
-    expandedKeys.value = next
-  },
-  { immediate: true }
-)
-
-// When route changes to a brand sub-page, auto-expand that brand
-watch(
-  () => route.path,
-  (path) => {
-    const m = path.match(/^\/brands\/([^/]+)\//)
-    if (m) {
-      const key = `brand-root-${m[1]}`
-      if (!expandedKeys.value.includes(key)) {
-        expandedKeys.value = [...expandedKeys.value, key]
-      }
-    }
-  },
-  { immediate: true }
-)
+const expandedKeys = ref<string[]>(['sound-library-root', 'broadcast-root'])
 
 function handleUpdateExpandedKeys(keys: string[]) {
   expandedKeys.value = keys
 }
-
-const brandLabel = (brand: any) =>
-  brand.localizedName?.['en'] || brand.title || brand.slugName || ''
 
 const menuOptions = computed<MenuOption[]>(() => [
   {
@@ -237,44 +200,12 @@ const menuOptions = computed<MenuOption[]>(() => [
     icon: () => h(AnimatedBoxesIcon, { size: 18, color: '#FF2D95' }),
   },
   {
-    label: () => h('span', { style: 'font-weight: 700;' }, t('menu.my_brands')),
-    key: 'brands-group',
-    children: [
-      ...brandsStore.brands.map(brand => ({
-        label: brandLabel(brand),
-        key: `brand-root-${brand.slugName}`,
-        children: [
-          {
-            label: t('menu.listeners'),
-            key: `brand-${brand.slugName}-listeners`,
-            icon: () => h(NIcon, null, { default: () => h(ListenersIcon) }),
-          },
-          {
-            label: t('menu.playlist'),
-            key: `brand-${brand.slugName}-playlist`,
-            icon: () => h(NIcon, null, { default: () => h(PlaylistIcon) }),
-          },
-          {
-            label: t('menu.settings'),
-            key: `brand-${brand.slugName}-settings`,
-            icon: () => h(NIcon, null, { default: () => h(SettingsIcon) }),
-          },
-        ],
-      })),
-      {
-        label: () => h('span', { style: 'color: var(--vt-c-primary); font-weight: 600;' }, t('menu.add_new')),
-        key: 'brands-new',
-        icon: () => h(NIcon, { color: 'var(--vt-c-primary)' }, { default: () => h(AddIcon) }),
-      },
-    ],
-  },
-  {
     label: () => h('span', { style: 'font-weight: 700;' }, t('menu.my_sounds')),
     key: 'sound-library-root',
     children: [
       {
-        label: t('menu.unassigned_brands'),
-        key: 'sound-library-archived',
+        label: t('menu.playlist'),
+        key: 'playlist',
       },
       {
         label: t('menu.songs'),
@@ -294,6 +225,20 @@ const menuOptions = computed<MenuOption[]>(() => [
       },
     ],
   },
+  {
+    label: () => h('span', { style: 'font-weight: 700;' }, t('menu.broadcast')),
+    key: 'broadcast-root',
+    children: [
+      {
+        label: t('menu.listeners'),
+        key: 'listeners',
+      },
+      {
+        label: t('menu.my_brands'),
+        key: 'brands',
+      },
+    ],
+  },
 ])
 
 const handleMenuSelect = async (key: string) => {
@@ -305,29 +250,20 @@ const handleMenuSelect = async (key: string) => {
 
   if (key === 'overview') {
     router.push('/mixdeck')
-  } else if (key === 'brands-manage') {
+  } else if (key === 'playlist') {
+    router.push('/playlist')
+  } else if (key === 'listeners') {
+    router.push('/listeners')
+  } else if (key === 'brands') {
     router.push('/brands')
   } else if (key === 'sound-library-contributed') {
     router.push('/shared')
   } else if (key === 'sound-library-received') {
     router.push('/sound-library/received')
-  } else if (key === 'sound-library-archived') {
-    router.push('/sound-library/archived')
   } else if (key === 'sound-library-assets') {
     router.push('/sound-library/sound-assets')
   } else if (key === 'sound-library-ots') {
     router.push('/one-time-streams')
-  } else if (key === 'brands-new') {
-    router.push('/brands/new')
-  } else if (key.startsWith('brand-') && key.endsWith('-listeners')) {
-    const slug = key.replace('brand-', '').replace('-listeners', '')
-    router.push(`/brands/${slug}/listeners`)
-  } else if (key.startsWith('brand-') && key.endsWith('-playlist')) {
-    const slug = key.replace('brand-', '').replace('-playlist', '')
-    router.push(`/brands/${slug}/playlist`)
-  } else if (key.startsWith('brand-') && key.endsWith('-settings')) {
-    const slug = key.replace('brand-', '').replace('-settings', '')
-    router.push(`/brands/${slug}/settings`)
   }
 }
 

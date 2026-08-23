@@ -12,9 +12,14 @@ class DatanestApiService extends ApiClient {
     super(appConfig.datanestServer)
   }
 
-  async getBrandListeners(brandSlug: string, page = 1, pageSize = 10): Promise<PagedResult<any>> {
+  /** Omit brand (null/undefined) — BE must return all listeners. */
+  async getBrandListeners(brandSlug?: string | null, page = 1, pageSize = 10): Promise<PagedResult<any>> {
+    const params = new URLSearchParams()
+    if (brandSlug) params.set('brand', brandSlug)
+    params.set('page', String(page))
+    params.set('size', String(pageSize))
     const response = await this.request<any>(
-      `/public/listeners/available-listeners?brand=${encodeURIComponent(brandSlug)}&page=${page}&size=${pageSize}`
+      `/public/listeners/available-listeners?${params}`
     )
     const viewData = response?.payload?.viewData ?? response?.viewData
     if (!viewData) throw new Error('Unexpected response format')
@@ -27,8 +32,9 @@ class DatanestApiService extends ApiClient {
     }
   }
 
+  /** Omit brand (null/undefined) — BE must return all sound fragments. */
   async getBrandPlaylist(
-    brandSlug: string,
+    brandSlug?: string | null,
     page = 1,
     pageSize = 10,
     filters: {
@@ -42,7 +48,7 @@ class DatanestApiService extends ApiClient {
     } = {}
   ): Promise<PagedResult<any>> {
     const params = new URLSearchParams()
-    params.set('brand', brandSlug)
+    if (brandSlug) params.set('brand', brandSlug)
     params.set('page', String(page))
     params.set('size', String(pageSize))
     const cleanFilters: Record<string, any> = {}

@@ -20,7 +20,9 @@ const store = useListenersStore()
 const constantsStore = useConstantsStore()
 const message = useMessage()
 
-const brandSlug = computed(() => route.params.slug as string)
+const brandSlug = computed(() =>
+  (route.params.slug as string) || (typeof route.query.brand === 'string' ? route.query.brand : '')
+)
 const listenerId = computed(() => route.params.listenerId as string)
 const isEditing = computed(() => !!listenerId.value && listenerId.value !== 'new')
 const pageTitle = computed(() => isEditing.value ? t('listenerForm.edit_title') : t('listenerForm.create_title'))
@@ -28,7 +30,7 @@ const returnToRoute = computed(() => {
   const value = route.query.returnTo
   return typeof value === 'string' && value ? value : null
 })
-const backRoute = computed(() => returnToRoute.value ?? `/brands/${brandSlug.value}/listeners`)
+const backRoute = computed(() => returnToRoute.value ?? (brandSlug.value ? `/listeners?brand=${encodeURIComponent(brandSlug.value)}` : '/listeners'))
 const formLabelPlacement = computed(() => (isMobile.value ? 'top' : 'left'))
 
 const loading = ref(false)

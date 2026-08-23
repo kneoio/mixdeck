@@ -65,10 +65,32 @@ const router = createRouter({
           meta: { requiresAuth: true }
         },
         {
-          path: '/sound-library/archived',
-          name: 'sound-library-archived',
-          component: () => import('../views/ArchivedView.vue'),
+          path: '/playlist',
+          name: 'playlist',
+          component: () => import('../views/PlaylistView.vue'),
           meta: { requiresAuth: true }
+        },
+        {
+          path: '/listeners',
+          name: 'listeners',
+          component: () => import('../views/ListenersView.vue'),
+          meta: { requiresAuth: true }
+        },
+        {
+          path: '/listeners/new',
+          name: 'listener-new',
+          component: () => import('../components/forms/ListenerForm.vue'),
+          meta: { requiresAuth: true }
+        },
+        {
+          path: '/listeners/:listenerId',
+          name: 'listener-edit',
+          component: () => import('../components/forms/ListenerForm.vue'),
+          meta: { requiresAuth: true }
+        },
+        {
+          path: '/sound-library/archived',
+          redirect: '/playlist',
         },
         {
           path: '/sound-library/archived/new',
@@ -115,9 +137,7 @@ const router = createRouter({
         // Brand sub-pages (must come after /brands/new)
         {
           path: '/brands/:slug/listeners',
-          name: 'brand-listeners',
-          component: () => import('../views/ListenersView.vue'),
-          meta: { requiresAuth: true }
+          redirect: to => ({ path: '/listeners', query: { brand: String(to.params.slug) } }),
         },
         {
           path: '/brands/:slug/listeners/new',
@@ -133,9 +153,7 @@ const router = createRouter({
         },
         {
           path: '/brands/:slug/playlist',
-          name: 'brand-playlist',
-          component: () => import('../views/PlaylistView.vue'),
-          meta: { requiresAuth: true }
+          redirect: to => ({ path: '/playlist', query: { brand: String(to.params.slug) } }),
         },
         {
           path: '/brands/:slug/playlist/new',
@@ -175,8 +193,8 @@ const router = createRouter({
         },
         {
           path: '/brands',
-          name: 'brands-redirect',
-          component: () => import('../views/OverviewView.vue'),
+          name: 'brands',
+          component: () => import('../views/BrandsView.vue'),
           meta: { requiresAuth: true }
         },
         {

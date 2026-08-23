@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, watch, h, onMounted } from 'vue'
+import { ref, computed, watch, h } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
-  NDataTable, NSpace, NPopconfirm, NInput, NTag, NIcon, NButton,
+  NDataTable, NSpace, NPopconfirm, NInput, NSelect, NTag, NIcon, NButton,
   type DataTableColumns, type DataTableSortState, useMessage
 } from 'naive-ui'
 import { ShareSocialOutline, PlayOutline, PauseOutline, RefreshOutline, ArrowUpOutline, ArrowDownOutline } from '@vicons/ionicons5'
@@ -71,7 +71,6 @@ function syncSortToQuery() {
 const showBulkUpload = ref(false)
 const showShareDialog = ref(false)
 const shareFragmentIds = ref<string[]>([])
-const brandDoc = ref<any | null>(null)
 
 async function toggleRowPlay(row: any, e: MouseEvent) {
   e.stopPropagation()
@@ -116,15 +115,35 @@ function resolveLabel(l: any) {
   return { name: l.identifier, color: l.color, fontColor: l.fontColor }
 }
 
-const brand = computed(() => brandsStore.brands.find(b => b.slugName === route.params.slug))
-const effectiveBrand = computed(() => brand.value ?? brandDoc.value)
-const slugName = computed(() => effectiveBrand.value?.slugName ?? (route.params.slug as string) ?? '')
-const brandName = computed(() =>
-  effectiveBrand.value?.localizedName?.['en']
-    || effectiveBrand.value?.title
-    || effectiveBrand.value?.slugName
-    || (route.params.slug as string)
+const selectedBrand = computed(() => typeof route.query.brand === 'string' ? route.query.brand : '')
+const slugName = computed(() => selectedBrand.value)
+const brandOptions = computed(() => [
+  { label: t('menu.filter_all_brands'), value: '', style: { fontWeight: 700 } },
+  ...brandsStore.brands.map(b => ({
+    label: b.localizedName?.['en'] || b.title || b.slugName || '',
+    value: b.slugName as string,
+  })),
+])
+
+function onBrandFilter(val: string | null) {
+  const query = { ...route.query }
+  if (val) query.brand = val
+  else delete query.brand
+  delete query.page
+  pageNum.value = 1
+  void router.replace({ query })
+}
+
+const newTrackPath = computed(() =>
+  selectedBrand.value
+    ? `/brands/${selectedBrand.value}/playlist/new`
+    : '/sound-library/archived/new'
 )
+function editTrackPath(id: string) {
+  return selectedBrand.value
+    ? `/brands/${selectedBrand.value}/playlist/${id}`
+    : `/sound-library/archived/${id}`
+}
 
 const pagination = computed(() => ({
   page: pageNum.value,
@@ -143,7 +162,8 @@ async function changeBoost(row: any, delta: number, e: MouseEvent) {
   if (next === cur) return
   boostingId.value = row.slugName
   try {
-    await datanestApiService.patchSoundFragmentBoost(row.slugName, route.params.slug as string, next, row.shared ? 'shared' : 'brand')
+    if (!selectedBrand.value) return
+    await datanestApiService.patchSoundFragmentBoost(row.slugName, selectedBrand.value, next, row.shared ? 'shared' : 'brand')
     row.boost = next
   } catch (err: any) {
     handleApiError(err, message)
@@ -371,11 +391,10 @@ function handleSorterChange(sorter: DataTableSortState | DataTableSortState[] | 
 }
 
 async function fetchData(page = pageNum.value, size = pageSize.value) {
-  if (!slugName.value) return
   loading.value = true
   try {
     const result = await datanestApiService.getBrandPlaylist(
-      slugName.value, page, size,
+      selectedBrand.value || null, page, size,
       buildPlaylistFilters()
     )
     entries.value = result.entries
@@ -387,18 +406,6 @@ async function fetchData(page = pageNum.value, size = pageSize.value) {
     handleApiError(e, message)
   } finally {
     loading.value = false
-  }
-}
-
-async function ensureBrandLoaded() {
-  if (brand.value) {
-    brandDoc.value = null
-    return
-  }
-  try {
-    brandDoc.value = await brandsStore.fetchBrand(route.params.slug as string)
-  } catch {
-    brandDoc.value = null
   }
 }
 
@@ -436,24 +443,10 @@ function onSearchChange() {
   }, 400)
 }
 
-onMounted(() => {
-  ensureBrandLoaded()
-})
-
-
-watch(
-  () => route.params.slug,
-  () => {
-    const parsed = parseSortFromQuery()
-    sortBy.value = parsed.sortBy
-    sortDesc.value = parsed.sortDesc
-    brandDoc.value = null
-    ensureBrandLoaded()
-  },
-  { immediate: true }
-)
-
-watch(slugName, (val) => { if (val) { loadDictionaries(); fetchData() } }, { immediate: true })
+watch(selectedBrand, () => {
+  loadDictionaries()
+  void fetchData()
+}, { immediate: true })
 watch(showBulkUpload, (isOpen, wasOpen) => {
   if (wasOpen && !isOpen) fetchData()
 })
@@ -461,14 +454,14 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
 
 <template>
   <div>
-    <PageHeader :title="brandName" :subtitle="t('playlistView.subtitle')" :count="totalCount" />
+    <PageHeader :title="t('menu.playlist')" :subtitle="t('playlistView.subtitle')" :count="totalCount" />
     <ActionBar>
       <div class="playlist-action-row">
         <div class="gsap-row" style="padding-left:0;flex-wrap:wrap">
-          <GsapButton type="primary" @click="router.push({ path: `/brands/${route.params.slug}/playlist/new`, query: { returnTo: route.fullPath } })">
+          <GsapButton type="primary" @click="router.push({ path: newTrackPath, query: { returnTo: route.fullPath } })">
             <span>{{ t('playlistView.new_track') }}</span>
           </GsapButton>
-          <GsapButton @click="showBulkUpload = true"><span>{{ t('playlistView.bulk_upload') }}</span></GsapButton>
+          <GsapButton :disabled="!selectedBrand" @click="showBulkUpload = true"><span>{{ t('playlistView.bulk_upload') }}</span></GsapButton>
           <GsapButton :disabled="selectedIds.length === 0" @click="openShareBulk">
             <span>{{ t('playlistView.share_btn', { count: selectedIds.length }) }}</span>
           </GsapButton>
@@ -484,13 +477,23 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
             <template #icon><NIcon :component="RefreshOutline" /></template>
           </NButton>
         </div>
-        <NInput
-          v-model:value="searchTerm"
-          :placeholder="t('playlistView.search')"
-          clearable
-          style="width: 220px"
-          @update:value="onSearchChange"
-        />
+        <div class="playlist-filters">
+          <NSelect
+            :value="selectedBrand"
+            :options="brandOptions"
+            filterable
+            :placeholder="t('menu.my_brands')"
+            style="width: 200px"
+            @update:value="onBrandFilter"
+          />
+          <NInput
+            v-model:value="searchTerm"
+            :placeholder="t('playlistView.search')"
+            clearable
+            style="width: 220px"
+            @update:value="onSearchChange"
+          />
+        </div>
       </div>
     </ActionBar>
     <BulkUploadDialog
@@ -515,7 +518,7 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
         remote
         :row-props="(row: any) => ({
           style: stackedRows ? 'cursor:pointer' : 'cursor:pointer;height:48px',
-          onClick: (e: MouseEvent) => { if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return; router.push({ path: `/brands/${route.params.slug}/playlist/${row.slugName}`, query: { returnTo: route.fullPath } }) }
+          onClick: (e: MouseEvent) => { if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return; router.push({ path: editTrackPath(row.slugName), query: { returnTo: route.fullPath } }) }
         })"
         @update:page="(p) => { setPage(p); fetchData(p) }"
         @update:page-size="(s) => { setPageSize(s); fetchData(1, s) }"
@@ -580,6 +583,12 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
   color: var(--vt-c-primary);
 }
 
+.playlist-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
 .playlist-action-row {
   display: flex;
   align-items: center;
@@ -591,7 +600,8 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
     flex-wrap: wrap;
     gap: 8px;
   }
-  .playlist-action-row .n-input {
+  .playlist-action-row .n-input,
+  .playlist-action-row .n-select {
     width: 100% !important;
   }
 }
