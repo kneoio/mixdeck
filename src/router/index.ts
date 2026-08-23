@@ -29,6 +29,12 @@ const router = createRouter({
       meta: { requiresAuth: false }
     },
     {
+      path: '/ots',
+      name: 'ots-master',
+      component: () => import('../views/OtsMasterView.vue'),
+      meta: { requiresAuth: false }
+    },
+    {
       path: '/demo',
       name: 'demo',
       component: () => import('../views/DemoView.vue'),
