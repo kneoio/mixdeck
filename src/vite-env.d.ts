@@ -3,6 +3,7 @@
 
 interface ImportMetaEnv {
   readonly VITE_DATANEST_SERVER: string
+  readonly VITE_OTP_DATANEST_SERVER: string
   readonly VITE_CORE_SERVER: string
   readonly VITE_METRIQ_SERVER: string
   readonly VITE_AIVOX_SERVER: string

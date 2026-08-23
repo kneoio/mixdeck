@@ -4,10 +4,11 @@ const ACCESS_TOKEN_KEY = 'mixdeck_access_token'
 const REFRESH_TOKEN_KEY = 'mixdeck_refresh_token'
 const EXPIRES_AT_KEY = 'mixdeck_token_expires_at'
 
-/** Same-origin Keycloak endpoints (proxied via mixpla.io). */
-const KEYCLOAK_TOKEN_URL = '/auth/realms/mixpla/protocol/openid-connect/token'
-const KEYCLOAK_LOGOUT_URL = '/auth/realms/mixpla/protocol/openid-connect/logout'
-const KEYCLOAK_CLIENT_ID = 'mixdeck_otp'
+/** Always hit remote Keycloak (dev and prod). */
+const KEYCLOAK_REALM_BASE = `${appConfig.keycloak.url}/realms/${appConfig.keycloak.realm}`
+const KEYCLOAK_TOKEN_URL = `${KEYCLOAK_REALM_BASE}/protocol/openid-connect/token`
+const KEYCLOAK_LOGOUT_URL = `${KEYCLOAK_REALM_BASE}/protocol/openid-connect/logout`
+const KEYCLOAK_CLIENT_ID = appConfig.keycloak.clientId
 
 /** Refresh this many ms before access-token expiry. */
 const REFRESH_SKEW_MS = 30_000
@@ -152,7 +153,7 @@ class AuthService {
 
   /** Step 1 — ask datanest to email a 6-digit code. */
   async requestOtp(email: string): Promise<void> {
-    const response = await fetch(`${appConfig.datanestServer}/auth/otp/request`, {
+    const response = await fetch(`${appConfig.otpDatanestServer}/auth/otp/request`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
