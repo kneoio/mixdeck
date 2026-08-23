@@ -4,11 +4,14 @@ const ACCESS_TOKEN_KEY = 'mixdeck_access_token'
 const REFRESH_TOKEN_KEY = 'mixdeck_refresh_token'
 const EXPIRES_AT_KEY = 'mixdeck_token_expires_at'
 
-/** Always hit remote Keycloak (dev and prod). */
-const KEYCLOAK_REALM_BASE = `${appConfig.keycloak.url}/realms/${appConfig.keycloak.realm}`
+/** Prod: same-origin proxy on mixpla.io. Dev: remote Keycloak (no local proxy). */
+const KEYCLOAK_REALM_BASE = import.meta.env.PROD
+  ? `/auth/realms/${appConfig.keycloak.realm}`
+  : `${appConfig.keycloak.url}/realms/${appConfig.keycloak.realm}`
 const KEYCLOAK_TOKEN_URL = `${KEYCLOAK_REALM_BASE}/protocol/openid-connect/token`
 const KEYCLOAK_LOGOUT_URL = `${KEYCLOAK_REALM_BASE}/protocol/openid-connect/logout`
-const KEYCLOAK_CLIENT_ID = appConfig.keycloak.clientId
+/** OTP direct-access grant — not the OIDC `mixpla_web` client in env. */
+const KEYCLOAK_CLIENT_ID = 'mixdeck_otp'
 
 /** Refresh this many ms before access-token expiry. */
 const REFRESH_SKEW_MS = 30_000
