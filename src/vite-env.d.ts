@@ -12,6 +12,8 @@ interface ImportMetaEnv {
   readonly VITE_KEYCLOAK_URL: string
   readonly VITE_KEYCLOAK_REALM: string
   readonly VITE_KEYCLOAK_CLIENT_ID: string
+  /** Dev-only. Put in `.env.local` (gitignored) to skip OTP. */
+  readonly VITE_DEV_ACCESS_TOKEN?: string
 }
 
 interface ImportMeta {

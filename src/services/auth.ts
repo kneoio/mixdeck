@@ -51,6 +51,15 @@ export class AuthRequestError extends Error {
   }
 }
 
+function readDevAccessToken(): string | null {
+  if (!import.meta.env.DEV) return null
+  const value = import.meta.env.VITE_DEV_ACCESS_TOKEN
+  if (typeof value === 'string' && value.trim() !== '') {
+    return value.trim()
+  }
+  return null
+}
+
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
   try {
     const part = token.split('.')[1]
@@ -95,6 +104,8 @@ class AuthService {
   private refreshPromise: Promise<boolean> | null = null
   private refreshTimer: ReturnType<typeof setTimeout> | null = null
   private authRequiredListeners = new Set<AuthRequiredListener>()
+  /** True when the session came from `VITE_DEV_ACCESS_TOKEN` (no Keycloak refresh). */
+  private staticDevToken = false
 
   onAuthRequired(listener: AuthRequiredListener): () => void {
     this.authRequiredListeners.add(listener)
@@ -124,6 +135,13 @@ class AuthService {
   }
 
   private async runInit(): Promise<boolean> {
+    const devToken = readDevAccessToken()
+    if (devToken) {
+      this.applyStaticDevToken(devToken)
+      this.initialized = true
+      return true
+    }
+
     const access = localStorage.getItem(ACCESS_TOKEN_KEY)
     const refresh = localStorage.getItem(REFRESH_TOKEN_KEY)
     const expiresAtRaw = localStorage.getItem(EXPIRES_AT_KEY)
@@ -206,6 +224,10 @@ class AuthService {
   }
 
   private async doRefresh(): Promise<boolean> {
+    if (this.staticDevToken) {
+      return true
+    }
+
     const refresh = this.state.refreshToken || localStorage.getItem(REFRESH_TOKEN_KEY)
     if (!refresh) {
       this.clearSession()
@@ -237,6 +259,16 @@ class AuthService {
       this.clearSession()
       return false
     }
+  }
+
+  private applyStaticDevToken(token: string) {
+    console.log('mixdeck in dev mode')
+    this.staticDevToken = true
+    this.state.token = token
+    this.state.refreshToken = null
+    this.state.expiresAt = null
+    this.state.isAuthenticated = true
+    this.state.userProfile = profileFromAccessToken(token)
   }
 
   private applyTokens(data: TokenResponse) {
@@ -275,6 +307,7 @@ class AuthService {
       clearTimeout(this.refreshTimer)
       this.refreshTimer = null
     }
+    this.staticDevToken = false
     this.state.isAuthenticated = false
     this.state.token = null
     this.state.refreshToken = null
