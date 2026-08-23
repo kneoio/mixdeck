@@ -200,15 +200,38 @@
               <div class="step step--success">
                 <h2>{{ t('otsMaster.success_heading') }}</h2>
                 <p class="step-body">{{ t('otsMaster.success_body') }}</p>
+                <p class="play-hint">{{ t('otsMaster.play_hint') }}</p>
               </div>
               <div class="summary-box">
                 <div class="summary-row">
                   <span class="summary-label">{{ t('otsForm.name_label') }}</span>
                   <span>{{ formData.name }}</span>
                 </div>
-                <div v-if="createdLink" class="summary-row">
+                <div v-if="createdLink" class="summary-row summary-row--link">
                   <span class="summary-label">{{ t('otsListView.col_link') }}</span>
-                  <a :href="createdLink" target="_blank" rel="noopener noreferrer" class="summary-link">{{ createdLink }}</a>
+                  <div class="link-actions">
+                    <a :href="createdLink" target="_blank" rel="noopener noreferrer" class="summary-link">{{ createdLink }}</a>
+                    <button
+                      type="button"
+                      class="copy-btn"
+                      :class="{ 'copy-btn--done': linkCopied }"
+                      :title="t('otsMaster.copy_link')"
+                      @click="copyLink"
+                    >
+                      <svg v-if="!linkCopied" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                      <svg v-else width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                      <span>{{ linkCopied ? t('otsMaster.copied') : t('otsMaster.copy_link') }}</span>
+                    </button>
+                    <button
+                      type="button"
+                      class="copy-btn"
+                      :title="t('otsMaster.share')"
+                      @click="shareLink"
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                      <span>{{ t('otsMaster.share') }}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
               <div class="success-actions">
@@ -306,6 +329,7 @@ const scripts = computed(() => scriptsStore.scripts)
 const selectedScriptSlug = ref<string | null>(null)
 const scriptDetail = ref<Script | null>(null)
 const createdLink = ref('')
+const linkCopied = ref(false)
 
 const formData = ref({
   name: '',
@@ -540,10 +564,34 @@ function openStream() {
   if (createdLink.value) window.open(createdLink.value, '_blank', 'noopener,noreferrer')
 }
 
+function copyLink() {
+  if (!createdLink.value) return
+  navigator.clipboard.writeText(createdLink.value)
+  linkCopied.value = true
+  setTimeout(() => { linkCopied.value = false }, 2000)
+}
+
+async function shareLink() {
+  if (!createdLink.value) return
+  const title = formData.value.name || t('otsMaster.title')
+  const text = t('otsMaster.share_text')
+  const url = createdLink.value
+  if (typeof navigator.share === 'function') {
+    try {
+      await navigator.share({ title, text, url })
+      return
+    } catch {
+      /* cancelled or unsupported — fall through */
+    }
+  }
+  window.open(`https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`, '_blank', 'noopener,noreferrer')
+}
+
 function createAnother() {
   selectedScriptSlug.value = null
   scriptDetail.value = null
   createdLink.value = ''
+  linkCopied.value = false
   formData.value = { name: '', scriptSlug: null, scope: 'default', brandSlug: null, agentSlug: null }
   Object.keys(variables).forEach((key) => delete variables[key])
   fieldErrors.value = { email: '', code: '', type: '', source: '', api: '' }
@@ -912,6 +960,15 @@ h2 {
   font-size: 0.95rem;
 }
 
+.play-hint {
+  margin: 0;
+  max-width: 420px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: #eff605;
+  opacity: 0.85;
+}
+
 .summary-box {
   width: 100%;
   background: #0f0f0f;
@@ -936,11 +993,54 @@ h2 {
   flex-shrink: 0;
 }
 
+.summary-row--link {
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.link-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
 .summary-link {
   color: inherit;
   opacity: 0.7;
   word-break: break-all;
   text-align: right;
+}
+
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px solid rgba(128, 128, 128, 0.35);
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.7;
+  transition: opacity 0.2s, color 0.2s, border-color 0.2s;
+  line-height: 1;
+  flex-shrink: 0;
+  font: inherit;
+  font-size: 11px;
+}
+
+.copy-btn:hover {
+  opacity: 1;
+}
+
+.copy-btn--done {
+  color: #4caf50;
+  border-color: rgba(76, 175, 80, 0.4);
+  opacity: 1;
 }
 
 .success-actions {
