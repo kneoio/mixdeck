@@ -285,7 +285,7 @@
                   <span class="summary-value">{{ formData.name }}</span>
                 </div>
                 <div v-for="variable in reviewVariables" :key="variable.name" class="summary-row">
-                  <n-ellipsis class="summary-label">{{ variable.description || variable.name }}</n-ellipsis>
+                  <n-ellipsis class="summary-label">{{ reviewFieldLabel(variable.description || variable.name) }}</n-ellipsis>
                   <span class="summary-value">{{ formatVarValue(variable) }}</span>
                 </div>
                 <div class="summary-row">
@@ -526,6 +526,11 @@ function formatVarValue(variable: { name: string; type: string }): string {
   if (variable.type === 'boolean') return val ? t('otsMaster.review_yes') : t('otsMaster.review_no')
   if (val === undefined || val === null || String(val).trim() === '') return t('otsMaster.review_empty')
   return String(val)
+}
+
+function reviewFieldLabel(text: string): string {
+  const stripped = text.replace(/\s*\([^)]*\)/g, '').replace(/\s*\([^)]*$/g, '').trim()
+  return stripped || text
 }
 
 function sceneReviewDuration(scene: ScriptScene): string {
