@@ -11,21 +11,12 @@
       <div class="page-center">
         <section class="submission-card">
           <div class="wizard-steps">
-            <div class="wizard-step" :class="{ active: step === 1, done: step > 1 }">
-              <div class="wizard-dot"><span class="arcade step-led">1</span></div>
-            </div>
-            <div class="wizard-connector" :class="{ done: step > 1 }" />
-            <div class="wizard-step" :class="{ active: step === 2, done: step > 2 }">
-              <div class="wizard-dot"><span class="arcade step-led">2</span></div>
-            </div>
-            <div class="wizard-connector" :class="{ done: step > 2 }" />
-            <div class="wizard-step" :class="{ active: step === 3, done: step > 3 }">
-              <div class="wizard-dot"><span class="arcade step-led">3</span></div>
-            </div>
-            <div class="wizard-connector" :class="{ done: step > 3 }" />
-            <div class="wizard-step" :class="{ active: step === 4, done: step > 4 }">
-              <div class="wizard-dot"><span class="arcade step-led">4</span></div>
-            </div>
+            <template v-for="n in stepCount" :key="n">
+              <div v-if="n > 1" class="wizard-connector" :class="{ done: step > n - 1 }" />
+              <div class="wizard-step" :class="{ active: step === n, done: step > n }">
+                <div class="wizard-dot"><span class="arcade step-led">{{ n }}</span></div>
+              </div>
+            </template>
           </div>
 
           <transition name="slide" mode="out-in">
@@ -197,8 +188,8 @@
 
                 <div class="wizard-actions">
                   <button class="back-btn" type="button" @click="step = 2">← {{ t('otsMaster.back') }}</button>
-                  <GsapButton type="primary" :disabled="loading" @click="createStream">
-                    <span>{{ loading ? t('otsMaster.creating') : t('otsMaster.create') }}</span>
+                  <GsapButton type="primary" :disabled="loading || paramsLoading" @click="goFromParams">
+                    <span>{{ paramsActionLabel }}</span>
                   </GsapButton>
                 </div>
               </template>
@@ -206,7 +197,60 @@
           </transition>
 
           <transition name="slide" mode="out-in">
-            <div v-if="step === 4" key="success" class="wizard-body">
+            <div v-if="step === 4 && hasDurationStep" key="scenes" class="wizard-body">
+              <p class="step-intro">{{ t('otsForm.tab_scenes') }}</p>
+              <div v-if="orderedScenes.length" class="ots-scenes">
+                <div
+                  v-for="scene in orderedScenes"
+                  :key="scene.id"
+                  class="ots-scene-row"
+                  :class="{ 'ots-scene-row--overridden': isSceneOverridden(scene) }"
+                >
+                  <div class="ots-scene-row__title">
+                    <span>{{ scene.title || scene.id }}</span>
+                    <span v-if="isSceneOverridden(scene)" class="ots-scene-row__badge">{{ t('otsForm.scene_duration_overridden') }}</span>
+                  </div>
+                  <template v-if="!isOneTimeScene(scene) && scene.id">
+                    <div class="ots-scene-row__controls">
+                      <n-slider
+                        :value="sceneDurationValues[scene.id]"
+                        :min="DURATION_SLIDER_MIN"
+                        :max="DURATION_SLIDER_MAX"
+                        :step="DURATION_SLIDER_STEP"
+                        :disabled="loading"
+                        style="flex: 1"
+                        @update:value="(v: number | null) => { sceneDurationValues[scene.id!] = typeof v === 'number' ? v : sceneInheritedSeconds(scene) }"
+                      />
+                      <span class="ots-scene-row__value">{{ formatDurationLabel(sceneDurationValues[scene.id] ?? sceneInheritedSeconds(scene)) }}</span>
+                      <button
+                        v-if="isSceneOverridden(scene)"
+                        type="button"
+                        class="ots-scene-row__reset"
+                        :disabled="loading"
+                        @click="resetSceneDuration(scene)"
+                      >{{ t('otsForm.scene_duration_reset') }}</button>
+                    </div>
+                    <div class="ots-scene-row__inherited">
+                      {{ t('otsForm.scene_duration_inherited', { n: formatDurationLabel(sceneInheritedSeconds(scene)) }) }}
+                    </div>
+                  </template>
+                </div>
+              </div>
+              <p v-else class="empty-hint">{{ t('otsForm.scene_no_scenes') }}</p>
+              <div v-if="fieldErrors.api" class="error-row">
+                <p class="field-error">{{ fieldErrors.api }}</p>
+              </div>
+              <div class="wizard-actions">
+                <button class="back-btn" type="button" @click="step = 3">← {{ t('otsMaster.back') }}</button>
+                <GsapButton type="primary" :disabled="loading" @click="createStream">
+                  <span>{{ loading ? t('otsMaster.creating') : t('otsMaster.create') }}</span>
+                </GsapButton>
+              </div>
+            </div>
+          </transition>
+
+          <transition name="slide" mode="out-in">
+            <div v-if="step === successStep" key="success" class="wizard-body">
               <div class="step step--success">
                 <h2>{{ t('otsMaster.success_heading') }}</h2>
                 <p class="play-hint">{{ t('otsMaster.play_hint') }}</p>
@@ -278,6 +322,7 @@ import {
   NRadioGroup,
   NSelect,
   NSkeleton,
+  NSlider,
   NSwitch,
   darkTheme,
   type GlobalThemeOverrides,
@@ -290,7 +335,7 @@ import datanestApiService from '@/services/datanestApi'
 import { useAuthStore } from '@/stores/auth'
 import { useBrandsStore } from '@/stores/brands'
 import { useOtsDefinitionsStore } from '@/stores/otsDefinitions'
-import { useScriptsStore, type Script } from '@/stores/scripts'
+import { useScriptsStore, type Script, type ScriptScene } from '@/stores/scripts'
 import { useThemeStore } from '@/stores/theme'
 
 const { t } = useI18n()
@@ -356,6 +401,75 @@ const formData = ref({
 const variables = reactive<Record<string, any>>({})
 const varErrors = reactive<Record<string, string>>({})
 const agentOptions = ref<SelectOption[]>([])
+const DURATION_SLIDER_MIN = 1
+const DURATION_SLIDER_MAX = 7200
+const DURATION_SLIDER_STEP = 1
+const sceneDurationValues = reactive<Record<string, number>>({})
+
+function isOneTimeScene(scene: ScriptScene): boolean {
+  return scene.sceneType === 'ONE_TIME' || scene.oneTimeRun === true
+}
+
+const orderedScenes = computed(() => scriptDetail.value?.scenes ?? [])
+const hasDurationStep = computed(() => orderedScenes.value.some((scene) => scene.id && !isOneTimeScene(scene)))
+const stepCount = computed(() => (hasDurationStep.value ? 5 : 4))
+const successStep = computed(() => (hasDurationStep.value ? 5 : 4))
+const paramsActionLabel = computed(() => {
+  if (paramsLoading.value) return t('otsMaster.next')
+  if (hasDurationStep.value) return t('otsMaster.next')
+  return loading.value ? t('otsMaster.creating') : t('otsMaster.create')
+})
+
+function sceneInheritedSeconds(scene: ScriptScene): number {
+  return scene.durationSeconds && scene.durationSeconds > 0 ? scene.durationSeconds : DURATION_SLIDER_MIN
+}
+
+function isSceneOverridden(scene: ScriptScene): boolean {
+  if (isOneTimeScene(scene) || !scene.id) return false
+  const current = sceneDurationValues[scene.id]
+  if (current === undefined) return false
+  return current !== sceneInheritedSeconds(scene)
+}
+
+function clampDuration(seconds: number): number {
+  return Math.min(DURATION_SLIDER_MAX, Math.max(DURATION_SLIDER_MIN, Math.round(seconds)))
+}
+
+function initSceneDurationValues() {
+  Object.keys(sceneDurationValues).forEach((key) => delete sceneDurationValues[key])
+  for (const scene of orderedScenes.value) {
+    if (!scene.id || isOneTimeScene(scene)) continue
+    sceneDurationValues[scene.id] = clampDuration(sceneInheritedSeconds(scene))
+  }
+}
+
+function resetSceneDuration(scene: ScriptScene) {
+  if (!scene.id || isOneTimeScene(scene)) return
+  sceneDurationValues[scene.id] = clampDuration(sceneInheritedSeconds(scene))
+}
+
+function buildSceneDurationsPayload(): Record<string, number> {
+  const map: Record<string, number> = {}
+  for (const scene of orderedScenes.value) {
+    if (!scene.id || isOneTimeScene(scene)) continue
+    const value = sceneDurationValues[scene.id]
+    if (value == null || value <= 0) continue
+    if (value === sceneInheritedSeconds(scene)) continue
+    map[scene.id] = Math.round(value)
+  }
+  return map
+}
+
+function formatDurationLabel(seconds: number): string {
+  const total = Math.max(0, Math.round(seconds))
+  const h = Math.floor(total / 3600)
+  const m = Math.floor((total % 3600) / 60)
+  const s = total % 60
+  if (h > 0) {
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  }
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
 
 type ValidationField = 'email' | 'code' | 'type' | 'source' | 'api' | 'name'
 const fieldErrors = ref<Record<ValidationField, string>>({
@@ -490,6 +604,7 @@ async function loadParams(scriptSlug: string) {
     for (const variable of scriptDetail.value.requiredVariables ?? []) {
       variables[variable.name] = variable.type === 'boolean' ? false : variable.type === 'number' ? null : ''
     }
+    initSceneDurationValues()
     await loadAgents()
   } catch {
     fieldErrors.value.api = t('otsMaster.load_failed')
@@ -562,12 +677,24 @@ function validateParams(): boolean {
   return valid
 }
 
+function goFromParams() {
+  if (!validateParams()) return
+  if (hasDurationStep.value) {
+    step.value = 4
+    return
+  }
+  void createStream()
+}
+
 function unwrapDoc(res: any) {
   return res?.payload?.docData ?? res?.docData ?? res
 }
 
 async function createStream() {
-  if (!validateParams()) return
+  if (!validateParams()) {
+    step.value = 3
+    return
+  }
   loading.value = true
   try {
     const res = await otsDefinitionsStore.createOtsDefinition({
@@ -576,12 +703,12 @@ async function createStream() {
       userVariables: { ...variables },
       brandSlug: formData.value.scope === 'brand' ? formData.value.brandSlug : null,
       agentSlug: formData.value.agentSlug || null,
-      sceneDurations: {},
+      sceneDurations: buildSceneDurationsPayload(),
     })
     const doc = unwrapDoc(res)
     const slug = doc?.slugName || ''
     createdLink.value = slug ? `https://mixpla.online/${slug}` : ''
-    step.value = 4
+    step.value = successStep.value
   } catch (e: any) {
     fieldErrors.value.api = e?.message || t('otsMaster.create_failed')
   } finally {
@@ -623,7 +750,8 @@ function createAnother() {
   linkCopied.value = false
   formData.value = { name: '', scriptSlug: null, scope: 'default', brandSlug: null, agentSlug: null }
   Object.keys(variables).forEach((key) => delete variables[key])
-  fieldErrors.value = { email: '', code: '', type: '', source: '', api: '' }
+  Object.keys(sceneDurationValues).forEach((key) => delete sceneDurationValues[key])
+  fieldErrors.value = { email: '', code: '', type: '', source: '', api: '', name: '' }
   step.value = 2
 }
 </script>
@@ -986,6 +1114,86 @@ h2 {
   border: 1px solid currentColor;
   border-radius: 3px;
   padding: 0px 4px;
+}
+
+.ots-scenes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ots-scene-row {
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 2px solid #2a2a2a;
+}
+
+.ots-scene-row--overridden {
+  border-left-color: rgba(64, 158, 255, 0.85);
+}
+
+.ots-scene-row__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #ddd;
+  margin-bottom: 10px;
+}
+
+.ots-scene-row__badge {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #409eff;
+  opacity: 0.9;
+}
+
+.ots-scene-row__controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.ots-scene-row__value {
+  min-width: 64px;
+  text-align: right;
+  font-size: 12px;
+  color: #bbb;
+  font-variant-numeric: tabular-nums;
+}
+
+.ots-scene-row__reset {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  font-size: 11px;
+  color: #888;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}
+
+.ots-scene-row__reset:hover:not(:disabled) {
+  color: #bbb;
+}
+
+.ots-scene-row__reset:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.ots-scene-row__inherited {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #888;
 }
 
 .wizard-actions {
