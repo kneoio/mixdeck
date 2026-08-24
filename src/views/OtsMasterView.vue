@@ -268,6 +268,47 @@
               </div>
               <div class="wizard-actions">
                 <button class="back-btn" type="button" @click="step = 3">← {{ t('otsMaster.back') }}</button>
+                <GsapButton type="primary" :disabled="loading" @click="goToReview">
+                  <span>{{ t('otsMaster.next') }}</span>
+                </GsapButton>
+              </div>
+            </div>
+          </transition>
+
+          <transition name="slide" mode="out-in">
+            <div v-if="step === reviewStep" key="review" class="wizard-body">
+              <p class="step-intro">{{ t('otsMaster.review_body') }}</p>
+              <div class="summary-box">
+                <div class="summary-row">
+                  <span class="summary-label">{{ t('otsForm.type_label') }}</span>
+                  <span class="summary-value">{{ selectedTypeName }}</span>
+                </div>
+                <div class="summary-row">
+                  <span class="summary-label">{{ t('otsForm.name_label') }}</span>
+                  <span class="summary-value">{{ formData.name }}</span>
+                </div>
+                <div v-for="variable in reviewVariables" :key="variable.name" class="summary-row">
+                  <span class="summary-label">{{ variable.description || variable.name }}</span>
+                  <span class="summary-value">{{ formatVarValue(variable) }}</span>
+                </div>
+                <div class="summary-row">
+                  <span class="summary-label">{{ t('overview.ots_scope_label') }}</span>
+                  <span class="summary-value">{{ formData.scope === 'brand' ? t('overview.ots_scope_brand') : t('overview.ots_scope_default') }}</span>
+                </div>
+                <div class="summary-row">
+                  <span class="summary-label">{{ formData.scope === 'brand' ? t('overview.ots_pick_brand') : t('overview.ots_pick_dj') }}</span>
+                  <span class="summary-value">{{ sourceLabel }}</span>
+                </div>
+                <div v-for="scene in orderedScenes" :key="scene.id" class="summary-row">
+                  <span class="summary-label">{{ scene.title || scene.id }}</span>
+                  <span class="summary-value">{{ sceneReviewDuration(scene) }}</span>
+                </div>
+              </div>
+              <div v-if="fieldErrors.api" class="error-row">
+                <p class="field-error">{{ fieldErrors.api }}</p>
+              </div>
+              <div class="wizard-actions">
+                <button class="back-btn" type="button" @click="backFromReview">← {{ t('otsMaster.back') }}</button>
                 <GsapButton type="primary" :disabled="loading" @click="createStream">
                   <span>{{ loading ? t('otsMaster.creating') : t('otsMaster.create') }}</span>
                 </GsapButton>
@@ -444,13 +485,50 @@ const requiredVariables = computed(() => scriptVariables.value.filter((v) => v.r
 const optionalVariables = computed(() => scriptVariables.value.filter((v) => !v.required))
 const optionalExpanded = ref<string[]>([])
 const hasDurationStep = computed(() => orderedScenes.value.some((scene) => scene.id && !isOneTimeScene(scene)))
-const stepCount = computed(() => (hasDurationStep.value ? 5 : 4))
-const successStep = computed(() => (hasDurationStep.value ? 5 : 4))
-const paramsActionLabel = computed(() => {
-  if (paramsLoading.value) return t('otsMaster.next')
-  if (hasDurationStep.value) return t('otsMaster.next')
-  return loading.value ? t('otsMaster.creating') : t('otsMaster.create')
+const stepCount = computed(() => (hasDurationStep.value ? 6 : 5))
+const reviewStep = computed(() => (hasDurationStep.value ? 5 : 4))
+const successStep = computed(() => (hasDurationStep.value ? 6 : 5))
+const paramsActionLabel = computed(() => t('otsMaster.next'))
+
+const selectedTypeName = computed(() =>
+  scripts.value.find((s) => s.slugName === selectedScriptSlug.value)?.name
+  || scriptDetail.value?.name
+  || selectedScriptSlug.value
+  || ''
+)
+const sourceLabel = computed(() => {
+  if (formData.value.scope === 'brand') {
+    return brandOptions.value.find((o) => o.value === formData.value.brandSlug)?.label
+      || formData.value.brandSlug
+      || ''
+  }
+  return agentOptions.value.find((o) => o.value === formData.value.agentSlug)?.label
+    || formData.value.agentSlug
+    || ''
 })
+const reviewVariables = computed(() =>
+  scriptVariables.value.filter((v) => v.required || hasVarValue(v))
+)
+
+function hasVarValue(variable: { name: string; type: string }): boolean {
+  const val = variables[variable.name]
+  if (variable.type === 'boolean') return true
+  return val !== undefined && val !== null && String(val).trim() !== ''
+}
+
+function formatVarValue(variable: { name: string; type: string }): string {
+  const val = variables[variable.name]
+  if (variable.type === 'boolean') return val ? t('otsMaster.review_yes') : t('otsMaster.review_no')
+  if (val === undefined || val === null || String(val).trim() === '') return t('otsMaster.review_empty')
+  return String(val)
+}
+
+function sceneReviewDuration(scene: ScriptScene): string {
+  if (!isOneTimeScene(scene) && scene.id) {
+    return formatDurationLabel(sceneDurationValues[scene.id] ?? sceneInheritedSeconds(scene))
+  }
+  return formatDurationLabel(sceneInheritedSeconds(scene))
+}
 
 function sceneInheritedSeconds(scene: ScriptScene): number {
   return scene.durationSeconds && scene.durationSeconds > 0 ? scene.durationSeconds : DURATION_SLIDER_MIN
@@ -716,7 +794,16 @@ function goFromParams() {
     step.value = 4
     return
   }
-  void createStream()
+  goToReview()
+}
+
+function goToReview() {
+  fieldErrors.value.api = ''
+  step.value = reviewStep.value
+}
+
+function backFromReview() {
+  step.value = hasDurationStep.value ? 4 : 3
 }
 
 function unwrapDoc(res: any) {
@@ -1325,6 +1412,11 @@ h2 {
 .summary-label {
   color: #777;
   flex-shrink: 0;
+}
+
+.summary-value {
+  text-align: right;
+  word-break: break-word;
 }
 
 .summary-row--link {

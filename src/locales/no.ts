@@ -594,6 +594,10 @@ export default {
     create_failed: 'Kunne ikke opprette strømmen. Prøv igjen.',
     optional_fields: 'Valgfrie detaljer',
     optional_hint: 'Valgfrie felt hjelper DJ-en å gjøre MCing rikere og mer interessant.',
+    review_body: 'Sjekk alt før du oppretter strømmen. Du kan fortsatt gå tilbake.',
+    review_yes: 'Ja',
+    review_no: 'Nei',
+    review_empty: '—',
   },
   auth: {
     email_title: 'Logg inn på Mixdeck',

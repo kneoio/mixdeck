@@ -543,6 +543,10 @@ export default {
     create_failed: 'स्ट्रीम नहीं बनाई जा सकी। कृपया पुनः प्रयास करें।',
     optional_fields: 'वैकल्पिक विवरण',
     optional_hint: 'वैकल्पिक फ़ील्ड DJ को MC को और समृद्ध व दिलचस्प बनाने में मदद करते हैं।',
+    review_body: 'स्ट्रीम बनाने से पहले सब कुछ जाँच लें। आप अभी वापस जा सकते हैं।',
+    review_yes: 'हाँ',
+    review_no: 'नहीं',
+    review_empty: '—',
   },
   auth: {
     email_title: 'Mixdeck में साइन इन करें',

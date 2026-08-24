@@ -594,6 +594,10 @@ export default {
     create_failed: '스트림을 만들지 못했습니다. 다시 시도해 주세요.',
     optional_fields: '선택 세부정보',
     optional_hint: '선택 필드는 DJ가 MC를 더 풍부하고 흥미롭게 만드는 데 도움이 됩니다.',
+    review_body: '스트림을 만들기 전에 모든 내용을 확인하세요. 아직 돌아갈 수 있습니다.',
+    review_yes: '예',
+    review_no: '아니요',
+    review_empty: '—',
   },
   auth: {
     email_title: 'Mixdeck 로그인',

@@ -544,6 +544,10 @@ export default {
     create_failed: 'Не вдалося створити ефір. Спробуйте ще раз.',
     optional_fields: 'Необов’язкові деталі',
     optional_hint: 'Необов’язкові поля допомагають діджею зробити MC-вставки багатшими й цікавішими.',
+    review_body: 'Перевірте все перед створенням ефіру. Ще можна повернутися назад.',
+    review_yes: 'Так',
+    review_no: 'Ні',
+    review_empty: '—',
   },
   auth: {
     email_title: 'Вхід у Mixdeck',

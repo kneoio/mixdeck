@@ -542,6 +542,10 @@ export default {
     create_failed: 'Impossible de créer la diffusion. Veuillez réessayer.',
     optional_fields: 'Détails optionnels',
     optional_hint: 'Les champs optionnels aident le DJ à rendre le MCing plus riche et plus intéressant.',
+    review_body: 'Vérifiez tout avant de créer la diffusion. Vous pouvez encore revenir en arrière.',
+    review_yes: 'Oui',
+    review_no: 'Non',
+    review_empty: '—',
   },
   auth: {
     email_title: 'Connexion à Mixdeck',

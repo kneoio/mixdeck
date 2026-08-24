@@ -543,6 +543,10 @@ export default {
     create_failed: 'ストリームを作成できませんでした。もう一度お試しください。',
     optional_fields: '任意の詳細',
     optional_hint: '任意項目は、DJのMCをより豊かで面白くするのに役立ちます。',
+    review_body: 'ストリームを作成する前に内容を確認してください。まだ戻れます。',
+    review_yes: 'はい',
+    review_no: 'いいえ',
+    review_empty: '—',
   },
   auth: {
     email_title: 'Mixdeckにサインイン',

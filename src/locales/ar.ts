@@ -543,6 +543,10 @@ export default {
     create_failed: 'تعذر إنشاء البث. حاول مرة أخرى.',
     optional_fields: 'تفاصيل اختيارية',
     optional_hint: 'الحقول الاختيارية تساعد الدي جي على جعل التعليق أغنى وأكثر تشويقاً.',
+    review_body: 'راجع كل شيء قبل إنشاء البث. ما زال بإمكانك الرجوع.',
+    review_yes: 'نعم',
+    review_no: 'لا',
+    review_empty: '—',
   },
   auth: {
     email_title: 'تسجيل الدخول إلى Mixdeck',

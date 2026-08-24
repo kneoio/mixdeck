@@ -594,6 +594,10 @@ export default {
     create_failed: 'Der Stream konnte nicht erstellt werden. Bitte versuche es erneut.',
     optional_fields: 'Optionale Angaben',
     optional_hint: 'Optionale Felder helfen dem DJ, das Moderieren reichhaltiger und interessanter zu machen.',
+    review_body: 'Prüfe alles, bevor du den Stream erstellst. Du kannst noch zurück.',
+    review_yes: 'Ja',
+    review_no: 'Nein',
+    review_empty: '—',
   },
   auth: {
     email_title: 'Bei Mixdeck anmelden',

@@ -671,6 +671,10 @@ export default {
     create_failed: 'Could not create the stream. Please try again.',
     optional_fields: 'Optional details',
     optional_hint: 'Optional fields help the DJ make MCing richer and more interesting.',
+    review_body: 'Check everything before creating the stream. You can still go back.',
+    review_yes: 'Yes',
+    review_no: 'No',
+    review_empty: '—',
   },
   auth: {
     email_title: 'Sign in to Mixdeck',

@@ -543,6 +543,10 @@ export default {
     create_failed: 'No se pudo crear el stream. Inténtalo de nuevo.',
     optional_fields: 'Detalles opcionales',
     optional_hint: 'Los campos opcionales ayudan al DJ a hacer el MCing más rico e interesante.',
+    review_body: 'Revisa todo antes de crear el stream. Todavía puedes volver atrás.',
+    review_yes: 'Sí',
+    review_no: 'No',
+    review_empty: '—',
   },
   auth: {
     email_title: 'Iniciar sesión en Mixdeck',

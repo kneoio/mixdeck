@@ -544,6 +544,10 @@ export default {
     create_failed: 'Ағынды жасау мүмкін болмады. Қайталап көріңіз.',
     optional_fields: 'Қосымша мәліметтер',
     optional_hint: 'Қосымша өрістер DJ-ге MC-ны байытып, қызықты етуге көмектеседі.',
+    review_body: 'Ағынды жасамас бұрын бәрін тексеріңіз. Әлі артқа оралуға болады.',
+    review_yes: 'Иә',
+    review_no: 'Жоқ',
+    review_empty: '—',
   },
   auth: {
     email_title: 'Mixdeck-ке кіру',
