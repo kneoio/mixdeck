@@ -54,9 +54,9 @@ const formData = ref({
   brandSlug: null as string | null,
   agentSlug: null as string | null,
   color: '#000000',
-  publicOts: 0,
+  publicOts: 1,
 })
-const publicPremiumGlow = ref(false)
+const privatePremiumGlow = ref(false)
 const scriptDetail = ref<Script | null>(null)
 const otsStatus = ref<string | null>(null)
 const otsType = ref<string | null>(null)
@@ -160,7 +160,7 @@ async function loadOtsTemplate(scriptSlug: string) {
   formData.value.name = template?.name ?? ''
   formData.value.scriptSlug = template?.scriptSlug ?? scriptSlug
   formData.value.color = template?.color || '#000000'
-  formData.value.publicOts = template?.publicOts ?? 0
+  formData.value.publicOts = template?.publicOts ?? 1
   await loadScriptDetail()
   if (scriptDetail.value) {
     scriptDetail.value = {
@@ -229,11 +229,11 @@ async function loadAgents() {
   }
 }
 
-function handlePublicToggle(v: boolean) {
-  if (!v) { formData.value.publicOts = 0; return }
-  publicPremiumGlow.value = true
-  message.warning(t('otsForm.public_premium_only'))
-  setTimeout(() => { publicPremiumGlow.value = false }, 1500)
+function handlePrivateToggle(v: boolean) {
+  if (!v) { formData.value.publicOts = 1; return }
+  privatePremiumGlow.value = true
+  message.warning(t('otsForm.private_premium_only'))
+  setTimeout(() => { privatePremiumGlow.value = false }, 1500)
 }
 
 function onScopeChange() {
@@ -336,7 +336,7 @@ onMounted(async () => {
       formData.value.name = def.name ?? ''
       formData.value.scriptSlug = def.scriptSlug
       formData.value.color = def.color || '#000000'
-      formData.value.publicOts = def.publicOts ?? 0
+      formData.value.publicOts = def.publicOts ?? 1
       Object.assign(variables, def.userVariables || {})
       formData.value.scope = def.brandSlug ? 'brand' : 'default'
       formData.value.brandSlug = def.brandSlug
@@ -427,13 +427,13 @@ onMounted(async () => {
           <NFormItem>
             <template #label>
               <span class="form-label-with-badge">
-                {{ t('otsForm.public') }}
-                <span class="premium-badge" :class="{ 'premium-badge--glow': publicPremiumGlow }">premium</span>
+                {{ t('otsForm.private') }}
+                <span class="premium-badge" :class="{ 'premium-badge--glow': privatePremiumGlow }">premium</span>
               </span>
             </template>
             <div class="field-stack">
               <div class="field-error-shell">
-                <NSwitch :value="formData.publicOts === 1" @update:value="handlePublicToggle" />
+                <NSwitch :value="formData.publicOts === 0" @update:value="handlePrivateToggle" />
               </div>
               <div class="field-error-label"></div>
             </div>

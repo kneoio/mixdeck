@@ -454,7 +454,6 @@ function handleQualityChange() {
   message.warning(t('brandForm.stream_quality_only_good'), { onAfterLeave: () => { qualityMsgShown.value = false } })
 }
 
-const publicPremiumGlow = ref(false)
 const customScriptGlow = ref(false)
 
 function handleScriptModeChange(val: string) {
@@ -477,10 +476,7 @@ function handleChatWithDjToggle(v: boolean) {
 }
 
 function handlePublicToggle(v: boolean) {
-  if (!v) { formData.value.publicBrand = 0; return }
-  publicPremiumGlow.value = true
-  message.warning(t('brandForm.public_premium_only'))
-  setTimeout(() => { publicPremiumGlow.value = false }, 1500)
+  formData.value.publicBrand = v ? 1 : 0
 }
 
 function formatBitRateTooltip(value: number) {
@@ -1298,13 +1294,7 @@ watch(activeTab, async (tab) => {
           </NFormItem>
 
 
-          <NFormItem>
-            <template #label>
-              <span class="form-label-with-badge">
-                {{ t('brandForm.public') }}
-                <span class="premium-badge" :class="{ 'premium-badge--glow': publicPremiumGlow }">premium</span>
-              </span>
-            </template>
+          <NFormItem :label="t('brandForm.public')" :show-feedback="false">
             <div class="field-stack">
               <div class="field-error-shell">
                 <NSwitch :value="formData.publicBrand === 1" @update:value="handlePublicToggle" />
@@ -1890,13 +1880,6 @@ watch(activeTab, async (tab) => {
 }
 .script-description :deep(ul),
 .script-description :deep(ol) { padding-left: 20px; margin: 4px 0; }
-
-.form-label-with-badge {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 3px;
-}
 
 .premium-badge {
   display: inline-block;
