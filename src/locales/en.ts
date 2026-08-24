@@ -669,6 +669,8 @@ export default {
     play_hint: 'The stream is ready. It starts only when you tap Play in the player.',
     load_failed: 'Could not load this type.',
     create_failed: 'Could not create the stream. Please try again.',
+    optional_fields: 'Optional details',
+    optional_hint: 'Optional fields help the DJ make MCing richer and more interesting.',
   },
   auth: {
     email_title: 'Sign in to Mixdeck',

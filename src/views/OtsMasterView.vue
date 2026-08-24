@@ -119,10 +119,10 @@
                   <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.name }">{{ fieldErrors.name || ' ' }}</div>
                 </div>
 
-                <template v-if="scriptDetail?.requiredVariables?.length">
-                  <div v-for="variable in scriptDetail.requiredVariables" :key="variable.name" class="field-row">
+                <template v-if="requiredVariables.length || optionalVariables.length">
+                  <div v-for="variable in requiredVariables" :key="variable.name" class="field-row">
                     <label class="field-label">
-                      {{ variable.description || variable.name }}<span v-if="variable.required" class="required">*</span>
+                      {{ variable.description || variable.name }}<span class="required">*</span>
                     </label>
                     <div class="field-error-shell" :class="{ 'field-error-shell--active': !!varErrors[variable.name] }">
                       <n-switch v-if="variable.type === 'boolean'" v-model:value="variables[variable.name]" />
@@ -141,6 +141,32 @@
                     </div>
                     <div class="field-error-label" :class="{ 'field-error-label--visible': !!varErrors[variable.name] }">{{ varErrors[variable.name] || ' ' }}</div>
                   </div>
+                  <n-collapse
+                    v-if="optionalVariables.length"
+                    v-model:expanded-names="optionalExpanded"
+                    class="optional-vars"
+                    display-directive="show"
+                  >
+                    <n-collapse-item :title="t('otsMaster.optional_fields')" name="optional">
+                      <p class="optional-hint">{{ t('otsMaster.optional_hint') }}</p>
+                      <div v-for="variable in optionalVariables" :key="variable.name" class="field-row">
+                        <label class="field-label">{{ variable.description || variable.name }}</label>
+                        <div class="field-error-shell">
+                          <n-switch v-if="variable.type === 'boolean'" v-model:value="variables[variable.name]" />
+                          <n-input-number
+                            v-else-if="variable.type === 'number'"
+                            v-model:value="variables[variable.name]"
+                            style="width: 100%"
+                          />
+                          <n-input
+                            v-else
+                            v-model:value="variables[variable.name]"
+                            style="width: 100%"
+                          />
+                        </div>
+                      </div>
+                    </n-collapse-item>
+                  </n-collapse>
                 </template>
                 <p v-else class="empty-hint">{{ t('overview.ots_no_variables') }}</p>
 
@@ -324,6 +350,8 @@ import {
   NSkeleton,
   NSlider,
   NSwitch,
+  NCollapse,
+  NCollapseItem,
   darkTheme,
   type GlobalThemeOverrides,
   type SelectOption,
@@ -411,6 +439,10 @@ function isOneTimeScene(scene: ScriptScene): boolean {
 }
 
 const orderedScenes = computed(() => scriptDetail.value?.scenes ?? [])
+const scriptVariables = computed(() => scriptDetail.value?.requiredVariables ?? [])
+const requiredVariables = computed(() => scriptVariables.value.filter((v) => v.required))
+const optionalVariables = computed(() => scriptVariables.value.filter((v) => !v.required))
+const optionalExpanded = ref<string[]>([])
 const hasDurationStep = computed(() => orderedScenes.value.some((scene) => scene.id && !isOneTimeScene(scene)))
 const stepCount = computed(() => (hasDurationStep.value ? 5 : 4))
 const successStep = computed(() => (hasDurationStep.value ? 5 : 4))
@@ -580,6 +612,7 @@ async function loadParams(scriptSlug: string) {
   fieldErrors.value.api = ''
   Object.keys(variables).forEach((key) => delete variables[key])
   Object.keys(varErrors).forEach((key) => delete varErrors[key])
+  optionalExpanded.value = []
   try {
     const template = await datanestApiService.getOtsDefinitionTemplate(scriptSlug)
     formData.value.name = template?.name ?? ''
@@ -751,6 +784,7 @@ function createAnother() {
   formData.value = { name: '', scriptSlug: null, scope: 'default', brandSlug: null, agentSlug: null }
   Object.keys(variables).forEach((key) => delete variables[key])
   Object.keys(sceneDurationValues).forEach((key) => delete sceneDurationValues[key])
+  optionalExpanded.value = []
   fieldErrors.value = { email: '', code: '', type: '', source: '', api: '', name: '' }
   step.value = 2
 }
@@ -1028,6 +1062,22 @@ h2 {
   opacity: 0.55;
   font-size: 13px;
   margin: 0;
+}
+
+.optional-vars {
+  margin: 4px 0 8px;
+}
+
+.optional-vars :deep(.n-collapse-item__header) {
+  color: #bbb;
+  font-size: 0.82rem;
+}
+
+.optional-hint {
+  font-size: 12px;
+  color: #888;
+  line-height: 1.5;
+  margin: 0 0 12px;
 }
 
 .type-list {
