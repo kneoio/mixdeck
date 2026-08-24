@@ -87,12 +87,17 @@
                   @click="selectType(script.slugName)"
                 >
                   <span class="type-card__name">{{ script.name }}</span>
+                  <div
+                    v-if="script.description"
+                    class="type-card__description"
+                    v-html="renderScriptDescription(script.description)"
+                  />
                   <span v-if="script.tags?.length" class="type-card__tags">
                     <span
                       v-for="tag in script.tags"
                       :key="tag.identifier"
                       class="type-tag"
-                      :style="{ background: tag.color || '#ececec', color: tag.fontColor || '#333' }"
+                      :style="{ color: tag.color || '#ececec', borderColor: tag.color || '#ececec' }"
                     >{{ tag.name || tag.identifier }}</span>
                   </span>
                 </button>
@@ -274,6 +279,7 @@ import {
   type GlobalThemeOverrides,
   type SelectOption,
 } from 'naive-ui'
+import MarkdownIt from 'markdown-it'
 import GsapButton from '@/components/GsapButton.vue'
 import authService, { AuthRequestError } from '@/services/auth'
 import datanestApiService from '@/services/datanestApi'
@@ -327,6 +333,11 @@ const loadingAgents = ref(false)
 
 const scripts = computed(() => scriptsStore.scripts)
 const selectedScriptSlug = ref<string | null>(null)
+const md = new MarkdownIt()
+
+function renderScriptDescription(description: string) {
+  return md.render(description)
+}
 const scriptDetail = ref<Script | null>(null)
 const createdLink = ref('')
 const linkCopied = ref(false)
@@ -746,14 +757,13 @@ h2 {
 
 .step-led {
   color: #00FF3C;
-  opacity: 0.25;
+  opacity: 0.22;
   text-shadow: none;
-  transition: opacity 0.3s ease, text-shadow 0.3s ease;
 }
 
 .wizard-step.active .step-led {
   opacity: 1;
-  animation: led-pulse 0.8s ease-in-out infinite;
+  animation: led-pulse 1.15s step-end infinite;
 }
 
 .wizard-step.done .step-led {
@@ -762,8 +772,18 @@ h2 {
 }
 
 @keyframes led-pulse {
-  0%, 70%, 100% { opacity: 1; text-shadow: 0 0 18px #00FF3C; }
-  40% { opacity: 0.25; text-shadow: 0 0 4px #00FF3C; }
+  0%, 58% {
+    opacity: 1;
+    text-shadow: 0 0 4px #00FF3C, 0 0 10px #00FF3C, 0 0 22px #00FF3C;
+  }
+  59%, 74% {
+    opacity: 0.18;
+    text-shadow: none;
+  }
+  75%, 100% {
+    opacity: 1;
+    text-shadow: 0 0 4px #00FF3C, 0 0 10px #00FF3C, 0 0 22px #00FF3C;
+  }
 }
 
 .wizard-connector {
@@ -890,7 +910,9 @@ h2 {
   border-color: #444;
 }
 
-.type-card--selected {
+.type-card--selected,
+.type-card--selected:hover,
+.type-card--selected:focus {
   border-color: #eff605;
   background: rgba(239, 246, 5, 0.06);
 }
@@ -900,6 +922,37 @@ h2 {
   color: #ddd;
 }
 
+.type-card__description {
+  font-size: 12px;
+  color: #999;
+  line-height: 1.5;
+}
+
+.type-card__description :deep(h1),
+.type-card__description :deep(h2),
+.type-card__description :deep(h3) {
+  color: #ccc;
+  font-size: 12px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+.type-card__description :deep(p) {
+  margin: 0 0 4px;
+}
+
+.type-card__description :deep(p:last-child),
+.type-card__description :deep(ul:last-child),
+.type-card__description :deep(ol:last-child) {
+  margin-bottom: 0;
+}
+
+.type-card__description :deep(ul),
+.type-card__description :deep(ol) {
+  padding-left: 18px;
+  margin: 0 0 4px;
+}
+
 .type-card__tags {
   display: flex;
   flex-wrap: wrap;
@@ -907,9 +960,14 @@ h2 {
 }
 
 .type-tag {
-  font-size: 10px;
-  padding: 2px 8px;
-  border-radius: 999px;
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  padding: 0px 4px;
 }
 
 .wizard-actions {
