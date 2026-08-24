@@ -20,7 +20,7 @@
           </div>
 
           <transition name="slide" mode="out-in">
-            <div v-if="step === 1" key="auth" class="wizard-body">
+            <div v-if="panel === 'auth'" key="auth" class="wizard-body">
               <p class="step-intro">{{ t('otsMaster.intro') }}</p>
 
               <div class="field-row">
@@ -61,10 +61,8 @@
                 <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.code }">{{ fieldErrors.code || ' ' }}</div>
               </div>
             </div>
-          </transition>
 
-          <transition name="slide" mode="out-in">
-            <div v-if="step === 2" key="type" class="wizard-body">
+            <div v-else-if="panel === 'type'" key="type" class="wizard-body">
               <p class="step-intro">{{ t('otsMaster.type_body') }}</p>
               <n-skeleton v-if="typesLoading" height="72px" :sharp="false" :repeat="3" />
               <p v-else-if="!scripts.length" class="empty-hint">{{ t('otsMaster.no_types') }}</p>
@@ -101,10 +99,8 @@
                 </GsapButton>
               </div>
             </div>
-          </transition>
 
-          <transition name="slide" mode="out-in">
-            <div v-if="step === 3" key="params" class="wizard-body">
+            <div v-else-if="panel === 'params'" key="params" class="wizard-body">
               <n-skeleton v-if="paramsLoading" height="40px" :sharp="false" :repeat="4" />
               <template v-else>
                 <div class="field-row">
@@ -147,8 +143,13 @@
                     class="optional-vars"
                     display-directive="show"
                   >
-                    <n-collapse-item :title="t('otsMaster.optional_fields')" name="optional">
-                      <p class="optional-hint">{{ t('otsMaster.optional_hint') }}</p>
+                    <n-collapse-item name="optional">
+                      <template #header>
+                        <span class="optional-title">
+                          {{ t('otsMaster.optional_fields') }}
+                          <span class="optional-hint">({{ t('otsMaster.optional_hint') }})</span>
+                        </span>
+                      </template>
                       <div v-for="variable in optionalVariables" :key="variable.name" class="field-row">
                         <label class="field-label">{{ variable.description || variable.name }}</label>
                         <div class="field-error-shell">
@@ -215,15 +216,13 @@
                 <div class="wizard-actions">
                   <button class="back-btn" type="button" @click="step = 2">← {{ t('otsMaster.back') }}</button>
                   <GsapButton type="primary" :disabled="loading || paramsLoading" @click="goFromParams">
-                    <span>{{ paramsActionLabel }}</span>
+                    <span>{{ t('otsMaster.next') }}</span>
                   </GsapButton>
                 </div>
               </template>
             </div>
-          </transition>
 
-          <transition name="slide" mode="out-in">
-            <div v-if="step === 4 && hasDurationStep" key="scenes" class="wizard-body">
+            <div v-else-if="panel === 'scenes'" key="scenes" class="wizard-body">
               <p class="step-intro">{{ t('otsForm.tab_scenes') }}</p>
               <div v-if="orderedScenes.length" class="ots-scenes">
                 <div
@@ -273,10 +272,8 @@
                 </GsapButton>
               </div>
             </div>
-          </transition>
 
-          <transition name="slide" mode="out-in">
-            <div v-if="step === reviewStep" key="review" class="wizard-body">
+            <div v-else-if="panel === 'review'" key="review" class="wizard-body">
               <p class="step-intro">{{ t('otsMaster.review_body') }}</p>
               <div class="summary-box">
                 <div class="summary-row">
@@ -314,10 +311,8 @@
                 </GsapButton>
               </div>
             </div>
-          </transition>
 
-          <transition name="slide" mode="out-in">
-            <div v-if="step === successStep" key="success" class="wizard-body">
+            <div v-else-if="panel === 'success'" key="success" class="wizard-body">
               <div class="step step--success">
                 <h2>{{ t('otsMaster.success_heading') }}</h2>
                 <p class="play-hint">{{ t('otsMaster.play_hint') }}</p>
@@ -486,9 +481,18 @@ const optionalVariables = computed(() => scriptVariables.value.filter((v) => !v.
 const optionalExpanded = ref<string[]>([])
 const hasDurationStep = computed(() => orderedScenes.value.some((scene) => scene.id && !isOneTimeScene(scene)))
 const stepCount = computed(() => (hasDurationStep.value ? 6 : 5))
-const reviewStep = computed(() => (hasDurationStep.value ? 5 : 4))
-const successStep = computed(() => (hasDurationStep.value ? 6 : 5))
-const paramsActionLabel = computed(() => t('otsMaster.next'))
+const panel = computed(() => {
+  if (step.value <= 1) return 'auth'
+  if (step.value === 2) return 'type'
+  if (step.value === 3) return 'params'
+  if (hasDurationStep.value) {
+    if (step.value === 4) return 'scenes'
+    if (step.value === 5) return 'review'
+    return 'success'
+  }
+  if (step.value === 4) return 'review'
+  return 'success'
+})
 
 const selectedTypeName = computed(() =>
   scripts.value.find((s) => s.slugName === selectedScriptSlug.value)?.name
@@ -799,7 +803,7 @@ function goFromParams() {
 
 function goToReview() {
   fieldErrors.value.api = ''
-  step.value = reviewStep.value
+  step.value = hasDurationStep.value ? 5 : 4
 }
 
 function backFromReview() {
@@ -828,7 +832,7 @@ async function createStream() {
     const doc = unwrapDoc(res)
     const slug = doc?.slugName || ''
     createdLink.value = slug ? `https://mixpla.online/${slug}` : ''
-    step.value = successStep.value
+    step.value = hasDurationStep.value ? 6 : 5
   } catch (e: any) {
     fieldErrors.value.api = e?.message || t('otsMaster.create_failed')
   } finally {
@@ -1160,11 +1164,19 @@ h2 {
   font-size: 0.82rem;
 }
 
+.optional-vars :deep(.n-collapse-item__header-main) {
+  white-space: normal;
+  line-height: 1.4;
+}
+
+.optional-title {
+  font-weight: 500;
+}
+
 .optional-hint {
-  font-size: 12px;
+  font-weight: 400;
+  font-size: 0.92em;
   color: #888;
-  line-height: 1.5;
-  margin: 0 0 12px;
 }
 
 .type-list {
