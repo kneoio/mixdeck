@@ -277,27 +277,27 @@
               <p class="step-intro">{{ t('otsMaster.review_body') }}</p>
               <div class="summary-box">
                 <div class="summary-row">
-                  <span class="summary-label">{{ t('otsForm.type_label') }}</span>
+                  <n-ellipsis class="summary-label">{{ t('otsForm.type_label') }}</n-ellipsis>
                   <span class="summary-value">{{ selectedTypeName }}</span>
                 </div>
                 <div class="summary-row">
-                  <span class="summary-label">{{ t('otsForm.name_label') }}</span>
+                  <n-ellipsis class="summary-label">{{ t('otsForm.name_label') }}</n-ellipsis>
                   <span class="summary-value">{{ formData.name }}</span>
                 </div>
                 <div v-for="variable in reviewVariables" :key="variable.name" class="summary-row">
-                  <span class="summary-label">{{ variable.description || variable.name }}</span>
+                  <n-ellipsis class="summary-label">{{ variable.description || variable.name }}</n-ellipsis>
                   <span class="summary-value">{{ formatVarValue(variable) }}</span>
                 </div>
                 <div class="summary-row">
-                  <span class="summary-label">{{ t('overview.ots_scope_label') }}</span>
+                  <n-ellipsis class="summary-label">{{ t('overview.ots_scope_label') }}</n-ellipsis>
                   <span class="summary-value">{{ formData.scope === 'brand' ? t('overview.ots_scope_brand') : t('overview.ots_scope_default') }}</span>
                 </div>
                 <div class="summary-row">
-                  <span class="summary-label">{{ formData.scope === 'brand' ? t('overview.ots_pick_brand') : t('overview.ots_pick_dj') }}</span>
+                  <n-ellipsis class="summary-label">{{ formData.scope === 'brand' ? t('overview.ots_pick_brand') : t('overview.ots_pick_dj') }}</n-ellipsis>
                   <span class="summary-value">{{ sourceLabel }}</span>
                 </div>
                 <div v-for="scene in orderedScenes" :key="scene.id" class="summary-row">
-                  <span class="summary-label">{{ scene.title || scene.id }}</span>
+                  <n-ellipsis class="summary-label">{{ scene.title || scene.id }}</n-ellipsis>
                   <span class="summary-value">{{ sceneReviewDuration(scene) }}</span>
                 </div>
               </div>
@@ -388,6 +388,7 @@ import {
   NSwitch,
   NCollapse,
   NCollapseItem,
+  NEllipsis,
   darkTheme,
   type GlobalThemeOverrides,
   type SelectOption,
@@ -1423,10 +1424,13 @@ h2 {
 
 .summary-label {
   color: #777;
-  flex-shrink: 0;
+  min-width: 0;
+  max-width: 62%;
 }
 
 .summary-value {
+  flex: 1;
+  min-width: 72px;
   text-align: right;
   word-break: break-word;
 }
