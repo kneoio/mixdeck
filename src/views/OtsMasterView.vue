@@ -117,10 +117,15 @@
               <n-skeleton v-if="paramsLoading" height="40px" :sharp="false" :repeat="4" />
               <template v-else>
                 <div class="field-row">
-                  <label class="field-label">{{ t('otsForm.name_label') }}</label>
-                  <div class="field-error-shell">
-                    <n-input v-model:value="formData.name" :placeholder="t('otsForm.name_label')" />
+                  <label class="field-label">{{ t('otsForm.name_label') }}<span class="required">*</span></label>
+                  <div class="field-error-shell" :class="{ 'field-error-shell--active': !!fieldErrors.name }">
+                    <n-input
+                      v-model:value="formData.name"
+                      :placeholder="t('otsForm.name_label')"
+                      @update:value="fieldErrors.name = ''"
+                    />
                   </div>
+                  <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.name }">{{ fieldErrors.name || ' ' }}</div>
                 </div>
 
                 <template v-if="scriptDetail?.requiredVariables?.length">
@@ -204,7 +209,6 @@
             <div v-if="step === 4" key="success" class="wizard-body">
               <div class="step step--success">
                 <h2>{{ t('otsMaster.success_heading') }}</h2>
-                <p class="step-body">{{ t('otsMaster.success_body') }}</p>
                 <p class="play-hint">{{ t('otsMaster.play_hint') }}</p>
               </div>
               <div class="summary-box">
@@ -353,13 +357,14 @@ const variables = reactive<Record<string, any>>({})
 const varErrors = reactive<Record<string, string>>({})
 const agentOptions = ref<SelectOption[]>([])
 
-type ValidationField = 'email' | 'code' | 'type' | 'source' | 'api'
+type ValidationField = 'email' | 'code' | 'type' | 'source' | 'api' | 'name'
 const fieldErrors = ref<Record<ValidationField, string>>({
   email: '',
   code: '',
   type: '',
   source: '',
   api: '',
+  name: '',
 })
 
 const brandOptions = computed(() =>
@@ -469,10 +474,18 @@ async function loadParams(scriptSlug: string) {
     formData.value.brandSlug = null
     formData.value.agentSlug = null
     const detail = await datanestApiService.getScriptDetail(scriptSlug)
+    const detailVars = detail?.requiredVariables ?? []
+    const templateVars = template?.requiredVariables ?? []
+    const detailByName = Object.fromEntries(detailVars.map((v: any) => [v.name, v]))
+    const requiredVariables = (templateVars.length ? templateVars : detailVars).map((v: any) => ({
+      ...detailByName[v.name],
+      ...v,
+      required: detailByName[v.name]?.required === true || v.required === true,
+    }))
     scriptDetail.value = {
       ...detail,
       name: template?.name ?? detail?.name,
-      requiredVariables: template?.requiredVariables ?? detail?.requiredVariables,
+      requiredVariables,
     }
     for (const variable of scriptDetail.value.requiredVariables ?? []) {
       variables[variable.name] = variable.type === 'boolean' ? false : variable.type === 'number' ? null : ''
@@ -524,8 +537,13 @@ function clearVarError(name: string) {
 function validateParams(): boolean {
   fieldErrors.value.source = ''
   fieldErrors.value.api = ''
+  fieldErrors.value.name = ''
   Object.keys(varErrors).forEach((key) => delete varErrors[key])
   let valid = true
+  if (!formData.value.name?.trim()) {
+    fieldErrors.value.name = t('common.required_field', { field: t('otsForm.name_label') })
+    valid = false
+  }
   const vars = scriptDetail.value?.requiredVariables ?? []
   for (const v of vars) {
     if (!v.required) continue
