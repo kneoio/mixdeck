@@ -56,7 +56,7 @@ export const useOtsDefinitionsStore = defineStore('otsDefinitions', () => {
   }
 
   async function createOtsDefinition(
-    data: Pick<OtsDefinition, 'name' | 'scriptSlug' | 'userVariables' | 'brandSlug' | 'agentSlug' | 'sceneDurations'>
+    data: Pick<OtsDefinition, 'name' | 'scriptSlug' | 'userVariables' | 'brandSlug' | 'agentSlug' | 'color' | 'sceneDurations'>
   ) {
     return datanestApiService.createOtsDefinition(data)
   }

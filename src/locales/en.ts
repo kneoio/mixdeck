@@ -390,6 +390,7 @@ export default {
     edit_title: 'Edit One-Time Stream',
     edit_subtitle: 'Update one-time stream',
     name_label: 'Stream Name',
+    color: 'Color',
     script_required: 'Choose a script to continue.',
     load_failed: 'Failed to load the one-time stream.',
     saved: 'One-time stream saved',

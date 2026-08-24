@@ -363,6 +363,7 @@ export default {
     edit_title: 'Rediger engangsstrøm',
     edit_subtitle: 'Oppdater engangsstrøm',
     name_label: 'Strømnavn',
+    color: 'Farge',
     script_required: 'Velg et skript for å fortsette.',
     load_failed: 'Kunne ikke laste engangsstrømmen.',
     saved: 'Engangsstrøm lagret',

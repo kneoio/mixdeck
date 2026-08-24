@@ -3,7 +3,7 @@ import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { gsap } from 'gsap'
-import { NForm, NFormItem, NInput, NInputNumber, NSelect, NSwitch, NRadioGroup, NRadioButton, NSlider, NTabs, NTabPane, useMessage, type SelectOption } from 'naive-ui'
+import { NForm, NFormItem, NInput, NInputNumber, NSelect, NSwitch, NRadioGroup, NRadioButton, NSlider, NTabs, NTabPane, NColorPicker, useMessage, type SelectOption } from 'naive-ui'
 import MarkdownIt from 'markdown-it'
 import GsapButton from '@/components/GsapButton.vue'
 import FormWrapper from '@/components/FormWrapper.vue'
@@ -53,6 +53,7 @@ const formData = ref({
   scope: 'default' as 'brand' | 'default',
   brandSlug: null as string | null,
   agentSlug: null as string | null,
+  color: '#000000',
 })
 const scriptDetail = ref<Script | null>(null)
 const otsStatus = ref<string | null>(null)
@@ -156,6 +157,7 @@ async function loadOtsTemplate(scriptSlug: string) {
   const template = await datanestApiService.getOtsDefinitionTemplate(scriptSlug)
   formData.value.name = template?.name ?? ''
   formData.value.scriptSlug = template?.scriptSlug ?? scriptSlug
+  formData.value.color = template?.color || '#000000'
   await loadScriptDetail()
   if (scriptDetail.value) {
     scriptDetail.value = {
@@ -285,6 +287,7 @@ async function handleSave() {
       userVariables: { ...variables },
       brandSlug: formData.value.scope === 'brand' ? formData.value.brandSlug : null,
       agentSlug: formData.value.agentSlug || null,
+      color: formData.value.color || undefined,
       sceneDurations: buildSceneDurationsPayload() ?? {},
     }
     if (isEditing.value) {
@@ -321,6 +324,7 @@ onMounted(async () => {
       const def = await otsDefinitionsStore.fetchOtsDefinition(route.params.slugName as string)
       formData.value.name = def.name ?? ''
       formData.value.scriptSlug = def.scriptSlug
+      formData.value.color = def.color || '#000000'
       Object.assign(variables, def.userVariables || {})
       formData.value.scope = def.brandSlug ? 'brand' : 'default'
       formData.value.brandSlug = def.brandSlug
@@ -394,6 +398,16 @@ onMounted(async () => {
             <div class="field-stack">
               <div class="field-error-shell">
                 <NInput v-model:value="formData.name" :placeholder="t('otsForm.name_label')" />
+              </div>
+              <div class="field-error-label"></div>
+            </div>
+          </NFormItem>
+          <NFormItem :label="t('otsForm.color')" :show-feedback="false">
+            <div class="field-stack">
+              <div class="field-error-shell">
+                <div style="width: 200px;">
+                  <NColorPicker v-model:value="formData.color" />
+                </div>
               </div>
               <div class="field-error-label"></div>
             </div>

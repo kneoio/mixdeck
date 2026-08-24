@@ -325,6 +325,7 @@ export default {
     edit_title: 'ワンタイムストリームを編集',
     edit_subtitle: 'ワンタイムストリームを更新',
     name_label: 'ストリーム名',
+    color: '色',
     script_required: '続行するにはスクリプトを選択してください。',
     load_failed: 'ワンタイムストリームの読み込みに失敗しました。',
     saved: 'ワンタイムストリームを保存しました',

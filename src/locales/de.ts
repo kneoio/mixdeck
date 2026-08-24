@@ -364,6 +364,7 @@ export default {
     edit_title: 'Einmal-Stream bearbeiten',
     edit_subtitle: 'Einmal-Stream aktualisieren',
     name_label: 'Stream-Name',
+    color: 'Farbe',
     script_required: 'Wähle ein Skript, um fortzufahren.',
     load_failed: 'Der Einmal-Stream konnte nicht geladen werden.',
     saved: 'Einmal-Stream gespeichert',
