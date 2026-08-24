@@ -547,6 +547,7 @@ export default {
     review_yes: 'はい',
     review_no: 'いいえ',
     review_empty: '—',
+    total_time: '合計時間',
   },
   auth: {
     email_title: 'Mixdeckにサインイン',

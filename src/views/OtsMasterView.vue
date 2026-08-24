@@ -300,6 +300,10 @@
                   <n-ellipsis class="summary-label">{{ scene.title || scene.id }}</n-ellipsis>
                   <span class="summary-value">{{ sceneReviewDuration(scene) }}</span>
                 </div>
+                <div v-if="orderedScenes.length" class="summary-row summary-row--total">
+                  <n-ellipsis class="summary-label">{{ t('otsMaster.total_time') }}</n-ellipsis>
+                  <span class="summary-value">{{ formatHoursMinutes(totalReviewSeconds) }}</span>
+                </div>
               </div>
               <div v-if="fieldErrors.api" class="error-row">
                 <p class="field-error">{{ fieldErrors.api }}</p>
@@ -533,11 +537,26 @@ function reviewFieldLabel(text: string): string {
   return stripped || text
 }
 
-function sceneReviewDuration(scene: ScriptScene): string {
+function sceneReviewSeconds(scene: ScriptScene): number {
   if (!isOneTimeScene(scene) && scene.id) {
-    return formatDurationLabel(sceneDurationValues[scene.id] ?? sceneInheritedSeconds(scene))
+    return sceneDurationValues[scene.id] ?? sceneInheritedSeconds(scene)
   }
-  return formatDurationLabel(sceneInheritedSeconds(scene))
+  return sceneInheritedSeconds(scene)
+}
+
+function sceneReviewDuration(scene: ScriptScene): string {
+  return formatDurationLabel(sceneReviewSeconds(scene))
+}
+
+const totalReviewSeconds = computed(() =>
+  orderedScenes.value.reduce((sum, scene) => sum + sceneReviewSeconds(scene), 0)
+)
+
+function formatHoursMinutes(seconds: number): string {
+  const total = Math.max(0, Math.round(seconds))
+  const h = Math.floor(total / 3600)
+  const m = Math.floor((total % 3600) / 60)
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
 }
 
 function sceneInheritedSeconds(scene: ScriptScene): number {
@@ -1440,7 +1459,16 @@ h2 {
   word-break: break-word;
 }
 
-.summary-row--link {
+.summary-row--total {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid #2a2a2a;
+}
+
+.summary-row--total .summary-label,
+.summary-row--total .summary-value {
+  color: #ddd;
+}
   align-items: flex-start;
   flex-wrap: wrap;
 }

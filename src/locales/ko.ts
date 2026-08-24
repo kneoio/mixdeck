@@ -598,6 +598,7 @@ export default {
     review_yes: '예',
     review_no: '아니요',
     review_empty: '—',
+    total_time: '총 시간',
   },
   auth: {
     email_title: 'Mixdeck 로그인',

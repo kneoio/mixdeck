@@ -547,6 +547,7 @@ export default {
     review_yes: 'हाँ',
     review_no: 'नहीं',
     review_empty: '—',
+    total_time: 'कुल समय',
   },
   auth: {
     email_title: 'Mixdeck में साइन इन करें',

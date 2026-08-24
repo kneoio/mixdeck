@@ -548,6 +548,7 @@ export default {
     review_yes: 'Так',
     review_no: 'Ні',
     review_empty: '—',
+    total_time: 'Загальний час',
   },
   auth: {
     email_title: 'Вхід у Mixdeck',

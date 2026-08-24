@@ -598,6 +598,7 @@ export default {
     review_yes: 'Ja',
     review_no: 'Nei',
     review_empty: '—',
+    total_time: 'Total tid',
   },
   auth: {
     email_title: 'Logg inn på Mixdeck',

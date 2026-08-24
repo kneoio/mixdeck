@@ -548,6 +548,7 @@ export default {
     review_yes: 'Иә',
     review_no: 'Жоқ',
     review_empty: '—',
+    total_time: 'Жалпы уақыт',
   },
   auth: {
     email_title: 'Mixdeck-ке кіру',

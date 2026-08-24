@@ -547,6 +547,7 @@ export default {
     review_yes: 'نعم',
     review_no: 'لا',
     review_empty: '—',
+    total_time: 'الوقت الإجمالي',
   },
   auth: {
     email_title: 'تسجيل الدخول إلى Mixdeck',

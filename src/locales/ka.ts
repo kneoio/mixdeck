@@ -548,6 +548,7 @@ export default {
     review_yes: 'კი',
     review_no: 'არა',
     review_empty: '—',
+    total_time: 'ჯამური დრო',
   },
   auth: {
     email_title: 'Mixdeck-ში შესვლა',
