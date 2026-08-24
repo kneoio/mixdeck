@@ -326,6 +326,8 @@ export default {
     edit_subtitle: 'Actualizar transmisión única',
     name_label: 'Nombre del stream',
     color: 'Color',
+    public: 'Público',
+    public_premium_only: 'Hacer público un stream solo está disponible para suscriptores Premium.',
     script_required: 'Elige un guion para continuar.',
     load_failed: 'No se pudo cargar la transmisión única.',
     saved: 'Transmisión única guardada',

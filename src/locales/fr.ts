@@ -325,6 +325,8 @@ export default {
     edit_subtitle: 'Mettre à jour la diffusion ponctuelle',
     name_label: 'Nom du flux',
     color: 'Couleur',
+    public: 'Public',
+    public_premium_only: 'Rendre un flux public est disponible uniquement pour les abonnés Premium.',
     script_required: 'Choisissez un script pour continuer.',
     load_failed: 'Échec du chargement de la diffusion ponctuelle.',
     saved: 'Diffusion ponctuelle enregistrée',

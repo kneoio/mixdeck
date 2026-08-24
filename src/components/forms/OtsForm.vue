@@ -54,7 +54,9 @@ const formData = ref({
   brandSlug: null as string | null,
   agentSlug: null as string | null,
   color: '#000000',
+  publicOts: 0,
 })
+const publicPremiumGlow = ref(false)
 const scriptDetail = ref<Script | null>(null)
 const otsStatus = ref<string | null>(null)
 const otsType = ref<string | null>(null)
@@ -158,6 +160,7 @@ async function loadOtsTemplate(scriptSlug: string) {
   formData.value.name = template?.name ?? ''
   formData.value.scriptSlug = template?.scriptSlug ?? scriptSlug
   formData.value.color = template?.color || '#000000'
+  formData.value.publicOts = template?.publicOts ?? 0
   await loadScriptDetail()
   if (scriptDetail.value) {
     scriptDetail.value = {
@@ -226,6 +229,13 @@ async function loadAgents() {
   }
 }
 
+function handlePublicToggle(v: boolean) {
+  if (!v) { formData.value.publicOts = 0; return }
+  publicPremiumGlow.value = true
+  message.warning(t('otsForm.public_premium_only'))
+  setTimeout(() => { publicPremiumGlow.value = false }, 1500)
+}
+
 function onScopeChange() {
   formData.value.brandSlug = null
   formData.value.agentSlug = null
@@ -288,6 +298,7 @@ async function handleSave() {
       brandSlug: formData.value.scope === 'brand' ? formData.value.brandSlug : null,
       agentSlug: formData.value.agentSlug || null,
       color: formData.value.color || undefined,
+      publicOts: formData.value.publicOts,
       sceneDurations: buildSceneDurationsPayload() ?? {},
     }
     if (isEditing.value) {
@@ -325,6 +336,7 @@ onMounted(async () => {
       formData.value.name = def.name ?? ''
       formData.value.scriptSlug = def.scriptSlug
       formData.value.color = def.color || '#000000'
+      formData.value.publicOts = def.publicOts ?? 0
       Object.assign(variables, def.userVariables || {})
       formData.value.scope = def.brandSlug ? 'brand' : 'default'
       formData.value.brandSlug = def.brandSlug
@@ -408,6 +420,20 @@ onMounted(async () => {
                 <div style="width: 200px;">
                   <NColorPicker v-model:value="formData.color" />
                 </div>
+              </div>
+              <div class="field-error-label"></div>
+            </div>
+          </NFormItem>
+          <NFormItem>
+            <template #label>
+              <span class="form-label-with-badge">
+                {{ t('otsForm.public') }}
+                <span class="premium-badge" :class="{ 'premium-badge--glow': publicPremiumGlow }">premium</span>
+              </span>
+            </template>
+            <div class="field-stack">
+              <div class="field-error-shell">
+                <NSwitch :value="formData.publicOts === 1" @update:value="handlePublicToggle" />
               </div>
               <div class="field-error-label"></div>
             </div>
@@ -535,6 +561,29 @@ onMounted(async () => {
 .field-stack {
   width: 100%;
   display: block;
+}
+.form-label-with-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+.premium-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  padding: 0px 4px;
+  transition: color 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+.premium-badge--glow {
+  color: #f0a500;
+  border-color: rgba(240, 165, 0, 0.5);
+  box-shadow: 0 0 7px 2px rgba(240, 165, 0, 0.4);
 }
 .field-error-shell {
   width: 100%;

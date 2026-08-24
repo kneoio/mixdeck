@@ -364,6 +364,8 @@ export default {
     edit_subtitle: '원타임 스트림 업데이트',
     name_label: '스트림 이름',
     color: '색상',
+    public: '공개',
+    public_premium_only: '스트림을 공개로 설정하는 것은 Premium 구독자만 이용할 수 있습니다.',
     script_required: '계속하려면 스크립트를 선택하세요.',
     load_failed: '원타임 스트림을 불러오지 못했습니다.',
     saved: '원타임 스트림이 저장되었습니다',

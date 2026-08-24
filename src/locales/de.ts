@@ -365,6 +365,8 @@ export default {
     edit_subtitle: 'Einmal-Stream aktualisieren',
     name_label: 'Stream-Name',
     color: 'Farbe',
+    public: 'Öffentlich',
+    public_premium_only: 'Einen Stream öffentlich zu machen ist nur für Premium-Abonnenten verfügbar.',
     script_required: 'Wähle ein Skript, um fortzufahren.',
     load_failed: 'Der Einmal-Stream konnte nicht geladen werden.',
     saved: 'Einmal-Stream gespeichert',

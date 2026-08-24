@@ -326,6 +326,8 @@ export default {
     edit_subtitle: 'ワンタイムストリームを更新',
     name_label: 'ストリーム名',
     color: '色',
+    public: '公開',
+    public_premium_only: 'ストリームを公開するにはPremiumサブスクリプションが必要です。',
     script_required: '続行するにはスクリプトを選択してください。',
     load_failed: 'ワンタイムストリームの読み込みに失敗しました。',
     saved: 'ワンタイムストリームを保存しました',

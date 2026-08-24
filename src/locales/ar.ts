@@ -326,6 +326,8 @@ export default {
     edit_subtitle: 'تحديث بث لمرة واحدة',
     name_label: 'اسم البث',
     color: 'اللون',
+    public: 'عام',
+    public_premium_only: 'جعل البث عامًا متاح فقط للمشتركين المميزين.',
     script_required: 'اختر نصًا برمجيًا للمتابعة.',
     load_failed: 'تعذر تحميل البث لمرة واحدة.',
     saved: 'تم حفظ البث لمرة واحدة',
