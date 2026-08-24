@@ -741,7 +741,7 @@ async function loadParams(scriptSlug: string) {
       name: template?.name ?? detail?.name,
       requiredVariables,
     }
-    for (const variable of scriptDetail.value.requiredVariables ?? []) {
+    for (const variable of requiredVariables) {
       variables[variable.name] = variable.type === 'boolean' ? false : variable.type === 'number' ? null : ''
     }
     initSceneDurationValues()
@@ -1469,6 +1469,8 @@ h2 {
 .summary-row--total .summary-value {
   color: #ddd;
 }
+
+.summary-row--link {
   align-items: flex-start;
   flex-wrap: wrap;
 }
