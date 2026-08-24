@@ -217,6 +217,8 @@ export default {
     stream_quality_only_good: 'O stream suporta apenas a qualidade Boa.',
     public: 'Público',
     public_premium_only: 'Tornar uma estação pública está disponível apenas para assinantes Premium.',
+    private: 'Privado',
+    private_premium_only: 'Tornar uma estação privada está disponível apenas para assinantes Premium.',
     ai_agent: 'Agente de IA',
     ai_override: 'Substituição de IA',
     ai_override_name: 'Nome do DJ',

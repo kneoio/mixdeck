@@ -216,6 +216,8 @@ export default {
     stream_quality_only_good: 'სტრიმი მხოლოდ კარგ ხარისხს უჭერს მხარს.',
     public: 'საჯარო',
     public_premium_only: 'სადგურის საჯაროდ გამოქვეყნება ხელმისაწვდომია მხოლოდ Premium გამომწერებისთვის.',
+    private: 'პირადი',
+    private_premium_only: 'სადგურის პირადად დაყენება ხელმისაწვდომია მხოლოდ Premium გამომწერებისთვის.',
     ai_agent: 'AI აგენტი',
     ai_override: 'AI გადაწერა',
     ai_override_name: 'DJ-ის სახელი',

@@ -216,6 +216,8 @@ export default {
     stream_quality_only_good: 'ストリームは「良い」品質のみをサポートしています。',
     public: '公開',
     public_premium_only: 'ステーションを公開するにはPremiumサブスクリプションが必要です。',
+    private: '非公開',
+    private_premium_only: 'ステーションを非公開にするにはPremiumサブスクリプションが必要です。',
     ai_agent: 'AIエージェント',
     ai_override: 'AI上書き',
     ai_override_name: 'DJ名',

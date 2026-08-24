@@ -57,6 +57,7 @@ const formData = ref({
   publicOts: 1,
 })
 const privatePremiumGlow = ref(false)
+const privateSwitchKey = ref(0)
 const scriptDetail = ref<Script | null>(null)
 const otsStatus = ref<string | null>(null)
 const otsType = ref<string | null>(null)
@@ -231,6 +232,7 @@ async function loadAgents() {
 
 function handlePrivateToggle(v: boolean) {
   if (!v) { formData.value.publicOts = 1; return }
+  privateSwitchKey.value += 1
   privatePremiumGlow.value = true
   message.warning(t('otsForm.private_premium_only'))
   setTimeout(() => { privatePremiumGlow.value = false }, 1500)
@@ -433,7 +435,7 @@ onMounted(async () => {
             </template>
             <div class="field-stack">
               <div class="field-error-shell">
-                <NSwitch :value="formData.publicOts === 0" @update:value="handlePrivateToggle" />
+                <NSwitch :key="privateSwitchKey" :value="formData.publicOts === 0" @update:value="handlePrivateToggle" />
               </div>
               <div class="field-error-label"></div>
             </div>

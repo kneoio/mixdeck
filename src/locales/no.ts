@@ -217,6 +217,8 @@ export default {
     stream_quality_only_good: 'Strømmen støtter for øyeblikket kun God kvalitet.',
     public: 'Offentlig',
     public_premium_only: 'Å gjøre en stasjon offentlig er kun tilgjengelig for Premium-abonnenter.',
+    private: 'Privat',
+    private_premium_only: 'Å gjøre en stasjon privat er kun tilgjengelig for Premium-abonnenter.',
     ai_agent: 'AI-agent',
     ai_override: 'AI-overstyring',
     ai_override_name: 'DJ-navn',

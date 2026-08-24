@@ -216,6 +216,8 @@ export default {
     stream_quality_only_good: 'Трансляція підтримує лише якість «Хороша».',
     public: 'Публічний',
     public_premium_only: 'Публічна трансляція доступна лише для Premium-підписників.',
+    private: 'Приватний',
+    private_premium_only: 'Приватна станція доступна лише для Premium-підписників.',
     ai_agent: 'AI агент',
     ai_override: 'Перевизначення AI',
     ai_override_name: 'Ім\'я DJ',

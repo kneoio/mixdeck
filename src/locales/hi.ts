@@ -216,6 +216,8 @@ export default {
     stream_quality_only_good: 'स्ट्रीम केवल अच्छी गुणवत्ता का समर्थन करती है।',
     public: 'सार्वजनिक',
     public_premium_only: 'स्टेशन को सार्वजनिक बनाना केवल Premium सदस्यों के लिए उपलब्ध है।',
+    private: 'निजी',
+    private_premium_only: 'स्टेशन को निजी बनाना केवल Premium सदस्यों के लिए उपलब्ध है।',
     ai_agent: 'AI एजेंट',
     ai_override: 'AI ओवरराइड',
     ai_override_name: 'DJ का नाम',

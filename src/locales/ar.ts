@@ -216,6 +216,8 @@ export default {
     stream_quality_only_good: 'البث يدعم جودة جيد فقط.',
     public: 'عام',
     public_premium_only: 'جعل المحطة عامة متاح فقط للمشتركين المميزين.',
+    private: 'خاص',
+    private_premium_only: 'جعل المحطة خاصة متاح فقط للمشتركين المميزين.',
     ai_agent: 'وكيل الذكاء الاصطناعي',
     ai_override: 'تخطي الذكاء الاصطناعي',
     ai_override_name: 'اسم الـ DJ',

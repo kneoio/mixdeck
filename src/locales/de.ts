@@ -218,6 +218,8 @@ export default {
     stream_quality_only_good: 'Der Stream unterstützt nur die Qualität Gut.',
     public: 'Öffentlich',
     public_premium_only: 'Eine Station öffentlich zu machen ist nur für Premium-Abonnenten verfügbar.',
+    private: 'Privat',
+    private_premium_only: 'Eine Station privat zu machen ist nur für Premium-Abonnenten verfügbar.',
     ai_agent: 'KI-Agent',
     ai_override: 'KI-Override',
     ai_override_name: 'DJ-Name',

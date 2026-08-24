@@ -217,6 +217,8 @@ export default {
     stream_quality_only_good: '현재 스트림은 좋음 품질만 지원합니다.',
     public: '공개',
     public_premium_only: '방송국을 공개로 설정하는 것은 Premium 구독자만 이용할 수 있습니다.',
+    private: '비공개',
+    private_premium_only: '방송국을 비공개로 설정하는 것은 Premium 구독자만 이용할 수 있습니다.',
     ai_agent: 'AI 에이전트',
     ai_override: 'AI 재정의',
     ai_override_name: 'DJ 이름',

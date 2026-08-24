@@ -100,7 +100,7 @@ const formData = ref({
   country: null as string | null,
   description: '',
   timeZone: null as string | null,
-  publicBrand: 0,
+  publicBrand: 1,
   bitRate: 64_000,
   aiAgentSlug: null as string | null,
   profileSlug: null as string | null,
@@ -454,6 +454,8 @@ function handleQualityChange() {
   message.warning(t('brandForm.stream_quality_only_good'), { onAfterLeave: () => { qualityMsgShown.value = false } })
 }
 
+const privatePremiumGlow = ref(false)
+const privateSwitchKey = ref(0)
 const customScriptGlow = ref(false)
 
 function handleScriptModeChange(val: string) {
@@ -475,8 +477,12 @@ function handleChatWithDjToggle(v: boolean) {
   }
 }
 
-function handlePublicToggle(v: boolean) {
-  formData.value.publicBrand = v ? 1 : 0
+function handlePrivateToggle(v: boolean) {
+  if (!v) { formData.value.publicBrand = 1; return }
+  privateSwitchKey.value += 1
+  privatePremiumGlow.value = true
+  message.warning(t('brandForm.private_premium_only'))
+  setTimeout(() => { privatePremiumGlow.value = false }, 1500)
 }
 
 function formatBitRateTooltip(value: number) {
@@ -986,7 +992,7 @@ function applyBrandToForm(brand: any) {
     country: brand.country || null,
     description: brand.description || '',
     timeZone: brand.timeZone || null,
-    publicBrand: brand.publicBrand ?? 0,
+    publicBrand: brand.publicBrand ?? 1,
     bitRate: snapBrandBitRate(normalizeBitRateFromServer(brand.bitRate)),
     aiAgentSlug: brand.aiAgentSlug || null,
     profileSlug: brand.profileSlug || null,
@@ -1294,10 +1300,16 @@ watch(activeTab, async (tab) => {
           </NFormItem>
 
 
-          <NFormItem :label="t('brandForm.public')" :show-feedback="false">
+          <NFormItem>
+            <template #label>
+              <span class="form-label-with-badge">
+                {{ t('brandForm.private') }}
+                <span class="premium-badge" :class="{ 'premium-badge--glow': privatePremiumGlow }">premium</span>
+              </span>
+            </template>
             <div class="field-stack">
               <div class="field-error-shell">
-                <NSwitch :value="formData.publicBrand === 1" @update:value="handlePublicToggle" />
+                <NSwitch :key="privateSwitchKey" :value="formData.publicBrand === 0" @update:value="handlePrivateToggle" />
               </div>
               <div class="field-error-label"></div>
             </div>
@@ -1880,6 +1892,13 @@ watch(activeTab, async (tab) => {
 }
 .script-description :deep(ul),
 .script-description :deep(ol) { padding-left: 20px; margin: 4px 0; }
+
+.form-label-with-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
 
 .premium-badge {
   display: inline-block;

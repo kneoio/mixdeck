@@ -216,6 +216,8 @@ export default {
     stream_quality_only_good: 'Трансляция тек «Жақсы» сапасын қолдайды.',
     public: 'Жария',
     public_premium_only: 'Станцияны жария ету тек Premium жазылушылар үшін қолжетімді.',
+    private: 'Жеке',
+    private_premium_only: 'Станцияны жеке ету тек Premium жазылушылар үшін қолжетімді.',
     ai_agent: 'AI агент',
     ai_override: 'AI қайта жазу',
     ai_override_name: 'DJ атауы',
