@@ -10,23 +10,23 @@
           <p class="eyebrow neon-motto">{{ t('welcome.motto') }}</p>
           <div class="hero-ctas">
             <div class="cta-item">
-              <n-button type="primary" size="large" class="cta-button neon-orange" @click="goToMixpla">{{ t('welcome.cta_mixplay') }}</n-button>
+              <n-button type="primary" size="large" class="cta-button neon-orange" :style="neonPulseStyles[0]" @click="goToMixpla">{{ t('welcome.cta_mixplay') }}</n-button>
               <span class="cta-hint">{{ t('welcome.cta_mixplay_hint') }}</span>
             </div>
             <div class="cta-item">
-              <n-button size="large" class="cta-button neon-cyan" @click="goToBrands">{{ t('welcome.cta_portal') }}</n-button>
+              <n-button size="large" class="cta-button neon-cyan" :style="neonPulseStyles[1]" @click="goToBrands">{{ t('welcome.cta_portal') }}</n-button>
               <span class="cta-hint">{{ t('welcome.cta_portal_hint') }}</span>
             </div>
             <div class="cta-item">
-              <n-button size="large" class="cta-button neon-magenta" @click="router.push('/submission')">{{ t('welcome.cta_submit') }}</n-button>
+              <n-button size="large" class="cta-button neon-magenta" :style="neonPulseStyles[2]" @click="router.push('/submission')">{{ t('welcome.cta_submit') }}</n-button>
               <span class="cta-hint">{{ t('welcome.cta_submit_hint') }}</span>
             </div>
             <div class="cta-item">
-              <n-button size="large" class="cta-button neon-lime" @click="router.push('/ots')">{{ t('welcome.cta_ots') }}</n-button>
+              <n-button size="large" class="cta-button neon-lime" :style="neonPulseStyles[3]" @click="router.push('/ots')">{{ t('welcome.cta_ots') }}</n-button>
               <span class="cta-hint">{{ t('welcome.cta_ots_hint') }}</span>
             </div>
             <div class="cta-item">
-              <n-button size="large" class="cta-button neon-violet" @click="router.push('/help')">{{ t('welcome.cta_help') }}</n-button>
+              <n-button size="large" class="cta-button neon-violet" :style="neonPulseStyles[4]" @click="router.push('/help')">{{ t('welcome.cta_help') }}</n-button>
               <span class="cta-hint">{{ t('welcome.cta_help_hint') }}</span>
             </div>
           </div>
@@ -53,6 +53,17 @@ import { NButton, NConfigProvider, darkTheme } from 'naive-ui'
 
 const { t } = useI18n()
 const router = useRouter()
+
+function randomPulseStyle() {
+  const duration = 1.6 + Math.random() * 2.4
+  const delay = Math.random() * duration
+  return {
+    '--pulse-duration': `${duration.toFixed(2)}s`,
+    '--pulse-delay': `${delay.toFixed(2)}s`,
+  }
+}
+
+const neonPulseStyles = Array.from({ length: 5 }, randomPulseStyle)
 
 function goToMixpla() {
   window.open('https://mixpla.online', '_blank', 'noopener,noreferrer')
@@ -163,21 +174,20 @@ h1 {
 .cta-button {
   --neon: #ff7a18;
   --neon-soft: rgba(255, 122, 24, 0.55);
-  --neon-strong: rgba(255, 122, 24, 0.9);
+  --neon-strong: rgba(255, 122, 24, 0.95);
   border: 1px solid var(--neon) !important;
   background: rgba(0, 0, 0, 0.55) !important;
-  color: #fff !important;
+  color: var(--neon) !important;
   font-weight: 700;
-  text-transform: uppercase;
   letter-spacing: 0.08em;
   box-shadow:
     0 0 6px var(--neon-soft),
     0 0 18px var(--neon-soft),
     0 0 36px var(--neon-soft),
     inset 0 0 12px var(--neon-soft);
-  text-shadow: 0 0 8px var(--neon);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-  animation: neon-pulse 2.4s ease-in-out infinite;
+  text-shadow: 0 0 8px var(--neon-soft), 0 0 16px var(--neon-soft);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, text-shadow 0.2s ease;
+  animation: neon-pulse var(--pulse-duration, 2.4s) ease-in-out var(--pulse-delay, 0s) infinite;
 }
 
 .cta-button:hover {
@@ -193,35 +203,31 @@ h1 {
   --neon: #ff7a18;
   --neon-soft: rgba(255, 122, 24, 0.55);
   --neon-strong: rgba(255, 122, 24, 0.95);
-  animation-delay: 0s;
+  text-transform: uppercase;
 }
 
 .neon-cyan {
   --neon: #2ee6ff;
   --neon-soft: rgba(46, 230, 255, 0.5);
   --neon-strong: rgba(46, 230, 255, 0.95);
-  animation-delay: 0.2s;
 }
 
 .neon-magenta {
   --neon: #ff2ea6;
   --neon-soft: rgba(255, 46, 166, 0.5);
   --neon-strong: rgba(255, 46, 166, 0.95);
-  animation-delay: 0.4s;
 }
 
 .neon-lime {
   --neon: #a8ff2e;
   --neon-soft: rgba(168, 255, 46, 0.5);
   --neon-strong: rgba(168, 255, 46, 0.95);
-  animation-delay: 0.6s;
 }
 
 .neon-violet {
   --neon: #b56bff;
   --neon-soft: rgba(181, 107, 255, 0.5);
   --neon-strong: rgba(181, 107, 255, 0.95);
-  animation-delay: 0.8s;
 }
 
 @keyframes neon-pulse {
@@ -231,6 +237,7 @@ h1 {
       0 0 18px var(--neon-soft),
       0 0 36px var(--neon-soft),
       inset 0 0 12px var(--neon-soft);
+    text-shadow: 0 0 6px var(--neon-soft), 0 0 12px var(--neon-soft);
   }
   50% {
     box-shadow:
@@ -238,6 +245,7 @@ h1 {
       0 0 28px var(--neon-strong),
       0 0 56px var(--neon-soft),
       inset 0 0 18px var(--neon-soft);
+    text-shadow: 0 0 10px var(--neon), 0 0 22px var(--neon-strong);
   }
 }
 
