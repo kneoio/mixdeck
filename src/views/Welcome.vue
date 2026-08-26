@@ -87,16 +87,21 @@ function goToBrands() {
   font-display: swap;
 }
 
-:global(body) {
+:global(html),
+:global(body),
+:global(#app) {
   background: #050505;
 }
 
 .welcome-page {
   min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
   background: #050505;
   color: #f5f5f5;
   font-family: 'Inter', sans-serif;
-  padding: 32px clamp(16px, 4vw, 64px);
+  padding: 24px clamp(16px, 4vw, 48px);
 }
 
 .nav {
@@ -104,7 +109,7 @@ function goToBrands() {
   align-items: center;
   justify-content: flex-start;
   gap: 24px;
-  padding-bottom: 32px;
+  padding-bottom: 16px;
 }
 
 .logo {
@@ -116,12 +121,16 @@ function goToBrands() {
 }
 
 .hero {
-  display: grid;
-  grid-template-columns: auto minmax(560px, 2.8fr) minmax(200px, 0.85fr);
+  flex: 1;
+  display: flex;
   align-items: center;
-  column-gap: 16px;
-  row-gap: 32px;
-  padding: 64px 0;
+  gap: 12px;
+  padding: 0;
+  min-height: 0;
+}
+
+.hero-text {
+  flex: 0 0 auto;
 }
 
 .eyebrow {
@@ -132,13 +141,17 @@ function goToBrands() {
 }
 
 .hero-city {
-  width: 100%;
+  flex: 1 1 auto;
+  width: min(960px, 52vw);
+  min-width: 0;
   max-width: 960px;
   height: auto;
   display: block;
 }
 
 .hero-motto {
+  flex: 0 0 auto;
+  max-width: min(360px, 28vw);
   display: flex;
   flex-direction: column;
   gap: 0.35em;
@@ -261,7 +274,8 @@ function goToBrands() {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 16px;
-  padding-top: 48px;
+  padding-top: 24px;
+  margin-top: auto;
   border-top: 1px solid #1a1a1a;
   align-items: center;
 }
@@ -315,6 +329,16 @@ function goToBrands() {
 @media (max-width: 768px) {
   .nav {
     flex-direction: column;
+  }
+
+  .hero {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 24px;
+  }
+
+  .hero-motto {
+    max-width: none;
   }
 
   .hero-city {
