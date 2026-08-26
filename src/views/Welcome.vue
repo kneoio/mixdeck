@@ -10,23 +10,23 @@
           <p class="eyebrow neon-motto">{{ t('welcome.motto') }}</p>
           <div class="hero-ctas">
             <div class="cta-item">
-              <n-button type="primary" size="large" class="cta-button" @click="goToMixpla">{{ t('welcome.cta_mixplay') }}</n-button>
+              <n-button type="primary" size="large" class="cta-button neon-orange" @click="goToMixpla">{{ t('welcome.cta_mixplay') }}</n-button>
               <span class="cta-hint">{{ t('welcome.cta_mixplay_hint') }}</span>
             </div>
             <div class="cta-item">
-              <n-button size="large" @click="goToBrands">{{ t('welcome.cta_portal') }}</n-button>
+              <n-button size="large" class="cta-button neon-cyan" @click="goToBrands">{{ t('welcome.cta_portal') }}</n-button>
               <span class="cta-hint">{{ t('welcome.cta_portal_hint') }}</span>
             </div>
             <div class="cta-item">
-              <n-button size="large" @click="router.push('/submission')">{{ t('welcome.cta_submit') }}</n-button>
+              <n-button size="large" class="cta-button neon-magenta" @click="router.push('/submission')">{{ t('welcome.cta_submit') }}</n-button>
               <span class="cta-hint">{{ t('welcome.cta_submit_hint') }}</span>
             </div>
             <div class="cta-item">
-              <n-button size="large" @click="router.push('/ots')">{{ t('welcome.cta_ots') }}</n-button>
+              <n-button size="large" class="cta-button neon-lime" @click="router.push('/ots')">{{ t('welcome.cta_ots') }}</n-button>
               <span class="cta-hint">{{ t('welcome.cta_ots_hint') }}</span>
             </div>
             <div class="cta-item">
-              <n-button size="large" @click="router.push('/help')">{{ t('welcome.cta_help') }}</n-button>
+              <n-button size="large" class="cta-button neon-violet" @click="router.push('/help')">{{ t('welcome.cta_help') }}</n-button>
               <span class="cta-hint">{{ t('welcome.cta_help_hint') }}</span>
             </div>
           </div>
@@ -161,32 +161,84 @@ h1 {
 }
 
 .cta-button {
-  background: linear-gradient(120deg, #ff7a18, #af002d 60%, #319197);
-  background-size: 200% 200%;
-  border: none;
+  --neon: #ff7a18;
+  --neon-soft: rgba(255, 122, 24, 0.55);
+  --neon-strong: rgba(255, 122, 24, 0.9);
+  border: 1px solid var(--neon) !important;
+  background: rgba(0, 0, 0, 0.55) !important;
   color: #fff !important;
   font-weight: 700;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.15), 0 15px 45px rgba(255, 122, 24, 0.55);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  animation: gradient-shift 4s ease infinite, cta-glow 2.4s ease-in-out infinite;
+  box-shadow:
+    0 0 6px var(--neon-soft),
+    0 0 18px var(--neon-soft),
+    0 0 36px var(--neon-soft),
+    inset 0 0 12px var(--neon-soft);
+  text-shadow: 0 0 8px var(--neon);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  animation: neon-pulse 2.4s ease-in-out infinite;
 }
 
 .cta-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25), 0 18px 50px rgba(255, 122, 24, 0.7);
+  box-shadow:
+    0 0 8px var(--neon-strong),
+    0 0 24px var(--neon-strong),
+    0 0 48px var(--neon-soft),
+    inset 0 0 16px var(--neon-soft);
 }
 
-@keyframes gradient-shift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+.neon-orange {
+  --neon: #ff7a18;
+  --neon-soft: rgba(255, 122, 24, 0.55);
+  --neon-strong: rgba(255, 122, 24, 0.95);
+  animation-delay: 0s;
 }
 
-@keyframes cta-glow {
-  0%, 100% { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.15), 0 15px 45px rgba(255, 122, 24, 0.55); }
-  50% { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3), 0 20px 60px rgba(255, 122, 24, 0.85); }
+.neon-cyan {
+  --neon: #2ee6ff;
+  --neon-soft: rgba(46, 230, 255, 0.5);
+  --neon-strong: rgba(46, 230, 255, 0.95);
+  animation-delay: 0.2s;
+}
+
+.neon-magenta {
+  --neon: #ff2ea6;
+  --neon-soft: rgba(255, 46, 166, 0.5);
+  --neon-strong: rgba(255, 46, 166, 0.95);
+  animation-delay: 0.4s;
+}
+
+.neon-lime {
+  --neon: #a8ff2e;
+  --neon-soft: rgba(168, 255, 46, 0.5);
+  --neon-strong: rgba(168, 255, 46, 0.95);
+  animation-delay: 0.6s;
+}
+
+.neon-violet {
+  --neon: #b56bff;
+  --neon-soft: rgba(181, 107, 255, 0.5);
+  --neon-strong: rgba(181, 107, 255, 0.95);
+  animation-delay: 0.8s;
+}
+
+@keyframes neon-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 6px var(--neon-soft),
+      0 0 18px var(--neon-soft),
+      0 0 36px var(--neon-soft),
+      inset 0 0 12px var(--neon-soft);
+  }
+  50% {
+    box-shadow:
+      0 0 10px var(--neon-strong),
+      0 0 28px var(--neon-strong),
+      0 0 56px var(--neon-soft),
+      inset 0 0 18px var(--neon-soft);
+  }
 }
 
 .waveform {
