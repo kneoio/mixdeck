@@ -20,45 +20,7 @@
           </div>
 
           <transition name="slide" mode="out-in">
-            <div v-if="panel === 'type'" key="type" class="wizard-body">
-              <p class="step-intro">{{ t('otsMaster.type_body') }}</p>
-              <n-skeleton v-if="typesLoading" height="72px" :sharp="false" :repeat="3" />
-              <p v-else-if="!scripts.length" class="empty-hint">{{ t('otsMaster.no_types') }}</p>
-              <div v-else class="type-list">
-                <button
-                  v-for="script in scripts"
-                  :key="script.slugName"
-                  type="button"
-                  class="type-card"
-                  :class="{ 'type-card--selected': selectedScriptSlug === script.slugName }"
-                  @click="selectType(script.slugName)"
-                >
-                  <span class="type-card__name">{{ script.name }}</span>
-                  <div
-                    v-if="script.description"
-                    class="type-card__description"
-                    v-html="renderScriptDescription(script.description)"
-                  />
-                  <span v-if="script.tags?.length" class="type-card__tags">
-                    <span
-                      v-for="tag in script.tags"
-                      :key="tag.identifier"
-                      class="type-tag"
-                      :style="{ color: tag.color || '#ececec', borderColor: tag.color || '#ececec' }"
-                    >{{ tag.name || tag.identifier }}</span>
-                  </span>
-                </button>
-              </div>
-              <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.type }">{{ fieldErrors.type || ' ' }}</div>
-              <div class="wizard-actions">
-                <span />
-                <GsapButton type="primary" :disabled="typesLoading" @click="goToParams">
-                  <span>{{ t('otsMaster.next') }}</span>
-                </GsapButton>
-              </div>
-            </div>
-
-            <div v-else-if="panel === 'auth'" key="auth" class="wizard-body">
+            <div v-if="panel === 'auth'" key="auth" class="wizard-body">
               <p class="step-intro">{{ t('otsMaster.intro') }}</p>
 
               <div class="field-row">
@@ -98,9 +60,43 @@
                 </div>
                 <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.code }">{{ fieldErrors.code || ' ' }}</div>
               </div>
+            </div>
+
+            <div v-else-if="panel === 'type'" key="type" class="wizard-body">
+              <p class="step-intro">{{ t('otsMaster.type_body') }}</p>
+              <n-skeleton v-if="typesLoading" height="72px" :sharp="false" :repeat="3" />
+              <p v-else-if="!scripts.length" class="empty-hint">{{ t('otsMaster.no_types') }}</p>
+              <div v-else class="type-list">
+                <button
+                  v-for="script in scripts"
+                  :key="script.slugName"
+                  type="button"
+                  class="type-card"
+                  :class="{ 'type-card--selected': selectedScriptSlug === script.slugName }"
+                  @click="selectType(script.slugName)"
+                >
+                  <span class="type-card__name">{{ script.name }}</span>
+                  <div
+                    v-if="script.description"
+                    class="type-card__description"
+                    v-html="renderScriptDescription(script.description)"
+                  />
+                  <span v-if="script.tags?.length" class="type-card__tags">
+                    <span
+                      v-for="tag in script.tags"
+                      :key="tag.identifier"
+                      class="type-tag"
+                      :style="{ color: tag.color || '#ececec', borderColor: tag.color || '#ececec' }"
+                    >{{ tag.name || tag.identifier }}</span>
+                  </span>
+                </button>
+              </div>
+              <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.type }">{{ fieldErrors.type || ' ' }}</div>
               <div class="wizard-actions">
-                <button class="back-btn" type="button" @click="step = 1">← {{ t('otsMaster.back') }}</button>
                 <span />
+                <GsapButton type="primary" :disabled="typesLoading" @click="goToParams">
+                  <span>{{ t('otsMaster.next') }}</span>
+                </GsapButton>
               </div>
             </div>
 
@@ -218,7 +214,7 @@
                 </div>
 
                 <div class="wizard-actions">
-                  <button class="back-btn" type="button" @click="step = 1">← {{ t('otsMaster.back') }}</button>
+                  <button class="back-btn" type="button" @click="step = 2">← {{ t('otsMaster.back') }}</button>
                   <GsapButton type="primary" :disabled="loading || paramsLoading" @click="goFromParams">
                     <span>{{ t('otsMaster.next') }}</span>
                   </GsapButton>
@@ -491,8 +487,8 @@ const optionalExpanded = ref<string[]>([])
 const hasDurationStep = computed(() => orderedScenes.value.some((scene) => scene.id && !isOneTimeScene(scene)))
 const stepCount = computed(() => (hasDurationStep.value ? 6 : 5))
 const panel = computed(() => {
-  if (step.value <= 1) return 'type'
-  if (step.value === 2) return 'auth'
+  if (step.value <= 1) return 'auth'
+  if (step.value === 2) return 'type'
   if (step.value === 3) return 'params'
   if (hasDurationStep.value) {
     if (step.value === 4) return 'scenes'
@@ -633,7 +629,10 @@ const brandOptions = computed(() =>
 
 onMounted(async () => {
   if (authStore.isLoading) await authStore.initializeAuth()
-  await loadTypes()
+  if (authStore.isAuthenticated) {
+    step.value = 2
+    await loadTypes()
+  }
 })
 
 function isValidEmail(value: string) {
@@ -675,8 +674,8 @@ async function verifyAndNext() {
   try {
     await authService.verifyOtp(email.value.trim(), otp)
     authStore.onLoginSuccess()
-    step.value = 3
-    if (selectedScriptSlug.value) await loadParams(selectedScriptSlug.value)
+    step.value = 2
+    await loadTypes()
   } catch {
     failCount.value += 1
     code.value = ''
@@ -709,10 +708,6 @@ function selectType(slug: string) {
 async function goToParams() {
   if (!selectedScriptSlug.value) {
     fieldErrors.value.type = t('otsMaster.type_required')
-    return
-  }
-  if (!authStore.isAuthenticated) {
-    step.value = 2
     return
   }
   step.value = 3
@@ -907,7 +902,7 @@ function createAnother() {
   Object.keys(sceneDurationValues).forEach((key) => delete sceneDurationValues[key])
   optionalExpanded.value = []
   fieldErrors.value = { email: '', code: '', type: '', source: '', api: '', name: '' }
-  step.value = 1
+  step.value = 2
 }
 </script>
 

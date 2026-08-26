@@ -639,7 +639,7 @@ export default {
   },
   otsMaster: {
     title: 'One-Time Stream',
-    intro: 'Sign in with a one-time code to continue.',
+    intro: 'Sign in with a one-time code, pick a stream type, then set its parameters.',
     next: 'Next',
     back: 'Back',
     type_heading: 'Choose a type',
