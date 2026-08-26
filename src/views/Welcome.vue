@@ -117,9 +117,10 @@ function goToBrands() {
 
 .hero {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: auto minmax(420px, 1.5fr) minmax(240px, 1fr);
   align-items: center;
-  gap: 48px;
+  column-gap: 24px;
+  row-gap: 32px;
   padding: 64px 0;
 }
 
@@ -132,10 +133,9 @@ function goToBrands() {
 
 .hero-city {
   width: 100%;
-  max-width: 420px;
+  max-width: 680px;
   height: auto;
   display: block;
-  justify-self: center;
 }
 
 .hero-motto {
