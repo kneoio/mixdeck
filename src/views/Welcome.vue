@@ -124,7 +124,7 @@ function goToBrands() {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   padding: 0;
   min-height: 0;
 }
@@ -141,15 +141,16 @@ function goToBrands() {
 }
 
 .hero-city {
-  flex: 0 0 auto;
-  height: 70vh;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 420px;
   width: auto;
+  object-fit: contain;
   display: block;
 }
 
 .hero-motto {
-  flex: 0 1 auto;
-  min-width: 0;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   gap: 0.35em;
