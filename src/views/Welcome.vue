@@ -150,12 +150,13 @@ function goToBrands() {
 }
 
 .hero-motto {
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  max-width: 14rem;
   display: flex;
   flex-direction: column;
-  gap: 0.35em;
+  gap: 0.25em;
   margin: 0;
-  font-size: clamp(1.75rem, 4.5vw, 3.25rem);
+  font-size: clamp(1.1rem, 2vw, 1.75rem);
   font-weight: 700;
   line-height: 1.15;
   letter-spacing: 0.04em;
