@@ -30,7 +30,9 @@
             </div>
           </div>
         </div>
-        <img class="hero-city" src="/city.png" alt="" />
+        <div class="hero-city-wrap">
+          <img class="hero-city" src="/city.png" alt="" />
+        </div>
         <div class="hero-motto neon-motto">
           <span>{{ t('welcome.motto_line1') }}</span>
           <span>{{ t('welcome.motto_line2') }}</span>
@@ -123,14 +125,16 @@ function goToBrands() {
 .hero {
   flex: 1;
   display: flex;
-  align-items: center;
-  gap: 12px;
+  align-items: stretch;
+  gap: 16px;
   padding: 0;
   min-height: 0;
 }
 
 .hero-text {
   flex: 0 0 auto;
+  display: flex;
+  align-items: center;
 }
 
 .eyebrow {
@@ -140,18 +144,24 @@ function goToBrands() {
   font-size: 0.75rem;
 }
 
-.hero-city {
-  flex: 1 1 auto;
-  width: min(960px, 52vw);
+.hero-city-wrap {
+  flex: 1 1 0;
   min-width: 0;
-  max-width: 960px;
-  height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-city {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
   display: block;
 }
 
 .hero-motto {
   flex: 0 0 auto;
-  max-width: min(360px, 28vw);
+  max-width: 22rem;
   display: flex;
   flex-direction: column;
   gap: 0.35em;
@@ -341,7 +351,7 @@ function goToBrands() {
     max-width: none;
   }
 
-  .hero-city {
+  .hero-city-wrap {
     display: none;
   }
 }
