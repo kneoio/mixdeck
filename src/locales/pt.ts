@@ -6,6 +6,8 @@ export default {
   },
   welcome: {
     motto: 'Tu escolhes o ambiente. A IA mantém-no vivo.',
+    motto_line1: 'Tu escolhes o ambiente.',
+    motto_line2: 'A IA mantém-no vivo.',
     headline: 'Streams, eventos e experiências de áudio com IA.',
     subline: 'Streams que nunca dormem. Personalizados. Interactivos. Vivos.',
     cta_mixplay: 'Mixplay Música',

@@ -10,6 +10,8 @@ export default {
   },
   welcome: {
     motto: 'You choose the vibe. AI keeps it live.',
+    motto_line1: 'You choose the vibe.',
+    motto_line2: 'AI keeps it live.',
     headline: 'Your Personal Stream. Your Audio Experience.',
     subline: 'Streams that never sleep. Personalised. Interactive. Alive.',
     cta_mixplay: 'Listen to Music',

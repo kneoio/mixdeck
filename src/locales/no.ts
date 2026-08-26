@@ -6,6 +6,8 @@ export default {
   },
   welcome: {
     motto: 'Du velger stemningen. AI holder den i live.',
+    motto_line1: 'Du velger stemningen.',
+    motto_line2: 'AI holder den i live.',
     headline: 'Din personlige strøm. Din lydopplevelse.',
     subline: 'Strømmer som aldri sover. Personlige. Interaktive. Levende.',
     cta_mixplay: 'Mixplay Musikk',

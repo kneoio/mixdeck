@@ -7,7 +7,6 @@
 
       <section class="hero" id="platform">
         <div class="hero-text">
-          <p class="eyebrow neon-motto">{{ t('welcome.motto') }}</p>
           <div class="hero-ctas">
             <div class="cta-item">
               <n-button type="primary" size="large" class="cta-button neon-orange" :style="neonPulseStyles[0]" @click="goToMixpla">{{ t('welcome.cta_mixplay') }}</n-button>
@@ -31,8 +30,9 @@
             </div>
           </div>
         </div>
-        <div class="waveform" aria-hidden="true">
-          <span v-for="bar in 32" :key="bar" />
+        <div class="hero-motto neon-motto">
+          <span>{{ t('welcome.motto_line1') }}</span>
+          <span>{{ t('welcome.motto_line2') }}</span>
         </div>
       </section>
 
@@ -129,25 +129,24 @@ function goToBrands() {
   font-size: 0.75rem;
 }
 
+.hero-motto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+  margin: 0;
+  font-size: clamp(1.75rem, 4.5vw, 3.25rem);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
 .neon-motto {
-  font-size: 0.75rem;
   text-shadow: 0 0 5px #ffa500, 0 0 15px #ffa500, 0 0 20px #ffa500, 0 0 40px #ffa500, 0 0 60px #ff0000, 0 0 10px #ff8d00, 0 0 98px #ff0000;
   color: #fff6a9;
   text-align: left;
   animation: blink 12s infinite;
   -webkit-animation: blink 12s infinite;
-  letter-spacing: 0.4em;
-  text-transform: uppercase;
-}
-
-h1 {
-  font-size: clamp(2.5rem, 5vw, 3.8rem);
-  margin: 16px 0;
-}
-
-.subline {
-  font-size: 1.125rem;
-  color: #b0b0b0;
 }
 
 .hero-ctas {
@@ -155,7 +154,7 @@ h1 {
   flex-direction: column;
   align-items: flex-start;
   gap: 16px;
-  margin-top: 24px;
+  margin-top: 0;
 }
 
 .cta-item {
@@ -249,32 +248,6 @@ h1 {
   }
 }
 
-.waveform {
-  display: flex;
-  align-items: flex-end;
-  gap: 4px;
-  height: 160px;
-  padding: 24px;
-  background: radial-gradient(circle at top, rgba(255,255,255,0.08), transparent 60%);
-  border-radius: 16px;
-}
-
-.waveform span {
-  width: 4px;
-  background: linear-gradient(180deg, #58d6ff, #7b5bff);
-  border-radius: 2px;
-  animation: pulse 15s ease-in-out infinite;
-  animation-delay: calc(var(--i) * 0.05s);
-}
-
-.waveform span:nth-child(n) {
-  --i: 1;
-}
-
-.waveform span:nth-child(odd) {
-  animation-duration: 1s;
-}
-
 .footer {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -330,24 +303,9 @@ h1 {
   }
 }
 
-@keyframes pulse {
-  0% { height: 20%; opacity: 0.4; }
-  50% { height: 100%; opacity: 1; }
-  100% { height: 30%; opacity: 0.4; }
-}
-
 @media (max-width: 768px) {
   .nav {
     flex-direction: column;
-  }
-  .waveform {
-    gap: 8px;
-  }
-  .waveform span:not(:nth-child(3n)) {
-    display: none;
-  }
-  .waveform span {
-    animation-duration: 15s;
   }
 }
 </style>

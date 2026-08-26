@@ -6,6 +6,8 @@ export default {
   },
   welcome: {
     motto: 'Du bestimmst die Stimmung. KI hält sie am Leben.',
+    motto_line1: 'Du bestimmst die Stimmung.',
+    motto_line2: 'KI hält sie am Leben.',
     headline: 'Dein persönlicher Stream. Dein Audio-Erlebnis.',
     subline: 'Streams, die niemals schlafen. Personalisiert. Interaktiv. Lebendig.',
     cta_mixplay: 'Mixplay Musik',

@@ -6,6 +6,8 @@ export default {
   },
   welcome: {
     motto: '분위기는 당신이 선택하세요. AI가 유지합니다.',
+    motto_line1: '분위기는 당신이 선택하세요.',
+    motto_line2: 'AI가 유지합니다.',
     headline: '나만의 스트림. 나만의 오디오 경험.',
     subline: '절대 멈추지 않는 스트림. 개인화된. 인터랙티브. 생동감 있는.',
     cta_mixplay: 'Mixplay 음악',

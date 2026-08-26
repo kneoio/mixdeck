@@ -6,6 +6,8 @@ export default {
   },
   welcome: {
     motto: 'あなたがムードを選ぶ。AIがそれを生き続ける。',
+    motto_line1: 'あなたがムードを選ぶ。',
+    motto_line2: 'AIがそれを生き続ける。',
     headline: 'AIが駆動するストリーム、イベント、オーディオ体験。',
     subline: '眠らないストリーム。パーソナライズ。インタラクティブ。ライブ。',
     cta_mixplay: 'Mixplay ミュージック',

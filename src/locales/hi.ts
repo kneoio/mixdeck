@@ -6,6 +6,8 @@ export default {
   },
   welcome: {
     motto: 'आप माहौल चुनें। AI उसे जीवंत रखे।',
+    motto_line1: 'आप माहौल चुनें।',
+    motto_line2: 'AI उसे जीवंत रखे।',
     headline: 'AI-संचालित स्ट्रीम, इवेंट और ऑडियो अनुभव।',
     subline: 'स्ट्रीम जो कभी नहीं सोतीं। व्यक्तिगत। इंटरैक्टिव। जीवंत।',
     cta_mixplay: 'Mixplay संगीत',
