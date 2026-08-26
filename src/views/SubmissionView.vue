@@ -50,6 +50,7 @@
                     v-model:value="email"
                     :placeholder="t('submission.email_placeholder')"
                     :disabled="codeSent"
+                    autofocus
                     @keydown.enter="sendCode"
                   />
                   <GsapButton type="primary" :disabled="loading || codeSent" @click="sendCode">
@@ -79,6 +80,10 @@
               <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.code }">{{ fieldErrors.code || ' ' }}</div>
             </div>
 
+            <div class="wizard-actions">
+              <button class="back-btn" type="button" @click="router.push('/')">← {{ t('auth.back_home') }}</button>
+              <span />
+            </div>
           </div>
         </transition>
 
