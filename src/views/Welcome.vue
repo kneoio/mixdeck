@@ -36,35 +36,6 @@
         </div>
       </section>
 
-      <section class="what-is" id="about">
-        <div class="section-header">
-          <p class="eyebrow">{{ t('welcome.what_is_eyebrow') }}</p>
-          <h2>{{ t('welcome.what_is_headline') }}</h2>
-          <p class="intro">{{ t('welcome.what_is_intro') }}</p>
-        </div>
-        <div class="cards">
-          <article>
-            <h3>{{ t('welcome.card1_title') }}</h3>
-            <p>{{ t('welcome.card1_body') }}</p>
-          </article>
-          <article>
-            <h3>{{ t('welcome.card2_title') }}</h3>
-            <p>{{ t('welcome.card2_body') }}</p>
-          </article>
-          <article>
-            <h3>{{ t('welcome.card3_title') }}</h3>
-            <p>{{ t('welcome.card3_body') }}</p>
-          </article>
-        </div>
-      </section>
-
-      <section class="highlights">
-        <div>{{ t('welcome.highlight1') }}</div>
-        <div>{{ t('welcome.highlight2') }}</div>
-        <div>{{ t('welcome.highlight3') }}</div>
-        <div>{{ t('welcome.highlight4') }}</div>
-      </section>
-
       <footer class="footer">
         <div class="logo">MIXPLA</div>
         <div class="status">{{ t('welcome.footer_status') }}</div>
@@ -242,49 +213,6 @@ h1 {
 
 .waveform span:nth-child(odd) {
   animation-duration: 1s;
-}
-
-.what-is {
-  padding: 64px 0;
-  border-top: 1px solid #1a1a1a;
-}
-
-.section-header h2 {
-  margin: 12px 0 8px;
-}
-
-.intro {
-  max-width: 680px;
-  color: #b0b0b0;
-}
-
-.cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 24px;
-  margin-top: 32px;
-}
-
-.cards article {
-  padding: 24px;
-  border: 1px solid #1f1f1f;
-  border-radius: 12px;
-  background: #0f0f0f;
-}
-
-.highlights {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 16px;
-  padding: 48px 0;
-  border-top: 1px solid #1a1a1a;
-}
-
-.highlights div {
-  border: 1px solid #1f1f1f;
-  padding: 16px;
-  text-align: center;
-  border-radius: 12px;
 }
 
 .footer {
