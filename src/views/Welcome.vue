@@ -30,9 +30,7 @@
             </div>
           </div>
         </div>
-        <div class="hero-city-wrap">
-          <img class="hero-city" src="/city.png" alt="" />
-        </div>
+        <img class="hero-city" src="/city.png" alt="" />
         <div class="hero-motto neon-motto">
           <span>{{ t('welcome.motto_line1') }}</span>
           <span>{{ t('welcome.motto_line2') }}</span>
@@ -124,17 +122,16 @@ function goToBrands() {
 
 .hero {
   flex: 1;
-  display: flex;
-  align-items: stretch;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
+  align-items: center;
+  column-gap: 16px;
   padding: 0;
   min-height: 0;
 }
 
 .hero-text {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
+  min-width: 0;
 }
 
 .eyebrow {
@@ -144,24 +141,13 @@ function goToBrands() {
   font-size: 0.75rem;
 }
 
-.hero-city-wrap {
-  flex: 1 1 0;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .hero-city {
   width: 100%;
-  height: 100%;
-  object-fit: contain;
+  height: auto;
   display: block;
 }
 
 .hero-motto {
-  flex: 0 0 auto;
-  max-width: 22rem;
   display: flex;
   flex-direction: column;
   gap: 0.35em;
@@ -342,16 +328,11 @@ function goToBrands() {
   }
 
   .hero {
-    flex-direction: column;
-    align-items: flex-start;
+    grid-template-columns: 1fr;
     gap: 24px;
   }
 
-  .hero-motto {
-    max-width: none;
-  }
-
-  .hero-city-wrap {
+  .hero-city {
     display: none;
   }
 }
