@@ -122,16 +122,15 @@ function goToBrands() {
 
 .hero {
   flex: 1;
-  display: grid;
-  grid-template-columns: max-content minmax(0, 1fr) max-content;
+  display: flex;
   align-items: center;
-  column-gap: 16px;
+  gap: 16px;
   padding: 0;
   min-height: 0;
 }
 
 .hero-text {
-  min-width: 0;
+  flex: 0 0 auto;
 }
 
 .eyebrow {
@@ -142,12 +141,15 @@ function goToBrands() {
 }
 
 .hero-city {
-  width: 100%;
-  height: auto;
+  flex: 0 0 auto;
+  height: 70vh;
+  width: auto;
   display: block;
 }
 
 .hero-motto {
+  flex: 0 1 auto;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 0.35em;
@@ -322,13 +324,14 @@ function goToBrands() {
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 480px) {
   .nav {
     flex-direction: column;
   }
 
   .hero {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+    align-items: flex-start;
     gap: 24px;
   }
 
