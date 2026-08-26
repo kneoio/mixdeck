@@ -30,6 +30,7 @@
             </div>
           </div>
         </div>
+        <img class="hero-city" src="/city.png" alt="" />
         <div class="hero-motto neon-motto">
           <span>{{ t('welcome.motto_line1') }}</span>
           <span>{{ t('welcome.motto_line2') }}</span>
@@ -127,6 +128,14 @@ function goToBrands() {
   text-transform: uppercase;
   color: #888;
   font-size: 0.75rem;
+}
+
+.hero-city {
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  display: block;
+  justify-self: center;
 }
 
 .hero-motto {
@@ -306,6 +315,10 @@ function goToBrands() {
 @media (max-width: 768px) {
   .nav {
     flex-direction: column;
+  }
+
+  .hero-city {
+    display: none;
   }
 }
 </style>
