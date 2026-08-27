@@ -32,46 +32,36 @@
         </div>
         <div class="hero-city-wrap">
           <img class="hero-city" src="/city.png" alt="" />
-          <svg
-            ref="cityFxRef"
-            class="city-fx"
-            viewBox="0 0 100 100"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-          >
-            <rect
+          <div ref="cityFxRef" class="city-fx" aria-hidden="true">
+            <span
               v-for="(win, i) in cityWindows"
               :key="'w' + i"
               class="city-fx__window"
-              :x="win.x"
-              :y="win.y"
-              :width="win.w"
-              :height="win.h"
-              :fill="win.color"
+              :style="{
+                left: win.x + '%',
+                top: win.y + '%',
+                width: win.w + '%',
+                height: win.h + '%',
+                background: win.color,
+              }"
             />
-            <circle
+            <span
               v-for="(glow, i) in distantGlows"
               :key="'d' + i"
               class="city-fx__distant"
-              :cx="glow.x"
-              :cy="glow.y"
-              :r="glow.r"
-              :fill="glow.color"
+              :style="{ left: glow.x + '%', top: glow.y + '%' }"
             />
-            <g
+            <span
               v-for="(light, i) in headlights"
               :key="'h' + i"
               class="city-fx__headlight"
+              :class="'city-fx__headlight--' + light.tone"
               :data-x0="light.x0"
               :data-y0="light.y0"
               :data-x1="light.x1"
               :data-y1="light.y1"
-              :data-tone="light.tone"
-            >
-              <circle class="city-fx__headlight-halo" r="1.05" />
-              <circle class="city-fx__headlight-core" r="0.34" />
-            </g>
-          </svg>
+            />
+          </div>
         </div>
         <div class="hero-motto neon-motto">
           <span>{{ t('welcome.motto_line1') }}</span>
@@ -90,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { NButton, NConfigProvider, darkTheme } from 'naive-ui'
@@ -99,40 +89,42 @@ import gsap from 'gsap'
 const { t } = useI18n()
 const router = useRouter()
 
-const cityFxRef = ref<SVGSVGElement | null>(null)
+const cityFxRef = ref<HTMLElement | null>(null)
 let cityFxCtx: gsap.Context | null = null
 
-/** Image-space % coords (viewBox 0–100). Vanishing point ~ center of the street canyon. */
+/** Image-space % coords. Vanishing point ~ center of the street canyon. */
 const CITY_VP = { x: 50, y: 49.8 }
 
 const cityWindows = [
-  { x: 6.2, y: 16.5, w: 0.72, h: 1.25, color: '#d9ecff' },
-  { x: 9.4, y: 24.8, w: 0.64, h: 1.1, color: '#cfe4ff' },
-  { x: 4.8, y: 33.2, w: 0.7, h: 1.18, color: '#fff4e0' },
-  { x: 12.6, y: 19.4, w: 0.58, h: 1.02, color: '#d7e8ff' },
-  { x: 8.1, y: 42.6, w: 0.6, h: 1.05, color: '#c8dcff' },
-  { x: 15.8, y: 28.5, w: 0.52, h: 0.92, color: '#e4d7ff' },
-  { x: 19.4, y: 36.2, w: 0.46, h: 0.82, color: '#d9ecff' },
-  { x: 11.5, y: 49.8, w: 0.5, h: 0.88, color: '#fff1d6' },
-  { x: 23.2, y: 31.4, w: 0.42, h: 0.74, color: '#cfe4ff' },
-  { x: 27.6, y: 39.8, w: 0.36, h: 0.64, color: '#d7e8ff' },
-  { x: 91.8, y: 17.2, w: 0.72, h: 1.25, color: '#d9ecff' },
-  { x: 88.2, y: 26.4, w: 0.64, h: 1.1, color: '#fff4e0' },
-  { x: 93.6, y: 34.8, w: 0.7, h: 1.18, color: '#cfe4ff' },
-  { x: 85.4, y: 20.6, w: 0.58, h: 1.02, color: '#e4d7ff' },
-  { x: 90.1, y: 44.2, w: 0.6, h: 1.05, color: '#d7e8ff' },
-  { x: 82.4, y: 29.8, w: 0.52, h: 0.92, color: '#c8dcff' },
-  { x: 78.6, y: 37.4, w: 0.46, h: 0.82, color: '#d9ecff' },
-  { x: 86.8, y: 51.2, w: 0.5, h: 0.88, color: '#fff1d6' },
-  { x: 74.8, y: 32.6, w: 0.42, h: 0.74, color: '#cfe4ff' },
-  { x: 70.6, y: 40.4, w: 0.36, h: 0.64, color: '#d7e8ff' },
+  { x: 5.4, y: 14.8, w: 1.35, h: 2.2, color: '#e7f4ff' },
+  { x: 8.8, y: 22.5, w: 1.2, h: 2.0, color: '#d4ebff' },
+  { x: 4.2, y: 31.6, w: 1.3, h: 2.1, color: '#fff4dc' },
+  { x: 11.8, y: 17.8, w: 1.1, h: 1.85, color: '#dff0ff' },
+  { x: 7.4, y: 41.2, w: 1.15, h: 1.9, color: '#cfe4ff' },
+  { x: 14.6, y: 26.8, w: 1.0, h: 1.7, color: '#ead9ff' },
+  { x: 18.4, y: 34.8, w: 0.9, h: 1.5, color: '#e7f4ff' },
+  { x: 10.6, y: 48.4, w: 1.0, h: 1.65, color: '#ffe9c4' },
+  { x: 22.2, y: 29.6, w: 0.8, h: 1.35, color: '#d4ebff' },
+  { x: 26.4, y: 38.2, w: 0.7, h: 1.15, color: '#dff0ff' },
+  { x: 16.2, y: 43.6, w: 0.85, h: 1.4, color: '#fff1d0' },
+  { x: 91.2, y: 15.4, w: 1.35, h: 2.2, color: '#e7f4ff' },
+  { x: 87.4, y: 24.6, w: 1.2, h: 2.0, color: '#fff4dc' },
+  { x: 92.8, y: 33.2, w: 1.3, h: 2.1, color: '#d4ebff' },
+  { x: 84.6, y: 18.8, w: 1.1, h: 1.85, color: '#ead9ff' },
+  { x: 89.4, y: 42.6, w: 1.15, h: 1.9, color: '#dff0ff' },
+  { x: 81.6, y: 28.2, w: 1.0, h: 1.7, color: '#cfe4ff' },
+  { x: 77.8, y: 35.8, w: 0.9, h: 1.5, color: '#e7f4ff' },
+  { x: 85.8, y: 49.4, w: 1.0, h: 1.65, color: '#ffe9c4' },
+  { x: 73.8, y: 31.2, w: 0.8, h: 1.35, color: '#d4ebff' },
+  { x: 69.8, y: 39.0, w: 0.7, h: 1.15, color: '#dff0ff' },
+  { x: 80.2, y: 44.8, w: 0.85, h: 1.4, color: '#fff1d0' },
 ]
 
 const distantGlows = [
-  { x: 49.15, y: 48.6, r: 0.38, color: '#c8dcff' },
-  { x: 51.05, y: 49.4, r: 0.3, color: '#e4d7ff' },
-  { x: 48.35, y: 50.2, r: 0.24, color: '#d9ecff' },
-  { x: 50.7, y: 47.8, r: 0.22, color: '#fff4e0' },
+  { x: 49.2, y: 48.4 },
+  { x: 51.1, y: 49.2 },
+  { x: 48.3, y: 50.0 },
+  { x: 50.6, y: 47.6 },
 ]
 
 const headlights = [
@@ -142,6 +134,8 @@ const headlights = [
   { x0: 55.8, y0: 96.8, x1: 50.4, y1: CITY_VP.y, tone: 'warm' },
   { x0: 64.2, y0: 97.2, x1: 50.8, y1: CITY_VP.y, tone: 'tail' },
   { x0: 73.6, y0: 96.6, x1: 51.3, y1: CITY_VP.y, tone: 'cool' },
+  { x0: 32.2, y0: 98.2, x1: 49.0, y1: CITY_VP.y, tone: 'cool' },
+  { x0: 69.0, y0: 98.0, x1: 51.0, y1: CITY_VP.y, tone: 'warm' },
 ]
 
 function rand(min: number, max: number) {
@@ -149,8 +143,8 @@ function rand(min: number, max: number) {
 }
 
 function headlightOpacity(t: number) {
-  if (t < 0.07) return t / 0.07
-  if (t > 0.7) return Math.max(0, (1 - t) / 0.3)
+  if (t < 0.05) return t / 0.05
+  if (t > 0.82) return Math.max(0, (1 - t) / 0.18)
   return 1
 }
 
@@ -165,68 +159,62 @@ function startCityFx() {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (reduceMotion) return
 
-    root.querySelectorAll<SVGRectElement>('.city-fx__window').forEach((el) => {
-      const dim = rand(0.04, 0.16)
-      const lit = rand(0.28, 0.62)
-      gsap.set(el, { opacity: Math.random() < 0.45 ? lit : dim })
-      const tl = gsap.timeline({ repeat: -1, delay: rand(0, 5) })
-      tl.to(el, { opacity: lit, duration: rand(2.2, 6.2), ease: 'sine.inOut' })
-      tl.to(el, { opacity: dim, duration: rand(2.4, 7), ease: 'sine.inOut', delay: rand(0.4, 3.8) })
+    root.querySelectorAll<HTMLElement>('.city-fx__window').forEach((el) => {
+      const dim = rand(0.12, 0.28)
+      const lit = rand(0.55, 0.95)
+      gsap.set(el, { opacity: Math.random() < 0.55 ? lit : dim })
+      const tl = gsap.timeline({ repeat: -1, delay: rand(0, 2.4) })
+      tl.to(el, { opacity: lit, duration: rand(1.6, 4.2), ease: 'sine.inOut' })
+      tl.to(el, { opacity: dim, duration: rand(1.8, 4.8), ease: 'sine.inOut', delay: rand(0.2, 1.8) })
     })
 
-    root.querySelectorAll<SVGCircleElement>('.city-fx__distant').forEach((el) => {
-      gsap.set(el, { opacity: rand(0.04, 0.12) })
+    root.querySelectorAll<HTMLElement>('.city-fx__distant').forEach((el) => {
+      gsap.set(el, { opacity: rand(0.12, 0.22) })
       gsap.to(el, {
-        opacity: rand(0.16, 0.34),
-        duration: rand(3.2, 7.5),
+        opacity: rand(0.35, 0.6),
+        duration: rand(2.4, 5.5),
         ease: 'sine.inOut',
         yoyo: true,
         repeat: -1,
-        delay: rand(0, 6),
-        repeatDelay: rand(2.5, 9),
+        delay: rand(0, 2.5),
+        repeatDelay: rand(0.8, 3.5),
       })
     })
 
-    root.querySelectorAll<SVGGElement>('.city-fx__headlight').forEach((el, i) => {
+    root.querySelectorAll<HTMLElement>('.city-fx__headlight').forEach((el, i) => {
       const x0 = Number(el.dataset.x0)
       const y0 = Number(el.dataset.y0)
       const x1 = Number(el.dataset.x1)
       const y1 = Number(el.dataset.y1)
-      const halo = el.querySelector('.city-fx__headlight-halo')
-      const core = el.querySelector('.city-fx__headlight-core')
       const proxy = { t: 0 }
 
-      gsap.set(el, { opacity: 0 })
+      const place = (t: number) => {
+        el.style.left = `${x0 + (x1 - x0) * t}%`
+        el.style.top = `${y0 + (y1 - y0) * t}%`
+        el.style.transform = `translate(-50%, -50%) scale(${1 - 0.72 * t})`
+        el.style.opacity = String(headlightOpacity(t))
+      }
+
+      place(0)
       gsap.fromTo(
         proxy,
         { t: 0 },
         {
           t: 1,
-          duration: rand(8, 15),
-          delay: i < 3 ? rand(0, 0.6) : rand(1.2, 6.5),
-          ease: 'power1.out',
+          duration: rand(5.5, 9),
+          delay: i * 0.85,
+          ease: 'none',
           repeat: -1,
-          repeatDelay: rand(0.8, 4.5),
-          onUpdate: () => {
-            const t = proxy.t
-            const x = x0 + (x1 - x0) * t
-            const y = y0 + (y1 - y0) * t
-            const s = 1 - 0.86 * t
-            el.setAttribute('transform', `translate(${x} ${y})`)
-            halo?.setAttribute('r', String(1.05 * s))
-            core?.setAttribute('r', String(0.34 * s))
-            el.style.opacity = String(headlightOpacity(t) * 0.7)
-          },
-          onRepeat: () => {
-            el.style.opacity = '0'
-          },
+          repeatDelay: rand(0.3, 1.8),
+          onUpdate: () => place(proxy.t),
         }
       )
     })
   }, root)
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await nextTick()
   startCityFx()
 })
 
@@ -339,32 +327,48 @@ function goToBrands() {
 .city-fx {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
+  z-index: 1;
   pointer-events: none;
   overflow: hidden;
+  mix-blend-mode: screen;
 }
 
 .city-fx__window,
 .city-fx__distant,
 .city-fx__headlight {
+  position: absolute;
   opacity: 0;
+  pointer-events: none;
 }
 
-.city-fx__headlight-halo {
-  opacity: 0.28;
+.city-fx__window {
+  border-radius: 1px;
 }
 
-.city-fx__headlight-core {
-  opacity: 0.95;
+.city-fx__distant {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(230, 242, 255, 0.95) 0%, rgba(160, 196, 255, 0.45) 40%, transparent 72%);
+  transform: translate(-50%, -50%);
 }
 
-.city-fx__headlight[data-tone='warm'] .city-fx__headlight-halo { fill: #ffd9a0; }
-.city-fx__headlight[data-tone='warm'] .city-fx__headlight-core { fill: #fff6dc; }
-.city-fx__headlight[data-tone='tail'] .city-fx__headlight-halo { fill: #ff5a3c; }
-.city-fx__headlight[data-tone='tail'] .city-fx__headlight-core { fill: #ffb199; }
-.city-fx__headlight[data-tone='cool'] .city-fx__headlight-halo { fill: #7ecfff; }
-.city-fx__headlight[data-tone='cool'] .city-fx__headlight-core { fill: #eaf6ff; }
+.city-fx__headlight {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0%, #ffe7b0 30%, rgba(255, 196, 90, 0.45) 52%, transparent 72%);
+  will-change: transform, opacity;
+}
+
+.city-fx__headlight--tail {
+  background: radial-gradient(circle, #ffe0d6 0%, #ff6a4a 32%, rgba(255, 70, 40, 0.45) 55%, transparent 72%);
+}
+
+.city-fx__headlight--cool {
+  background: radial-gradient(circle, #fff 0%, #9ad8ff 30%, rgba(80, 180, 255, 0.4) 52%, transparent 72%);
+}
 
 .hero-motto {
   flex: 0 1 auto;
