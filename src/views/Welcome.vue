@@ -30,7 +30,49 @@
             </div>
           </div>
         </div>
-        <img class="hero-city" src="/city.png" alt="" />
+        <div class="hero-city-wrap">
+          <img class="hero-city" src="/city.png" alt="" />
+          <svg
+            ref="cityFxRef"
+            class="city-fx"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            <rect
+              v-for="(win, i) in cityWindows"
+              :key="'w' + i"
+              class="city-fx__window"
+              :x="win.x"
+              :y="win.y"
+              :width="win.w"
+              :height="win.h"
+              :fill="win.color"
+            />
+            <circle
+              v-for="(glow, i) in distantGlows"
+              :key="'d' + i"
+              class="city-fx__distant"
+              :cx="glow.x"
+              :cy="glow.y"
+              :r="glow.r"
+              :fill="glow.color"
+            />
+            <g
+              v-for="(light, i) in headlights"
+              :key="'h' + i"
+              class="city-fx__headlight"
+              :data-x0="light.x0"
+              :data-y0="light.y0"
+              :data-x1="light.x1"
+              :data-y1="light.y1"
+              :data-tone="light.tone"
+            >
+              <circle class="city-fx__headlight-halo" r="1.05" />
+              <circle class="city-fx__headlight-core" r="0.34" />
+            </g>
+          </svg>
+        </div>
         <div class="hero-motto neon-motto">
           <span>{{ t('welcome.motto_line1') }}</span>
           <span>{{ t('welcome.motto_line2') }}</span>
@@ -48,12 +90,150 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { NButton, NConfigProvider, darkTheme } from 'naive-ui'
+import gsap from 'gsap'
 
 const { t } = useI18n()
 const router = useRouter()
+
+const cityFxRef = ref<SVGSVGElement | null>(null)
+let cityFxCtx: gsap.Context | null = null
+
+/** Image-space % coords (viewBox 0–100). Vanishing point ~ center of the street canyon. */
+const CITY_VP = { x: 50, y: 49.8 }
+
+const cityWindows = [
+  { x: 6.2, y: 16.5, w: 0.72, h: 1.25, color: '#d9ecff' },
+  { x: 9.4, y: 24.8, w: 0.64, h: 1.1, color: '#cfe4ff' },
+  { x: 4.8, y: 33.2, w: 0.7, h: 1.18, color: '#fff4e0' },
+  { x: 12.6, y: 19.4, w: 0.58, h: 1.02, color: '#d7e8ff' },
+  { x: 8.1, y: 42.6, w: 0.6, h: 1.05, color: '#c8dcff' },
+  { x: 15.8, y: 28.5, w: 0.52, h: 0.92, color: '#e4d7ff' },
+  { x: 19.4, y: 36.2, w: 0.46, h: 0.82, color: '#d9ecff' },
+  { x: 11.5, y: 49.8, w: 0.5, h: 0.88, color: '#fff1d6' },
+  { x: 23.2, y: 31.4, w: 0.42, h: 0.74, color: '#cfe4ff' },
+  { x: 27.6, y: 39.8, w: 0.36, h: 0.64, color: '#d7e8ff' },
+  { x: 91.8, y: 17.2, w: 0.72, h: 1.25, color: '#d9ecff' },
+  { x: 88.2, y: 26.4, w: 0.64, h: 1.1, color: '#fff4e0' },
+  { x: 93.6, y: 34.8, w: 0.7, h: 1.18, color: '#cfe4ff' },
+  { x: 85.4, y: 20.6, w: 0.58, h: 1.02, color: '#e4d7ff' },
+  { x: 90.1, y: 44.2, w: 0.6, h: 1.05, color: '#d7e8ff' },
+  { x: 82.4, y: 29.8, w: 0.52, h: 0.92, color: '#c8dcff' },
+  { x: 78.6, y: 37.4, w: 0.46, h: 0.82, color: '#d9ecff' },
+  { x: 86.8, y: 51.2, w: 0.5, h: 0.88, color: '#fff1d6' },
+  { x: 74.8, y: 32.6, w: 0.42, h: 0.74, color: '#cfe4ff' },
+  { x: 70.6, y: 40.4, w: 0.36, h: 0.64, color: '#d7e8ff' },
+]
+
+const distantGlows = [
+  { x: 49.15, y: 48.6, r: 0.38, color: '#c8dcff' },
+  { x: 51.05, y: 49.4, r: 0.3, color: '#e4d7ff' },
+  { x: 48.35, y: 50.2, r: 0.24, color: '#d9ecff' },
+  { x: 50.7, y: 47.8, r: 0.22, color: '#fff4e0' },
+]
+
+const headlights = [
+  { x0: 28.4, y0: 97.0, x1: 48.7, y1: CITY_VP.y, tone: 'warm' },
+  { x0: 36.8, y0: 96.4, x1: 49.2, y1: CITY_VP.y, tone: 'tail' },
+  { x0: 44.2, y0: 97.4, x1: 49.6, y1: CITY_VP.y, tone: 'cool' },
+  { x0: 55.8, y0: 96.8, x1: 50.4, y1: CITY_VP.y, tone: 'warm' },
+  { x0: 64.2, y0: 97.2, x1: 50.8, y1: CITY_VP.y, tone: 'tail' },
+  { x0: 73.6, y0: 96.6, x1: 51.3, y1: CITY_VP.y, tone: 'cool' },
+]
+
+function rand(min: number, max: number) {
+  return min + Math.random() * (max - min)
+}
+
+function headlightOpacity(t: number) {
+  if (t < 0.07) return t / 0.07
+  if (t > 0.7) return Math.max(0, (1 - t) / 0.3)
+  return 1
+}
+
+function startCityFx() {
+  cityFxCtx?.revert()
+  cityFxCtx = null
+
+  const root = cityFxRef.value
+  if (!root) return
+
+  cityFxCtx = gsap.context(() => {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reduceMotion) return
+
+    root.querySelectorAll<SVGRectElement>('.city-fx__window').forEach((el) => {
+      const dim = rand(0.04, 0.16)
+      const lit = rand(0.28, 0.62)
+      gsap.set(el, { opacity: Math.random() < 0.45 ? lit : dim })
+      const tl = gsap.timeline({ repeat: -1, delay: rand(0, 5) })
+      tl.to(el, { opacity: lit, duration: rand(2.2, 6.2), ease: 'sine.inOut' })
+      tl.to(el, { opacity: dim, duration: rand(2.4, 7), ease: 'sine.inOut', delay: rand(0.4, 3.8) })
+    })
+
+    root.querySelectorAll<SVGCircleElement>('.city-fx__distant').forEach((el) => {
+      gsap.set(el, { opacity: rand(0.04, 0.12) })
+      gsap.to(el, {
+        opacity: rand(0.16, 0.34),
+        duration: rand(3.2, 7.5),
+        ease: 'sine.inOut',
+        yoyo: true,
+        repeat: -1,
+        delay: rand(0, 6),
+        repeatDelay: rand(2.5, 9),
+      })
+    })
+
+    root.querySelectorAll<SVGGElement>('.city-fx__headlight').forEach((el, i) => {
+      const x0 = Number(el.dataset.x0)
+      const y0 = Number(el.dataset.y0)
+      const x1 = Number(el.dataset.x1)
+      const y1 = Number(el.dataset.y1)
+      const halo = el.querySelector('.city-fx__headlight-halo')
+      const core = el.querySelector('.city-fx__headlight-core')
+      const proxy = { t: 0 }
+
+      gsap.set(el, { opacity: 0 })
+      gsap.fromTo(
+        proxy,
+        { t: 0 },
+        {
+          t: 1,
+          duration: rand(8, 15),
+          delay: i < 3 ? rand(0, 0.6) : rand(1.2, 6.5),
+          ease: 'power1.out',
+          repeat: -1,
+          repeatDelay: rand(0.8, 4.5),
+          onUpdate: () => {
+            const t = proxy.t
+            const x = x0 + (x1 - x0) * t
+            const y = y0 + (y1 - y0) * t
+            const s = 1 - 0.86 * t
+            el.setAttribute('transform', `translate(${x} ${y})`)
+            halo?.setAttribute('r', String(1.05 * s))
+            core?.setAttribute('r', String(0.34 * s))
+            el.style.opacity = String(headlightOpacity(t) * 0.7)
+          },
+          onRepeat: () => {
+            el.style.opacity = '0'
+          },
+        }
+      )
+    })
+  }, root)
+}
+
+onMounted(() => {
+  startCityFx()
+})
+
+onUnmounted(() => {
+  cityFxCtx?.revert()
+  cityFxCtx = null
+})
 
 function randomPulseStyle() {
   const duration = 1.6 + Math.random() * 2.4
@@ -141,13 +321,50 @@ function goToBrands() {
   font-size: 0.75rem;
 }
 
-.hero-city {
+.hero-city-wrap {
   flex: 0 0 auto;
+  position: relative;
   height: 420px;
+  width: auto;
+  overflow: hidden;
+}
+
+.hero-city {
+  height: 100%;
   width: auto;
   object-fit: contain;
   display: block;
 }
+
+.city-fx {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.city-fx__window,
+.city-fx__distant,
+.city-fx__headlight {
+  opacity: 0;
+}
+
+.city-fx__headlight-halo {
+  opacity: 0.28;
+}
+
+.city-fx__headlight-core {
+  opacity: 0.95;
+}
+
+.city-fx__headlight[data-tone='warm'] .city-fx__headlight-halo { fill: #ffd9a0; }
+.city-fx__headlight[data-tone='warm'] .city-fx__headlight-core { fill: #fff6dc; }
+.city-fx__headlight[data-tone='tail'] .city-fx__headlight-halo { fill: #ff5a3c; }
+.city-fx__headlight[data-tone='tail'] .city-fx__headlight-core { fill: #ffb199; }
+.city-fx__headlight[data-tone='cool'] .city-fx__headlight-halo { fill: #7ecfff; }
+.city-fx__headlight[data-tone='cool'] .city-fx__headlight-core { fill: #eaf6ff; }
 
 .hero-motto {
   flex: 0 1 auto;
@@ -337,7 +554,13 @@ function goToBrands() {
     gap: 24px;
   }
 
-  .hero-city {
+  .hero-city-wrap {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .city-fx {
     display: none;
   }
 }
