@@ -2,9 +2,9 @@
 import { computed, h, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { NDataTable, NPopconfirm, NButton, NIcon, NTag, NSpace, useMessage, type DataTableColumns } from 'naive-ui'
+import { NDataTable, NPopconfirm, NButton, NIcon, useMessage, type DataTableColumns } from 'naive-ui'
 import { RefreshOutline } from '@vicons/ionicons5'
-import { useBrandsStore, SUBMISSION_POLICY_OPTIONS, type Brand } from '@/stores/brands'
+import { useBrandsStore, type Brand } from '@/stores/brands'
 import PageHeader from '@/components/PageHeader.vue'
 import ActionBar from '@/components/ActionBar.vue'
 import GsapButton from '@/components/GsapButton.vue'
@@ -14,14 +14,11 @@ const { t } = useI18n()
 const router = useRouter()
 const brandsStore = useBrandsStore()
 const message = useMessage()
-const closingSlug = ref<string | null>(null)
+const selectedIds = ref<string[]>([])
+const deleting = ref(false)
 
 const brandLabel = (brand: Brand) =>
   brand.localizedName?.['en'] || brand.title || brand.slugName || ''
-
-function policyLabel(value?: string) {
-  return SUBMISSION_POLICY_OPTIONS.find(o => o.value === value)?.label ?? value ?? ''
-}
 
 function renderColorCell(row: Brand) {
   if (!row.color) return ''
@@ -38,36 +35,23 @@ function renderColorCell(row: Brand) {
   })
 }
 
-function renderFlagsCell(row: Brand) {
-  const flags = [
-    { label: t('brandForm.accept_shared_sounds'), value: row.submissionPolicy },
-    { label: t('brandForm.chat_with_dj'), value: row.messagingPolicy },
-    { label: t('brandForm.one_time_stream'), value: row.oneTimeStreamPolicy },
-  ].filter(f => f.value)
-  return h(NSpace, { size: 4, wrap: true }, {
-    default: () => flags.map(f => h(NTag, {
-      size: 'small',
-      bordered: false,
-      type: f.value === 'NO_RESTRICTIONS' ? 'success' : f.value === 'REVIEW_REQUIRED' ? 'warning' : 'default',
-    }, { default: () => `${f.label}: ${policyLabel(f.value)}` })),
-  })
-}
-
-async function handleCloseBrand(row: any) {
-  if (!row.slugName) return
+async function handleDelete() {
+  if (!selectedIds.value.length) return
+  deleting.value = true
   try {
-    closingSlug.value = row.slugName
-    await brandsStore.closeBrand(row.slugName)
-    message.success('Brand closed successfully')
+    await Promise.all(selectedIds.value.map(slug => brandsStore.closeBrand(slug)))
+    message.success(t('brandsView.deleted', { count: selectedIds.value.length }))
+    selectedIds.value = []
     await brandsStore.loadBrands()
   } catch (error: any) {
     handleApiError(error, message)
   } finally {
-    closingSlug.value = null
+    deleting.value = false
   }
 }
 
 const columns = computed<DataTableColumns<Brand>>(() => [
+  { type: 'selection', multiple: true },
   {
     title: t('brandsView.col_name'), key: 'name', minWidth: 200,
     render: (row) => brandLabel(row),
@@ -81,31 +65,20 @@ const columns = computed<DataTableColumns<Brand>>(() => [
     render: renderColorCell,
   },
   {
-    title: t('brandsView.col_flags'), key: 'flags', minWidth: 280,
-    render: renderFlagsCell,
+    title: t('brandsView.col_timezone'), key: 'timeZone', minWidth: 160,
+    render: (row) => row.timeZone || '',
   },
   {
-    key: 'actions',
-    width: 160,
-    render: (row) => h('div', {
-      onClick: (e: MouseEvent) => e.stopPropagation(),
-      onMousedown: (e: MouseEvent) => e.stopPropagation(),
-    }, [
-      h(NPopconfirm, {
-        disabled: !!closingSlug.value,
-        onPositiveClick: () => handleCloseBrand(row),
-      }, {
-        trigger: () => h(GsapButton, {
-          type: 'error',
-          disabled: !!closingSlug.value,
-        }, { default: () => h('span', t('brandForm.close_brand')) }),
-        default: () => t('brandForm.close_brand_confirm'),
-      }),
-    ]),
+    title: t('brandsView.col_public'), key: 'publicBrand', width: 100,
+    render: (row) => row.publicBrand === 0 ? t('brandForm.private') : t('brandForm.public'),
+  },
+  {
+    title: t('brandsView.col_owner'), key: 'owner', minWidth: 140,
+    render: (row) => row.owner?.name || '',
   },
 ])
 
-function goSettings(row: any) {
+function goSettings(row: Brand) {
   if (!row.slugName) return
   router.push({ path: `/brands/${row.slugName}/settings`, query: { returnTo: '/brands' } })
 }
@@ -119,6 +92,14 @@ function goSettings(row: any) {
         <GsapButton type="primary" @click="router.push('/brands/new')">
           <span>{{ t('menu.add_new') }}</span>
         </GsapButton>
+        <NPopconfirm @positive-click="handleDelete" :disabled="selectedIds.length === 0">
+          <template #trigger>
+            <GsapButton type="error" :disabled="!selectedIds.length || deleting">
+              <span>{{ t('brandsView.delete_btn', { count: selectedIds.length }) }}</span>
+            </GsapButton>
+          </template>
+          {{ t('brandsView.delete_confirm', { count: selectedIds.length }) }}
+        </NPopconfirm>
         <NButton quaternary circle size="small" style="opacity:0.5" @click="brandsStore.loadBrands()">
           <template #icon><NIcon :component="RefreshOutline" /></template>
         </NButton>
@@ -127,8 +108,9 @@ function goSettings(row: any) {
     <NDataTable
       :columns="columns"
       :data="brandsStore.brands"
-      :row-key="(row: any) => row.slugName"
-      :row-props="(row: any) => ({ style: 'cursor:pointer', onClick: () => goSettings(row) })"
+      :row-key="(row: Brand) => row.slugName"
+      v-model:checked-row-keys="selectedIds"
+      :row-props="(row: Brand) => ({ style: 'cursor:pointer', onClick: (e: MouseEvent) => { if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return; goSettings(row) } })"
     />
   </div>
 </template>

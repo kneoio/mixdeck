@@ -695,7 +695,12 @@ export default {
     col_name: 'Name',
     col_country: 'Country',
     col_color: 'Color',
-    col_flags: 'Flags',
+    col_timezone: 'Time Zone',
+    col_public: 'Public',
+    col_owner: 'Owner',
+    delete_btn: 'Delete ({count})',
+    delete_confirm: 'Delete {count} brand(s)?',
+    deleted: 'Deleted {count} brand(s)',
   },
   common: {
     save: 'Save',
