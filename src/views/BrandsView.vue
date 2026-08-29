@@ -3,7 +3,7 @@ import { computed, h, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { NDataTable, NPopconfirm, NButton, NIcon, useMessage, type DataTableColumns } from 'naive-ui'
-import { RefreshOutline } from '@vicons/ionicons5'
+import { RefreshOutline, CheckmarkCircle } from '@vicons/ionicons5'
 import { useBrandsStore, type Brand } from '@/stores/brands'
 import PageHeader from '@/components/PageHeader.vue'
 import ActionBar from '@/components/ActionBar.vue'
@@ -19,6 +19,17 @@ const deleting = ref(false)
 
 const brandLabel = (brand: Brand) =>
   brand.localizedName?.['en'] || brand.title || brand.slugName || ''
+
+function ownerLabel(row: Brand) {
+  const raw = row.owner as unknown
+  if (typeof raw === 'string') return raw
+  return (raw as { name?: string } | undefined)?.name || row.ownerEmail || ''
+}
+
+function renderPublicCell(row: Brand) {
+  if (row.publicBrand === 0) return ''
+  return h(NIcon, { component: CheckmarkCircle, color: '#16a34a', size: 18 })
+}
 
 function renderColorCell(row: Brand) {
   if (!row.color) return ''
@@ -65,16 +76,16 @@ const columns = computed<DataTableColumns<Brand>>(() => [
     render: renderColorCell,
   },
   {
-    title: t('brandsView.col_timezone'), key: 'timeZone', minWidth: 160,
+    title: t('brandsView.col_timezone'), key: 'timeZone', minWidth: 200,
     render: (row) => row.timeZone || '',
   },
   {
-    title: t('brandsView.col_public'), key: 'publicBrand', width: 100,
-    render: (row) => row.publicBrand === 0 ? t('brandForm.private') : t('brandForm.public'),
+    title: t('brandsView.col_public'), key: 'publicBrand', width: 80,
+    render: renderPublicCell,
   },
   {
     title: t('brandsView.col_owner'), key: 'owner', minWidth: 140,
-    render: (row) => row.owner?.name || '',
+    render: ownerLabel,
   },
 ])
 

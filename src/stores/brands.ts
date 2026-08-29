@@ -41,6 +41,7 @@ export interface Brand {
     actionDebugEnabled?: boolean
     coOwners?: Array<{ name?: string; email: string }>
   }
+  ownerEmail?: string
   publicBrand?: number
   bitRate?: number
   mixplaUrl?: string
