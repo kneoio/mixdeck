@@ -693,6 +693,9 @@ export default {
   brandsView: {
     subtitle: 'Brands',
     col_name: 'Name',
+    col_country: 'Country',
+    col_color: 'Color',
+    col_flags: 'Flags',
   },
   common: {
     save: 'Save',
