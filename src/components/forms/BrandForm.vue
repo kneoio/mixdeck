@@ -548,8 +548,27 @@ function onLogoFileSelected(e: Event) {
   ;(e.target as HTMLInputElement).value = ''
 }
 
+function slugFromBrandPayload(brand: any): string | null {
+  if (!brand) return null
+  return brand.slugName
+    ?? brand.docData?.slugName
+    ?? brand.payload?.docData?.slugName
+    ?? null
+}
+
+/** Brand dictionary POST/PUT paths use slugName (see closeBrand). */
+function resolveBrandSaveId(): string | null {
+  if (isSettings.value) {
+    return (route.params.slug as string) || brandSlug.value
+  }
+  if (brandSlug.value) return brandSlug.value
+  if (brandId.value && brandId.value !== 'new') return brandId.value
+  return null
+}
+
 async function cropAndUpload() {
-  if (!cropperRef.value || !isEditing.value || !brandSlug.value) return
+  const brandKey = resolveBrandSaveId()
+  if (!cropperRef.value || !isEditing.value || !brandKey) return
   logoUploading.value = true
   try {
     const { canvas } = cropperRef.value.getResult()
@@ -558,9 +577,9 @@ async function cropAndUpload() {
       canvas.toBlob(b => b ? res(b) : rej(new Error('toBlob failed')), 'image/png')
     )
     const file = new File([blob], 'logo.png', { type: 'image/png' })
-    const result = await datanestApiService.uploadBrandLogo(brandSlug.value!, file)
+    const result = await datanestApiService.uploadBrandLogo(brandKey, file)
     logoSlugName.value = result.slugName
-    await loadLogoPreview(brandSlug.value!, result.slugName)
+    await loadLogoPreview(brandKey, result.slugName)
     showCropDialog.value = false
   } catch (e: any) {
     message.error(e?.message || 'Logo upload failed')
@@ -762,7 +781,8 @@ async function handleSave() {
   try {
     loading.value = true
     const { scriptId: selectedScriptSlug, aiOverriding, ...formFields } = formData.value
-    const savedBrand = await store.saveBrand(isEditing.value ? brandSlug.value : null, {
+    console.log('[BrandForm] save | scriptMode:', scriptMode.value, '| scriptId:', formData.value.scriptId, '| customScriptId will be:', scriptMode.value === 'custom' ? formData.value.scriptId || undefined : undefined)
+    const savedBrand = await store.saveBrand(resolveBrandSaveId(), {
       ...formFields,
       localizedName: buildLocalizedName(),
       country: formData.value.country || undefined,
@@ -806,13 +826,16 @@ async function handleSave() {
     } as any)
     saveAttempted.value = false
     message.success(t('brandForm.saved'))
+    const savedSlug = slugFromBrandPayload(savedBrand)
+    if (savedSlug) {
+      brandSlug.value = savedSlug
+      const savedId = (savedBrand as any)?.id ?? (savedBrand as any)?.docData?.id
+      if (savedId) brandId.value = savedId
+    }
     if (!isEditing.value) {
-      const newSlug = (savedBrand as any)?.slugName
-        ?? (savedBrand as any)?.docData?.slugName
-        ?? (savedBrand as any)?.payload?.docData?.slugName
-      if (newSlug) {
+      if (savedSlug) {
         await store.loadBrands()
-        await router.push({ path: '/playlist', query: { brand: newSlug } })
+        await router.push(`/brands/${savedSlug}/playlist`)
       }
     }
   } catch (error: any) {
@@ -1051,9 +1074,10 @@ function applyBrandToForm(brand: any) {
   }
   mp3Enabled.value = isEditing.value && (brand.streamingOptions?.codecs ?? []).includes('MP3')
   const logoSlug = (brand as any).logoFiles?.[0]?.slugName
-  if (logoSlug) {
+  const logoBrandKey = brandSlug.value ?? brandId.value
+  if (logoSlug && logoBrandKey) {
     logoSlugName.value = logoSlug
-    loadLogoPreview(route.params.slug as string, logoSlug)
+    loadLogoPreview(logoBrandKey, logoSlug)
   } else {
     logoSlugName.value = null
     logoPreviewUrl.value = null
