@@ -12,6 +12,7 @@ import type { Script, ScriptScene } from '@/stores/scripts'
 import { useOtsDefinitionsStore } from '@/stores/otsDefinitions'
 import datanestApiService from '@/services/datanestApi'
 import { handleApiError } from '@/utils/notificationService'
+import { isValidationError } from '@/utils/errorHandler'
 
 const DURATION_SLIDER_MIN = 1
 const DURATION_SLIDER_MAX = 7200
@@ -36,9 +37,11 @@ const returnToRoute = computed(() => {
 })
 const backRoute = computed(() => returnToRoute.value ?? '/one-time-streams')
 
-type ValidationField = 'source'
+type ValidationField = 'source' | 'name'
 const sourceFieldRef = ref<HTMLElement | null>(null)
-const fieldErrors = ref<Record<ValidationField, string>>({ source: '' })
+const nameFieldRef = ref<HTMLElement | null>(null)
+const varFieldRefs = reactive<Record<string, HTMLElement | null>>({})
+const fieldErrors = ref<Record<ValidationField, string>>({ source: '', name: '' })
 
 function updateIsMobile() {
   isMobile.value = window.innerWidth <= 768
@@ -257,16 +260,33 @@ async function loadOtsTemplate(scriptSlug: string) {
   }
 }
 
-function clearVarError(name: string) {
-  if (varErrors[name]) delete varErrors[name]
+function setVarFieldRef(name: string, el: unknown) {
+  const node = el && typeof el === 'object' && '$el' in el ? (el as { $el: unknown }).$el : el
+  varFieldRefs[name] = (node as HTMLElement) ?? null
 }
 
 function getFieldRef(field: ValidationField) {
-  return field === 'source' ? sourceFieldRef.value : null
+  if (field === 'source') return sourceFieldRef.value
+  return nameFieldRef.value
 }
 
 function getFieldLabel(field: ValidationField) {
-  return field === 'source' ? t('overview.ots_scope_label') : ''
+  if (field === 'source') return t('overview.ots_scope_label')
+  return t('otsForm.name_label')
+}
+
+function getFieldTab(field: ValidationField) {
+  return 'properties'
+}
+
+function flashErrorShell(target: HTMLElement | null) {
+  if (!target) return
+  gsap.killTweensOf(target)
+  gsap.fromTo(
+    target,
+    { borderLeftColor: 'rgba(255,77,79,0)' },
+    { borderLeftColor: 'rgba(255,77,79,0.95)', duration: 0.24, repeat: 1, yoyo: true, ease: 'power1.out' }
+  )
 }
 
 function clearFieldError(field: ValidationField) {
@@ -278,22 +298,62 @@ function clearFieldError(field: ValidationField) {
   }
 }
 
+function clearVarError(name: string) {
+  if (!varErrors[name]) return
+  delete varErrors[name]
+  const target = varFieldRefs[name]
+  if (target) {
+    gsap.to(target, { borderLeftColor: 'rgba(255,77,79,0)', duration: 0.2, ease: 'power1.out' })
+  }
+}
+
 function clearAllFieldErrors() {
   clearFieldError('source')
-  Object.keys(varErrors).forEach((key) => delete varErrors[key])
+  clearFieldError('name')
+  Object.keys(varErrors).forEach((key) => clearVarError(key))
 }
 
 async function showFieldError(field: ValidationField, customMessage?: string) {
   fieldErrors.value[field] = customMessage ?? t('common.required_field', { field: getFieldLabel(field) })
   await nextTick()
-  const target = getFieldRef(field)
-  if (!target) return
-  gsap.killTweensOf(target)
-  gsap.fromTo(
-    target,
-    { borderLeftColor: 'rgba(255,77,79,0)' },
-    { borderLeftColor: 'rgba(255,77,79,0.95)', duration: 0.24, repeat: 1, yoyo: true, ease: 'power1.out' }
-  )
+  flashErrorShell(getFieldRef(field))
+}
+
+async function showVarError(name: string, msg: string) {
+  varErrors[name] = msg
+  await nextTick()
+  flashErrorShell(varFieldRefs[name])
+}
+
+async function handleServerValidation(error: any): Promise<boolean> {
+  if (!isValidationError(error)) return false
+  const fieldMap: Record<string, ValidationField> = {
+    name: 'name',
+    agentSlug: 'source',
+    brandSlug: 'source',
+  }
+  const toShow: { field: ValidationField; msg: string }[] = []
+  const varToShow: { name: string; msg: string }[] = []
+  for (const [key, messages] of Object.entries(error.validationError.errors)) {
+    const msg = (messages as string[])[0]
+    if (key.startsWith('userVariables')) {
+      const varName = key.split('.').pop()?.replace(/[[\]]/g, '') ?? ''
+      if (varName && varName !== 'userVariables') varToShow.push({ name: varName, msg })
+      continue
+    }
+    const field = fieldMap[key]
+    if (field) toShow.push({ field, msg })
+  }
+  if (!toShow.length && !varToShow.length) return false
+  isTabChangeFromValidation.value = true
+  activeTab.value = varToShow.length && !toShow.length ? 'variables' : getFieldTab(toShow[0]?.field ?? 'name')
+  await nextTick()
+  isTabChangeFromValidation.value = false
+  await Promise.all([
+    ...toShow.map(({ field, msg }) => showFieldError(field, msg)),
+    ...varToShow.map(({ name, msg }) => showVarError(name, msg)),
+  ])
+  return true
 }
 
 async function loadAgents() {
@@ -340,35 +400,42 @@ function scopeValid(): boolean {
   return formData.value.scope === 'brand' ? !!formData.value.brandSlug : !!formData.value.agentSlug
 }
 
-function validateVariables(): boolean {
+async function validateVariables(): Promise<boolean> {
   const vars = scriptDetail.value?.requiredVariables ?? []
-  Object.keys(varErrors).forEach((key) => delete varErrors[key])
+  Object.keys(varErrors).forEach((key) => {
+    if (!vars.some((v) => v.name === key && v.required)) clearVarError(key)
+  })
+  const invalid: { name: string; msg: string }[] = []
   for (const v of vars) {
     if (!v.required) continue
     const val = variables[v.name]
     const empty = val === undefined || val === null || (typeof val === 'string' && val.trim() === '')
-    if (empty) varErrors[v.name] = t('common.required_field', { field: v.description || v.name })
+    if (empty) invalid.push({ name: v.name, msg: t('common.required_field', { field: v.description || v.name }) })
+    else clearVarError(v.name)
   }
-  return Object.keys(varErrors).length === 0
+  if (!invalid.length) return true
+  await Promise.all(invalid.map(({ name, msg }) => showVarError(name, msg)))
+  return false
 }
 
 async function validateBeforeSave(): Promise<boolean> {
   const invalidFields: ValidationField[] = []
+  if (!formData.value.name?.trim()) invalidFields.push('name')
   if (!scopeValid()) invalidFields.push('source')
 
-  const allFields: ValidationField[] = ['source']
+  const allFields: ValidationField[] = ['name', 'source']
   for (const field of allFields) {
     if (!invalidFields.includes(field)) clearFieldError(field)
   }
 
-  const variablesValid = validateVariables()
+  const variablesValid = await validateVariables()
   if (!invalidFields.length && variablesValid) return true
 
   isTabChangeFromValidation.value = true
-  activeTab.value = invalidFields.length ? 'properties' : 'variables'
+  activeTab.value = invalidFields.length ? getFieldTab(invalidFields[0]) : 'variables'
   await nextTick()
   isTabChangeFromValidation.value = false
-  await Promise.all(invalidFields.map((field) => showFieldError(field, t('overview.ots_agent_required'))))
+  await Promise.all(invalidFields.map((field) => showFieldError(field, field === 'source' ? t('overview.ots_agent_required') : undefined)))
   return false
 }
 
@@ -396,7 +463,8 @@ async function handleSave() {
     message.success(t('otsForm.saved'))
     router.push(backRoute.value)
   } catch (error: any) {
-    handleApiError(error, message)
+    const handled = await handleServerValidation(error)
+    if (!handled) handleApiError(error, message)
   } finally {
     loading.value = false
   }
@@ -408,6 +476,15 @@ function navigateBack() {
 
 watch(() => formData.value.brandSlug, (value) => { if (value) clearFieldError('source') })
 watch(() => formData.value.agentSlug, (value) => { if (value) clearFieldError('source') })
+watch(() => formData.value.name, (value) => { if (value?.trim()) clearFieldError('name') })
+watch(variables, () => {
+  for (const v of scriptDetail.value?.requiredVariables ?? []) {
+    if (!v.required) continue
+    const val = variables[v.name]
+    const empty = val === undefined || val === null || (typeof val === 'string' && val.trim() === '')
+    if (!empty) clearVarError(v.name)
+  }
+}, { deep: true })
 watch(activeTab, () => {
   if (isTabChangeFromValidation.value) return
   clearAllFieldErrors()
@@ -481,18 +558,22 @@ onMounted(async () => {
       <NTabPane name="variables" :tab="t('otsForm.tab_variables')">
         <NForm :label-placement="formLabelPlacement" label-width="140" :disabled="loading">
           <template v-if="scriptDetail?.requiredVariables?.length">
-            <NFormItem v-for="variable in scriptDetail.requiredVariables" :key="variable.name" :show-feedback="false">
+            <NFormItem v-for="variable in scriptDetail.requiredVariables" :key="variable.name">
               <template #label>
                 <span>{{ variable.description }}<span v-if="variable.required" class="ots-variable__required">*</span></span>
               </template>
               <div class="field-stack">
-                <div class="field-error-shell" :class="{ 'field-error-shell--active': !!varErrors[variable.name] }">
+                <div
+                  :ref="(el) => setVarFieldRef(variable.name, el)"
+                  class="field-error-shell"
+                  :class="{ 'field-error-shell--active': !!varErrors[variable.name] }"
+                >
                   <NSwitch v-if="variable.type === 'boolean'" v-model:value="variables[variable.name]" />
                   <NInputNumber v-else-if="variable.type === 'number'" v-model:value="variables[variable.name]" style="width: 100%" @update:value="clearVarError(variable.name)" />
                   <NInput v-else v-model:value="variables[variable.name]" style="width: 100%" @update:value="clearVarError(variable.name)" />
                 </div>
                 <div class="field-error-label" :class="{ 'field-error-label--visible': !!varErrors[variable.name] }">
-                  {{ varErrors[variable.name] || ' ' }}
+                  {{ varErrors[variable.name] || '\u00A0' }}
                 </div>
               </div>
             </NFormItem>
@@ -503,15 +584,21 @@ onMounted(async () => {
 
       <NTabPane name="properties" :tab="t('otsForm.tab_properties')">
         <NForm :label-placement="formLabelPlacement" label-width="140" :disabled="loading">
-          <NFormItem :label="t('otsForm.name_label')" :show-feedback="false">
+          <NFormItem :label="t('otsForm.name_label')">
             <div class="field-stack">
-              <div class="field-error-shell">
+              <div
+                ref="nameFieldRef"
+                class="field-error-shell"
+                :class="{ 'field-error-shell--active': !!fieldErrors.name }"
+              >
                 <NInput v-model:value="formData.name" :placeholder="t('otsForm.name_label')" />
               </div>
-              <div class="field-error-label"></div>
+              <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.name }">
+                {{ fieldErrors.name || '\u00A0' }}
+              </div>
             </div>
           </NFormItem>
-          <NFormItem :label="t('otsForm.color')" :show-feedback="false">
+          <NFormItem :label="t('otsForm.color')">
             <div class="field-stack">
               <div class="field-error-shell">
                 <div style="width: 200px;">
@@ -535,7 +622,7 @@ onMounted(async () => {
               <div class="field-error-label"></div>
             </div>
           </NFormItem>
-          <NFormItem v-if="isEditing" :label="t('otsForm.type_label')" :show-feedback="false">
+          <NFormItem v-if="isEditing" :label="t('otsForm.type_label')">
             <div class="field-stack">
               <div class="field-error-shell">
                 <span>{{ otsType }}</span>
@@ -544,7 +631,7 @@ onMounted(async () => {
             </div>
           </NFormItem>
 
-          <NFormItem :label="t('overview.ots_scope_label')" :show-feedback="false">
+          <NFormItem :label="t('overview.ots_scope_label')">
             <div class="field-stack">
               <div class="field-error-shell">
                 <NRadioGroup v-model:value="formData.scope" @update:value="onScopeChange">
@@ -556,7 +643,7 @@ onMounted(async () => {
             </div>
           </NFormItem>
 
-          <NFormItem v-if="formData.scope === 'brand'" :label="t('overview.ots_pick_brand')" :show-feedback="false">
+          <NFormItem v-if="formData.scope === 'brand'" :label="t('overview.ots_pick_brand')">
             <div class="field-stack">
               <div ref="sourceFieldRef" class="field-error-shell" :class="{ 'field-error-shell--active': !!fieldErrors.source }">
                 <NSelect
@@ -569,12 +656,12 @@ onMounted(async () => {
                 />
               </div>
               <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.source }">
-                {{ fieldErrors.source || ' ' }}
+                {{ fieldErrors.source || '\u00A0' }}
               </div>
             </div>
           </NFormItem>
 
-          <NFormItem v-if="formData.scope !== 'brand'" :label="t('overview.ots_pick_dj')" :show-feedback="false">
+          <NFormItem v-if="formData.scope !== 'brand'" :label="t('overview.ots_pick_dj')">
             <div class="field-stack">
               <div ref="sourceFieldRef" class="field-error-shell" :class="{ 'field-error-shell--active': !!fieldErrors.source }">
                 <NSelect
@@ -587,7 +674,7 @@ onMounted(async () => {
                 />
               </div>
               <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.source }">
-                {{ fieldErrors.source || ' ' }}
+                {{ fieldErrors.source || '\u00A0' }}
               </div>
             </div>
           </NFormItem>
@@ -845,7 +932,11 @@ onMounted(async () => {
 }
 .script-description :deep(ul),
 .script-description :deep(ol) { padding-left: 20px; margin: 4px 0; }
-:deep(.n-form-item) { margin-bottom: 20px; }
+:deep(.n-form-item .n-form-item-feedback-wrapper) {
+  min-height: 12px;
+  line-height: 1.1;
+}
+:deep(.n-form-item) { margin-bottom: 8px; }
 :deep(.n-form-item:last-child) { margin-bottom: 0; }
 @media (max-width: 768px) {
   :deep(.n-form-item-label) { padding-left: 10px !important; }
