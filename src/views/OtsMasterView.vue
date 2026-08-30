@@ -232,28 +232,28 @@
               <div v-if="orderedScenes.length" class="ots-scenes">
                 <div
                   v-for="scene in orderedScenes"
-                  :key="scene.id"
+                  :key="sceneSeqKey(scene) ?? scene.title"
                   class="ots-scene-row"
                   :class="{ 'ots-scene-row--overridden': isSceneOverridden(scene) }"
                 >
                   <div class="ots-scene-row__title">
-                    <span>{{ scene.title || scene.id }}</span>
+                    <span>{{ scene.title || sceneSeqKey(scene) }}</span>
                     <span v-if="isSceneOverridden(scene)" class="ots-scene-row__badge">{{ t('otsForm.scene_duration_overridden') }}</span>
                   </div>
-                  <template v-if="!isOneTimeScene(scene) && scene.id">
+                  <template v-if="!isOneTimeScene(scene) && sceneSeqKey(scene)">
                     <div class="ots-scene-row__group">
                       <div class="ots-scene-row__label">{{ t('agenda.duration') }}</div>
                       <div class="ots-scene-row__controls">
                         <n-slider
-                          :value="sceneDurationValues[scene.id]"
+                          :value="sceneDurationValues[sceneSeqKey(scene)!]"
                           :min="DURATION_SLIDER_MIN"
                           :max="DURATION_SLIDER_MAX"
                           :step="DURATION_SLIDER_STEP"
                           :disabled="loading"
                           style="flex: 1"
-                          @update:value="(v: number | null) => { sceneDurationValues[scene.id!] = typeof v === 'number' ? v : sceneInheritedSeconds(scene) }"
+                          @update:value="(v: number | null) => { const key = sceneSeqKey(scene); if (key) sceneDurationValues[key] = typeof v === 'number' ? v : sceneInheritedSeconds(scene) }"
                         />
-                        <span class="ots-scene-row__value">{{ formatDurationLabel(sceneDurationValues[scene.id] ?? sceneInheritedSeconds(scene)) }}</span>
+                        <span class="ots-scene-row__value">{{ formatDurationLabel(sceneDurationValues[sceneSeqKey(scene)!] ?? sceneInheritedSeconds(scene)) }}</span>
                         <button
                           v-if="isDurationOverridden(scene)"
                           type="button"
@@ -270,16 +270,16 @@
                       <div class="ots-scene-row__label">{{ t('brandForm.scene_talk_activity') }}</div>
                       <div class="ots-scene-row__controls">
                         <n-slider
-                          :value="sceneTalkativityValues[scene.id]"
+                          :value="sceneTalkativityValues[sceneSeqKey(scene)!]"
                           :min="0"
                           :max="1"
                           :step="0.01"
                           :disabled="loading"
                           style="flex: 1"
-                          :theme-overrides="{ fillColor: talkativityColor(sceneTalkativityValues[scene.id] ?? sceneInheritedTalkativity(scene)), fillColorHover: talkativityColor(sceneTalkativityValues[scene.id] ?? sceneInheritedTalkativity(scene)) }"
-                          @update:value="(v: number | null) => { sceneTalkativityValues[scene.id!] = typeof v === 'number' ? roundTalkativity(v) : sceneInheritedTalkativity(scene) }"
+                          :theme-overrides="{ fillColor: talkativityColor(sceneTalkativityValues[sceneSeqKey(scene)!] ?? sceneInheritedTalkativity(scene)), fillColorHover: talkativityColor(sceneTalkativityValues[sceneSeqKey(scene)!] ?? sceneInheritedTalkativity(scene)) }"
+                          @update:value="(v: number | null) => { const key = sceneSeqKey(scene); if (key) sceneTalkativityValues[key] = typeof v === 'number' ? roundTalkativity(v) : sceneInheritedTalkativity(scene) }"
                         />
-                        <span class="ots-scene-row__value">{{ formatTalkativityLabel(sceneTalkativityValues[scene.id] ?? sceneInheritedTalkativity(scene)) }}</span>
+                        <span class="ots-scene-row__value">{{ formatTalkativityLabel(sceneTalkativityValues[sceneSeqKey(scene)!] ?? sceneInheritedTalkativity(scene)) }}</span>
                         <button
                           v-if="isTalkativityOverridden(scene)"
                           type="button"
@@ -330,8 +330,8 @@
                   <n-ellipsis class="summary-label">{{ formData.scope === 'brand' ? t('overview.ots_pick_brand') : t('overview.ots_pick_dj') }}</n-ellipsis>
                   <span class="summary-value">{{ sourceLabel }}</span>
                 </div>
-                <div v-for="scene in orderedScenes" :key="scene.id" class="summary-row">
-                  <n-ellipsis class="summary-label">{{ scene.title || scene.id }}</n-ellipsis>
+                <div v-for="scene in orderedScenes" :key="sceneSeqKey(scene) ?? scene.title" class="summary-row">
+                  <n-ellipsis class="summary-label">{{ scene.title || sceneSeqKey(scene) }}</n-ellipsis>
                   <span class="summary-value">{{ sceneReviewDuration(scene) }}</span>
                 </div>
                 <div v-if="orderedScenes.length" class="summary-row summary-row--total">
@@ -515,12 +515,17 @@ function isOneTimeScene(scene: ScriptScene): boolean {
   return scene.sceneType === 'ONE_TIME' || scene.oneTimeRun === true
 }
 
+function sceneSeqKey(scene: ScriptScene): string | null {
+  if (scene.seqNum == null || !Number.isFinite(scene.seqNum)) return null
+  return String(scene.seqNum)
+}
+
 const orderedScenes = computed(() => scriptDetail.value?.scenes ?? [])
 const scriptVariables = computed(() => scriptDetail.value?.requiredVariables ?? [])
 const requiredVariables = computed(() => scriptVariables.value.filter((v) => v.required))
 const optionalVariables = computed(() => scriptVariables.value.filter((v) => !v.required))
 const optionalExpanded = ref<string[]>([])
-const hasDurationStep = computed(() => orderedScenes.value.some((scene) => scene.id && !isOneTimeScene(scene)))
+const hasDurationStep = computed(() => orderedScenes.value.some((scene) => sceneSeqKey(scene) && !isOneTimeScene(scene)))
 const stepCount = computed(() => (hasDurationStep.value ? 6 : 5))
 const panel = computed(() => {
   if (step.value <= 1) return 'auth'
@@ -574,8 +579,9 @@ function reviewFieldLabel(text: string): string {
 }
 
 function sceneReviewSeconds(scene: ScriptScene): number {
-  if (!isOneTimeScene(scene) && scene.id) {
-    return sceneDurationValues[scene.id] ?? sceneInheritedSeconds(scene)
+  const key = sceneSeqKey(scene)
+  if (!isOneTimeScene(scene) && key) {
+    return sceneDurationValues[key] ?? sceneInheritedSeconds(scene)
   }
   return sceneInheritedSeconds(scene)
 }
@@ -608,15 +614,17 @@ function sceneInheritedTalkativity(scene: ScriptScene): number {
 }
 
 function isDurationOverridden(scene: ScriptScene): boolean {
-  if (isOneTimeScene(scene) || !scene.id) return false
-  const current = sceneDurationValues[scene.id]
+  const key = sceneSeqKey(scene)
+  if (isOneTimeScene(scene) || !key) return false
+  const current = sceneDurationValues[key]
   if (current === undefined) return false
   return current !== sceneInheritedSeconds(scene)
 }
 
 function isTalkativityOverridden(scene: ScriptScene): boolean {
-  if (isOneTimeScene(scene) || !scene.id) return false
-  const current = sceneTalkativityValues[scene.id]
+  const key = sceneSeqKey(scene)
+  if (isOneTimeScene(scene) || !key) return false
+  const current = sceneTalkativityValues[key]
   if (current === undefined) return false
   return roundTalkativity(current) !== sceneInheritedTalkativity(scene)
 }
@@ -643,37 +651,42 @@ function clampDuration(seconds: number): number {
 function initSceneDurationValues() {
   Object.keys(sceneDurationValues).forEach((key) => delete sceneDurationValues[key])
   for (const scene of orderedScenes.value) {
-    if (!scene.id || isOneTimeScene(scene)) continue
-    sceneDurationValues[scene.id] = clampDuration(sceneInheritedSeconds(scene))
+    const key = sceneSeqKey(scene)
+    if (!key || isOneTimeScene(scene)) continue
+    sceneDurationValues[key] = clampDuration(sceneInheritedSeconds(scene))
   }
 }
 
 function initSceneTalkativityValues() {
   Object.keys(sceneTalkativityValues).forEach((key) => delete sceneTalkativityValues[key])
   for (const scene of orderedScenes.value) {
-    if (!scene.id || isOneTimeScene(scene)) continue
-    sceneTalkativityValues[scene.id] = sceneInheritedTalkativity(scene)
+    const key = sceneSeqKey(scene)
+    if (!key || isOneTimeScene(scene)) continue
+    sceneTalkativityValues[key] = sceneInheritedTalkativity(scene)
   }
 }
 
 function resetSceneDuration(scene: ScriptScene) {
-  if (!scene.id || isOneTimeScene(scene)) return
-  sceneDurationValues[scene.id] = clampDuration(sceneInheritedSeconds(scene))
+  const key = sceneSeqKey(scene)
+  if (!key || isOneTimeScene(scene)) return
+  sceneDurationValues[key] = clampDuration(sceneInheritedSeconds(scene))
 }
 
 function resetSceneTalkativity(scene: ScriptScene) {
-  if (!scene.id || isOneTimeScene(scene)) return
-  sceneTalkativityValues[scene.id] = sceneInheritedTalkativity(scene)
+  const key = sceneSeqKey(scene)
+  if (!key || isOneTimeScene(scene)) return
+  sceneTalkativityValues[key] = sceneInheritedTalkativity(scene)
 }
 
 function buildSceneDurationsPayload(): Record<string, number> {
   const map: Record<string, number> = {}
   for (const scene of orderedScenes.value) {
-    if (!scene.id || isOneTimeScene(scene)) continue
-    const value = sceneDurationValues[scene.id]
+    const key = sceneSeqKey(scene)
+    if (!key || isOneTimeScene(scene)) continue
+    const value = sceneDurationValues[key]
     if (value == null || value <= 0) continue
     if (value === sceneInheritedSeconds(scene)) continue
-    map[scene.id] = Math.round(value)
+    map[key] = Math.round(value)
   }
   return map
 }
@@ -681,12 +694,13 @@ function buildSceneDurationsPayload(): Record<string, number> {
 function buildSceneTalkativitiesPayload(): Record<string, number> {
   const map: Record<string, number> = {}
   for (const scene of orderedScenes.value) {
-    if (!scene.id || isOneTimeScene(scene)) continue
-    const value = sceneTalkativityValues[scene.id]
+    const key = sceneSeqKey(scene)
+    if (!key || isOneTimeScene(scene)) continue
+    const value = sceneTalkativityValues[key]
     if (value == null) continue
     const rounded = roundTalkativity(value)
     if (rounded === sceneInheritedTalkativity(scene)) continue
-    map[scene.id] = rounded
+    map[key] = rounded
   }
   return map
 }

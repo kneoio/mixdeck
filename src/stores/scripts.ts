@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import datanestApiService from '@/services/datanestApi'
 
 export interface ScriptScene {
-  id: string
+  id?: string
   title?: string
   durationSeconds?: number
   talkativity?: number
