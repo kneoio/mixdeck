@@ -326,7 +326,7 @@ export default {
     tab_source: 'セットアップ',
     tab_variables: 'プロパティ',
     tab_description: '情報',
-    tab_scenes: 'シーンの長さ',
+    tab_scenes: 'シーン',
     status_label: 'ステータス',
     type_label: 'タイプ',
     scene_duration_inherited: 'デフォルト: {n}',

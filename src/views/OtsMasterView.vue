@@ -241,27 +241,55 @@
                     <span v-if="isSceneOverridden(scene)" class="ots-scene-row__badge">{{ t('otsForm.scene_duration_overridden') }}</span>
                   </div>
                   <template v-if="!isOneTimeScene(scene) && scene.id">
-                    <div class="ots-scene-row__controls">
-                      <n-slider
-                        :value="sceneDurationValues[scene.id]"
-                        :min="DURATION_SLIDER_MIN"
-                        :max="DURATION_SLIDER_MAX"
-                        :step="DURATION_SLIDER_STEP"
-                        :disabled="loading"
-                        style="flex: 1"
-                        @update:value="(v: number | null) => { sceneDurationValues[scene.id!] = typeof v === 'number' ? v : sceneInheritedSeconds(scene) }"
-                      />
-                      <span class="ots-scene-row__value">{{ formatDurationLabel(sceneDurationValues[scene.id] ?? sceneInheritedSeconds(scene)) }}</span>
-                      <button
-                        v-if="isSceneOverridden(scene)"
-                        type="button"
-                        class="ots-scene-row__reset"
-                        :disabled="loading"
-                        @click="resetSceneDuration(scene)"
-                      >{{ t('otsForm.scene_duration_reset') }}</button>
+                    <div class="ots-scene-row__group">
+                      <div class="ots-scene-row__controls">
+                        <n-slider
+                          :value="sceneDurationValues[scene.id]"
+                          :min="DURATION_SLIDER_MIN"
+                          :max="DURATION_SLIDER_MAX"
+                          :step="DURATION_SLIDER_STEP"
+                          :disabled="loading"
+                          style="flex: 1"
+                          @update:value="(v: number | null) => { sceneDurationValues[scene.id!] = typeof v === 'number' ? v : sceneInheritedSeconds(scene) }"
+                        />
+                        <span class="ots-scene-row__value">{{ formatDurationLabel(sceneDurationValues[scene.id] ?? sceneInheritedSeconds(scene)) }}</span>
+                        <button
+                          v-if="isDurationOverridden(scene)"
+                          type="button"
+                          class="ots-scene-row__reset"
+                          :disabled="loading"
+                          @click="resetSceneDuration(scene)"
+                        >{{ t('otsForm.scene_duration_reset') }}</button>
+                      </div>
+                      <div class="ots-scene-row__inherited">
+                        {{ t('otsForm.scene_duration_inherited', { n: formatDurationLabel(sceneInheritedSeconds(scene)) }) }}
+                      </div>
                     </div>
-                    <div class="ots-scene-row__inherited">
-                      {{ t('otsForm.scene_duration_inherited', { n: formatDurationLabel(sceneInheritedSeconds(scene)) }) }}
+                    <div class="ots-scene-row__group">
+                      <div class="ots-scene-row__label">{{ t('brandForm.scene_talk_activity') }}</div>
+                      <div class="ots-scene-row__controls">
+                        <n-slider
+                          :value="sceneTalkativityValues[scene.id]"
+                          :min="0"
+                          :max="1"
+                          :step="0.01"
+                          :disabled="loading"
+                          style="flex: 1"
+                          :theme-overrides="{ fillColor: talkativityColor(sceneTalkativityValues[scene.id] ?? sceneInheritedTalkativity(scene)), fillColorHover: talkativityColor(sceneTalkativityValues[scene.id] ?? sceneInheritedTalkativity(scene)) }"
+                          @update:value="(v: number | null) => { sceneTalkativityValues[scene.id!] = typeof v === 'number' ? roundTalkativity(v) : sceneInheritedTalkativity(scene) }"
+                        />
+                        <span class="ots-scene-row__value">{{ formatTalkativityLabel(sceneTalkativityValues[scene.id] ?? sceneInheritedTalkativity(scene)) }}</span>
+                        <button
+                          v-if="isTalkativityOverridden(scene)"
+                          type="button"
+                          class="ots-scene-row__reset"
+                          :disabled="loading"
+                          @click="resetSceneTalkativity(scene)"
+                        >{{ t('otsForm.scene_duration_reset') }}</button>
+                      </div>
+                      <div class="ots-scene-row__inherited">
+                        {{ t('otsForm.scene_duration_inherited', { n: formatTalkativityLabel(sceneInheritedTalkativity(scene)) }) }}
+                      </div>
                     </div>
                   </template>
                 </div>
@@ -478,7 +506,9 @@ const agentOptions = ref<SelectOption[]>([])
 const DURATION_SLIDER_MIN = 1
 const DURATION_SLIDER_MAX = 7200
 const DURATION_SLIDER_STEP = 1
+const TALKATIVITY_DEFAULT = 0.5
 const sceneDurationValues = reactive<Record<string, number>>({})
+const sceneTalkativityValues = reactive<Record<string, number>>({})
 
 function isOneTimeScene(scene: ScriptScene): boolean {
   return scene.sceneType === 'ONE_TIME' || scene.oneTimeRun === true
@@ -568,11 +598,41 @@ function sceneInheritedSeconds(scene: ScriptScene): number {
   return scene.durationSeconds && scene.durationSeconds > 0 ? scene.durationSeconds : DURATION_SLIDER_MIN
 }
 
-function isSceneOverridden(scene: ScriptScene): boolean {
+function roundTalkativity(value: number): number {
+  return Math.round(Math.min(1, Math.max(0, value)) * 100) / 100
+}
+
+function sceneInheritedTalkativity(scene: ScriptScene): number {
+  return typeof scene.talkativity === 'number' ? roundTalkativity(scene.talkativity) : TALKATIVITY_DEFAULT
+}
+
+function isDurationOverridden(scene: ScriptScene): boolean {
   if (isOneTimeScene(scene) || !scene.id) return false
   const current = sceneDurationValues[scene.id]
   if (current === undefined) return false
   return current !== sceneInheritedSeconds(scene)
+}
+
+function isTalkativityOverridden(scene: ScriptScene): boolean {
+  if (isOneTimeScene(scene) || !scene.id) return false
+  const current = sceneTalkativityValues[scene.id]
+  if (current === undefined) return false
+  return roundTalkativity(current) !== sceneInheritedTalkativity(scene)
+}
+
+function isSceneOverridden(scene: ScriptScene): boolean {
+  return isDurationOverridden(scene) || isTalkativityOverridden(scene)
+}
+
+function talkativityColor(v: number): string {
+  const r = Math.round(56 + (255 - 56) * v)
+  const g = Math.round(189 - 144 * v)
+  const b = Math.round(237 - 237 * v)
+  return `rgb(${r},${g},${b})`
+}
+
+function formatTalkativityLabel(value: number): string {
+  return `${Math.round(roundTalkativity(value) * 100)}%`
 }
 
 function clampDuration(seconds: number): number {
@@ -587,9 +647,22 @@ function initSceneDurationValues() {
   }
 }
 
+function initSceneTalkativityValues() {
+  Object.keys(sceneTalkativityValues).forEach((key) => delete sceneTalkativityValues[key])
+  for (const scene of orderedScenes.value) {
+    if (!scene.id || isOneTimeScene(scene)) continue
+    sceneTalkativityValues[scene.id] = sceneInheritedTalkativity(scene)
+  }
+}
+
 function resetSceneDuration(scene: ScriptScene) {
   if (!scene.id || isOneTimeScene(scene)) return
   sceneDurationValues[scene.id] = clampDuration(sceneInheritedSeconds(scene))
+}
+
+function resetSceneTalkativity(scene: ScriptScene) {
+  if (!scene.id || isOneTimeScene(scene)) return
+  sceneTalkativityValues[scene.id] = sceneInheritedTalkativity(scene)
 }
 
 function buildSceneDurationsPayload(): Record<string, number> {
@@ -600,6 +673,19 @@ function buildSceneDurationsPayload(): Record<string, number> {
     if (value == null || value <= 0) continue
     if (value === sceneInheritedSeconds(scene)) continue
     map[scene.id] = Math.round(value)
+  }
+  return map
+}
+
+function buildSceneTalkativitiesPayload(): Record<string, number> {
+  const map: Record<string, number> = {}
+  for (const scene of orderedScenes.value) {
+    if (!scene.id || isOneTimeScene(scene)) continue
+    const value = sceneTalkativityValues[scene.id]
+    if (value == null) continue
+    const rounded = roundTalkativity(value)
+    if (rounded === sceneInheritedTalkativity(scene)) continue
+    map[scene.id] = rounded
   }
   return map
 }
@@ -750,6 +836,7 @@ async function loadParams(scriptSlug: string) {
       variables[variable.name] = variable.type === 'boolean' ? false : variable.type === 'number' ? null : ''
     }
     initSceneDurationValues()
+    initSceneTalkativityValues()
     await loadAgents()
   } catch {
     fieldErrors.value.api = t('otsMaster.load_failed')
@@ -858,6 +945,7 @@ async function createStream() {
       brandSlug: formData.value.scope === 'brand' ? formData.value.brandSlug : null,
       agentSlug: formData.value.agentSlug || null,
       sceneDurations: buildSceneDurationsPayload(),
+      sceneTalkativities: buildSceneTalkativitiesPayload(),
     })
     const doc = unwrapDoc(res)
     const slug = doc?.slugName || ''
@@ -905,6 +993,7 @@ function createAnother() {
   formData.value = { name: '', scriptSlug: null, scope: 'default', brandSlug: null, agentSlug: null }
   Object.keys(variables).forEach((key) => delete variables[key])
   Object.keys(sceneDurationValues).forEach((key) => delete sceneDurationValues[key])
+  Object.keys(sceneTalkativityValues).forEach((key) => delete sceneTalkativityValues[key])
   optionalExpanded.value = []
   fieldErrors.value = { email: '', code: '', type: '', source: '', api: '', name: '' }
   step.value = 2
@@ -1320,6 +1409,16 @@ h2 {
   font-size: 13px;
   color: #ddd;
   margin-bottom: 10px;
+}
+
+.ots-scene-row__group + .ots-scene-row__group {
+  margin-top: 12px;
+}
+
+.ots-scene-row__label {
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 6px;
 }
 
 .ots-scene-row__badge {

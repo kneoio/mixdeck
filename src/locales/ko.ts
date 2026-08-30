@@ -364,7 +364,7 @@ export default {
     tab_source: '설정',
     tab_variables: '속성',
     tab_description: '정보',
-    tab_scenes: '장면 길이',
+    tab_scenes: '장면',
     status_label: '상태',
     type_label: '유형',
     scene_duration_inherited: '기본값: {n}',

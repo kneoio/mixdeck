@@ -326,7 +326,7 @@ export default {
     tab_source: 'Баптау',
     tab_variables: 'Қасиеттер',
     tab_description: 'Ақпарат',
-    tab_scenes: 'Сахна ұзақтығы',
+    tab_scenes: 'Сахналар',
     status_label: 'Күй',
     type_label: 'Түрі',
     scene_duration_inherited: 'Әдепкі: {n}',

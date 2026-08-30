@@ -6,6 +6,7 @@ export interface ScriptScene {
   id: string
   title?: string
   durationSeconds?: number
+  talkativity?: number
   seqNum?: number
   oneTimeRun?: boolean
   sceneType?: 'LOOP' | 'ONE_TIME' | string

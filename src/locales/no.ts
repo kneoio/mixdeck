@@ -364,7 +364,7 @@ export default {
     tab_source: 'Oppsett',
     tab_variables: 'Egenskaper',
     tab_description: 'Info',
-    tab_scenes: 'Scenelengder',
+    tab_scenes: 'Scener',
     status_label: 'Status',
     type_label: 'Type',
     scene_duration_inherited: 'Standard: {n}',

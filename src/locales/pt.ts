@@ -327,7 +327,7 @@ export default {
     tab_source: 'Configuração',
     tab_variables: 'Propriedades',
     tab_description: 'Info',
-    tab_scenes: 'Durações das cenas',
+    tab_scenes: 'Cenas',
     status_label: 'Status',
     type_label: 'Tipo',
     scene_duration_inherited: 'Padrão: {n}',

@@ -326,7 +326,7 @@ export default {
     tab_source: 'Настройка',
     tab_variables: 'Свойства',
     tab_description: 'Инфо',
-    tab_scenes: 'Длительность сцен',
+    tab_scenes: 'Сцены',
     status_label: 'Статус',
     type_label: 'Тип',
     scene_duration_inherited: 'По умолчанию: {n}',

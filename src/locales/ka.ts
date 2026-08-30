@@ -326,7 +326,7 @@ export default {
     tab_source: 'გამართვა',
     tab_variables: 'თვისებები',
     tab_description: 'ინფორმაცია',
-    tab_scenes: 'სცენების ხანგრძლივობა',
+    tab_scenes: 'სცენები',
     status_label: 'სტატუსი',
     type_label: 'ტიპი',
     scene_duration_inherited: 'ნაგულისხმევი: {n}',

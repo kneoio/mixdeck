@@ -326,7 +326,7 @@ export default {
     tab_source: 'الإعداد',
     tab_variables: 'الخصائص',
     tab_description: 'معلومات',
-    tab_scenes: 'مدد المشاهد',
+    tab_scenes: 'المشاهد',
     status_label: 'الحالة',
     type_label: 'النوع',
     scene_duration_inherited: 'افتراضي: {n}',

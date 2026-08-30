@@ -20,6 +20,8 @@ export interface OtsDefinition {
   requiredVariables?: unknown
   /** Per-scene duration overrides (seconds). Absent key => use scene's own duration. */
   sceneDurations?: Record<string, number> | null
+  /** Per-scene talkativity overrides (0–1). Absent key => use scene's own talkativity. */
+  sceneTalkativities?: Record<string, number> | null
   author?: string
   regDate?: string
   lastModifier?: string
@@ -57,7 +59,7 @@ export const useOtsDefinitionsStore = defineStore('otsDefinitions', () => {
   }
 
   async function createOtsDefinition(
-    data: Pick<OtsDefinition, 'name' | 'scriptSlug' | 'userVariables' | 'brandSlug' | 'agentSlug' | 'color' | 'publicOts' | 'sceneDurations'>
+    data: Pick<OtsDefinition, 'name' | 'scriptSlug' | 'userVariables' | 'brandSlug' | 'agentSlug' | 'color' | 'publicOts' | 'sceneDurations' | 'sceneTalkativities'>
   ) {
     return datanestApiService.createOtsDefinition(data)
   }

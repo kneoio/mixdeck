@@ -326,7 +326,7 @@ export default {
     tab_source: 'सेटअप',
     tab_variables: 'गुण',
     tab_description: 'जानकारी',
-    tab_scenes: 'दृश्य अवधि',
+    tab_scenes: 'दृश्य',
     status_label: 'स्थिति',
     type_label: 'प्रकार',
     scene_duration_inherited: 'डिफ़ॉल्ट: {n}',
