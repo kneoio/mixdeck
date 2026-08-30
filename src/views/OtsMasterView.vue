@@ -242,6 +242,7 @@
                   </div>
                   <template v-if="!isOneTimeScene(scene) && scene.id">
                     <div class="ots-scene-row__group">
+                      <div class="ots-scene-row__label">{{ t('agenda.duration') }}</div>
                       <div class="ots-scene-row__controls">
                         <n-slider
                           :value="sceneDurationValues[scene.id]"
@@ -946,6 +947,7 @@ async function createStream() {
       agentSlug: formData.value.agentSlug || null,
       sceneDurations: buildSceneDurationsPayload(),
       sceneTalkativities: buildSceneTalkativitiesPayload(),
+      publicOts: 1,
     })
     const doc = unwrapDoc(res)
     const slug = doc?.slugName || ''

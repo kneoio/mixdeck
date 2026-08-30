@@ -232,7 +232,7 @@ async function loadOtsTemplate(scriptSlug: string) {
   formData.value.name = template?.name ?? ''
   formData.value.scriptSlug = template?.scriptSlug ?? scriptSlug
   formData.value.color = template?.color || '#000000'
-  formData.value.publicOts = template?.publicOts ?? 1
+  formData.value.publicOts = 1
   await loadScriptDetail()
   if (scriptDetail.value) {
     scriptDetail.value = {
@@ -454,6 +454,9 @@ onMounted(async () => {
 
 <template>
   <FormWrapper :title="formTitle" :subtitle="formSubtitle" :loading="loading">
+    <template v-if="isEditing && otsStatus" #title-after>
+      <span class="ots-header-status">{{ otsStatus }}</span>
+    </template>
     <template #actions>
       <div class="gsap-row">
         <GsapButton @click="navigateBack"><span>{{ t('common.close') }}</span></GsapButton>
@@ -515,14 +518,6 @@ onMounted(async () => {
             <div class="field-stack">
               <div class="field-error-shell">
                 <NSwitch :key="privateSwitchKey" :value="formData.publicOts === 0" @update:value="handlePrivateToggle" />
-              </div>
-              <div class="field-error-label"></div>
-            </div>
-          </NFormItem>
-          <NFormItem v-if="isEditing" :label="t('otsForm.status_label')" :show-feedback="false">
-            <div class="field-stack">
-              <div class="field-error-shell">
-                <span>{{ otsStatus }}</span>
               </div>
               <div class="field-error-label"></div>
             </div>
@@ -604,6 +599,7 @@ onMounted(async () => {
 
             <template v-if="!isOneTimeScene(scene) && scene.id">
               <div class="ots-scene-row__group">
+                <div class="ots-scene-row__label">{{ t('agenda.duration') }}</div>
                 <div class="ots-scene-row__controls">
                   <NSlider
                     :value="sceneDurationValues[scene.id]"
@@ -676,6 +672,19 @@ onMounted(async () => {
   flex-direction: column;
   align-items: flex-end;
   gap: 3px;
+}
+.ots-header-status {
+  margin-left: 10px;
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 3px;
+  padding: 1px 7px;
+  vertical-align: middle;
 }
 .premium-badge {
   display: inline-block;
