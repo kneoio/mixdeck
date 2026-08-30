@@ -31,6 +31,7 @@ const loading = ref(false)
 const isMobile = ref(false)
 const activeTab = ref('variables')
 const isTabChangeFromValidation = ref(false)
+const saveAttempted = ref(false)
 const returnToRoute = computed(() => {
   const value = route.query.returnTo
   return typeof value === 'string' && value ? value : null
@@ -400,6 +401,27 @@ function scopeValid(): boolean {
   return formData.value.scope === 'brand' ? !!formData.value.brandSlug : !!formData.value.agentSlug
 }
 
+function isVarEmpty(variable: { name: string; type: string }): boolean {
+  const val = variables[variable.name]
+  if (variable.type === 'boolean') return false
+  return val === undefined || val === null || (typeof val === 'string' && val.trim() === '')
+}
+
+function requiredVarMessage(variable: { name: string; description?: string }): string {
+  return t('common.required_field', { field: variable.description || variable.name })
+}
+
+function syncRequiredVarErrors() {
+  for (const v of scriptDetail.value?.requiredVariables ?? []) {
+    if (!v.required) {
+      clearVarError(v.name)
+      continue
+    }
+    if (isVarEmpty(v)) varErrors[v.name] = requiredVarMessage(v)
+    else clearVarError(v.name)
+  }
+}
+
 async function validateVariables(): Promise<boolean> {
   const vars = scriptDetail.value?.requiredVariables ?? []
   Object.keys(varErrors).forEach((key) => {
@@ -408,9 +430,7 @@ async function validateVariables(): Promise<boolean> {
   const invalid: { name: string; msg: string }[] = []
   for (const v of vars) {
     if (!v.required) continue
-    const val = variables[v.name]
-    const empty = val === undefined || val === null || (typeof val === 'string' && val.trim() === '')
-    if (empty) invalid.push({ name: v.name, msg: t('common.required_field', { field: v.description || v.name }) })
+    if (isVarEmpty(v)) invalid.push({ name: v.name, msg: requiredVarMessage(v) })
     else clearVarError(v.name)
   }
   if (!invalid.length) return true
@@ -432,7 +452,7 @@ async function validateBeforeSave(): Promise<boolean> {
   if (!invalidFields.length && variablesValid) return true
 
   isTabChangeFromValidation.value = true
-  activeTab.value = invalidFields.length ? getFieldTab(invalidFields[0]) : 'variables'
+  activeTab.value = !variablesValid ? 'variables' : getFieldTab(invalidFields[0])
   await nextTick()
   isTabChangeFromValidation.value = false
   await Promise.all(invalidFields.map((field) => showFieldError(field, field === 'source' ? t('overview.ots_agent_required') : undefined)))
@@ -440,6 +460,7 @@ async function validateBeforeSave(): Promise<boolean> {
 }
 
 async function handleSave() {
+  saveAttempted.value = true
   const valid = await validateBeforeSave()
   if (!valid) return
   loading.value = true
@@ -461,6 +482,7 @@ async function handleSave() {
       await otsDefinitionsStore.createOtsDefinition(payload)
     }
     message.success(t('otsForm.saved'))
+    saveAttempted.value = false
     router.push(backRoute.value)
   } catch (error: any) {
     const handled = await handleServerValidation(error)
@@ -478,16 +500,20 @@ watch(() => formData.value.brandSlug, (value) => { if (value) clearFieldError('s
 watch(() => formData.value.agentSlug, (value) => { if (value) clearFieldError('source') })
 watch(() => formData.value.name, (value) => { if (value?.trim()) clearFieldError('name') })
 watch(variables, () => {
+  if (saveAttempted.value) {
+    syncRequiredVarErrors()
+    return
+  }
   for (const v of scriptDetail.value?.requiredVariables ?? []) {
     if (!v.required) continue
-    const val = variables[v.name]
-    const empty = val === undefined || val === null || (typeof val === 'string' && val.trim() === '')
-    if (!empty) clearVarError(v.name)
+    if (!isVarEmpty(v)) clearVarError(v.name)
   }
 }, { deep: true })
-watch(activeTab, () => {
+watch(activeTab, (tab) => {
   if (isTabChangeFromValidation.value) return
-  clearAllFieldErrors()
+  clearFieldError('source')
+  clearFieldError('name')
+  if (tab === 'variables' && saveAttempted.value) syncRequiredVarErrors()
 })
 
 onMounted(async () => {
@@ -564,16 +590,19 @@ onMounted(async () => {
               </template>
               <div class="field-stack">
                 <div
-                  :ref="(el) => setVarFieldRef(variable.name, el)"
+                  :ref="variable.required ? (el) => setVarFieldRef(variable.name, el) : undefined"
                   class="field-error-shell"
-                  :class="{ 'field-error-shell--active': !!varErrors[variable.name] }"
+                  :class="{ 'field-error-shell--active': !!variable.required && !!varErrors[variable.name] }"
                 >
                   <NSwitch v-if="variable.type === 'boolean'" v-model:value="variables[variable.name]" />
-                  <NInputNumber v-else-if="variable.type === 'number'" v-model:value="variables[variable.name]" style="width: 100%" @update:value="clearVarError(variable.name)" />
-                  <NInput v-else v-model:value="variables[variable.name]" style="width: 100%" @update:value="clearVarError(variable.name)" />
+                  <NInputNumber v-else-if="variable.type === 'number'" v-model:value="variables[variable.name]" style="width: 100%" @update:value="variable.required && clearVarError(variable.name)" />
+                  <NInput v-else v-model:value="variables[variable.name]" style="width: 100%" @update:value="variable.required && clearVarError(variable.name)" />
                 </div>
-                <div class="field-error-label" :class="{ 'field-error-label--visible': !!varErrors[variable.name] }">
-                  {{ varErrors[variable.name] || '\u00A0' }}
+                <div
+                  class="field-error-label"
+                  :class="{ 'field-error-label--visible': !!variable.required && !!varErrors[variable.name] }"
+                >
+                  {{ variable.required ? (varErrors[variable.name] || '\u00A0') : '' }}
                 </div>
               </div>
             </NFormItem>
