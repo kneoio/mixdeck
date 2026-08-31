@@ -219,6 +219,7 @@ export default {
     title: 'Plans & Pricing',
     subtitle: 'Choose the plan that fits your needs',
     current: 'Current plan',
+    redeemed: 'Redeemed',
     coming_soon: 'Coming soon',
     subscribe: 'Subscribe',
     upgrade: 'Upgrade',

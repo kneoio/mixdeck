@@ -19,6 +19,7 @@
             <div style="display: flex; align-items: center; gap: 8px;">
               <div style="font-size: 18px; font-weight: 700;">{{ card.name }}</div>
               <NTag v-if="card.subscribed" class="current-plan-badge" :class="{ 'plan-glow-badge': card.id === justUpgradedId }" type="success" size="small">{{ t('plans.current') }}</NTag>
+              <NTag v-if="card.subscribed && userSubscriptionStore.redeemed" class="current-plan-badge" type="warning" size="small">{{ t('plans.redeemed') }}</NTag>
             </div>
             <div style="font-size: 28px; font-weight: 800; margin: 8px 0;">
               €{{ card.price }} <span style="font-size: 14px; font-weight: 400; opacity: 0.5;">/ mo</span>
@@ -30,8 +31,8 @@
             <li v-for="feature in card.features" :key="feature">✓ {{ feature }}</li>
           </ul>
           <div v-if="!card.subscribed && (card.identifier === PRO_IDENTIFIER || card.identifier === PLUS_IDENTIFIER)" style="margin-top: -8px; margin-bottom: 16px; display: flex; gap: 16px;">
-            <NInput v-model:value="promoCode" size="small" clearable :placeholder="t('plans.promo_placeholder')" @keyup.enter="redeemPromo" />
-            <GsapButton type="error" size="small" :disabled="!promoCode || redeeming" @click="redeemPromo">
+            <NInput v-model:value="promoCodes[card.identifier]" size="small" clearable :placeholder="t('plans.promo_placeholder')" @keyup.enter="redeemPromo(card.identifier)" />
+            <GsapButton type="error" size="small" :disabled="!promoCodes[card.identifier] || redeeming" @click="redeemPromo(card.identifier)">
               <span>{{ redeeming ? t('plans.processing') : t('plans.promo_apply') }}</span>
             </GsapButton>
           </div>
@@ -51,7 +52,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { NCard, NDivider, NEmpty, NInput, NTag, useMessage } from 'naive-ui'
@@ -98,10 +99,13 @@ const subscriptionProductsStore = useSubscriptionProductsStore()
 const userSubscriptionStore = useUserSubscriptionStore()
 const subscribing = ref<string | null>(null)
 const justUpgradedId = ref<string | null>(null)
-const promoCode = ref('')
 const redeeming = ref(false)
 const PRO_IDENTIFIER = 'mixpla_pro'
 const PLUS_IDENTIFIER = 'mixpla_plus'
+const promoCodes = reactive<Record<string, string>>({
+  [PRO_IDENTIFIER]: '',
+  [PLUS_IDENTIFIER]: '',
+})
 
 function parseDescription(raw: string | undefined): PlanDescription {
   if (!raw || typeof raw !== 'string') return {}
@@ -220,14 +224,15 @@ async function subscribe(planIdentifier: string, price: number) {
   }
 }
 
-async function redeemPromo() {
-  if (!promoCode.value) return
+async function redeemPromo(planIdentifier: string) {
+  const code = promoCodes[planIdentifier]
+  if (!code) return
   redeeming.value = true
   try {
-    const subscription = await nivaroApiService.redeemPromoCode(promoCode.value.trim())
+    const subscription = await nivaroApiService.redeemPromoCode(code.trim())
     userSubscriptionStore.setSubscription(subscription)
     await subscriptionProductsStore.loadProducts(undefined, undefined, true)
-    promoCode.value = ''
+    promoCodes[planIdentifier] = ''
     message.success(t('plans.promo_success'))
   } catch (error) {
     message.error(getErrorMessage(error))

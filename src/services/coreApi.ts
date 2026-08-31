@@ -17,6 +17,7 @@ export interface UserSubscriptionDTO {
   stripeCustomerId?: string
   subscriptionType?: string
   subscriptionStatus?: string
+  redeemed?: boolean
   trialEnd?: string
   currentPeriodStart?: string
   currentPeriodEnd?: string

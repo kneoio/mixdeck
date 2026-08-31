@@ -13,6 +13,7 @@ export const useUserSubscriptionStore = defineStore('userSubscription', () => {
   const isFreePlan = computed(() => !hasActiveSubscription.value)
   const subscriptionType = computed(() => subscription.value?.subscriptionType)
   const subscriptionStatus = computed(() => subscription.value?.subscriptionStatus)
+  const redeemed = computed(() => subscription.value?.redeemed === true)
   const streamDurationMinutes = computed(() => subscription.value?.streamDurationMinutes)
   const otsAllowed = computed(() => subscription.value?.otsAllowed ?? false)
   const maxSongs = computed(() => subscription.value?.maxSongs)
@@ -63,6 +64,7 @@ export const useUserSubscriptionStore = defineStore('userSubscription', () => {
     isFreePlan,
     subscriptionType,
     subscriptionStatus,
+    redeemed,
     streamDurationMinutes,
     otsAllowed,
     maxSongs,
