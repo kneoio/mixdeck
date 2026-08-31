@@ -7,7 +7,7 @@ import {
   NTabs, NTabPane, NDynamicInput, NInputNumber, NSlider, NTimePicker,
   NCheckbox, NRadioGroup, NRadio,
   NColorPicker, NTag, NPopconfirm, NAnchor, NAnchorLink, useMessage,
-  NModal, NCard, NButton, NSkeleton,
+  NModal, NCard, NButton, NSkeleton, NAlert,
 } from 'naive-ui'
 import MarkdownIt from 'markdown-it'
 import { Cropper } from 'vue-advanced-cropper'
@@ -31,7 +31,7 @@ import type { GenreEntry, LabelEntry } from '@/stores/dictionary'
 import jesoosApiService, { type DebugInstructionResponse } from '@/services/jesoosApi'
 import { handleApiError } from '@/utils/notificationService'
 import { normalizeIdList, toGenreTreeOptions } from '@/utils/genreTree'
-import { isValidationError } from '@/utils/errorHandler'
+import { isValidationError, ApiStationLimitReachedError } from '@/utils/errorHandler'
 
 const { t } = useI18n()
 
@@ -60,6 +60,7 @@ const formTitle = computed(() => {
 })
 
 const loading = ref(false)
+const stationLimitError = ref<{ title: string; detail: string; upgradeHint?: string } | null>(null)
 const brandSlug = ref<string | null>(null)
 const activeTab = ref('properties')
 const isTabChangeFromValidation = ref(false)
@@ -1100,8 +1101,12 @@ onMounted(async () => {
     }
     loadAgents()
   } catch (error: any) {
-    message.error(error?.message || t('brandForm.load_failed'))
-    if (isEditing.value) router.push(backRoute.value)
+    if (error instanceof ApiStationLimitReachedError) {
+      stationLimitError.value = { title: error.title, detail: error.detail, upgradeHint: error.upgradeHint }
+    } else {
+      message.error(error?.message || t('brandForm.load_failed'))
+      if (isEditing.value) router.push(backRoute.value)
+    }
   } finally {
     loading.value = false
   }
@@ -1228,11 +1233,15 @@ watch(activeTab, async (tab) => {
     <template #actions>
       <div class="gsap-row">
         <GsapButton @click="router.push(backRoute)"><span>{{ t('common.close') }}</span></GsapButton>
-        <GsapButton type="primary" :disabled="loading" @click="handleSave"><span>{{ t('common.save') }}</span></GsapButton>
+        <GsapButton v-if="!stationLimitError" type="primary" :disabled="loading" @click="handleSave"><span>{{ t('common.save') }}</span></GsapButton>
       </div>
     </template>
 
-    <NTabs v-model:value="activeTab">
+    <NAlert v-if="stationLimitError" type="warning" :title="stationLimitError.title">
+      <div>{{ stationLimitError.detail }}</div>
+      <div v-if="stationLimitError.upgradeHint" style="margin-top: 8px">{{ stationLimitError.upgradeHint }}</div>
+    </NAlert>
+    <NTabs v-else v-model:value="activeTab">
       <NTabPane name="properties" :tab="t('brandForm.tab_properties')">
         <NForm :label-placement="formLabelPlacement" label-width="140" :disabled="loading">
           <NFormItem :label="t('brandForm.localized_names')">

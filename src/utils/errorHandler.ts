@@ -24,6 +24,17 @@ export class ApiPaymentActionRequiredError extends Error {
   }
 }
 
+export class ApiStationLimitReachedError extends Error {
+  constructor(
+    public readonly title: string,
+    public readonly detail: string,
+    public readonly upgradeHint?: string,
+  ) {
+    super(detail || title)
+    this.name = 'ApiStationLimitReachedError'
+  }
+}
+
 export class ApiValidationError extends Error {
   constructor(
     public readonly validationError: ValidationError,

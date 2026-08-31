@@ -1,5 +1,5 @@
 import authService from './auth'
-import { ApiValidationError, ApiNotEnoughSongsError, ApiPaymentActionRequiredError, type ValidationError } from '@/utils/errorHandler'
+import { ApiValidationError, ApiNotEnoughSongsError, ApiPaymentActionRequiredError, ApiStationLimitReachedError, type ValidationError } from '@/utils/errorHandler'
 import { LOCALE_KEY } from '@/i18n'
 
 function getAcceptLanguage(): string {
@@ -63,13 +63,21 @@ export class ApiClient {
           throw new ApiPaymentActionRequiredError((data as any).clientSecret)
         }
 
+        if (response.status === 403 && (data as any).code === 'STATION_LIMIT_REACHED') {
+          throw new ApiStationLimitReachedError(
+            (data as any).title || 'Station limit reached',
+            (data as any).detail || 'Station limit reached',
+            (data as any).upgradeHint,
+          )
+        }
+
         if (typeof (data as any).error === 'string') {
           errorMessage = (data as any).error
         } else if (data && typeof (data as any).message === 'string') {
           errorMessage = (data as any).message
         }
       } catch (error) {
-        if (error instanceof ApiValidationError || error instanceof ApiNotEnoughSongsError || error instanceof ApiPaymentActionRequiredError) {
+        if (error instanceof ApiValidationError || error instanceof ApiNotEnoughSongsError || error instanceof ApiPaymentActionRequiredError || error instanceof ApiStationLimitReachedError) {
           throw error
         }
       }
