@@ -16,6 +16,8 @@ const brandsStore = useBrandsStore()
 const message = useMessage()
 const selectedIds = ref<string[]>([])
 const deleting = ref(false)
+const canCreate = computed(() => brandsStore.actions.includes('create'))
+const canDelete = computed(() => brandsStore.actions.includes('delete'))
 
 const brandLabel = (brand: Brand) =>
   brand.localizedName?.['en'] || brand.title || brand.slugName || ''
@@ -100,12 +102,12 @@ function goSettings(row: Brand) {
     <PageHeader :title="t('menu.my_brands')" :subtitle="t('brandsView.subtitle')" :count="brandsStore.brands.length" />
     <ActionBar>
       <div class="gsap-row" style="padding-left:0">
-        <GsapButton type="primary" @click="router.push('/brands/new')">
+        <GsapButton type="primary" :disabled="!canCreate" @click="router.push('/brands/new')">
           <span>{{ t('menu.add_new') }}</span>
         </GsapButton>
-        <NPopconfirm @positive-click="handleDelete" :disabled="selectedIds.length === 0">
+        <NPopconfirm @positive-click="handleDelete" :disabled="!canDelete || selectedIds.length === 0">
           <template #trigger>
-            <GsapButton type="error" :disabled="!selectedIds.length || deleting">
+            <GsapButton type="error" :disabled="!canDelete || !selectedIds.length || deleting">
               <span>{{ t('brandsView.delete_btn', { count: selectedIds.length }) }}</span>
             </GsapButton>
           </template>

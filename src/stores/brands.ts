@@ -66,6 +66,7 @@ export const SUBMISSION_POLICY_OPTIONS: { label: string; value: SubmissionPolicy
 
 export const useBrandsStore = defineStore('brands', () => {
   const brands = ref<Brand[]>([])
+  const actions = ref<string[]>([])
   const loading = ref(false)
   const totalCount = ref(0)
   const pageNum = ref(1)
@@ -77,11 +78,12 @@ export const useBrandsStore = defineStore('brands', () => {
   async function loadBrands() {
     loading.value = true
     try {
-      const entries = await datanestApiService.getDictionary<Brand>('/public/brands')
-      brands.value = entries
-      totalCount.value = entries.length
+      const result = await datanestApiService.getDictionary<Brand>('/public/brands')
+      brands.value = result.entries
+      actions.value = result.actions
+      totalCount.value = result.entries.length
       pageNum.value = 1
-      pageSize.value = entries.length
+      pageSize.value = result.entries.length
       maxPage.value = 1
     } finally {
       loading.value = false
@@ -116,6 +118,7 @@ export const useBrandsStore = defineStore('brands', () => {
 
   return {
     brands,
+    actions,
     loading,
     totalCount,
     pageNum,

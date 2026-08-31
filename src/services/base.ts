@@ -88,10 +88,14 @@ export class ApiClient {
     return response.json()
   }
 
-  async getDictionary<T>(endpoint: string): Promise<T[]> {
+  async getDictionary<T>(endpoint: string): Promise<{ entries: T[]; actions: string[] }> {
     const response = await this.request<any>(endpoint)
     const viewData = response?.payload?.viewData ?? response?.viewData
-    return viewData?.entries ?? []
+    const actions = response?.payload?.actions ?? response?.actions ?? []
+    return {
+      entries: viewData?.entries ?? [],
+      actions: Array.isArray(actions) ? actions : [],
+    }
   }
 
   async getPagedDictionary<T>(
