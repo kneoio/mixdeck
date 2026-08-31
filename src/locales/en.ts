@@ -716,11 +716,10 @@ export default {
     title: 'Privacy policy',
     updated: 'Last updated: 31 August 2026',
     intro:
-      'This policy explains how Mixpla (“we”, “us”) treats information when you use the Mixpla listener apps, mixpla.online, Mixdeck, mixpla.io, and related Mixpla services operated by Semantyca.',
+      'This policy explains how Mixpla (“we”, “us”) treats information when you use the Mixpla listener apps, mixpla.online, Mixdeck, mixpla.io, and related Mixpla services.',
     who_title: 'Who we are',
     who_p1:
       'Mixpla is an AI radio and streaming platform. Mixdeck is the broadcaster portal for managing stations, playlists, and related tools. The Mixpla mobile app lets you listen to live streams, chat with a station, rate tracks, and (if you choose) sign in as an artist.',
-    who_p2: 'Operator: Semantyca. Site:',
     collect_title: 'What we collect',
     collect_intro: 'Depending on how you use Mixpla, we may process:',
     collect_anon:
@@ -763,6 +762,5 @@ export default {
     contact_title: 'Contact',
     contact_before: 'Questions about this policy: use',
     contact_help: 'Mixpla Help',
-    contact_mid: 'or contact Semantyca at',
   },
 }

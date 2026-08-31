@@ -573,11 +573,10 @@ export default {
     title: 'سياسة الخصوصية',
     updated: 'آخر تحديث: 31 أغسطس 2026',
     intro:
-      'توضح هذه السياسة كيف تتعامل Mixpla («نحن») مع المعلومات عند استخدام تطبيقات الاستماع Mixpla وmixpla.online وMixdeck وmixpla.io وخدمات Mixpla ذات الصلة التي تشغّلها Semantyca.',
+      'توضح هذه السياسة كيف تتعامل Mixpla («نحن») مع المعلومات عند استخدام تطبيقات الاستماع Mixpla وmixpla.online وMixdeck وmixpla.io وخدمات Mixpla ذات الصلة.',
     who_title: 'من نحن',
     who_p1:
       'Mixpla منصة راديو وبث بالذكاء الاصطناعي. Mixdeck بوابة المذيعين لإدارة المحطات وقوائم التشغيل والأدوات المرتبطة. يتيح تطبيق Mixpla الاستماع للبث المباشر والدردشة مع محطة وتقييم المقاطع، وتسجيل الدخول كفنان إن رغبت.',
-    who_p2: 'المشغّل: Semantyca. الموقع:',
     collect_title: 'ما نجمعه',
     collect_intro: 'حسب طريقة استخدامك لـ Mixpla قد نعالج:',
     collect_anon:
@@ -620,6 +619,5 @@ export default {
     contact_title: 'التواصل',
     contact_before: 'أسئلة حول هذه السياسة: استخدم',
     contact_help: 'مساعدة Mixpla',
-    contact_mid: 'أو تواصل مع Semantyca عبر',
   },
 }

@@ -573,11 +573,10 @@ export default {
     title: 'プライバシーポリシー',
     updated: '最終更新: 2026年8月31日',
     intro:
-      '本ポリシーは、Mixpla（「当社」）が Mixpla リスナーアプリ、mixpla.online、Mixdeck、mixpla.io、および Semantyca が運営する関連 Mixpla サービスを利用する際に情報をどのように扱うかを説明します。',
+      '本ポリシーは、Mixpla（「当社」）が Mixpla リスナーアプリ、mixpla.online、Mixdeck、mixpla.io、および関連 Mixpla サービスを利用する際に情報をどのように扱うかを説明します。',
     who_title: '私たちについて',
     who_p1:
       'Mixpla は AI ラジオ／ストリーミングのプラットフォームです。Mixdeck は局・プレイリスト・関連ツールを管理するブロードキャスター向けポータルです。Mixpla アプリではライブストリームの聴取、局チャット、曲の評価、希望すればアーティストとしてログインができます。',
-    who_p2: '運営者: Semantyca。サイト:',
     collect_title: '収集する情報',
     collect_intro: 'Mixpla の使い方に応じて、次の情報を処理することがあります。',
     collect_anon:
@@ -619,7 +618,6 @@ export default {
       '本ポリシーを更新することがあります。その場合、上部の日付が変わります。更新後も利用を続ける場合、改訂後のポリシーに同意したものとします。',
     contact_title: 'お問い合わせ',
     contact_before: '本ポリシーに関するご質問は',
-    contact_help: 'Mixpla ヘルプ',
-    contact_mid: 'をご利用いただくか、Semantyca へ',
+    contact_help: 'Mixpla ヘルプをご利用ください',
   },
 }

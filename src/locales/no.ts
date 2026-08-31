@@ -626,11 +626,10 @@ export default {
     title: 'Personvernerklæring',
     updated: 'Sist oppdatert: 31. august 2026',
     intro:
-      'Denne erklæringen forklarer hvordan Mixpla («vi») behandler informasjon når du bruker Mixpla-lytteappene, mixpla.online, Mixdeck, mixpla.io og relaterte Mixpla-tjenester drevet av Semantyca.',
+      'Denne erklæringen forklarer hvordan Mixpla («vi») behandler informasjon når du bruker Mixpla-lytteappene, mixpla.online, Mixdeck, mixpla.io og relaterte Mixpla-tjenester.',
     who_title: 'Hvem vi er',
     who_p1:
       'Mixpla er en AI-radio- og strømmeplattform. Mixdeck er kringkasterportalen for å administrere stasjoner, spillelister og relaterte verktøy. Mixpla-appen lar deg høre live-strømmer, chatte med en stasjon, vurdere spor og (hvis du vil) logge inn som artist.',
-    who_p2: 'Operatør: Semantyca. Nettsted:',
     collect_title: 'Hva vi samler inn',
     collect_intro: 'Avhengig av hvordan du bruker Mixpla, kan vi behandle:',
     collect_anon:
@@ -673,6 +672,5 @@ export default {
     contact_title: 'Kontakt',
     contact_before: 'Spørsmål om denne erklæringen: bruk',
     contact_help: 'Mixpla-hjelp',
-    contact_mid: 'eller kontakt Semantyca på',
   },
 }

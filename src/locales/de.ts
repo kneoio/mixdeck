@@ -626,11 +626,10 @@ export default {
     title: 'Datenschutzerklärung',
     updated: 'Zuletzt aktualisiert: 31. August 2026',
     intro:
-      'Diese Erklärung beschreibt, wie Mixpla („wir“) Informationen behandelt, wenn Sie die Mixpla-Listener-Apps, mixpla.online, Mixdeck, mixpla.io und verwandte Mixpla-Dienste von Semantyca nutzen.',
+      'Diese Erklärung beschreibt, wie Mixpla („wir“) Informationen behandelt, wenn Sie die Mixpla-Listener-Apps, mixpla.online, Mixdeck, mixpla.io und verwandte Mixpla-Dienste nutzen.',
     who_title: 'Wer wir sind',
     who_p1:
       'Mixpla ist eine KI-Radio- und Streaming-Plattform. Mixdeck ist das Portal für Sender zur Verwaltung von Stationen, Playlists und zugehörigen Werkzeugen. Die Mixpla-App ermöglicht Live-Streams, Chat mit einer Station, Bewertungen von Titeln und optional die Anmeldung als Artist.',
-    who_p2: 'Betreiber: Semantyca. Website:',
     collect_title: 'Welche Daten wir erheben',
     collect_intro: 'Je nachdem, wie Sie Mixpla nutzen, können wir verarbeiten:',
     collect_anon:
@@ -673,6 +672,5 @@ export default {
     contact_title: 'Kontakt',
     contact_before: 'Fragen zu dieser Erklärung: nutzen Sie',
     contact_help: 'Mixpla Hilfe',
-    contact_mid: 'oder kontaktieren Sie Semantyca unter',
   },
 }

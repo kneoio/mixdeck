@@ -573,11 +573,10 @@ export default {
     title: 'गोपनीयता नीति',
     updated: 'अंतिम अपडेट: 31 अगस्त 2026',
     intro:
-      'यह नीति बताती है कि Mixpla («हम») Mixpla लिसनर ऐप, mixpla.online, Mixdeck, mixpla.io और Semantyca द्वारा संचालित संबंधित Mixpla सेवाओं के उपयोग पर जानकारी का कैसे व्यवहार करता है।',
+      'यह नीति बताती है कि Mixpla («हम») Mixpla लिसनर ऐप, mixpla.online, Mixdeck, mixpla.io और संबंधित Mixpla सेवाओं के उपयोग पर जानकारी का कैसे व्यवहार करता है।',
     who_title: 'हम कौन हैं',
     who_p1:
       'Mixpla एक AI रेडियो और स्ट्रीमिंग प्लेटफ़ॉर्म है। Mixdeck स्टेशन, प्लेलिस्ट और संबंधित टूल प्रबंधित करने का ब्रॉडकास्टर पोर्टल है। Mixpla ऐप से लाइव स्ट्रीम सुन सकते हैं, स्टेशन चैट कर सकते हैं, ट्रैक रेट कर सकते हैं, और चाहें तो कलाकार के रूप में साइन इन कर सकते हैं।',
-    who_p2: 'संचालक: Semantyca। साइट:',
     collect_title: 'हम क्या एकत्र करते हैं',
     collect_intro: 'आप Mixpla का कैसे उपयोग करते हैं, उसके अनुसार हम संसाधित कर सकते हैं:',
     collect_anon:
@@ -620,6 +619,5 @@ export default {
     contact_title: 'संपर्क',
     contact_before: 'इस नीति के प्रश्न: उपयोग करें',
     contact_help: 'Mixpla सहायता',
-    contact_mid: 'या Semantyca से संपर्क करें',
   },
 }

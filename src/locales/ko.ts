@@ -626,11 +626,10 @@ export default {
     title: '개인정보 처리방침',
     updated: '최종 업데이트: 2026년 8월 31일',
     intro:
-      '이 방침은 Mixpla(「당사」)가 Mixpla 청취 앱, mixpla.online, Mixdeck, mixpla.io 및 Semantyca가 운영하는 관련 Mixpla 서비스를 이용할 때 정보를 어떻게 다루는지 설명합니다.',
+      '이 방침은 Mixpla(「당사」)가 Mixpla 청취 앱, mixpla.online, Mixdeck, mixpla.io 및 관련 Mixpla 서비스를 이용할 때 정보를 어떻게 다루는지 설명합니다.',
     who_title: '당사 소개',
     who_p1:
       'Mixpla는 AI 라디오·스트리밍 플랫폼입니다. Mixdeck은 스테이션, 플레이리스트 및 관련 도구를 관리하는 방송인 포털입니다. Mixpla 앱에서는 라이브 스트림 청취, 스테이션 채팅, 트랙 평가, 원하면 아티스트로 로그인할 수 있습니다.',
-    who_p2: '운영자: Semantyca. 사이트:',
     collect_title: '수집하는 정보',
     collect_intro: 'Mixpla 이용 방식에 따라 다음을 처리할 수 있습니다.',
     collect_anon:
@@ -673,6 +672,5 @@ export default {
     contact_title: '문의',
     contact_before: '이 방침에 관한 질문: 이용하세요',
     contact_help: 'Mixpla 도움말',
-    contact_mid: '또는 Semantyca에 문의',
   },
 }

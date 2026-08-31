@@ -573,11 +573,10 @@ export default {
     title: 'Política de privacidad',
     updated: 'Última actualización: 31 de agosto de 2026',
     intro:
-      'Esta política explica cómo Mixpla («nosotros») trata la información cuando usas las apps de escucha Mixpla, mixpla.online, Mixdeck, mixpla.io y servicios Mixpla relacionados operados por Semantyca.',
+      'Esta política explica cómo Mixpla («nosotros») trata la información cuando usas las apps de escucha Mixpla, mixpla.online, Mixdeck, mixpla.io y servicios Mixpla relacionados.',
     who_title: 'Quiénes somos',
     who_p1:
       'Mixpla es una plataforma de radio y streaming con IA. Mixdeck es el portal para emisores que gestiona emisoras, listas y herramientas relacionadas. La app Mixpla permite escuchar streams en directo, chatear con una emisora, valorar temas y, si quieres, iniciar sesión como artista.',
-    who_p2: 'Operador: Semantyca. Sitio:',
     collect_title: 'Qué recopilamos',
     collect_intro: 'Según cómo uses Mixpla, podemos tratar:',
     collect_anon:
@@ -620,6 +619,5 @@ export default {
     contact_title: 'Contacto',
     contact_before: 'Preguntas sobre esta política: usa',
     contact_help: 'Ayuda Mixpla',
-    contact_mid: 'o contacta con Semantyca en',
   },
 }

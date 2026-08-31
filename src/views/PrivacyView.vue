@@ -12,10 +12,6 @@
 
         <h2>{{ t('privacy.who_title') }}</h2>
         <p>{{ t('privacy.who_p1') }}</p>
-        <p>
-          {{ t('privacy.who_p2') }}
-          <a href="https://semantyca.com" target="_blank" rel="noopener noreferrer">semantyca.com</a>.
-        </p>
 
         <h2>{{ t('privacy.collect_title') }}</h2>
         <p>{{ t('privacy.collect_intro') }}</p>
@@ -60,16 +56,13 @@
         <h2>{{ t('privacy.contact_title') }}</h2>
         <p>
           {{ t('privacy.contact_before') }}
-          <router-link to="/help">{{ t('privacy.contact_help') }}</router-link>
-          {{ t('privacy.contact_mid') }}
-          <a href="https://semantyca.com" target="_blank" rel="noopener noreferrer">semantyca.com</a>.
+          <router-link to="/help">{{ t('privacy.contact_help') }}</router-link>.
         </p>
       </article>
 
       <footer class="footer">
         <div class="logo" @click="router.push('/')">MIXPLA</div>
         <div class="copyright">© Mixpla</div>
-        <a class="affiliation" href="https://semantyca.com" target="_blank" rel="noopener noreferrer">By Semantyca</a>
       </footer>
     </div>
   </n-config-provider>
@@ -187,12 +180,4 @@ const router = useRouter()
   color: #888;
 }
 
-.affiliation {
-  color: #888;
-  text-decoration: none;
-}
-
-.affiliation:hover {
-  color: #f5f5f5;
-}
 </style>
