@@ -17,6 +17,7 @@ export default {
     cta_help: 'Hilfe',
     cta_help_hint: 'Erfahren Sie, was Mixpla ist und wie es funktioniert',
     footer_status: '● Live — Läuft 24/7',
+    footer_privacy: 'Datenschutz',
   },
   ask: {
     eyebrow: 'Mixpla Ask',
@@ -620,5 +621,58 @@ export default {
     add: 'Hinzufügen',
     required_field: '{field} ist erforderlich',
     no_data: 'Keine Daten',
+  },
+  privacy: {
+    title: 'Datenschutzerklärung',
+    updated: 'Zuletzt aktualisiert: 31. August 2026',
+    intro:
+      'Diese Erklärung beschreibt, wie Mixpla („wir“) Informationen behandelt, wenn Sie die Mixpla-Listener-Apps, mixpla.online, Mixdeck, mixpla.io und verwandte Mixpla-Dienste von Semantyca nutzen.',
+    who_title: 'Wer wir sind',
+    who_p1:
+      'Mixpla ist eine KI-Radio- und Streaming-Plattform. Mixdeck ist das Portal für Sender zur Verwaltung von Stationen, Playlists und zugehörigen Werkzeugen. Die Mixpla-App ermöglicht Live-Streams, Chat mit einer Station, Bewertungen von Titeln und optional die Anmeldung als Artist.',
+    who_p2: 'Betreiber: Semantyca. Website:',
+    collect_title: 'Welche Daten wir erheben',
+    collect_intro: 'Je nachdem, wie Sie Mixpla nutzen, können wir verarbeiten:',
+    collect_anon:
+      'Anonyme Hörer-ID. Die App speichert eine zufällige ID auf Ihrem Gerät, damit Chat und Bewertungen ohne Konto funktionieren.',
+    collect_account:
+      'Kontodaten, wenn Sie sich anmelden (z. B. Mixdeck oder Artist-Login): Kennungen wie E-Mail oder Telefon zur Authentifizierung sowie ein Anzeigename, den Sie angeben.',
+    collect_chat:
+      'Chat und Uploads. Nachrichten im Stationschat und Dateien, die Sie anhängen (z. B. Audio für eine Track-Einreichung).',
+    collect_listen:
+      'Hörverhalten. Gespielte Station, Titelbewertungen und technische Anfragen für den Live-Stream.',
+    collect_broadcaster:
+      'Senderinhalte, die Sie in Mixdeck anlegen: Marken, Playlists, Skripte, Assets und ähnliche Stationsdaten.',
+    collect_device:
+      'Geräte- und Netzdaten für den Betrieb: IP-Adresse, App-Version und ähnliche Protokolle. Wir nutzen Ihr Mikrofon nicht, um Sie aufzunehmen. Android kann eine Audio-Berechtigung anzeigen, weil der Visualizer den laufenden Stream ausliest, nicht das Mikrofon.',
+    collect_notify:
+      'Benachrichtigungen, wenn Sie sie zulassen, damit Wiedergabe und Updates im Hintergrund weiterlaufen können.',
+    collect_no_sell:
+      'Wir verkaufen Ihre personenbezogenen Daten nicht. In der Mixpla-Listener-App nutzen wir keine Werbe-SDKs Dritter. Wir erheben keine genaue Standortdaten.',
+    use_title: 'Wofür wir sie nutzen',
+    use_1: 'Betrieb von Live-Streams, Chat, Bewertungen und Mixdeck.',
+    use_2: 'Anmeldung auf einem Gerät Ihrer Wahl aufrechterhalten.',
+    use_3: 'Dienst absichern, Missbrauch verhindern und Probleme beheben.',
+    use_4: 'Bei Bedarf zu Ihrem Konto oder dem Dienst kommunizieren.',
+    share_title: 'Weitergabe',
+    share_p:
+      'Wir geben Daten an Infrastrukturanbieter weiter, die Mixpla hosten (Server, Authentifizierung, Speicher, Zahlungen für Mixdeck-Pläne, wenn Sie abonnieren). Chat auf einer Station kann für deren Betreiber und andere Hörer in diesem Chat sichtbar sein. Wir geben Informationen weiter, wenn das Gesetz es verlangt.',
+    retain_title: 'Speicherdauer',
+    retain_p:
+      'Wir speichern Konto- und Stationsdaten, solange Konto oder Station aktiv sind, und Protokolle zeitlich begrenzt für Sicherheit und Betrieb. Sie können die App beenden und App-Daten auf dem Gerät löschen, um die lokale anonyme ID zu entfernen.',
+    choices_title: 'Ihre Wahlmöglichkeiten',
+    choices_1: 'Mixpla als Gast ohne Konto nutzen.',
+    choices_2: 'Benachrichtigungen in den Systemeinstellungen ablehnen oder deaktivieren.',
+    choices_3: 'Zugang, Berichtigung oder Löschung von Kontodaten verlangen, soweit geltendes Recht es erlaubt.',
+    children_title: 'Kinder',
+    children_p:
+      'Mixpla richtet sich nicht an Kinder unter 13 Jahren (oder dem Mindestalter in Ihrem Land). Nutzen Sie den Dienst nicht, wenn Sie jünger sind.',
+    changes_title: 'Änderungen',
+    changes_p:
+      'Wir können diese Erklärung aktualisieren. Das Datum oben ändert sich dann. Die weitere Nutzung nach einer Aktualisierung gilt als Zustimmung zur geänderten Erklärung.',
+    contact_title: 'Kontakt',
+    contact_before: 'Fragen zu dieser Erklärung: nutzen Sie',
+    contact_help: 'Mixpla Hilfe',
+    contact_mid: 'oder kontaktieren Sie Semantyca unter',
   },
 }

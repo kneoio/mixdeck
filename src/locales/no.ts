@@ -17,6 +17,7 @@ export default {
     cta_help: 'Hjelp',
     cta_help_hint: 'Lær hva Mixpla er og hvordan det fungerer',
     footer_status: '● Live — Kjører 24/7',
+    footer_privacy: 'Personvern',
   },
   ask: {
     eyebrow: 'Mixpla Ask',
@@ -620,5 +621,58 @@ export default {
     add: 'Legg til',
     required_field: '{field} er påkrevd',
     no_data: 'Ingen data',
+  },
+  privacy: {
+    title: 'Personvernerklæring',
+    updated: 'Sist oppdatert: 31. august 2026',
+    intro:
+      'Denne erklæringen forklarer hvordan Mixpla («vi») behandler informasjon når du bruker Mixpla-lytteappene, mixpla.online, Mixdeck, mixpla.io og relaterte Mixpla-tjenester drevet av Semantyca.',
+    who_title: 'Hvem vi er',
+    who_p1:
+      'Mixpla er en AI-radio- og strømmeplattform. Mixdeck er kringkasterportalen for å administrere stasjoner, spillelister og relaterte verktøy. Mixpla-appen lar deg høre live-strømmer, chatte med en stasjon, vurdere spor og (hvis du vil) logge inn som artist.',
+    who_p2: 'Operatør: Semantyca. Nettsted:',
+    collect_title: 'Hva vi samler inn',
+    collect_intro: 'Avhengig av hvordan du bruker Mixpla, kan vi behandle:',
+    collect_anon:
+      'Anonym lytter-id. Appen lagrer en tilfeldig id på enheten din slik at chat og vurderinger virker uten konto.',
+    collect_account:
+      'Kontodata hvis du logger inn (for eksempel Mixdeck eller artistinnlogging): identifikatorer som e-post eller telefon for autentisering, pluss et visningsnavn du oppgir.',
+    collect_chat:
+      'Chat og opplastinger. Meldinger du sender i stasjonschatten, og filer du legger ved (for eksempel lyd for innsending av et spor).',
+    collect_listen:
+      'Lytteaktivitet. Stasjon du spiller, sporvurderinger og tekniske forespørsler som trengs for å levere livestrømmen.',
+    collect_broadcaster:
+      'Kringkasterinnhold du lager i Mixdeck: merkevarer, spillelister, skript, ressurser og lignende stasjonsdata.',
+    collect_device:
+      'Enhets- og nettverksdata som trengs for tjenesten: IP-adresse, appversjon og lignende logger. Vi bruker ikke mikrofonen til å ta deg opp. Android kan vise lydtillatelse fordi visualiseringen leser strømmen som spilles, ikke mikrofonen.',
+    collect_notify:
+      'Varsler hvis du tillater dem, slik at avspilling og oppdateringer kan fortsette i bakgrunnen.',
+    collect_no_sell:
+      'Vi selger ikke personopplysningene dine. Vi bruker ikke tredjeparts annonse-SDK-er i Mixpla-lytteappen. Vi samler ikke inn nøyaktig posisjon.',
+    use_title: 'Hvordan vi bruker det',
+    use_1: 'Drive livestrømmer, chat, vurderinger og Mixdeck.',
+    use_2: 'Holde deg innlogget på en enhet du velger.',
+    use_3: 'Sikre tjenesten, hindre misbruk og rette feil.',
+    use_4: 'Kommunisere om kontoen din eller tjenesten når det trengs.',
+    share_title: 'Deling',
+    share_p:
+      'Vi deler data med infrastrukturleverandører som drifter Mixpla (servere, autentisering, lagring, betalinger for Mixdeck-planer hvis du abonnerer). Chat du sender på en stasjon kan være synlig for den stasjonens operatører og andre lyttere i den chatten. Vi utleverer informasjon hvis loven krever det.',
+    retain_title: 'Lagring',
+    retain_p:
+      'Vi lagrer konto- og stasjonsdata mens kontoen eller stasjonen er aktiv, og logger i begrenset tid for sikkerhet og drift. Du kan slutte å bruke appen og slette appdata på enheten for å fjerne den lokale anonyme id-en.',
+    choices_title: 'Dine valg',
+    choices_1: 'Bruke Mixpla som gjestelytter uten å opprette konto.',
+    choices_2: 'Avvise eller slå av varsler i systeminnstillingene.',
+    choices_3: 'Be oss om innsyn, retting eller sletting av kontodata der gjeldende lov tillater det.',
+    children_title: 'Barn',
+    children_p:
+      'Mixpla er ikke rettet mot barn under 13 år (eller minstealderen i landet ditt). Ikke bruk tjenesten hvis du er under den alderen.',
+    changes_title: 'Endringer',
+    changes_p:
+      'Vi kan oppdatere denne erklæringen. Datoen øverst endres da. Fortsatt bruk etter en oppdatering betyr at du godtar den reviderte erklæringen.',
+    contact_title: 'Kontakt',
+    contact_before: 'Spørsmål om denne erklæringen: bruk',
+    contact_help: 'Mixpla-hjelp',
+    contact_mid: 'eller kontakt Semantyca på',
   },
 }

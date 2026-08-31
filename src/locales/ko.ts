@@ -17,6 +17,7 @@ export default {
     cta_help: '도움말',
     cta_help_hint: 'Mixpla가 무엇인지, 어떻게 쓰는지 알아보기',
     footer_status: '● 라이브 — 24/7 운영 중',
+    footer_privacy: '개인정보',
   },
   ask: {
     eyebrow: 'Mixpla Ask',
@@ -620,5 +621,58 @@ export default {
     add: '추가',
     required_field: '{field}은(는) 필수입니다',
     no_data: '데이터 없음',
+  },
+  privacy: {
+    title: '개인정보 처리방침',
+    updated: '최종 업데이트: 2026년 8월 31일',
+    intro:
+      '이 방침은 Mixpla(「당사」)가 Mixpla 청취 앱, mixpla.online, Mixdeck, mixpla.io 및 Semantyca가 운영하는 관련 Mixpla 서비스를 이용할 때 정보를 어떻게 다루는지 설명합니다.',
+    who_title: '당사 소개',
+    who_p1:
+      'Mixpla는 AI 라디오·스트리밍 플랫폼입니다. Mixdeck은 스테이션, 플레이리스트 및 관련 도구를 관리하는 방송인 포털입니다. Mixpla 앱에서는 라이브 스트림 청취, 스테이션 채팅, 트랙 평가, 원하면 아티스트로 로그인할 수 있습니다.',
+    who_p2: '운영자: Semantyca. 사이트:',
+    collect_title: '수집하는 정보',
+    collect_intro: 'Mixpla 이용 방식에 따라 다음을 처리할 수 있습니다.',
+    collect_anon:
+      '익명 청취자 ID. 계정 없이도 채팅과 평가가 동작하도록 기기에 무작위 ID를 저장합니다.',
+    collect_account:
+      '로그인하는 경우의 계정 데이터(예: Mixdeck 또는 아티스트 로그인): 인증에 쓰는 이메일·전화 등 식별자와 직접 입력한 표시 이름.',
+    collect_chat:
+      '채팅 및 업로드. 스테이션 채팅에 보내는 메시지와 첨부하는 파일(예: 트랙 제출용 오디오).',
+    collect_listen:
+      '청취 활동. 재생하는 스테이션, 트랙 평가, 라이브 스트림 전달에 필요한 기술 요청.',
+    collect_broadcaster:
+      'Mixdeck에서 만드는 방송인 콘텐츠: 브랜드, 플레이리스트, 스크립트, 에셋 및 유사 스테이션 데이터.',
+    collect_device:
+      '서비스 운영에 필요한 기기·네트워크 데이터: IP 주소, 앱 버전 및 유사 로그. 마이크를 사용해 녹음하지 않습니다. Android가 오디오 권한을 표시할 수 있는 이유는 비주얼라이저가 재생 중인 스트림을 읽기 때문이며 마이크가 아닙니다.',
+    collect_notify:
+      '허용하는 경우 알림. 재생과 업데이트가 백그라운드에서 이어질 수 있도록 합니다.',
+    collect_no_sell:
+      '개인 데이터를 판매하지 않습니다. Mixpla 청취 앱에 제3자 광고 SDK를 쓰지 않습니다. 정확한 위치를 수집하지 않습니다.',
+    use_title: '이용 목적',
+    use_1: '라이브 스트림, 채팅, 평가 및 Mixdeck 운영.',
+    use_2: '선택한 기기에서 로그인 유지.',
+    use_3: '서비스 보안, 남용 방지, 문제 수정.',
+    use_4: '필요할 때 계정 또는 서비스에 관한 연락.',
+    share_title: '공유',
+    share_p:
+      'Mixpla를 호스팅하는 인프라 제공자(서버, 인증, 저장소, 구독 시 Mixdeck 요금제 결제)와 데이터를 공유합니다. 스테이션 채팅에 보낸 내용은 해당 스테이션 운영자와 그 채팅의 다른 청취자에게 보일 수 있습니다. 법령이 요구하면 정보를 공개합니다.',
+    retain_title: '보관',
+    retain_p:
+      '계정 또는 스테이션이 활성인 동안 해당 데이터를 보관하고, 보안과 운영을 위해 로그는 제한된 기간 보관합니다. 앱 사용을 중단하고 기기에서 앱 데이터를 지우면 로컬 익명 ID를 제거할 수 있습니다.',
+    choices_title: '선택권',
+    choices_1: '계정 없이 게스트 청취자로 Mixpla 이용.',
+    choices_2: '시스템 설정에서 알림을 거부하거나 끄기.',
+    choices_3: '적용 법령이 허용하는 범위에서 계정 데이터 열람·정정·삭제를 요청.',
+    children_title: '아동',
+    children_p:
+      'Mixpla는 13세 미만(또는 해당 국가의 최소 연령 미만) 아동을 대상으로 하지 않습니다. 그 나이보다 어리면 서비스를 이용하지 마세요.',
+    changes_title: '변경',
+    changes_p:
+      '이 방침을 업데이트할 수 있습니다. 그때 상단 날짜가 바뀝니다. 업데이트 후에도 계속 이용하면 개정된 방침에 동의한 것으로 봅니다.',
+    contact_title: '문의',
+    contact_before: '이 방침에 관한 질문: 이용하세요',
+    contact_help: 'Mixpla 도움말',
+    contact_mid: '또는 Semantyca에 문의',
   },
 }

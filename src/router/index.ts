@@ -47,6 +47,12 @@ const router = createRouter({
       meta: { requiresAuth: false }
     },
     {
+      path: '/privacy',
+      name: 'privacy',
+      component: () => import('../views/PrivacyView.vue'),
+      meta: { requiresAuth: false }
+    },
+    {
       // Layout shell — children use absolute paths, URL stays at top level
       path: '/app',
       component: DashboardView,

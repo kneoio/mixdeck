@@ -26,6 +26,7 @@ export default {
     cta_help: 'Get help',
     cta_help_hint: 'Learn what Mixpla is and how it works',
     footer_status: '● Live — Running 24/7',
+    footer_privacy: 'Privacy',
   },
   ask: {
     eyebrow: 'Mixpla Ask',
@@ -710,5 +711,58 @@ export default {
     add: 'Add',
     required_field: '{field} is required',
     no_data: 'No data',
+  },
+  privacy: {
+    title: 'Privacy policy',
+    updated: 'Last updated: 31 August 2026',
+    intro:
+      'This policy explains how Mixpla (“we”, “us”) treats information when you use the Mixpla listener apps, mixpla.online, Mixdeck, mixpla.io, and related Mixpla services operated by Semantyca.',
+    who_title: 'Who we are',
+    who_p1:
+      'Mixpla is an AI radio and streaming platform. Mixdeck is the broadcaster portal for managing stations, playlists, and related tools. The Mixpla mobile app lets you listen to live streams, chat with a station, rate tracks, and (if you choose) sign in as an artist.',
+    who_p2: 'Operator: Semantyca. Site:',
+    collect_title: 'What we collect',
+    collect_intro: 'Depending on how you use Mixpla, we may process:',
+    collect_anon:
+      'Anonymous listener id. The app stores a random id on your device so chat and ratings can work without an account.',
+    collect_account:
+      'Account data if you sign in (for example Mixdeck or an artist login): identifiers such as email or phone used to authenticate, plus a display name you provide.',
+    collect_chat:
+      'Chat and uploads. Messages you send in station chat, and files you choose to attach (for example audio for a track submission).',
+    collect_listen:
+      'Listening activity. Station you play, track ratings, and technical requests needed to deliver the live stream.',
+    collect_broadcaster:
+      'Broadcaster content you create in Mixdeck: brands, playlists, scripts, assets, and similar station data.',
+    collect_device:
+      'Device and network data needed to run the service: IP address, app version, and similar logs. We do not use your microphone to record you. Android may list audio permission because the player visualizer reads the playing stream, not the mic.',
+    collect_notify:
+      'Notifications if you allow them, so playback and updates can continue in the background.',
+    collect_no_sell:
+      'We do not sell your personal data. We do not use third-party advertising SDKs in the Mixpla listener app. We do not collect precise location.',
+    use_title: 'How we use it',
+    use_1: 'Operate live streams, chat, ratings, and Mixdeck.',
+    use_2: 'Keep you signed in on a device you choose.',
+    use_3: 'Secure the service, prevent abuse, and fix problems.',
+    use_4: 'Communicate about your account or the service when needed.',
+    share_title: 'Sharing',
+    share_p:
+      'We share data with infrastructure providers that host Mixpla (servers, authentication, storage, payments for Mixdeck plans where you subscribe). Chat you send on a station may be visible to that station’s operators and to other listeners in that chat. We disclose information if required by law.',
+    retain_title: 'Retention',
+    retain_p:
+      'We keep account and station data while the account or station is active, and logs for a limited time for security and operations. You can stop using the app and clear app data on your device to remove the local anonymous id.',
+    choices_title: 'Your choices',
+    choices_1: 'Use Mixpla as a guest listener without creating an account.',
+    choices_2: 'Refuse or disable notifications in system settings.',
+    choices_3: 'Ask us to access, correct, or delete account data where applicable law allows.',
+    children_title: 'Children',
+    children_p:
+      'Mixpla is not directed at children under 13 (or the minimum age in your country). Do not use the service if you are under that age.',
+    changes_title: 'Changes',
+    changes_p:
+      'We may update this policy. The date at the top will change when we do. Continued use after an update means you accept the revised policy.',
+    contact_title: 'Contact',
+    contact_before: 'Questions about this policy: use',
+    contact_help: 'Mixpla Help',
+    contact_mid: 'or contact Semantyca at',
   },
 }

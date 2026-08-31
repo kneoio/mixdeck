@@ -41,6 +41,7 @@
         <div class="logo">MIXPLA</div>
         <div class="status">{{ t('welcome.footer_status') }}</div>
         <div class="copyright">© Mixpla</div>
+        <router-link class="privacy-link" to="/privacy">{{ t('welcome.footer_privacy') }}</router-link>
         <a class="affiliation" href="https://semantyca.com" target="_blank" rel="noopener noreferrer">By Semantyca</a>
       </footer>
     </div>
@@ -282,6 +283,17 @@ function goToBrands() {
 
 .status {
   color: #68ffba;
+}
+
+.privacy-link,
+.affiliation {
+  color: #888;
+  text-decoration: none;
+}
+
+.privacy-link:hover,
+.affiliation:hover {
+  color: #f5f5f5;
 }
 
 @-webkit-keyframes blink {
