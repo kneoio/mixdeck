@@ -11,7 +11,8 @@
 
         <p>
           Use this page to ask Mixpla to delete your account and the data linked to it. This is the
-          Mixpla product on Google Play.
+          Mixpla product on Google Play. You can listen as a guest, or sign in through the DJ bot in
+          station chat: the bot asks for your email, then sends a one-time code to confirm.
         </p>
 
         <h2>How to request deletion</h2>
@@ -27,7 +28,10 @@
             and ask to delete your account.
           </li>
         </ol>
-        <p>Say whether you use the Mixpla listener app, Mixdeck, or both, and your username if you have one.</p>
+        <p>
+          Say whether you use the Mixpla listener app, Mixdeck, or both, and the email you used with
+          the DJ bot.
+        </p>
 
         <h2>What we delete</h2>
         <ul>
