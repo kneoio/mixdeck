@@ -80,7 +80,7 @@ export default {
     listeners: 'Listeners',
     playlist: 'Playlist',
     settings: 'Settings',
-    add_new: 'Add New Brand',
+    add_new: 'New Brand',
   },
   overview: {
     title: 'Streams',
