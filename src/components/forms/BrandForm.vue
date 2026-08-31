@@ -7,7 +7,7 @@ import {
   NTabs, NTabPane, NDynamicInput, NInputNumber, NSlider, NTimePicker,
   NCheckbox, NRadioGroup, NRadio,
   NColorPicker, NTag, NPopconfirm, NAnchor, NAnchorLink, useMessage,
-  NModal, NCard, NButton, NSkeleton, NAlert,
+  NModal, NCard, NButton, NSkeleton,
 } from 'naive-ui'
 import MarkdownIt from 'markdown-it'
 import { Cropper } from 'vue-advanced-cropper'
@@ -60,7 +60,6 @@ const formTitle = computed(() => {
 })
 
 const loading = ref(false)
-const stationLimitError = ref<{ title: string; detail: string; upgradeHint?: string } | null>(null)
 const brandSlug = ref<string | null>(null)
 const activeTab = ref('properties')
 const isTabChangeFromValidation = ref(false)
@@ -1102,7 +1101,10 @@ onMounted(async () => {
     loadAgents()
   } catch (error: any) {
     if (error instanceof ApiStationLimitReachedError) {
-      stationLimitError.value = { title: error.title, detail: error.detail, upgradeHint: error.upgradeHint }
+      message.warning([error.detail, error.upgradeHint].filter(Boolean).join(' '), {
+        duration: 5000,
+        closable: true,
+      })
     } else {
       message.error(error?.message || t('brandForm.load_failed'))
       if (isEditing.value) router.push(backRoute.value)
@@ -1233,15 +1235,11 @@ watch(activeTab, async (tab) => {
     <template #actions>
       <div class="gsap-row">
         <GsapButton @click="router.push(backRoute)"><span>{{ t('common.close') }}</span></GsapButton>
-        <GsapButton v-if="!stationLimitError" type="primary" :disabled="loading" @click="handleSave"><span>{{ t('common.save') }}</span></GsapButton>
+        <GsapButton type="primary" :disabled="loading" @click="handleSave"><span>{{ t('common.save') }}</span></GsapButton>
       </div>
     </template>
 
-    <NAlert v-if="stationLimitError" type="warning" :title="stationLimitError.title">
-      <div>{{ stationLimitError.detail }}</div>
-      <div v-if="stationLimitError.upgradeHint" style="margin-top: 8px">{{ stationLimitError.upgradeHint }}</div>
-    </NAlert>
-    <NTabs v-else v-model:value="activeTab">
+    <NTabs v-model:value="activeTab">
       <NTabPane name="properties" :tab="t('brandForm.tab_properties')">
         <NForm :label-placement="formLabelPlacement" label-width="140" :disabled="loading">
           <NFormItem :label="t('brandForm.localized_names')">
