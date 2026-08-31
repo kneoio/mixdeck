@@ -228,7 +228,7 @@ export default {
     pro_not_ready: 'Pro subscriptions are not available yet — please check back soon.',
     promo_placeholder: 'Promo code',
     promo_apply: 'Apply',
-    promo_success: 'Promo code applied — enjoy Pro!',
+    promo_success: 'Promo code applied.',
     feat_dj_types: 'DJ Types',
     feat_max_songs: 'Max Songs',
     feat_max_stations: 'Stations',

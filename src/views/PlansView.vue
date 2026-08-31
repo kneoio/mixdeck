@@ -29,7 +29,7 @@
           <ul style="list-style: none; padding: 0; margin: 0 0 24px; display: flex; flex-direction: column; gap: 10px; font-size: 13px; flex: 1;">
             <li v-for="feature in card.features" :key="feature">✓ {{ feature }}</li>
           </ul>
-          <div v-if="!card.subscribed && card.identifier === PRO_IDENTIFIER" style="margin-top: -8px; margin-bottom: 16px; display: flex; gap: 16px;">
+          <div v-if="!card.subscribed && (card.identifier === PRO_IDENTIFIER || card.identifier === PLUS_IDENTIFIER)" style="margin-top: -8px; margin-bottom: 16px; display: flex; gap: 16px;">
             <NInput v-model:value="promoCode" size="small" clearable :placeholder="t('plans.promo_placeholder')" @keyup.enter="redeemPromo" />
             <GsapButton type="error" size="small" :disabled="!promoCode || redeeming" @click="redeemPromo">
               <span>{{ redeeming ? t('plans.processing') : t('plans.promo_apply') }}</span>
@@ -101,6 +101,7 @@ const justUpgradedId = ref<string | null>(null)
 const promoCode = ref('')
 const redeeming = ref(false)
 const PRO_IDENTIFIER = 'mixpla_pro'
+const PLUS_IDENTIFIER = 'mixpla_plus'
 
 function parseDescription(raw: string | undefined): PlanDescription {
   if (!raw || typeof raw !== 'string') return {}
