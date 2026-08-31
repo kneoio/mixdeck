@@ -6,61 +6,49 @@
       </header>
 
       <article class="privacy-body">
-        <h1>{{ t('privacy.title') }}</h1>
-        <p class="updated">{{ t('privacy.updated') }}</p>
-        <p>{{ t('privacy.intro') }}</p>
+        <h1>Delete your Mixpla account and data</h1>
+        <p class="updated">Mixpla listener app and Mixdeck</p>
 
-        <h2>{{ t('privacy.who_title') }}</h2>
-        <p>{{ t('privacy.who_p1') }}</p>
-
-        <h2>{{ t('privacy.collect_title') }}</h2>
-        <p>{{ t('privacy.collect_intro') }}</p>
-        <ul>
-          <li>{{ t('privacy.collect_anon') }}</li>
-          <li>{{ t('privacy.collect_account') }}</li>
-          <li>{{ t('privacy.collect_chat') }}</li>
-          <li>{{ t('privacy.collect_listen') }}</li>
-          <li>{{ t('privacy.collect_broadcaster') }}</li>
-          <li>{{ t('privacy.collect_device') }}</li>
-          <li>{{ t('privacy.collect_notify') }}</li>
-        </ul>
-        <p>{{ t('privacy.collect_no_sell') }}</p>
-
-        <h2>{{ t('privacy.use_title') }}</h2>
-        <ul>
-          <li>{{ t('privacy.use_1') }}</li>
-          <li>{{ t('privacy.use_2') }}</li>
-          <li>{{ t('privacy.use_3') }}</li>
-          <li>{{ t('privacy.use_4') }}</li>
-        </ul>
-
-        <h2>{{ t('privacy.share_title') }}</h2>
-        <p>{{ t('privacy.share_p') }}</p>
-
-        <h2>{{ t('privacy.retain_title') }}</h2>
-        <p>{{ t('privacy.retain_p') }}</p>
-
-        <h2>{{ t('privacy.choices_title') }}</h2>
-        <ul>
-          <li>{{ t('privacy.choices_1') }}</li>
-          <li>{{ t('privacy.choices_2') }}</li>
-          <li>{{ t('privacy.choices_3') }}</li>
-        </ul>
-
-        <h2>{{ t('privacy.children_title') }}</h2>
-        <p>{{ t('privacy.children_p') }}</p>
-
-        <h2>{{ t('privacy.changes_title') }}</h2>
-        <p>{{ t('privacy.changes_p') }}</p>
-
-        <h2>{{ t('privacy.contact_title') }}</h2>
         <p>
-          {{ t('privacy.contact_before') }}
-          <router-link to="/help">{{ t('privacy.contact_help') }}</router-link>.
+          Use this page to ask Mixpla to delete your account and the data linked to it. This is the
+          Mixpla product on Google Play.
         </p>
+
+        <h2>How to request deletion</h2>
+        <ol>
+          <li>
+            Email
+            <a href="mailto:justaidajam@gmail.com">justaidajam@gmail.com</a>
+            from the address you used with Mixpla, with the subject “Delete Mixpla account”.
+          </li>
+          <li>
+            Or use
+            <router-link to="/help">Mixpla Help</router-link>
+            and ask to delete your account.
+          </li>
+        </ol>
+        <p>Say whether you use the Mixpla listener app, Mixdeck, or both, and your username if you have one.</p>
+
+        <h2>What we delete</h2>
+        <ul>
+          <li>Account login and profile data (name, email or phone used to sign in).</li>
+          <li>Artist or Mixdeck account records tied to that login.</li>
+          <li>Chat history and uploads we can still identify as yours.</li>
+        </ul>
         <p>
-          To delete an account:
-          <router-link to="/delete-account">mixpla.io/delete-account</router-link>
+          We aim to complete deletion within 30 days. Some backups and security logs may remain for
+          a limited time, then they expire.
+        </p>
+
+        <h2>If you never created an account</h2>
+        <p>
+          Guest listening only stores an anonymous id on your device. Uninstall Mixpla or clear the
+          app’s storage in Android settings to remove it. We do not need an email for that.
+        </p>
+
+        <p>
+          Privacy policy:
+          <router-link to="/privacy">mixpla.io/privacy</router-link>
         </p>
       </article>
 
@@ -74,10 +62,8 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
 import { NConfigProvider, darkTheme } from 'naive-ui'
 
-const { t } = useI18n()
 const router = useRouter()
 </script>
 
@@ -156,7 +142,8 @@ const router = useRouter()
   margin: 0 0 12px;
 }
 
-.privacy-body ul {
+.privacy-body ul,
+.privacy-body ol {
   padding-left: 1.2em;
   margin: 0 0 12px;
 }
@@ -183,5 +170,4 @@ const router = useRouter()
 .copyright {
   color: #888;
 }
-
 </style>
