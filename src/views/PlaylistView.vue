@@ -194,9 +194,7 @@ const pagination = computed(() => ({
 const boostingId = ref<string | null>(null)
 
 function canBoost(row: any) {
-  if (unassignedOnly.value) return false
-  if (selectedBrand.value) return row.defaultBrandId != null
-  return true
+  return !!selectedBrand.value && row.defaultBrandId != null
 }
 
 async function changeBoost(row: any, delta: number, e: MouseEvent) {
@@ -207,8 +205,7 @@ async function changeBoost(row: any, delta: number, e: MouseEvent) {
   if (next === cur) return
   boostingId.value = row.slugName
   try {
-    const brand = selectedBrand.value || null
-    await datanestApiService.patchSoundFragmentBoost(row.slugName, brand, next, row.shared ? 'shared' : 'brand')
+    await datanestApiService.patchSoundFragmentBoost(row.slugName, selectedBrand.value, next, row.shared ? 'shared' : 'brand')
     const i = entries.value.findIndex((r: any) => r.slugName === row.slugName)
     if (i >= 0) entries.value[i] = { ...entries.value[i], boost: next }
   } catch (err: any) {
@@ -251,7 +248,6 @@ const columns = computed<DataTableColumns<any>>(() => {
   void audioPlayer.loadingId
   void boostingId.value
   void selectedBrand.value
-  void unassignedOnly.value
 
   if (stackedRows.value) {
     return [
