@@ -27,12 +27,14 @@ const props = withDefaults(defineProps<{
   type?: 'default' | 'primary' | 'info' | 'error' | 'warning' | 'success' | 'text'
   size?: 'small' | 'default' | 'large'
   disabled?: boolean
+  lookDisabled?: boolean
   loading?: boolean
   block?: boolean
 }>(), {
   type: 'default',
   size: 'default',
   disabled: false,
+  lookDisabled: false,
   loading: false,
   block: false,
 })
@@ -42,6 +44,7 @@ const classes = computed(() => [
   `gsap-btn--${props.type}`,
   props.size !== 'default' && `gsap-btn--${props.size}`,
   props.block && 'gsap-btn--block',
+  props.lookDisabled && 'gsap-btn--look-disabled',
 ])
 </script>
 
@@ -105,8 +108,14 @@ const classes = computed(() => [
 .gsap-btn--text:not(:disabled):hover { transform: scale(1.03); }
 .gsap-btn--text:not(:disabled):active { transform: scale(0.96); }
 
-.gsap-btn:disabled {
+.gsap-btn:disabled,
+.gsap-btn--look-disabled {
   opacity: 0.35;
+}
+.gsap-btn--look-disabled {
+  cursor: pointer;
+}
+.gsap-btn:disabled {
   cursor: not-allowed;
   pointer-events: none;
 }

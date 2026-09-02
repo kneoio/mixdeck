@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, h } from 'vue'
+import { ref, computed, watch, h, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
@@ -19,7 +19,7 @@ import GsapLoader from '@/components/GsapLoader.vue'
 import BulkUploadDialog from '@/components/forms/BulkUploadDialog.vue'
 import ShareToBrandsDialog from '@/components/forms/ShareToBrandsDialog.vue'
 import { handleApiError } from '@/utils/notificationService'
-import { isActionEnabled, entitlementNotice, type EntitlementAction } from '@/utils/entitlements'
+import { isActionEnabled, entitlementNotice, revealEntitlementNotice, type EntitlementAction } from '@/utils/entitlements'
 import { useStackedDataTable } from '@/composables/useStackedDataTable'
 import { useRoutePagination } from '@/composables/useRoutePagination'
 
@@ -128,6 +128,18 @@ const actions = ref<EntitlementAction[]>([])
 const canCreate = computed(() => isActionEnabled(actions.value, 'create'))
 const canDelete = computed(() => isActionEnabled(actions.value, 'delete'))
 const createNotice = computed(() => entitlementNotice(actions.value, 'create'))
+const showCreateNotice = ref(false)
+const createNoticeEl = ref<HTMLElement | null>(null)
+
+async function onAddTrack() {
+  if (canCreate.value) {
+    router.push({ path: newTrackPath.value, query: { returnTo: route.fullPath } })
+    return
+  }
+  showCreateNotice.value = true
+  await nextTick()
+  revealEntitlementNotice(createNoticeEl.value)
+}
 const brandOptions = computed(() => [
   { label: t('menu.filter_all_brands'), value: '', style: { fontWeight: 700 } },
   { label: t('menu.unassigned_brands'), value: UNASSIGNED_VALUE },
@@ -495,7 +507,7 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
     <ActionBar>
       <div class="playlist-action-row">
         <div class="gsap-row" style="padding-left:0;flex-wrap:wrap">
-          <GsapButton type="primary" :disabled="!canCreate" @click="router.push({ path: newTrackPath, query: { returnTo: route.fullPath } })">
+          <GsapButton type="primary" :look-disabled="!canCreate" @click="onAddTrack">
             <span>{{ t('playlistView.new_track') }}</span>
           </GsapButton>
           <GsapButton :disabled="!selectedBrand" @click="showBulkUpload = true"><span>{{ t('playlistView.bulk_upload') }}</span></GsapButton>
@@ -513,7 +525,7 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
           <NButton quaternary circle size="small" style="opacity:0.5" @click="fetchData()">
             <template #icon><NIcon :component="RefreshOutline" /></template>
           </NButton>
-          <span v-if="createNotice" class="entitlement-notice">{{ createNotice }}</span>
+          <span v-show="showCreateNotice && createNotice" ref="createNoticeEl" class="entitlement-notice">{{ createNotice }}</span>
         </div>
         <div class="playlist-filters">
           <NSelect

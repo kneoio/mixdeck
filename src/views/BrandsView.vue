@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, h, ref } from 'vue'
+import { computed, h, ref, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { NDataTable, NPopconfirm, NButton, NIcon, useMessage, type DataTableColumns } from 'naive-ui'
@@ -9,7 +9,7 @@ import PageHeader from '@/components/PageHeader.vue'
 import ActionBar from '@/components/ActionBar.vue'
 import GsapButton from '@/components/GsapButton.vue'
 import { handleApiError } from '@/utils/notificationService'
-import { isActionEnabled, entitlementNotice } from '@/utils/entitlements'
+import { isActionEnabled, entitlementNotice, revealEntitlementNotice } from '@/utils/entitlements'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -20,6 +20,18 @@ const deleting = ref(false)
 const canCreate = computed(() => isActionEnabled(brandsStore.actions, 'create'))
 const canDelete = computed(() => isActionEnabled(brandsStore.actions, 'delete'))
 const createNotice = computed(() => entitlementNotice(brandsStore.actions, 'create'))
+const showCreateNotice = ref(false)
+const createNoticeEl = ref<HTMLElement | null>(null)
+
+async function onAddBrand() {
+  if (canCreate.value) {
+    router.push('/brands/new')
+    return
+  }
+  showCreateNotice.value = true
+  await nextTick()
+  revealEntitlementNotice(createNoticeEl.value)
+}
 
 const brandLabel = (brand: Brand) =>
   brand.localizedName?.['en'] || brand.title || brand.slugName || ''
@@ -104,7 +116,7 @@ function goSettings(row: Brand) {
     <PageHeader :title="t('menu.my_brands')" :subtitle="t('brandsView.subtitle')" :count="brandsStore.brands.length" />
     <ActionBar>
       <div class="gsap-row" style="padding-left:0">
-        <GsapButton type="primary" :disabled="!canCreate" @click="router.push('/brands/new')">
+        <GsapButton type="primary" :look-disabled="!canCreate" @click="onAddBrand">
           <span>{{ t('menu.add_new') }}</span>
         </GsapButton>
         <NPopconfirm @positive-click="handleDelete" :disabled="!canDelete || selectedIds.length === 0">
@@ -118,7 +130,7 @@ function goSettings(row: Brand) {
         <NButton quaternary circle size="small" style="opacity:0.5" @click="brandsStore.loadBrands()">
           <template #icon><NIcon :component="RefreshOutline" /></template>
         </NButton>
-        <span v-if="createNotice" class="entitlement-notice">{{ createNotice }}</span>
+        <span v-show="showCreateNotice && createNotice" ref="createNoticeEl" class="entitlement-notice">{{ createNotice }}</span>
       </div>
     </ActionBar>
     <NDataTable

@@ -1,3 +1,5 @@
+import { gsap } from 'gsap'
+
 export interface EntitlementAction {
   id: string
   enabled: boolean
@@ -34,4 +36,9 @@ export function entitlementNotice(actions: EntitlementAction[] | undefined | nul
   const action = getAction(actions, id)
   if (!action || action.enabled) return ''
   return action.reason || ''
+}
+
+export function revealEntitlementNotice(el: Element | null | undefined) {
+  if (!el) return
+  gsap.fromTo(el, { opacity: 0, x: -8 }, { opacity: 1, x: 0, duration: 0.35, ease: 'power2.out' })
 }

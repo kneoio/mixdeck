@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, h, onMounted } from 'vue'
+import { ref, computed, h, onMounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import {
@@ -15,7 +15,7 @@ import GsapButton from '@/components/GsapButton.vue'
 import GsapLoader from '@/components/GsapLoader.vue'
 import ShareToBrandsDialog from '@/components/forms/ShareToBrandsDialog.vue'
 import { handleApiError } from '@/utils/notificationService'
-import { isActionEnabled, entitlementNotice, type EntitlementAction } from '@/utils/entitlements'
+import { isActionEnabled, entitlementNotice, revealEntitlementNotice, type EntitlementAction } from '@/utils/entitlements'
 import { useStackedDataTable } from '@/composables/useStackedDataTable'
 import { useRoutePagination } from '@/composables/useRoutePagination'
 
@@ -39,6 +39,18 @@ const actions = ref<EntitlementAction[]>([])
 const canCreate = computed(() => isActionEnabled(actions.value, 'create'))
 const canDelete = computed(() => isActionEnabled(actions.value, 'delete'))
 const createNotice = computed(() => entitlementNotice(actions.value, 'create'))
+const showCreateNotice = ref(false)
+const createNoticeEl = ref<HTMLElement | null>(null)
+
+async function onAddTrack() {
+  if (canCreate.value) {
+    router.push({ path: '/sound-library/archived/new', query: { returnTo: route.fullPath } })
+    return
+  }
+  showCreateNotice.value = true
+  await nextTick()
+  revealEntitlementNotice(createNoticeEl.value)
+}
 
 function openShareBulk() {
   if (selectedIds.value.length === 0) return
@@ -213,7 +225,7 @@ onMounted(async () => {
     <ActionBar>
       <div class="playlist-action-row">
         <NSpace>
-          <GsapButton type="primary" :disabled="!canCreate" @click="router.push({ path: '/sound-library/archived/new', query: { returnTo: route.fullPath } })">
+          <GsapButton type="primary" :look-disabled="!canCreate" @click="onAddTrack">
             <span>{{ t('playlistView.new_track') }}</span>
           </GsapButton>
           <GsapButton :disabled="selectedIds.length === 0" @click="openShareBulk">
@@ -230,7 +242,7 @@ onMounted(async () => {
           <NButton quaternary circle size="small" style="opacity:0.5" @click="fetchData()">
             <template #icon><NIcon :component="RefreshOutline" /></template>
           </NButton>
-          <span v-if="createNotice" class="entitlement-notice">{{ createNotice }}</span>
+          <span v-show="showCreateNotice && createNotice" ref="createNoticeEl" class="entitlement-notice">{{ createNotice }}</span>
         </NSpace>
         <NInput
           v-model:value="searchTerm"
