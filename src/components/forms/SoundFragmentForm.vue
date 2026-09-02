@@ -412,6 +412,22 @@ function boostDownColor(id: string) {
   return brandBoost(id) <= -1 ? '#ef4444' : '#888'
 }
 
+function boostCaption(id: string) {
+  const b = brandBoost(id)
+  if (b >= 2) return t('fragmentForm.boost_super')
+  if (b >= 1) return t('fragmentForm.boost_boost')
+  if (b <= -1) return t('fragmentForm.boost_quarantine')
+  return t('fragmentForm.boost_nothing')
+}
+
+function boostCaptionColor(id: string) {
+  const b = brandBoost(id)
+  if (b >= 2) return '#f59e0b'
+  if (b >= 1) return '#22c55e'
+  if (b <= -1) return '#ef4444'
+  return '#888'
+}
+
 function changeBrandBoost(id: string, delta: number, e: MouseEvent) {
   e.stopPropagation()
   e.preventDefault()
@@ -909,6 +925,7 @@ watch([activeTab, genreRows], async () => {
                       >
                         <template #icon><NIcon :component="ArrowUpOutline" :size="14" :color="boostUpColor(id)" /></template>
                       </NButton>
+                      <span class="brand-boost-caption" :style="{ color: boostCaptionColor(id) }">{{ boostCaption(id) }}</span>
                       <NButton
                         text
                         size="tiny"
@@ -1340,6 +1357,13 @@ watch([activeTab, genreRows], async () => {
   display: inline-flex;
   align-items: center;
   gap: 1px;
+}
+.brand-boost-caption {
+  font-size: 11px;
+  line-height: 1;
+  min-width: 4.2em;
+  text-align: center;
+  padding: 0 2px;
 }
 .brand-tag-inner :deep(.n-button:disabled) {
   opacity: 1;
