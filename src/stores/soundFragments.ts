@@ -39,6 +39,7 @@ export interface SoundFragment {
   url?: string
   description: string
   representedInBrands: string[]
+  boosts?: Record<string, number>
   source?: string
   streamUrl?: string
   length?: string | number

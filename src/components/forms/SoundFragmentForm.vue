@@ -374,8 +374,28 @@ function isKnownBrand(id: string) {
 }
 
 const boostByBrand = ref<Record<string, number>>({})
-const dirtyBoostBrands = ref<Record<string, true>>({})
-const boostingBrand = ref<string | null>(null)
+
+function clampBoost(n: number) {
+  return Math.min(2, Math.max(-1, Math.trunc(n)))
+}
+
+function parseBoosts(raw: unknown, brands: string[]): Record<string, number> {
+  const out: Record<string, number> = {}
+  for (const id of brands) out[id] = 0
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    const n = typeof v === 'number' ? v : Number(v)
+    if (!Number.isFinite(n)) continue
+    out[k] = clampBoost(n)
+  }
+  return out
+}
+
+function assignedBoosts(): Record<string, number> {
+  const out: Record<string, number> = {}
+  for (const id of formData.value.representedInBrands) out[id] = brandBoost(id)
+  return out
+}
 
 function brandBoost(id: string) {
   return boostByBrand.value[id] ?? 0
@@ -392,30 +412,14 @@ function boostDownColor(id: string) {
   return brandBoost(id) <= -1 ? '#ef4444' : '#888'
 }
 
-async function changeBrandBoost(id: string, delta: number, e: MouseEvent) {
+function changeBrandBoost(id: string, delta: number, e: MouseEvent) {
   e.stopPropagation()
   e.preventDefault()
-  if (!isKnownBrand(id) || boostingBrand.value === id) return
+  if (!isKnownBrand(id)) return
   const cur = brandBoost(id)
-  const next = Math.min(2, Math.max(-1, cur + delta))
+  const next = clampBoost(cur + delta)
   if (next === cur) return
   boostByBrand.value = { ...boostByBrand.value, [id]: next }
-  if (!fragmentSlug.value) {
-    dirtyBoostBrands.value = { ...dirtyBoostBrands.value, [id]: true }
-    return
-  }
-  boostingBrand.value = id
-  try {
-    await datanestApiService.patchSoundFragmentBoost(fragmentSlug.value, id, next, 'brand')
-    const nextDirty = { ...dirtyBoostBrands.value }
-    delete nextDirty[id]
-    dirtyBoostBrands.value = nextDirty
-  } catch (err: any) {
-    boostByBrand.value = { ...boostByBrand.value, [id]: cur }
-    handleApiError(err, message)
-  } finally {
-    boostingBrand.value = null
-  }
 }
 
 function removeBrand(id: string) {
@@ -424,9 +428,6 @@ function removeBrand(id: string) {
   const nextBoost = { ...boostByBrand.value }
   delete nextBoost[id]
   boostByBrand.value = nextBoost
-  const nextDirty = { ...dirtyBoostBrands.value }
-  delete nextDirty[id]
-  dirtyBoostBrands.value = nextDirty
 }
 
 function addBrand(id: string | null) {
@@ -591,21 +592,14 @@ async function handleSave() {
     const id = isEditing.value ? (route.params.fragmentId as string) : null
     const payload: any = { ...formData.value, customTags: customTags.value }
     if (uploadedFileNames.value.length) payload.newlyUploaded = uploadedFileNames.value
-    if (payload.representedInBrands?.length) {
+    if (payload.representedInBrands) {
       payload.brands = payload.representedInBrands
+      payload.boosts = assignedBoosts()
       delete payload.representedInBrands
     }
     const saved = await store.saveFragment(id, payload)
     formData.value.labels = saved.labels || []
     customTags.value = []
-    const slug = saved?.slugName || fragmentSlug.value
-    if (slug) {
-      const assigned = new Set(formData.value.representedInBrands)
-      for (const brandId of assigned) {
-        if (!dirtyBoostBrands.value[brandId]) continue
-        await datanestApiService.patchSoundFragmentBoost(slug, brandId, brandBoost(brandId), 'brand')
-      }
-    }
     message.success(t('fragmentForm.saved'))
     router.push(backRoute.value)
   } catch (error: any) {
@@ -677,15 +671,7 @@ onMounted(async () => {
       dislikes.value = frag.dislikes ?? 0
       sharedWith.value = normalizeSharedWith(frag.sharedWith)
       rawAddInfo.value = frag.addInfo && typeof frag.addInfo === 'object' ? frag.addInfo : null
-      const brands = formData.value.representedInBrands
-      const boosts: Record<string, number> = {}
-      for (const id of brands) boosts[id] = 0
-      if (typeof frag.boost === 'number') {
-        if (brandSlug.value && brands.includes(brandSlug.value)) boosts[brandSlug.value] = frag.boost
-        else if (brands.length === 1) boosts[brands[0]] = frag.boost
-      }
-      boostByBrand.value = boosts
-      dirtyBoostBrands.value = {}
+      boostByBrand.value = parseBoosts(frag.boosts, formData.value.representedInBrands)
       const opusFile = frag.uploadedFiles?.find((f: any) => f.type === 'opus')
       isOpusPreview.value = !!opusFile
       const f0 = opusFile || frag.uploadedFiles?.[0]
@@ -917,7 +903,7 @@ watch([activeTab, genreRows], async () => {
                       <NButton
                         text
                         size="tiny"
-                        :disabled="boostingBrand === id || brandBoost(id) >= 2"
+                        :disabled="brandBoost(id) >= 2"
                         @click="changeBrandBoost(id, 1, $event)"
                         @mousedown.stop
                       >
@@ -926,7 +912,7 @@ watch([activeTab, genreRows], async () => {
                       <NButton
                         text
                         size="tiny"
-                        :disabled="boostingBrand === id || brandBoost(id) <= -1"
+                        :disabled="brandBoost(id) <= -1"
                         @click="changeBrandBoost(id, -1, $event)"
                         @mousedown.stop
                       >
