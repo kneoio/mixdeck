@@ -382,7 +382,7 @@ export default {
     labels: 'التصنيفات',
     assign_to: 'تعيين إلى',
     boost_quarantine: 'حجر',
-    boost_nothing: 'لا شيء',
+    boost_nothing: 'عادي',
     boost_boost: 'تعزيز',
     boost_super: 'فائق',
     audio_file: 'الملف الصوتي',

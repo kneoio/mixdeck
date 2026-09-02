@@ -382,7 +382,7 @@ export default {
     labels: 'Метки',
     assign_to: 'Назначить',
     boost_quarantine: 'Карантин',
-    boost_nothing: 'Нет',
+    boost_nothing: 'Обычный',
     boost_boost: 'Буст',
     boost_super: 'Супер',
     audio_file: 'Аудиофайл',

@@ -382,7 +382,7 @@ export default {
     labels: 'ラベル',
     assign_to: '割り当て先',
     boost_quarantine: '隔離',
-    boost_nothing: 'なし',
+    boost_nothing: '通常',
     boost_boost: 'ブースト',
     boost_super: 'スーパー',
     audio_file: 'オーディオファイル',

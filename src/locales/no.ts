@@ -421,7 +421,7 @@ export default {
     labels: 'Etiketter',
     assign_to: 'Tilordne til',
     boost_quarantine: 'Karantene',
-    boost_nothing: 'Ingen',
+    boost_nothing: 'Normal',
     boost_boost: 'Boost',
     boost_super: 'Super',
     audio_file: 'Lydfil',

@@ -382,7 +382,7 @@ export default {
     labels: 'लेबल',
     assign_to: 'असाइन करें',
     boost_quarantine: 'क्वारंटाइन',
-    boost_nothing: 'नहीं',
+    boost_nothing: 'सामान्य',
     boost_boost: 'बूस्ट',
     boost_super: 'सुपर',
     audio_file: 'ऑडियो फ़ाइल',

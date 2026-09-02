@@ -421,7 +421,7 @@ export default {
     labels: '레이블',
     assign_to: '할당 대상',
     boost_quarantine: '격리',
-    boost_nothing: '없음',
+    boost_nothing: '보통',
     boost_boost: '부스트',
     boost_super: '슈퍼',
     audio_file: '오디오 파일',

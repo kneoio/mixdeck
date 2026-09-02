@@ -457,7 +457,7 @@ export default {
     labels: 'Labels',
     assign_to: 'Assign To',
     boost_quarantine: 'Quarantine',
-    boost_nothing: 'None',
+    boost_nothing: 'Normal',
     boost_boost: 'Boost',
     boost_super: 'Super',
     source: 'Source',

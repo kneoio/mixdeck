@@ -382,7 +382,7 @@ export default {
     labels: 'Мітки',
     assign_to: 'Призначити',
     boost_quarantine: 'Карантин',
-    boost_nothing: 'Немає',
+    boost_nothing: 'Звичайний',
     boost_boost: 'Буст',
     boost_super: 'Супер',
     audio_file: 'Аудіофайл',

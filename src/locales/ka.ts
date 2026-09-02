@@ -382,7 +382,7 @@ export default {
     labels: 'ლეიბლები',
     assign_to: 'მინიჭება',
     boost_quarantine: 'კარანტინი',
-    boost_nothing: 'არა',
+    boost_nothing: 'ჩვეულებრივი',
     boost_boost: 'ბუსტი',
     boost_super: 'სუპერ',
     audio_file: 'აუდიო ფაილი',

@@ -382,7 +382,7 @@ export default {
     labels: 'Белгілер',
     assign_to: 'Тағайындау',
     boost_quarantine: 'Карантин',
-    boost_nothing: 'Жоқ',
+    boost_nothing: 'Қалыпты',
     boost_boost: 'Буст',
     boost_super: 'Супер',
     audio_file: 'Аудио файл',

@@ -422,7 +422,7 @@ export default {
     labels: 'Labels',
     assign_to: 'Zuweisen zu',
     boost_quarantine: 'Quarantäne',
-    boost_nothing: 'Keine',
+    boost_nothing: 'Normal',
     boost_boost: 'Boost',
     boost_super: 'Super',
     audio_file: 'Audiodatei',
