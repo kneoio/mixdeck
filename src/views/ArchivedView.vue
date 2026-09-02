@@ -209,15 +209,15 @@ onMounted(async () => {
     <ActionBar>
       <div class="playlist-action-row">
         <NSpace>
-          <GsapButton v-if="canCreate" type="primary" @click="router.push({ path: '/sound-library/archived/new', query: { returnTo: route.fullPath } })">
+          <GsapButton type="primary" :disabled="!canCreate" @click="router.push({ path: '/sound-library/archived/new', query: { returnTo: route.fullPath } })">
             <span>{{ t('playlistView.new_track') }}</span>
           </GsapButton>
           <GsapButton :disabled="selectedIds.length === 0" @click="openShareBulk">
             <span>{{ t('playlistView.share_btn', { count: selectedIds.length }) }}</span>
           </GsapButton>
-          <NPopconfirm v-if="canDelete" @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
+          <NPopconfirm @positive-click="handleBulkDelete" :disabled="!canDelete || selectedIds.length === 0">
             <template #trigger>
-              <GsapButton type="error" :disabled="selectedIds.length === 0">
+              <GsapButton type="error" :disabled="!canDelete || selectedIds.length === 0">
                 <span>{{ t('playlistView.delete_btn', { count: selectedIds.length }) }}</span>
               </GsapButton>
             </template>
