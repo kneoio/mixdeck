@@ -386,11 +386,6 @@ function buildPlaylistFilters() {
     searchTerm?: string
     sortBy?: PlaylistSortBy
     sortDesc?: boolean
-  } = {}
-  const filters: {
-    searchTerm?: string
-    sortBy?: PlaylistSortBy
-    sortDesc?: boolean
     unassigned?: boolean
   } = {}
   if (searchTerm.value) filters.searchTerm = searchTerm.value
