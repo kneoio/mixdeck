@@ -33,5 +33,5 @@ export function isActionEnabled(actions: EntitlementAction[] | undefined | null,
 export function entitlementNotice(actions: EntitlementAction[] | undefined | null, id = 'create'): string {
   const action = getAction(actions, id)
   if (!action || action.enabled) return ''
-  return [action.reason, action.upgradeHint].filter(Boolean).join(' ')
+  return action.reason || ''
 }
