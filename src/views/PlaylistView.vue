@@ -42,7 +42,7 @@ type PlaylistSortBy = 'BOOST' | 'PLAYED' | 'RATE'
 const VALID_SORT_BY: PlaylistSortBy[] = ['BOOST', 'PLAYED', 'RATE']
 const COLUMN_SORT_MAP: Record<string, PlaylistSortBy> = {
   boost: 'BOOST',
-  playedByBrandCount: 'PLAYED',
+  playedCount: 'PLAYED',
   rating: 'RATE',
 }
 
@@ -165,6 +165,12 @@ function editTrackPath(id: string) {
     : `/sound-library/archived/${id}`
 }
 
+function playedLabel(row: any): string {
+  const total = row.playedCount ?? 0
+  if (!selectedBrand.value) return String(total)
+  return `${total} / ${row.playedByBrand ?? 0}`
+}
+
 const pagination = computed(() => ({
   page: pageNum.value,
   pageSize: pageSize.value,
@@ -257,7 +263,7 @@ const columns = computed<DataTableColumns<any>>(() => {
             ? h('div', { class: 'mob-r2' }, [...genreTags, ...labelTags])
             : null
 
-          const played = row.playedByBrandCount ?? 0
+          const played = playedLabel(row)
           const l = row.likes ?? 0
           const d = row.dislikes ?? 0
           const likesBadge = h('span', { class: ['stat-badge', l > 0 ? 'stat-badge--likes' : ''] }, `+${l}`)
@@ -356,10 +362,10 @@ const columns = computed<DataTableColumns<any>>(() => {
     }
   },
   {
-    title: t('playlistView.col_played'), key: 'playedByBrandCount', width: 96,
+    title: t('playlistView.col_played'), key: 'playedCount', width: 96,
     sorter: true,
     sortOrder: sortBy.value === 'PLAYED' ? (sortDesc.value ? 'descend' : 'ascend') : false,
-    render: (row) => row.playedByBrandCount ?? 0,
+    render: (row) => playedLabel(row),
   },
   {
     key: 'boost',
