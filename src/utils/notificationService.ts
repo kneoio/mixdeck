@@ -1,7 +1,14 @@
 import type { MessageApi } from 'naive-ui'
-import { isValidationError } from './errorHandler'
+import { isEntitlementLimitError, isValidationError } from './errorHandler'
 
 export function handleApiError(error: any, message: MessageApi) {
+  if (isEntitlementLimitError(error)) {
+    message.warning([error.detail, error.upgradeHint, error.upgradeTo].filter(Boolean).join(' '), {
+      duration: 5000,
+      closable: true,
+    })
+    return
+  }
   if (isValidationError(error)) {
     for (const [field, fieldErrors] of Object.entries(error.validationError.errors)) {
       const formattedField = field.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase())

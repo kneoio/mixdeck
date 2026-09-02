@@ -19,14 +19,17 @@ import GsapLoader from '@/components/GsapLoader.vue'
 import BulkUploadDialog from '@/components/forms/BulkUploadDialog.vue'
 import ShareToBrandsDialog from '@/components/forms/ShareToBrandsDialog.vue'
 import { handleApiError } from '@/utils/notificationService'
+import { hasAction } from '@/utils/entitlements'
 import { useStackedDataTable } from '@/composables/useStackedDataTable'
 import { useRoutePagination } from '@/composables/useRoutePagination'
+import { useSoundFragmentsStore } from '@/stores/soundFragments'
 
 const { t } = useI18n()
 
 const route = useRoute()
 const router = useRouter()
 const brandsStore = useBrandsStore()
+const soundFragmentsStore = useSoundFragmentsStore()
 const message = useMessage()
 const dictionaryStore = useDictionaryStore()
 const audioPlayer = useAudioPlayerStore()
@@ -117,6 +120,8 @@ function resolveLabel(l: any) {
 
 const selectedBrand = computed(() => typeof route.query.brand === 'string' ? route.query.brand : '')
 const slugName = computed(() => selectedBrand.value)
+const canCreate = computed(() => hasAction(soundFragmentsStore.actions, 'create'))
+const canDelete = computed(() => hasAction(soundFragmentsStore.actions, 'delete'))
 const brandOptions = computed(() => [
   { label: t('menu.filter_all_brands'), value: '', style: { fontWeight: 700 } },
   ...brandsStore.brands.map(b => ({
@@ -450,6 +455,7 @@ watch(selectedBrand, () => {
 watch(showBulkUpload, (isOpen, wasOpen) => {
   if (wasOpen && !isOpen) fetchData()
 })
+void soundFragmentsStore.loadUnassigned(1, 1)
 </script>
 
 <template>
@@ -458,14 +464,14 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
     <ActionBar>
       <div class="playlist-action-row">
         <div class="gsap-row" style="padding-left:0;flex-wrap:wrap">
-          <GsapButton type="primary" @click="router.push({ path: newTrackPath, query: { returnTo: route.fullPath } })">
+          <GsapButton v-if="canCreate" type="primary" @click="router.push({ path: newTrackPath, query: { returnTo: route.fullPath } })">
             <span>{{ t('playlistView.new_track') }}</span>
           </GsapButton>
           <GsapButton :disabled="!selectedBrand" @click="showBulkUpload = true"><span>{{ t('playlistView.bulk_upload') }}</span></GsapButton>
           <GsapButton :disabled="selectedIds.length === 0" @click="openShareBulk">
             <span>{{ t('playlistView.share_btn', { count: selectedIds.length }) }}</span>
           </GsapButton>
-          <NPopconfirm @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
+          <NPopconfirm v-if="canDelete" @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
             <template #trigger>
               <GsapButton type="error" :disabled="selectedIds.length === 0">
                 <span>{{ t('playlistView.delete_btn', { count: selectedIds.length }) }}</span>

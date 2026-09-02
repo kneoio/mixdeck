@@ -24,15 +24,27 @@ export class ApiPaymentActionRequiredError extends Error {
   }
 }
 
-export class ApiStationLimitReachedError extends Error {
+const ENTITLEMENT_LIMIT_CODES = ['STATION_LIMIT_REACHED', 'SONG_LIMIT_REACHED'] as const
+
+export class ApiEntitlementLimitError extends Error {
   constructor(
     public readonly title: string,
     public readonly detail: string,
     public readonly upgradeHint?: string,
+    public readonly upgradeTo?: string,
+    public readonly code?: string,
   ) {
     super(detail || title)
-    this.name = 'ApiStationLimitReachedError'
+    this.name = 'ApiEntitlementLimitError'
   }
+}
+
+export function isEntitlementLimitError(error: any): error is ApiEntitlementLimitError {
+  return error instanceof ApiEntitlementLimitError
+}
+
+export function isEntitlementLimitCode(code: unknown): boolean {
+  return typeof code === 'string' && (ENTITLEMENT_LIMIT_CODES as readonly string[]).includes(code)
 }
 
 export class ApiValidationError extends Error {

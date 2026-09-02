@@ -1,5 +1,6 @@
 import authService from './auth'
-import { ApiValidationError, ApiNotEnoughSongsError, ApiPaymentActionRequiredError, ApiStationLimitReachedError, type ValidationError } from '@/utils/errorHandler'
+import { ApiValidationError, ApiNotEnoughSongsError, ApiPaymentActionRequiredError, ApiEntitlementLimitError, isEntitlementLimitCode, type ValidationError } from '@/utils/errorHandler'
+import { parseActions } from '@/utils/entitlements'
 import { LOCALE_KEY } from '@/i18n'
 
 function getAcceptLanguage(): string {
@@ -12,6 +13,7 @@ export interface PagedResult<T> {
   pageNum: number
   maxPage: number
   pageSize: number
+  actions?: string[]
 }
 
 export class ApiClient {
@@ -63,11 +65,13 @@ export class ApiClient {
           throw new ApiPaymentActionRequiredError((data as any).clientSecret)
         }
 
-        if (response.status === 403 && (data as any).code === 'STATION_LIMIT_REACHED') {
-          throw new ApiStationLimitReachedError(
-            (data as any).title || 'Station limit reached',
-            (data as any).detail || 'Station limit reached',
+        if (response.status === 403 && isEntitlementLimitCode((data as any).code)) {
+          throw new ApiEntitlementLimitError(
+            (data as any).title || 'Limit reached',
+            (data as any).detail || (data as any).title || 'Limit reached',
             (data as any).upgradeHint,
+            (data as any).upgradeTo,
+            (data as any).code,
           )
         }
 
@@ -77,7 +81,7 @@ export class ApiClient {
           errorMessage = (data as any).message
         }
       } catch (error) {
-        if (error instanceof ApiValidationError || error instanceof ApiNotEnoughSongsError || error instanceof ApiPaymentActionRequiredError || error instanceof ApiStationLimitReachedError) {
+        if (error instanceof ApiValidationError || error instanceof ApiNotEnoughSongsError || error instanceof ApiPaymentActionRequiredError || error instanceof ApiEntitlementLimitError) {
           throw error
         }
       }
@@ -91,10 +95,9 @@ export class ApiClient {
   async getDictionary<T>(endpoint: string): Promise<{ entries: T[]; actions: string[] }> {
     const response = await this.request<any>(endpoint)
     const viewData = response?.payload?.viewData ?? response?.viewData
-    const actions = response?.payload?.actions ?? response?.actions ?? []
     return {
       entries: viewData?.entries ?? [],
-      actions: Array.isArray(actions) ? actions : [],
+      actions: parseActions(response),
     }
   }
 

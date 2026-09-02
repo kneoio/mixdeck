@@ -15,8 +15,10 @@ import GsapButton from '@/components/GsapButton.vue'
 import GsapLoader from '@/components/GsapLoader.vue'
 import ShareToBrandsDialog from '@/components/forms/ShareToBrandsDialog.vue'
 import { handleApiError } from '@/utils/notificationService'
+import { hasAction } from '@/utils/entitlements'
 import { useStackedDataTable } from '@/composables/useStackedDataTable'
 import { useRoutePagination } from '@/composables/useRoutePagination'
+import { useSoundFragmentsStore } from '@/stores/soundFragments'
 
 const { stackedRows, tableWrapRef } = useStackedDataTable()
 
@@ -25,6 +27,7 @@ const message = useMessage()
 const router = useRouter()
 const route = useRoute()
 const dictionaryStore = useDictionaryStore()
+const soundFragmentsStore = useSoundFragmentsStore()
 
 const entries = ref<any[]>([])
 const loading = ref(true)
@@ -34,6 +37,8 @@ const selectedIds = ref<string[]>([])
 const showShareDialog = ref(false)
 const shareFragmentIds = ref<string[]>([])
 const searchTerm = ref('')
+const canCreate = computed(() => hasAction(soundFragmentsStore.actions, 'create'))
+const canDelete = computed(() => hasAction(soundFragmentsStore.actions, 'delete'))
 
 function openShareBulk() {
   if (selectedIds.value.length === 0) return
@@ -165,7 +170,7 @@ function onSearchChange() {
 async function fetchData(page = pageNum.value, size = pageSize.value) {
   loading.value = true
   try {
-    const result = await datanestApiService.getUnassignedBrands(page, size, searchTerm.value)
+    const result = await soundFragmentsStore.loadUnassigned(page, size, searchTerm.value)
     entries.value = result.entries
     totalCount.value = result.count
     pageNum.value = result.pageNum
@@ -204,13 +209,13 @@ onMounted(async () => {
     <ActionBar>
       <div class="playlist-action-row">
         <NSpace>
-          <GsapButton type="primary" @click="router.push({ path: '/sound-library/archived/new', query: { returnTo: route.fullPath } })">
+          <GsapButton v-if="canCreate" type="primary" @click="router.push({ path: '/sound-library/archived/new', query: { returnTo: route.fullPath } })">
             <span>{{ t('playlistView.new_track') }}</span>
           </GsapButton>
           <GsapButton :disabled="selectedIds.length === 0" @click="openShareBulk">
             <span>{{ t('playlistView.share_btn', { count: selectedIds.length }) }}</span>
           </GsapButton>
-          <NPopconfirm @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
+          <NPopconfirm v-if="canDelete" @positive-click="handleBulkDelete" :disabled="selectedIds.length === 0">
             <template #trigger>
               <GsapButton type="error" :disabled="selectedIds.length === 0">
                 <span>{{ t('playlistView.delete_btn', { count: selectedIds.length }) }}</span>

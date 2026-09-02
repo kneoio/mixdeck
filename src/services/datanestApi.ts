@@ -1,6 +1,7 @@
 import { ApiClient, type PagedResult } from './base'
 import { appConfig } from '@/config/appConfig'
 import authService from './auth'
+import { parseActions } from '@/utils/entitlements'
 
 /** Chunked bulk upload: chunk body size (per POST). */
 export const BULK_UPLOAD_CHUNK_SIZE = 5 * 1024 * 1024
@@ -271,6 +272,7 @@ class DatanestApiService extends ApiClient {
       pageNum: viewData.pageNum ?? page,
       maxPage: viewData.maxPage ?? 1,
       pageSize: viewData.pageSize ?? pageSize,
+      actions: parseActions(response),
     }
   }
 

@@ -31,7 +31,7 @@ import type { GenreEntry, LabelEntry } from '@/stores/dictionary'
 import jesoosApiService, { type DebugInstructionResponse } from '@/services/jesoosApi'
 import { handleApiError } from '@/utils/notificationService'
 import { normalizeIdList, toGenreTreeOptions } from '@/utils/genreTree'
-import { isValidationError, ApiStationLimitReachedError } from '@/utils/errorHandler'
+import { isValidationError, isEntitlementLimitError } from '@/utils/errorHandler'
 
 const { t } = useI18n()
 
@@ -1100,15 +1100,8 @@ onMounted(async () => {
     }
     loadAgents()
   } catch (error: any) {
-    if (error instanceof ApiStationLimitReachedError) {
-      message.warning([error.detail, error.upgradeHint].filter(Boolean).join(' '), {
-        duration: 5000,
-        closable: true,
-      })
-    } else {
-      message.error(error?.message || t('brandForm.load_failed'))
-      if (isEditing.value) router.push(backRoute.value)
-    }
+    handleApiError(error, message)
+    if (!isEntitlementLimitError(error) && isEditing.value) router.push(backRoute.value)
   } finally {
     loading.value = false
   }

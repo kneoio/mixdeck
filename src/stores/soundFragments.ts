@@ -56,6 +56,7 @@ export interface SoundFragment {
 
 export const useSoundFragmentsStore = defineStore('soundFragments', () => {
   const loading = ref(false)
+  const actions = ref<string[]>([])
 
   async function fetchFragment(id: string): Promise<SoundFragment> {
     const raw: any = await datanestApiService.getDocument<any>('/public/soundfragments', id)
@@ -81,5 +82,11 @@ export const useSoundFragmentsStore = defineStore('soundFragments', () => {
     return datanestApiService.getReceived(page, pageSize, searchTerm)
   }
 
-  return { loading, fetchFragment, saveFragment, deleteFragment, fetchReceived }
+  async function loadUnassigned(page = 1, pageSize = 10, searchTerm = '') {
+    const result = await datanestApiService.getUnassignedBrands(page, pageSize, searchTerm)
+    actions.value = result.actions ?? []
+    return result
+  }
+
+  return { loading, actions, fetchFragment, saveFragment, deleteFragment, fetchReceived, loadUnassigned }
 })
