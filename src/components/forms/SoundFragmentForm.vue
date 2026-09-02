@@ -375,20 +375,47 @@ function isKnownBrand(id: string) {
 
 const boostByBrand = ref<Record<string, number>>({})
 const dirtyBoostBrands = ref<Record<string, true>>({})
+const boostingBrand = ref<string | null>(null)
 
 function brandBoost(id: string) {
   return boostByBrand.value[id] ?? 0
 }
 
-function changeBrandBoost(id: string, delta: number, e: MouseEvent) {
+function boostUpColor(id: string) {
+  const b = brandBoost(id)
+  if (b >= 2) return '#f59e0b'
+  if (b >= 1) return '#22c55e'
+  return '#888'
+}
+
+function boostDownColor(id: string) {
+  return brandBoost(id) <= -1 ? '#ef4444' : '#888'
+}
+
+async function changeBrandBoost(id: string, delta: number, e: MouseEvent) {
   e.stopPropagation()
   e.preventDefault()
-  if (!isKnownBrand(id)) return
+  if (!isKnownBrand(id) || boostingBrand.value === id) return
   const cur = brandBoost(id)
   const next = Math.min(2, Math.max(-1, cur + delta))
   if (next === cur) return
   boostByBrand.value = { ...boostByBrand.value, [id]: next }
-  dirtyBoostBrands.value = { ...dirtyBoostBrands.value, [id]: true }
+  if (!fragmentSlug.value) {
+    dirtyBoostBrands.value = { ...dirtyBoostBrands.value, [id]: true }
+    return
+  }
+  boostingBrand.value = id
+  try {
+    await datanestApiService.patchSoundFragmentBoost(fragmentSlug.value, id, next, 'brand')
+    const nextDirty = { ...dirtyBoostBrands.value }
+    delete nextDirty[id]
+    dirtyBoostBrands.value = nextDirty
+  } catch (err: any) {
+    boostByBrand.value = { ...boostByBrand.value, [id]: cur }
+    handleApiError(err, message)
+  } finally {
+    boostingBrand.value = null
+  }
 }
 
 function removeBrand(id: string) {
@@ -890,20 +917,20 @@ watch([activeTab, genreRows], async () => {
                       <NButton
                         text
                         size="tiny"
-                        :disabled="brandBoost(id) >= 2"
+                        :disabled="boostingBrand === id || brandBoost(id) >= 2"
                         @click="changeBrandBoost(id, 1, $event)"
                         @mousedown.stop
                       >
-                        <template #icon><NIcon :component="ArrowUpOutline" :size="14" /></template>
+                        <template #icon><NIcon :component="ArrowUpOutline" :size="14" :color="boostUpColor(id)" /></template>
                       </NButton>
                       <NButton
                         text
                         size="tiny"
-                        :disabled="brandBoost(id) <= -1"
+                        :disabled="boostingBrand === id || brandBoost(id) <= -1"
                         @click="changeBrandBoost(id, -1, $event)"
                         @mousedown.stop
                       >
-                        <template #icon><NIcon :component="ArrowDownOutline" :size="14" /></template>
+                        <template #icon><NIcon :component="ArrowDownOutline" :size="14" :color="boostDownColor(id)" /></template>
                       </NButton>
                     </span>
                   </NTag>
@@ -1327,6 +1354,9 @@ watch([activeTab, genreRows], async () => {
   display: inline-flex;
   align-items: center;
   gap: 1px;
+}
+.brand-tag-inner :deep(.n-button:disabled) {
+  opacity: 1;
 }
 
 .brand-tag--inaccessible {
