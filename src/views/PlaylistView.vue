@@ -181,16 +181,21 @@ const pagination = computed(() => ({
 
 const boostingId = ref<string | null>(null)
 
+function canBoost(row: any) {
+  return !!selectedBrand.value && row.defaultBrandId != null
+}
+
 async function changeBoost(row: any, delta: number, e: MouseEvent) {
   e.stopPropagation()
+  if (!canBoost(row)) return
   const cur = row.boost ?? 0
   const next = Math.min(2, Math.max(-1, cur + delta))
   if (next === cur) return
   boostingId.value = row.slugName
   try {
-    if (!selectedBrand.value) return
     await datanestApiService.patchSoundFragmentBoost(row.slugName, selectedBrand.value, next, row.shared ? 'shared' : 'brand')
-    row.boost = next
+    const i = entries.value.findIndex((r: any) => r.slugName === row.slugName)
+    if (i >= 0) entries.value[i] = { ...entries.value[i], boost: next }
   } catch (err: any) {
     handleApiError(err, message)
   } finally {
@@ -201,9 +206,10 @@ async function changeBoost(row: any, delta: number, e: MouseEvent) {
 function renderBoostControls(row: any) {
   const boost = row.boost ?? 0
   const busy = boostingId.value === row.slugName
+  const allowed = canBoost(row)
   const upBtn = h(NButton, {
     text: true, size: 'tiny',
-    disabled: busy || boost >= 2,
+    disabled: !allowed || busy || boost >= 2,
     onClick: (e: MouseEvent) => changeBoost(row, 1, e),
   }, { icon: () => h(NIcon, { size: 16 }, { default: () => h(ArrowUpOutline) }) })
   const leds = h('span', { style: 'display:flex;flex-direction:row;align-items:center;gap:2px' }, [
@@ -213,7 +219,7 @@ function renderBoostControls(row: any) {
   ])
   const downBtn = h(NButton, {
     text: true, size: 'tiny',
-    disabled: busy || boost <= -1,
+    disabled: !allowed || busy || boost <= -1,
     onClick: (e: MouseEvent) => changeBoost(row, -1, e),
   }, { icon: () => h(NIcon, { size: 16 }, { default: () => h(ArrowDownOutline) }) })
   return h('span', {
@@ -228,6 +234,8 @@ const columns = computed<DataTableColumns<any>>(() => {
   void audioPlayer.isPlaying
   void audioPlayer.trackId
   void audioPlayer.loadingId
+  void boostingId.value
+  void selectedBrand.value
 
   if (stackedRows.value) {
     return [
