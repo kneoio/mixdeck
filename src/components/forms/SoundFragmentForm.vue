@@ -6,7 +6,7 @@ import {
   NSpace, NForm, NFormItem, NInput, NSelect, NTreeSelect, NDynamicTags,
   NTabs, NTabPane, NUpload, NProgress, NTag, NButton, NPopover, NPopselect, NTree, NScrollbar, NEmpty, NIcon, useMessage,
 } from 'naive-ui'
-import { CheckmarkCircle } from '@vicons/ionicons5'
+import { CheckmarkCircle, ArrowUpOutline, ArrowDownOutline } from '@vicons/ionicons5'
 import GsapButton from '@/components/GsapButton.vue'
 import type { UploadCustomRequestOptions } from 'naive-ui'
 import FormWrapper from '@/components/FormWrapper.vue'
@@ -373,14 +373,41 @@ function isKnownBrand(id: string) {
   return brandOptions.value.some(o => o.value === id)
 }
 
+const boostByBrand = ref<Record<string, number>>({})
+const dirtyBoostBrands = ref<Record<string, true>>({})
+
+function brandBoost(id: string) {
+  return boostByBrand.value[id] ?? 0
+}
+
+function changeBrandBoost(id: string, delta: number, e: MouseEvent) {
+  e.stopPropagation()
+  e.preventDefault()
+  if (!isKnownBrand(id)) return
+  const cur = brandBoost(id)
+  const next = Math.min(2, Math.max(-1, cur + delta))
+  if (next === cur) return
+  boostByBrand.value = { ...boostByBrand.value, [id]: next }
+  dirtyBoostBrands.value = { ...dirtyBoostBrands.value, [id]: true }
+}
+
 function removeBrand(id: string) {
   if (!isKnownBrand(id)) return
   formData.value.representedInBrands = formData.value.representedInBrands.filter(x => x !== id)
+  const nextBoost = { ...boostByBrand.value }
+  delete nextBoost[id]
+  boostByBrand.value = nextBoost
+  const nextDirty = { ...dirtyBoostBrands.value }
+  delete nextDirty[id]
+  dirtyBoostBrands.value = nextDirty
 }
 
 function addBrand(id: string | null) {
   if (id && !formData.value.representedInBrands.includes(id)) {
     formData.value.representedInBrands.push(id)
+    if (boostByBrand.value[id] == null) {
+      boostByBrand.value = { ...boostByBrand.value, [id]: 0 }
+    }
   }
 }
 
@@ -544,6 +571,14 @@ async function handleSave() {
     const saved = await store.saveFragment(id, payload)
     formData.value.labels = saved.labels || []
     customTags.value = []
+    const slug = saved?.slugName || fragmentSlug.value
+    if (slug) {
+      const assigned = new Set(formData.value.representedInBrands)
+      for (const brandId of assigned) {
+        if (!dirtyBoostBrands.value[brandId]) continue
+        await datanestApiService.patchSoundFragmentBoost(slug, brandId, brandBoost(brandId), 'brand')
+      }
+    }
     message.success(t('fragmentForm.saved'))
     router.push(backRoute.value)
   } catch (error: any) {
@@ -615,6 +650,15 @@ onMounted(async () => {
       dislikes.value = frag.dislikes ?? 0
       sharedWith.value = normalizeSharedWith(frag.sharedWith)
       rawAddInfo.value = frag.addInfo && typeof frag.addInfo === 'object' ? frag.addInfo : null
+      const brands = formData.value.representedInBrands
+      const boosts: Record<string, number> = {}
+      for (const id of brands) boosts[id] = 0
+      if (typeof frag.boost === 'number') {
+        if (brandSlug.value && brands.includes(brandSlug.value)) boosts[brandSlug.value] = frag.boost
+        else if (brands.length === 1) boosts[brands[0]] = frag.boost
+      }
+      boostByBrand.value = boosts
+      dirtyBoostBrands.value = {}
       const opusFile = frag.uploadedFiles?.find((f: any) => f.type === 'opus')
       isOpusPreview.value = !!opusFile
       const f0 = opusFile || frag.uploadedFiles?.[0]
@@ -841,7 +885,27 @@ watch([activeTab, genreRows], async () => {
                     :closable="isKnownBrand(id)"
                     @close="removeBrand(id)"
                   >
-                    {{ brandLabelById(id) }}
+                    <span class="brand-tag-inner">
+                      <span>{{ brandLabelById(id) }}</span>
+                      <NButton
+                        text
+                        size="tiny"
+                        :disabled="brandBoost(id) >= 2"
+                        @click="changeBrandBoost(id, 1, $event)"
+                        @mousedown.stop
+                      >
+                        <template #icon><NIcon :component="ArrowUpOutline" :size="14" /></template>
+                      </NButton>
+                      <NButton
+                        text
+                        size="tiny"
+                        :disabled="brandBoost(id) <= -1"
+                        @click="changeBrandBoost(id, -1, $event)"
+                        @mousedown.stop
+                      >
+                        <template #icon><NIcon :component="ArrowDownOutline" :size="14" /></template>
+                      </NButton>
+                    </span>
                   </NTag>
                   <NPopselect :options="availableBrandOptions" trigger="click" filterable
                     @update:value="addBrand">
@@ -1257,6 +1321,12 @@ watch([activeTab, genreRows], async () => {
 
 .add-info-negative {
   opacity: 0.55;
+}
+
+.brand-tag-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
 }
 
 .brand-tag--inaccessible {
