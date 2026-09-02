@@ -126,4 +126,9 @@ const classes = computed(() => [
   gap: 3px;
   padding-left: 10px;
 }
+.entitlement-notice {
+  font-size: 12px;
+  color: #888;
+  margin-left: 8px;
+}
 </style>

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import datanestApiService from '@/services/datanestApi'
+import type { EntitlementAction } from '@/utils/entitlements'
 
 export type BrandStatus = 'OFF_LINE' | 'ON_LINE' | 'QUEUE_SATURATED' | 'WARMING_UP' | 'IDLE' | 'SYSTEM_ERROR'
 export type ManagedBy = 'ITSELF' | 'AI_AGENT' | 'MIX'
@@ -66,7 +67,7 @@ export const SUBMISSION_POLICY_OPTIONS: { label: string; value: SubmissionPolicy
 
 export const useBrandsStore = defineStore('brands', () => {
   const brands = ref<Brand[]>([])
-  const actions = ref<string[]>([])
+  const actions = ref<EntitlementAction[]>([])
   const loading = ref(false)
   const totalCount = ref(0)
   const pageNum = ref(1)

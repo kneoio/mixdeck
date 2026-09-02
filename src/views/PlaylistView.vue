@@ -19,7 +19,7 @@ import GsapLoader from '@/components/GsapLoader.vue'
 import BulkUploadDialog from '@/components/forms/BulkUploadDialog.vue'
 import ShareToBrandsDialog from '@/components/forms/ShareToBrandsDialog.vue'
 import { handleApiError } from '@/utils/notificationService'
-import { hasAction } from '@/utils/entitlements'
+import { isActionEnabled, entitlementNotice } from '@/utils/entitlements'
 import { useStackedDataTable } from '@/composables/useStackedDataTable'
 import { useRoutePagination } from '@/composables/useRoutePagination'
 import { useSoundFragmentsStore } from '@/stores/soundFragments'
@@ -120,8 +120,9 @@ function resolveLabel(l: any) {
 
 const selectedBrand = computed(() => typeof route.query.brand === 'string' ? route.query.brand : '')
 const slugName = computed(() => selectedBrand.value)
-const canCreate = computed(() => hasAction(soundFragmentsStore.actions, 'create'))
-const canDelete = computed(() => hasAction(soundFragmentsStore.actions, 'delete'))
+const canCreate = computed(() => isActionEnabled(soundFragmentsStore.actions, 'create'))
+const canDelete = computed(() => isActionEnabled(soundFragmentsStore.actions, 'delete'))
+const createNotice = computed(() => entitlementNotice(soundFragmentsStore.actions, 'create'))
 const brandOptions = computed(() => [
   { label: t('menu.filter_all_brands'), value: '', style: { fontWeight: 700 } },
   ...brandsStore.brands.map(b => ({
@@ -482,6 +483,7 @@ void soundFragmentsStore.loadUnassigned(1, 1)
           <NButton quaternary circle size="small" style="opacity:0.5" @click="fetchData()">
             <template #icon><NIcon :component="RefreshOutline" /></template>
           </NButton>
+          <span v-if="createNotice" class="entitlement-notice">{{ createNotice }}</span>
         </div>
         <div class="playlist-filters">
           <NSelect

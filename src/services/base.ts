@@ -1,6 +1,6 @@
 import authService from './auth'
 import { ApiValidationError, ApiNotEnoughSongsError, ApiPaymentActionRequiredError, ApiEntitlementLimitError, isEntitlementLimitCode, type ValidationError } from '@/utils/errorHandler'
-import { parseActions } from '@/utils/entitlements'
+import { parseActions, type EntitlementAction } from '@/utils/entitlements'
 import { LOCALE_KEY } from '@/i18n'
 
 function getAcceptLanguage(): string {
@@ -13,7 +13,7 @@ export interface PagedResult<T> {
   pageNum: number
   maxPage: number
   pageSize: number
-  actions?: string[]
+  actions?: EntitlementAction[]
 }
 
 export class ApiClient {
@@ -92,7 +92,7 @@ export class ApiClient {
     return response.json()
   }
 
-  async getDictionary<T>(endpoint: string): Promise<{ entries: T[]; actions: string[] }> {
+  async getDictionary<T>(endpoint: string): Promise<{ entries: T[]; actions: EntitlementAction[] }> {
     const response = await this.request<any>(endpoint)
     const viewData = response?.payload?.viewData ?? response?.viewData
     return {

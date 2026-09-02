@@ -15,7 +15,7 @@ import GsapButton from '@/components/GsapButton.vue'
 import GsapLoader from '@/components/GsapLoader.vue'
 import ShareToBrandsDialog from '@/components/forms/ShareToBrandsDialog.vue'
 import { handleApiError } from '@/utils/notificationService'
-import { hasAction } from '@/utils/entitlements'
+import { isActionEnabled, entitlementNotice } from '@/utils/entitlements'
 import { useStackedDataTable } from '@/composables/useStackedDataTable'
 import { useRoutePagination } from '@/composables/useRoutePagination'
 import { useSoundFragmentsStore } from '@/stores/soundFragments'
@@ -37,8 +37,9 @@ const selectedIds = ref<string[]>([])
 const showShareDialog = ref(false)
 const shareFragmentIds = ref<string[]>([])
 const searchTerm = ref('')
-const canCreate = computed(() => hasAction(soundFragmentsStore.actions, 'create'))
-const canDelete = computed(() => hasAction(soundFragmentsStore.actions, 'delete'))
+const canCreate = computed(() => isActionEnabled(soundFragmentsStore.actions, 'create'))
+const canDelete = computed(() => isActionEnabled(soundFragmentsStore.actions, 'delete'))
+const createNotice = computed(() => entitlementNotice(soundFragmentsStore.actions, 'create'))
 
 function openShareBulk() {
   if (selectedIds.value.length === 0) return
@@ -226,6 +227,7 @@ onMounted(async () => {
           <NButton quaternary circle size="small" style="opacity:0.5" @click="fetchData()">
             <template #icon><NIcon :component="RefreshOutline" /></template>
           </NButton>
+          <span v-if="createNotice" class="entitlement-notice">{{ createNotice }}</span>
         </NSpace>
         <NInput
           v-model:value="searchTerm"

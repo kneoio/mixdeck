@@ -9,7 +9,7 @@ import PageHeader from '@/components/PageHeader.vue'
 import ActionBar from '@/components/ActionBar.vue'
 import GsapButton from '@/components/GsapButton.vue'
 import { handleApiError } from '@/utils/notificationService'
-import { hasAction } from '@/utils/entitlements'
+import { isActionEnabled, entitlementNotice } from '@/utils/entitlements'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -17,8 +17,9 @@ const brandsStore = useBrandsStore()
 const message = useMessage()
 const selectedIds = ref<string[]>([])
 const deleting = ref(false)
-const canCreate = computed(() => hasAction(brandsStore.actions, 'create'))
-const canDelete = computed(() => hasAction(brandsStore.actions, 'delete'))
+const canCreate = computed(() => isActionEnabled(brandsStore.actions, 'create'))
+const canDelete = computed(() => isActionEnabled(brandsStore.actions, 'delete'))
+const createNotice = computed(() => entitlementNotice(brandsStore.actions, 'create'))
 
 const brandLabel = (brand: Brand) =>
   brand.localizedName?.['en'] || brand.title || brand.slugName || ''
@@ -117,6 +118,7 @@ function goSettings(row: Brand) {
         <NButton quaternary circle size="small" style="opacity:0.5" @click="brandsStore.loadBrands()">
           <template #icon><NIcon :component="RefreshOutline" /></template>
         </NButton>
+        <span v-if="createNotice" class="entitlement-notice">{{ createNotice }}</span>
       </div>
     </ActionBar>
     <NDataTable
