@@ -6,8 +6,7 @@ import {
   NDataTable, NSpace, NPopconfirm, NInput, NSelect, NTag, NIcon, NButton,
   type DataTableColumns, type DataTableSortState, useMessage
 } from 'naive-ui'
-import { ShareSocialOutline, PlayOutline, PauseOutline, RefreshOutline, ArrowUpOutline, ArrowDownOutline } from '@vicons/ionicons5'
-import LedIndicator from '@/components/LedIndicator.vue'
+import { ShareSocialOutline, PlayOutline, PauseOutline, RefreshOutline } from '@vicons/ionicons5'
 import datanestApiService from '@/services/datanestApi'
 import { useBrandsStore } from '@/stores/brands'
 import { useDictionaryStore } from '@/stores/dictionary'
@@ -38,10 +37,9 @@ const totalCount = ref(0)
 const { pageNum, pageSize, setPage, setPageSize, resetPage, syncToQuery } = useRoutePagination()
 const selectedIds = ref<string[]>([])
 const searchTerm = ref('')
-type PlaylistSortBy = 'BOOST' | 'PLAYED' | 'RATE'
-const VALID_SORT_BY: PlaylistSortBy[] = ['BOOST', 'PLAYED', 'RATE']
+type PlaylistSortBy = 'PLAYED' | 'RATE'
+const VALID_SORT_BY: PlaylistSortBy[] = ['PLAYED', 'RATE']
 const COLUMN_SORT_MAP: Record<string, PlaylistSortBy> = {
-  boost: 'BOOST',
   playedCount: 'PLAYED',
   rating: 'RATE',
 }
@@ -191,62 +189,11 @@ const pagination = computed(() => ({
   itemCount: totalCount.value,
 }))
 
-const boostingId = ref<string | null>(null)
-
-function canBoost(row: any) {
-  return !!selectedBrand.value && row.defaultBrandId != null
-}
-
-async function changeBoost(row: any, delta: number, e: MouseEvent) {
-  e.stopPropagation()
-  if (!canBoost(row)) return
-  const cur = row.boost ?? 0
-  const next = Math.min(2, Math.max(-1, cur + delta))
-  if (next === cur) return
-  boostingId.value = row.slugName
-  try {
-    await datanestApiService.patchSoundFragmentBoost(row.slugName, selectedBrand.value, next, row.shared ? 'shared' : 'brand')
-    const i = entries.value.findIndex((r: any) => r.slugName === row.slugName)
-    if (i >= 0) entries.value[i] = { ...entries.value[i], boost: next }
-  } catch (err: any) {
-    handleApiError(err, message)
-  } finally {
-    boostingId.value = null
-  }
-}
-
-function renderBoostControls(row: any) {
-  const boost = row.boost ?? 0
-  const busy = boostingId.value === row.slugName
-  const allowed = canBoost(row)
-  const upBtn = h(NButton, {
-    text: true, size: 'tiny',
-    disabled: !allowed || busy || boost >= 2,
-    onClick: (e: MouseEvent) => changeBoost(row, 1, e),
-  }, { icon: () => h(NIcon, { size: 16 }, { default: () => h(ArrowUpOutline) }) })
-  const leds = h('span', { style: 'display:flex;flex-direction:row;align-items:center;gap:2px' }, [
-    h(LedIndicator, { active: boost === 2, color: '#f59e0b', size: 12 }),
-    h(LedIndicator, { active: boost === 1, color: '#22c55e', size: 12 }),
-    h(LedIndicator, { active: boost === -1, color: '#ef4444', size: 12 }),
-  ])
-  const downBtn = h(NButton, {
-    text: true, size: 'tiny',
-    disabled: !allowed || busy || boost <= -1,
-    onClick: (e: MouseEvent) => changeBoost(row, -1, e),
-  }, { icon: () => h(NIcon, { size: 16 }, { default: () => h(ArrowDownOutline) }) })
-  return h('span', {
-    style: 'display:flex;align-items:center;gap:3px',
-    onMousedown: (e: MouseEvent) => e.stopPropagation(),
-    onClick: (e: MouseEvent) => e.stopPropagation(),
-  }, [upBtn, leds, downBtn])
-}
-
 const columns = computed<DataTableColumns<any>>(() => {
   // Track player state so row play icons re-render
   void audioPlayer.isPlaying
   void audioPlayer.trackId
   void audioPlayer.loadingId
-  void boostingId.value
   void selectedBrand.value
 
   if (stackedRows.value) {
@@ -291,7 +238,6 @@ const columns = computed<DataTableColumns<any>>(() => {
           const metaItems: any[] = [
             h('span', { class: 'mob-meta-item mob-meta-item--emphasis' }, `${t('playlistView.col_played')}: ${played}`),
             h('span', { class: 'mob-meta-item mob-meta-item--emphasis' }, [t('playlistView.col_rating') + ': ', dislikesBadge, ' ', likesBadge]),
-            h('span', { class: 'mob-meta-item mob-meta-item--emphasis' }, ['Boost: ', renderBoostControls(row)]),
           ]
           if (row.shared) metaItems.push(h('span', { class: 'mob-meta-item' }, [h(NIcon, { size: 14, color: 'var(--vt-c-primary)' }, { default: () => h(ShareSocialOutline) })]))
           if (row.description) metaItems.push(h('span', { class: 'mob-meta-item mob-desc' }, row.description))
@@ -386,14 +332,6 @@ const columns = computed<DataTableColumns<any>>(() => {
     sorter: true,
     sortOrder: sortBy.value === 'PLAYED' ? (sortDesc.value ? 'descend' : 'ascend') : false,
     render: (row) => playedLabel(row),
-  },
-  {
-    key: 'boost',
-    width: 100,
-    title: 'Boost',
-    sorter: true,
-    sortOrder: sortBy.value === 'BOOST' ? (sortDesc.value ? 'descend' : 'ascend') : false,
-    render: (row) => renderBoostControls(row),
   },
   {
     title: '',
