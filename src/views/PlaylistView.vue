@@ -19,17 +19,15 @@ import GsapLoader from '@/components/GsapLoader.vue'
 import BulkUploadDialog from '@/components/forms/BulkUploadDialog.vue'
 import ShareToBrandsDialog from '@/components/forms/ShareToBrandsDialog.vue'
 import { handleApiError } from '@/utils/notificationService'
-import { isActionEnabled, entitlementNotice } from '@/utils/entitlements'
+import { isActionEnabled, entitlementNotice, type EntitlementAction } from '@/utils/entitlements'
 import { useStackedDataTable } from '@/composables/useStackedDataTable'
 import { useRoutePagination } from '@/composables/useRoutePagination'
-import { useSoundFragmentsStore } from '@/stores/soundFragments'
 
 const { t } = useI18n()
 
 const route = useRoute()
 const router = useRouter()
 const brandsStore = useBrandsStore()
-const soundFragmentsStore = useSoundFragmentsStore()
 const message = useMessage()
 const dictionaryStore = useDictionaryStore()
 const audioPlayer = useAudioPlayerStore()
@@ -118,13 +116,21 @@ function resolveLabel(l: any) {
   return { name: l.identifier, color: l.color, fontColor: l.fontColor }
 }
 
-const selectedBrand = computed(() => typeof route.query.brand === 'string' ? route.query.brand : '')
+const UNASSIGNED_VALUE = '__unassigned__'
+const unassignedOnly = computed(() => route.query.unassigned === 'true')
+const selectedBrand = computed(() => {
+  if (unassignedOnly.value) return ''
+  return typeof route.query.brand === 'string' ? route.query.brand : ''
+})
 const slugName = computed(() => selectedBrand.value)
-const canCreate = computed(() => isActionEnabled(soundFragmentsStore.actions, 'create'))
-const canDelete = computed(() => isActionEnabled(soundFragmentsStore.actions, 'delete'))
-const createNotice = computed(() => entitlementNotice(soundFragmentsStore.actions, 'create'))
+const brandFilterValue = computed(() => unassignedOnly.value ? UNASSIGNED_VALUE : selectedBrand.value)
+const actions = ref<EntitlementAction[]>([])
+const canCreate = computed(() => isActionEnabled(actions.value, 'create'))
+const canDelete = computed(() => isActionEnabled(actions.value, 'delete'))
+const createNotice = computed(() => entitlementNotice(actions.value, 'create'))
 const brandOptions = computed(() => [
   { label: t('menu.filter_all_brands'), value: '', style: { fontWeight: 700 } },
+  { label: t('menu.unassigned_brands'), value: UNASSIGNED_VALUE },
   ...brandsStore.brands.map(b => ({
     label: b.localizedName?.['en'] || b.title || b.slugName || '',
     value: b.slugName as string,
@@ -133,10 +139,18 @@ const brandOptions = computed(() => [
 
 function onBrandFilter(val: string | null) {
   const query = { ...route.query }
-  if (val) query.brand = val
-  else delete query.brand
   delete query.page
   pageNum.value = 1
+  if (val === UNASSIGNED_VALUE) {
+    query.unassigned = 'true'
+    delete query.brand
+  } else if (val) {
+    query.brand = val
+    delete query.unassigned
+  } else {
+    delete query.brand
+    delete query.unassigned
+  }
   void router.replace({ query })
 }
 
@@ -373,11 +387,18 @@ function buildPlaylistFilters() {
     sortBy?: PlaylistSortBy
     sortDesc?: boolean
   } = {}
+  const filters: {
+    searchTerm?: string
+    sortBy?: PlaylistSortBy
+    sortDesc?: boolean
+    unassigned?: boolean
+  } = {}
   if (searchTerm.value) filters.searchTerm = searchTerm.value
   if (sortBy.value) {
     filters.sortBy = sortBy.value
     filters.sortDesc = sortDesc.value
   }
+  if (unassignedOnly.value) filters.unassigned = true
   return filters
 }
 
@@ -400,10 +421,11 @@ async function fetchData(page = pageNum.value, size = pageSize.value) {
   loading.value = true
   try {
     const result = await datanestApiService.getBrandPlaylist(
-      selectedBrand.value || null, page, size,
+      unassignedOnly.value ? null : selectedBrand.value || null, page, size,
       buildPlaylistFilters()
     )
     entries.value = result.entries
+    actions.value = result.actions ?? []
     totalCount.value = result.count
     pageNum.value = result.pageNum
     pageSize.value = result.pageSize
@@ -449,14 +471,13 @@ function onSearchChange() {
   }, 400)
 }
 
-watch(selectedBrand, () => {
+watch([selectedBrand, unassignedOnly], () => {
   loadDictionaries()
   void fetchData()
 }, { immediate: true })
 watch(showBulkUpload, (isOpen, wasOpen) => {
   if (wasOpen && !isOpen) fetchData()
 })
-void soundFragmentsStore.loadUnassigned(1, 1)
 </script>
 
 <template>
@@ -487,7 +508,7 @@ void soundFragmentsStore.loadUnassigned(1, 1)
         </div>
         <div class="playlist-filters">
           <NSelect
-            :value="selectedBrand"
+            :value="brandFilterValue"
             :options="brandOptions"
             filterable
             :placeholder="t('menu.my_brands')"

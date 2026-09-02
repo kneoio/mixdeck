@@ -33,7 +33,7 @@ class DatanestApiService extends ApiClient {
     }
   }
 
-  /** Omit brand (null/undefined) — BE must return all sound fragments. */
+  /** Omit brand — all of the user’s songs. Brand set — that station plus songs with no station. unassigned: true — only songs with no station (brand ignored). */
   async getBrandPlaylist(
     brandSlug?: string | null,
     page = 1,
@@ -46,10 +46,11 @@ class DatanestApiService extends ApiClient {
       source?: string[]
       sortBy?: 'BOOST' | 'PLAYED' | 'RATE'
       sortDesc?: boolean
+      unassigned?: boolean
     } = {}
   ): Promise<PagedResult<any>> {
     const params = new URLSearchParams()
-    if (brandSlug) params.set('brand', brandSlug)
+    if (!filters.unassigned && brandSlug) params.set('brand', brandSlug)
     params.set('page', String(page))
     params.set('size', String(pageSize))
     const cleanFilters: Record<string, any> = {}
@@ -62,6 +63,7 @@ class DatanestApiService extends ApiClient {
       cleanFilters.sortBy = filters.sortBy
       cleanFilters.sortDesc = filters.sortDesc !== false
     }
+    if (filters.unassigned) cleanFilters.unassigned = true
     if (Object.keys(cleanFilters).length) params.set('filter', JSON.stringify(cleanFilters))
     const response = await this.request<any>(`/public/soundfragments/available-soundfragments?${params}`)
     const viewData = response?.payload?.viewData ?? response?.viewData
@@ -72,6 +74,7 @@ class DatanestApiService extends ApiClient {
       pageNum: viewData.pageNum ?? page,
       maxPage: viewData.maxPage ?? 1,
       pageSize: viewData.pageSize ?? pageSize,
+      actions: parseActions(response),
     }
   }
 
@@ -257,22 +260,6 @@ class DatanestApiService extends ApiClient {
       pageNum: viewData.pageNum ?? page,
       maxPage: viewData.maxPage ?? 1,
       pageSize: viewData.pageSize ?? pageSize,
-    }
-  }
-
-  async getUnassignedBrands(page = 1, pageSize = 10, searchTerm = ''): Promise<PagedResult<any>> {
-    const params = new URLSearchParams({ page: String(page), size: String(pageSize) })
-    if (searchTerm) params.set('filter', JSON.stringify({ searchTerm }))
-    const response = await this.request<any>(`/public/soundfragments/unassigned-brands?${params}`)
-    const viewData = response?.payload?.viewData ?? response?.viewData
-    if (!viewData) throw new Error('Unexpected response format')
-    return {
-      entries: viewData.entries ?? [],
-      count: viewData.count ?? 0,
-      pageNum: viewData.pageNum ?? page,
-      maxPage: viewData.maxPage ?? 1,
-      pageSize: viewData.pageSize ?? pageSize,
-      actions: parseActions(response),
     }
   }
 

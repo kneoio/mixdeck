@@ -15,10 +15,9 @@ import GsapButton from '@/components/GsapButton.vue'
 import GsapLoader from '@/components/GsapLoader.vue'
 import ShareToBrandsDialog from '@/components/forms/ShareToBrandsDialog.vue'
 import { handleApiError } from '@/utils/notificationService'
-import { isActionEnabled, entitlementNotice } from '@/utils/entitlements'
+import { isActionEnabled, entitlementNotice, type EntitlementAction } from '@/utils/entitlements'
 import { useStackedDataTable } from '@/composables/useStackedDataTable'
 import { useRoutePagination } from '@/composables/useRoutePagination'
-import { useSoundFragmentsStore } from '@/stores/soundFragments'
 
 const { stackedRows, tableWrapRef } = useStackedDataTable()
 
@@ -27,7 +26,6 @@ const message = useMessage()
 const router = useRouter()
 const route = useRoute()
 const dictionaryStore = useDictionaryStore()
-const soundFragmentsStore = useSoundFragmentsStore()
 
 const entries = ref<any[]>([])
 const loading = ref(true)
@@ -37,9 +35,10 @@ const selectedIds = ref<string[]>([])
 const showShareDialog = ref(false)
 const shareFragmentIds = ref<string[]>([])
 const searchTerm = ref('')
-const canCreate = computed(() => isActionEnabled(soundFragmentsStore.actions, 'create'))
-const canDelete = computed(() => isActionEnabled(soundFragmentsStore.actions, 'delete'))
-const createNotice = computed(() => entitlementNotice(soundFragmentsStore.actions, 'create'))
+const actions = ref<EntitlementAction[]>([])
+const canCreate = computed(() => isActionEnabled(actions.value, 'create'))
+const canDelete = computed(() => isActionEnabled(actions.value, 'delete'))
+const createNotice = computed(() => entitlementNotice(actions.value, 'create'))
 
 function openShareBulk() {
   if (selectedIds.value.length === 0) return
@@ -171,8 +170,12 @@ function onSearchChange() {
 async function fetchData(page = pageNum.value, size = pageSize.value) {
   loading.value = true
   try {
-    const result = await soundFragmentsStore.loadUnassigned(page, size, searchTerm.value)
+    const result = await datanestApiService.getBrandPlaylist(null, page, size, {
+      searchTerm: searchTerm.value || undefined,
+      unassigned: true,
+    })
     entries.value = result.entries
+    actions.value = result.actions ?? []
     totalCount.value = result.count
     pageNum.value = result.pageNum
     pageSize.value = result.pageSize

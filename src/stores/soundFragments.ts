@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import datanestApiService from '@/services/datanestApi'
-import type { EntitlementAction } from '@/utils/entitlements'
 
 export type FragmentType =
   | 'SONG' | 'ADVERTISEMENT' | 'JINGLE'
@@ -57,7 +56,6 @@ export interface SoundFragment {
 
 export const useSoundFragmentsStore = defineStore('soundFragments', () => {
   const loading = ref(false)
-  const actions = ref<EntitlementAction[]>([])
 
   async function fetchFragment(id: string): Promise<SoundFragment> {
     const raw: any = await datanestApiService.getDocument<any>('/public/soundfragments', id)
@@ -83,11 +81,5 @@ export const useSoundFragmentsStore = defineStore('soundFragments', () => {
     return datanestApiService.getReceived(page, pageSize, searchTerm)
   }
 
-  async function loadUnassigned(page = 1, pageSize = 10, searchTerm = '') {
-    const result = await datanestApiService.getUnassignedBrands(page, pageSize, searchTerm)
-    actions.value = result.actions ?? []
-    return result
-  }
-
-  return { loading, actions, fetchFragment, saveFragment, deleteFragment, fetchReceived, loadUnassigned }
+  return { loading, fetchFragment, saveFragment, deleteFragment, fetchReceived }
 })
