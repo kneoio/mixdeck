@@ -301,12 +301,29 @@ const availableLabelOptions = computed(() =>
 
 const labelSearchQuery = ref('')
 const labelPickerShow = ref(false)
+const labelSearchInputRef = ref<{ focus: () => void } | null>(null)
+const genreSearchInputRef = ref<{ focus: () => void } | null>(null)
+const genrePickerShow = ref(false)
 
 const filteredAvailableLabelOptions = computed(() => {
   const q = labelSearchQuery.value.trim().toLowerCase()
   if (!q) return availableLabelOptions.value
   return availableLabelOptions.value.filter(o => o.label.toLowerCase().includes(q))
 })
+
+function focusSearchInput(input: { focus: () => void } | null | undefined) {
+  nextTick(() => input?.focus())
+}
+
+function onLabelPickerShow(show: boolean) {
+  labelPickerShow.value = show
+  if (show) focusSearchInput(labelSearchInputRef.value)
+}
+
+function onGenrePickerShow(show: boolean) {
+  genrePickerShow.value = show
+  if (show) focusSearchInput(genreSearchInputRef.value)
+}
 
 function addExistingLabel(id: string | null) {
   if (id && !formData.value.labels.includes(id)) {
@@ -841,11 +858,12 @@ watch([activeTab, genreRows], async () => {
                   <NTag v-for="id in formData.genres" :key="id" closable @close="removeGenre(id)">
                     {{ genreLabelById(id) }}
                   </NTag>
-                  <NPopover trigger="click" placement="bottom-start" style="padding: 8px; width: 240px">
+                  <NPopover trigger="click" placement="bottom-start" style="padding: 8px; width: 240px"
+                    :show="genrePickerShow" @update:show="onGenrePickerShow">
                     <template #trigger>
                       <NButton dashed size="small">+</NButton>
                     </template>
-                    <NInput v-model:value="genreSearchQuery" placeholder="Search genres" size="small"
+                    <NInput ref="genreSearchInputRef" v-model:value="genreSearchQuery" placeholder="Search genres" size="small"
                       clearable style="margin-bottom: 8px" />
                     <NScrollbar style="max-height: 240px">
                       <NTree
@@ -878,11 +896,11 @@ watch([activeTab, genreRows], async () => {
                     {{ tag }}
                   </NTag>
                   <NPopover trigger="click" placement="bottom-start" style="padding: 8px; width: 220px"
-                    :show="labelPickerShow" @update:show="labelPickerShow = $event">
+                    :show="labelPickerShow" @update:show="onLabelPickerShow">
                     <template #trigger>
                       <NButton dashed size="small">+</NButton>
                     </template>
-                    <NInput v-model:value="labelSearchQuery" placeholder="Search labels" size="small"
+                    <NInput ref="labelSearchInputRef" v-model:value="labelSearchQuery" placeholder="Search labels" size="small"
                       clearable style="margin-bottom: 8px" />
                     <NScrollbar style="max-height: 240px">
                       <div v-for="option in filteredAvailableLabelOptions" :key="option.value"
