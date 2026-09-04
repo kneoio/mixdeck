@@ -251,6 +251,7 @@ export default {
     localized_names: 'Локализованные имена',
     nick_names: 'Никнеймы',
     user_data: 'Данные пользователя',
+    tab_properties: 'Свойства',
     email: 'Email',
     slug_name: 'Slug-имя',
     listener_of: 'Слушатель',

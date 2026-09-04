@@ -251,6 +251,7 @@ export default {
     localized_names: 'स्थानीयकृत नाम',
     nick_names: 'उपनाम',
     user_data: 'उपयोगकर्ता डेटा',
+    tab_properties: 'गुण',
     email: 'ईमेल',
     slug_name: 'स्लग नाम',
     listener_of: 'का श्रोता',

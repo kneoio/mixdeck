@@ -289,6 +289,7 @@ export default {
     localized_names: 'Navn',
     nick_names: 'Kallenavn',
     user_data: 'Brukerdata',
+    tab_properties: 'Egenskaper',
     email: 'E-post',
     slug_name: 'Slug-navn',
     listener_of: 'Lytter av',

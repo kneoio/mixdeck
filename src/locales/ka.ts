@@ -251,6 +251,7 @@ export default {
     localized_names: 'ლოკალიზებული სახელები',
     nick_names: 'მეტსახელები',
     user_data: 'მომხმარებლის მონაცემები',
+    tab_properties: 'თვისებები',
     email: 'Email',
     slug_name: 'Slug სახელი',
     listener_of: 'ვის უსმენს',

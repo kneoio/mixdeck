@@ -251,6 +251,7 @@ export default {
     localized_names: 'ローカライズ名',
     nick_names: 'ニックネーム',
     user_data: 'ユーザーデータ',
+    tab_properties: 'プロパティ',
     email: 'メールアドレス',
     slug_name: 'スラッグ名',
     listener_of: 'リスナー対象',

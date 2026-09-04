@@ -251,6 +251,7 @@ export default {
     localized_names: 'Локалданған атаулар',
     nick_names: 'Лақап аттар',
     user_data: 'Пайдаланушы деректері',
+    tab_properties: 'Қасиеттер',
     email: 'Email',
     slug_name: 'Slug атауы',
     listener_of: 'Тыңдайтын брендтер',

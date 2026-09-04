@@ -354,6 +354,7 @@ export default {
     localized_names: 'Name',
     nick_names: 'Nick Names',
     user_data: 'User Data',
+    tab_properties: 'Properties',
     email: 'Email',
     slug_name: 'Slug Name',
     listener_of: 'Listener Of',

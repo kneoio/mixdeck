@@ -252,6 +252,7 @@ export default {
     localized_names: 'Nomes localizados',
     nick_names: 'Alcunhas',
     user_data: 'Dados do utilizador',
+    tab_properties: 'Propriedades',
     email: 'Correio electrónico',
     slug_name: 'Nome slug',
     listener_of: 'Ouvinte de',

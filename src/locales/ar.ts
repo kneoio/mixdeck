@@ -251,6 +251,7 @@ export default {
     localized_names: 'الأسماء المحلية',
     nick_names: 'الأسماء المستعارة',
     user_data: 'بيانات المستخدم',
+    tab_properties: 'الخصائص',
     email: 'البريد الإلكتروني',
     slug_name: 'الاسم المختصر',
     listener_of: 'مستمع لـ',

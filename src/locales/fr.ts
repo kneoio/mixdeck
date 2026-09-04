@@ -250,6 +250,7 @@ export default {
     localized_names: 'Noms localisés',
     nick_names: 'Pseudonymes',
     user_data: 'Données utilisateur',
+    tab_properties: 'Propriétés',
     email: 'E-mail',
     slug_name: 'Nom slug',
     listener_of: 'Auditeur de',

@@ -290,6 +290,7 @@ export default {
     localized_names: 'Name',
     nick_names: 'Spitznamen',
     user_data: 'Benutzerdaten',
+    tab_properties: 'Eigenschaften',
     email: 'E-Mail',
     slug_name: 'Slug-Name',
     listener_of: 'Hörer von',

@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
-  NForm, NFormItem, NInput, NSelect,
+  NForm, NFormItem, NInput, NSelect, NTabs, NTabPane,
   NDynamicInput, useMessage
 } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
@@ -36,6 +36,7 @@ const formLabelPlacement = computed(() => (isMobile.value ? 'top' : 'left'))
 const loading = ref(false)
 const saving = ref(false)
 const isMobile = ref(false)
+const activeTab = ref('properties')
 const regDate = ref('')
 const lastModifiedDate = ref('')
 
@@ -161,55 +162,60 @@ onMounted(async () => {
       </div>
     </template>
 
-    <NForm :label-placement="formLabelPlacement" label-width="140" :disabled="loading">
+    <NTabs v-model:value="activeTab">
+      <NTabPane name="properties" :tab="t('listenerForm.tab_properties')">
+        <NForm :label-placement="formLabelPlacement" label-width="140" :disabled="loading">
+          <NFormItem :label="t('listenerForm.localized_names')">
+            <div class="field-stack">
+              <div
+                class="field-error-shell"
+                :class="{ 'field-error-shell--active': !!fieldErrors.localizedNames }"
+              >
+                <NDynamicInput v-model:value="localizedNames" :on-create="createLocalizedName" style="width:100%">
+                  <template #default="{ index }">
+                    <div class="localized-row">
+                      <NSelect
+                        v-model:value="localizedNames[index].lang"
+                        :options="constantsStore.mostUsedLanguagesSimple"
+                        filterable
+                        style="width:140px"
+                      />
+                      <NInput v-model:value="localizedNames[index].name" class="localized-row__input" />
+                    </div>
+                  </template>
+                </NDynamicInput>
+              </div>
+              <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.localizedNames }">
+                {{ fieldErrors.localizedNames || ' ' }}
+              </div>
+            </div>
+          </NFormItem>
 
-      <NFormItem :label="t('listenerForm.localized_names')">
-        <div class="field-stack">
-          <div
-            class="field-error-shell"
-            :class="{ 'field-error-shell--active': !!fieldErrors.localizedNames }"
-          >
-            <NDynamicInput v-model:value="localizedNames" :on-create="createLocalizedName" style="width:100%">
-              <template #default="{ index }">
-                <div class="localized-row">
-                  <NSelect
-                    v-model:value="localizedNames[index].lang"
-                    :options="constantsStore.mostUsedLanguagesSimple"
-                    filterable
-                    style="width:140px"
-                  />
-                  <NInput v-model:value="localizedNames[index].name" class="localized-row__input" />
-                </div>
-              </template>
-            </NDynamicInput>
-          </div>
-          <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.localizedNames }">
-            {{ fieldErrors.localizedNames || ' ' }}
-          </div>
-        </div>
-      </NFormItem>
+          <NFormItem :label="t('listenerForm.labels')">
+            <div class="field-stack">
+              <div class="field-error-shell">
+                <NSelect v-model:value="labels" :options="labelOptions" multiple filterable style="width:100%" />
+              </div>
+              <div class="field-error-label" />
+            </div>
+          </NFormItem>
+        </NForm>
+      </NTabPane>
 
-      <NFormItem :label="t('listenerForm.labels')">
-        <div class="field-stack">
-          <div class="field-error-shell">
-            <NSelect v-model:value="labels" :options="labelOptions" multiple filterable style="width:100%" />
-          </div>
-          <div class="field-error-label" />
-        </div>
-      </NFormItem>
-
-      <hr class="section-divider" />
-      <NFormItem :label="t('listenerForm.user_data')">
-        <div class="userdata-list">
-          <div v-for="item in userDataArray" :key="item.key" class="userdata-row">
-            <span class="userdata-key">{{ item.key }}</span>
-            <span class="userdata-val">{{ item.value }}</span>
-          </div>
-          <span v-if="!userDataArray.length" class="userdata-empty">—</span>
-        </div>
-      </NFormItem>
-
-    </NForm>
+      <NTabPane name="userData" :tab="t('listenerForm.user_data')">
+        <NForm :label-placement="formLabelPlacement" label-width="140" :disabled="loading">
+          <NFormItem :label="t('listenerForm.user_data')">
+            <div class="userdata-list">
+              <div v-for="item in userDataArray" :key="item.key" class="userdata-row">
+                <span class="userdata-key">{{ item.key }}</span>
+                <span class="userdata-val">{{ item.value }}</span>
+              </div>
+              <span v-if="!userDataArray.length" class="userdata-empty">—</span>
+            </div>
+          </NFormItem>
+        </NForm>
+      </NTabPane>
+    </NTabs>
   </FormWrapper>
 </template>
 
@@ -296,11 +302,5 @@ onMounted(async () => {
 .userdata-empty {
   opacity: 0.35;
   font-size: 0.85rem;
-}
-
-.section-divider {
-  border: none;
-  border-top: 1px solid rgba(255,255,255,0.08);
-  margin: 16px 0 20px;
 }
 </style>

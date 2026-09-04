@@ -289,6 +289,7 @@ export default {
     localized_names: '이름',
     nick_names: '별명',
     user_data: '사용자 데이터',
+    tab_properties: '속성',
     email: '이메일',
     slug_name: '슬러그 이름',
     listener_of: '청취자 소속',
