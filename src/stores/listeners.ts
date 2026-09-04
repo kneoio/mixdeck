@@ -2,40 +2,38 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import datanestApiService from '@/services/datanestApi'
 
+/** Mixdeck public listener — keyed by slugName (user login); no document UUID. */
 export interface Listener {
-  id: string
+  slugName?: string
   author?: string
   regDate?: string
   lastModifier?: string
   lastModifiedDate?: string
   localizedName: Record<string, string>
-  userId?: number
   email?: string
-  slugName?: string
   nickName?: Record<string, string[]>
   userData?: Record<string, string>
   archived?: number
-  listenerOf?: string[]
   labels?: string[]
 }
 
 export const useListenersStore = defineStore('listeners', () => {
   const loading = ref(false)
 
-  async function fetchListener(id: string) {
-    return datanestApiService.getDocument<Listener>('/listeners', id)
+  async function fetchListener(slugName: string) {
+    return datanestApiService.getDocument<Listener>('/public/listeners', slugName)
   }
 
-  async function saveListener(id: string | null, data: Partial<Listener>, contextBrandSlug?: string) {
+  async function saveListener(slugName: string | null, data: Partial<Listener>, contextBrandSlug?: string) {
     const qs = contextBrandSlug ? `?contextBrandSlug=${encodeURIComponent(contextBrandSlug)}` : ''
-    if (id) {
-      return datanestApiService.post<Listener>(`/listeners/${encodeURIComponent(id)}${qs}`, data)
+    if (slugName) {
+      return datanestApiService.post<Listener>(`/public/listeners/${encodeURIComponent(slugName)}${qs}`, data)
     }
-    return datanestApiService.post<Listener>(`/listeners/new${qs}`, data)
+    return datanestApiService.post<Listener>(`/public/listeners/new${qs}`, data)
   }
 
-  async function deleteListener(id: string) {
-    return datanestApiService.deleteDictionaryItem('/listeners', id)
+  async function deleteListener(slugName: string) {
+    return datanestApiService.deleteDictionaryItem('/public/listeners', slugName)
   }
 
   return { loading, fetchListener, saveListener, deleteListener }

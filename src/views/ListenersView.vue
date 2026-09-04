@@ -56,10 +56,10 @@ const newListenerPath = computed(() =>
     ? `/brands/${selectedBrand.value}/listeners/new`
     : '/listeners/new'
 )
-function editListenerPath(id: string) {
+function editListenerPath(slugName: string) {
   return selectedBrand.value
-    ? `/brands/${selectedBrand.value}/listeners/${id}`
-    : `/listeners/${id}`
+    ? `/brands/${selectedBrand.value}/listeners/${slugName}`
+    : `/listeners/${slugName}`
 }
 
 const pagination = computed(() => ({
@@ -162,11 +162,11 @@ watch(selectedBrand, () => { void fetchData() }, { immediate: true })
       :columns="columns"
       :data="entries"
       :loading="loading"
-      :row-key="(row: any) => row.id || row.listener?.id"
+      :row-key="(row: any) => row.listener?.slugName"
       v-model:checked-row-keys="selectedIds"
       :pagination="pagination"
       remote
-      :row-props="(row: any) => ({ style: 'cursor:pointer', onClick: (e: MouseEvent) => { if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return; router.push({ path: editListenerPath(row.id || row.listener?.id), query: { returnTo: route.fullPath } }) } })"
+      :row-props="(row: any) => ({ style: 'cursor:pointer', onClick: (e: MouseEvent) => { if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return; const slug = row.listener?.slugName; if (!slug) return; router.push({ path: editListenerPath(slug), query: { returnTo: route.fullPath } }) } })"
       @update:page="(p) => { setPage(p); fetchData(p) }"
       @update:page-size="(s) => { setPageSize(s); fetchData(1, s) }"
     >
