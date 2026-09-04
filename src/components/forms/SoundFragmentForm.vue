@@ -420,13 +420,13 @@ function brandBoost(id: string) {
 
 function boostUpColor(id: string) {
   const b = brandBoost(id)
-  if (b >= 2) return '#f59e0b'
+  if (b >= 2) return '#888'
   if (b >= 1) return '#22c55e'
   return '#888'
 }
 
 function boostDownColor(id: string) {
-  return brandBoost(id) <= -1 ? '#ef4444' : '#888'
+  return '#888'
 }
 
 function boostCaption(id: string) {
@@ -1381,9 +1381,6 @@ watch([activeTab, genreRows], async () => {
   line-height: 1;
   white-space: nowrap;
   padding: 0 2px;
-}
-.brand-tag-inner :deep(.n-button:disabled) {
-  opacity: 1;
 }
 
 .brand-tag--inaccessible {
