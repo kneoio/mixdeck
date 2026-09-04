@@ -177,16 +177,6 @@
                 <p v-else class="empty-hint">{{ t('overview.ots_no_variables') }}</p>
 
                 <div class="field-row">
-                  <label class="field-label">{{ t('overview.ots_scope_label') }}</label>
-                  <div class="field-error-shell">
-                    <n-radio-group v-model:value="formData.scope" @update:value="onScopeChange">
-                      <n-radio-button value="brand">{{ t('overview.ots_scope_brand') }}</n-radio-button>
-                      <n-radio-button value="default">{{ t('overview.ots_scope_default') }}</n-radio-button>
-                    </n-radio-group>
-                  </div>
-                </div>
-
-                <div v-if="formData.scope === 'brand'" class="field-row">
                   <label class="field-label">{{ t('overview.ots_pick_brand') }}</label>
                   <div class="field-error-shell" :class="{ 'field-error-shell--active': !!fieldErrors.source }">
                     <n-select
@@ -195,20 +185,6 @@
                       :placeholder="t('overview.ots_pick_brand')"
                       filterable
                       @update:value="onBrandChange"
-                    />
-                  </div>
-                  <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.source }">{{ fieldErrors.source || ' ' }}</div>
-                </div>
-
-                <div v-else class="field-row">
-                  <label class="field-label">{{ t('overview.ots_pick_dj') }}</label>
-                  <div class="field-error-shell" :class="{ 'field-error-shell--active': !!fieldErrors.source }">
-                    <n-select
-                      v-model:value="formData.agentSlug"
-                      :options="agentOptions"
-                      :loading="loadingAgents"
-                      :placeholder="t('overview.ots_pick_dj')"
-                      filterable
                     />
                   </div>
                   <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.source }">{{ fieldErrors.source || ' ' }}</div>
@@ -323,11 +299,7 @@
                   <span class="summary-value">{{ formatVarValue(variable) }}</span>
                 </div>
                 <div class="summary-row">
-                  <n-ellipsis class="summary-label">{{ t('overview.ots_scope_label') }}</n-ellipsis>
-                  <span class="summary-value">{{ formData.scope === 'brand' ? t('overview.ots_scope_brand') : t('overview.ots_scope_default') }}</span>
-                </div>
-                <div class="summary-row">
-                  <n-ellipsis class="summary-label">{{ formData.scope === 'brand' ? t('overview.ots_pick_brand') : t('overview.ots_pick_dj') }}</n-ellipsis>
+                  <n-ellipsis class="summary-label">{{ t('overview.ots_pick_brand') }}</n-ellipsis>
                   <span class="summary-value">{{ sourceLabel }}</span>
                 </div>
                 <div v-for="scene in orderedScenes" :key="sceneSeqKey(scene) ?? scene.title" class="summary-row">
@@ -497,7 +469,7 @@ const linkCopied = ref(false)
 const formData = ref({
   name: '',
   scriptSlug: null as string | null,
-  scope: 'default' as 'brand' | 'default',
+  scope: 'brand' as 'brand' | 'default',
   brandSlug: null as string | null,
   agentSlug: null as string | null,
 })
@@ -830,9 +802,9 @@ async function loadParams(scriptSlug: string) {
     const template = await datanestApiService.getOtsDefinitionTemplate(scriptSlug)
     formData.value.name = template?.name ?? ''
     formData.value.scriptSlug = template?.scriptSlug ?? scriptSlug
-    formData.value.scope = 'default'
-    formData.value.brandSlug = null
-    formData.value.agentSlug = null
+    formData.value.scope = 'brand'
+    formData.value.brandSlug = template?.brandSlug ?? null
+    formData.value.agentSlug = template?.agentSlug ?? null
     const detail = await datanestApiService.getScriptDetail(scriptSlug)
     const detailVars = detail?.requiredVariables ?? []
     const templateVars = template?.requiredVariables ?? []
@@ -852,7 +824,7 @@ async function loadParams(scriptSlug: string) {
     }
     initSceneDurationValues()
     initSceneTalkativityValues()
-    await loadAgents()
+    if (formData.value.brandSlug) await loadAgents()
   } catch {
     fieldErrors.value.api = t('otsMaster.load_failed')
   } finally {
@@ -864,7 +836,7 @@ async function loadAgents() {
   loadingAgents.value = true
   try {
     let endpoint = '/dictionary/agents'
-    if (formData.value.scope === 'brand' && formData.value.brandSlug) {
+    if (formData.value.brandSlug) {
       endpoint = `/dictionary/agents?brand=${encodeURIComponent(formData.value.brandSlug)}`
     }
     const result = await datanestApiService.getPagedDictionary<any>(endpoint, 1, 100)
@@ -875,14 +847,6 @@ async function loadAgents() {
   } finally {
     loadingAgents.value = false
   }
-}
-
-function onScopeChange() {
-  formData.value.brandSlug = null
-  formData.value.agentSlug = null
-  agentOptions.value = []
-  fieldErrors.value.source = ''
-  if (formData.value.scope === 'default') void loadAgents()
 }
 
 function onBrandChange() {
@@ -916,9 +880,8 @@ function validateParams(): boolean {
       valid = false
     }
   }
-  const sourceOk = formData.value.scope === 'brand' ? !!formData.value.brandSlug : !!formData.value.agentSlug
-  if (!sourceOk) {
-    fieldErrors.value.source = t('overview.ots_agent_required')
+  if (!formData.value.brandSlug) {
+    fieldErrors.value.source = t('common.required_field', { field: t('overview.ots_pick_brand') })
     valid = false
   }
   return valid
@@ -1006,7 +969,7 @@ function createAnother() {
   scriptDetail.value = null
   createdLink.value = ''
   linkCopied.value = false
-  formData.value = { name: '', scriptSlug: null, scope: 'default', brandSlug: null, agentSlug: null }
+  formData.value = { name: '', scriptSlug: null, scope: 'brand', brandSlug: null, agentSlug: null }
   Object.keys(variables).forEach((key) => delete variables[key])
   Object.keys(sceneDurationValues).forEach((key) => delete sceneDurationValues[key])
   Object.keys(sceneTalkativityValues).forEach((key) => delete sceneTalkativityValues[key])

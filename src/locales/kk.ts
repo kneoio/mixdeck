@@ -276,7 +276,7 @@ export default {
     ots_scope_label: 'Музыка көзі',
     ots_scope_brand: 'Брендтің каталогын пайдалану',
     ots_scope_default: 'Әдепкі (өз әндерім)',
-    ots_pick_brand: 'Брендті таңдаңыз',
+    ots_pick_brand: 'Бренд ойнату тізімін таңдаңыз',
     ots_pick_dj: 'DJ таңдаңыз',
     ots_pick_dj_override: 'DJ ауыстыру (міндетті емес)',
     ots_agent_required: 'Жалғастыру үшін DJ таңдаңыз.',

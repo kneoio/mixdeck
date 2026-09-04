@@ -96,7 +96,7 @@ export default {
     ots_scope_label: 'Music source',
     ots_scope_brand: "Use a brand's catalog",
     ots_scope_default: 'Default (my own songs)',
-    ots_pick_brand: 'Choose a brand',
+    ots_pick_brand: 'Choose a playlist from brand',
     ots_pick_dj: 'Choose a DJ',
     ots_pick_dj_override: 'DJ override (optional)',
     ots_agent_required: 'Select a DJ to continue.',

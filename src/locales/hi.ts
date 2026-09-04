@@ -276,7 +276,7 @@ export default {
     ots_scope_label: 'संगीत स्रोत',
     ots_scope_brand: 'किसी ब्रांड की कैटलॉग का उपयोग करें',
     ots_scope_default: 'डिफ़ॉल्ट (मेरे अपने गाने)',
-    ots_pick_brand: 'एक ब्रांड चुनें',
+    ots_pick_brand: 'ब्रांड से प्लेलिस्ट चुनें',
     ots_pick_dj: 'एक डीजे चुनें',
     ots_pick_dj_override: 'डीजे ओवरराइड (वैकल्पिक)',
     ots_agent_required: 'जारी रखने के लिए एक डीजे चुनें।',

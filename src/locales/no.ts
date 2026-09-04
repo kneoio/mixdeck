@@ -314,7 +314,7 @@ export default {
     ots_scope_label: 'Musikkilde',
     ots_scope_brand: 'Bruk en merkevares katalog',
     ots_scope_default: 'Standard (mine egne sanger)',
-    ots_pick_brand: 'Velg en merkevare',
+    ots_pick_brand: 'Velg en spilleliste fra merkevare',
     ots_pick_dj: 'Velg en DJ',
     ots_pick_dj_override: 'DJ-overstyring (valgfritt)',
     ots_agent_required: 'Velg en DJ for å fortsette.',

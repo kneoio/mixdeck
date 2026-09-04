@@ -55,7 +55,7 @@ const formSubtitle = computed(() => (isEditing.value ? t('otsForm.edit_subtitle'
 const formData = ref({
   name: '',
   scriptSlug: null as string | null,
-  scope: 'default' as 'brand' | 'default',
+  scope: 'brand' as 'brand' | 'default',
   brandSlug: null as string | null,
   agentSlug: null as string | null,
   color: '#000000',
@@ -272,7 +272,7 @@ function getFieldRef(field: ValidationField) {
 }
 
 function getFieldLabel(field: ValidationField) {
-  if (field === 'source') return t('overview.ots_scope_label')
+  if (field === 'source') return t('overview.ots_pick_brand')
   return t('otsForm.name_label')
 }
 
@@ -361,9 +361,9 @@ async function loadAgents() {
   loadingAgents.value = true
   try {
     let endpoint = '/dictionary/agents'
-    if (formData.value.scope === 'brand' && formData.value.brandSlug) {
+    if (formData.value.brandSlug) {
       const brand = brandsStore.brands.find((b) => b.slugName === formData.value.brandSlug)
-      endpoint = `/dictionary/agents?brand=${encodeURIComponent(brand?.slugName ?? '')}`
+      endpoint = `/dictionary/agents?brand=${encodeURIComponent(brand?.slugName ?? formData.value.brandSlug)}`
     }
     const result = await datanestApiService.getPagedDictionary<any>(endpoint, 1, 100)
     agentOptions.value = result.entries.map((a: any) => ({
@@ -383,22 +383,15 @@ function handlePrivateToggle(v: boolean) {
   setTimeout(() => { privatePremiumGlow.value = false }, 1500)
 }
 
-function onScopeChange() {
-  formData.value.brandSlug = null
-  formData.value.agentSlug = null
-  agentOptions.value = []
-  clearFieldError('source')
-  if (formData.value.scope === 'default') loadAgents()
-}
-
 function onBrandChange() {
   formData.value.agentSlug = null
   agentOptions.value = []
+  clearFieldError('source')
   loadAgents()
 }
 
 function scopeValid(): boolean {
-  return formData.value.scope === 'brand' ? !!formData.value.brandSlug : !!formData.value.agentSlug
+  return !!formData.value.brandSlug
 }
 
 function isVarEmpty(variable: { name: string; type: string }): boolean {
@@ -455,7 +448,7 @@ async function validateBeforeSave(): Promise<boolean> {
   activeTab.value = !variablesValid ? 'variables' : getFieldTab(invalidFields[0])
   await nextTick()
   isTabChangeFromValidation.value = false
-  await Promise.all(invalidFields.map((field) => showFieldError(field, field === 'source' ? t('overview.ots_agent_required') : undefined)))
+  await Promise.all(invalidFields.map((field) => showFieldError(field, field === 'source' ? t('common.required_field', { field: t('overview.ots_pick_brand') }) : undefined)))
   return false
 }
 
@@ -660,19 +653,7 @@ onMounted(async () => {
             </div>
           </NFormItem>
 
-          <NFormItem :label="t('overview.ots_scope_label')">
-            <div class="field-stack">
-              <div class="field-error-shell">
-                <NRadioGroup v-model:value="formData.scope" @update:value="onScopeChange">
-                  <NRadioButton value="brand">{{ t('overview.ots_scope_brand') }}</NRadioButton>
-                  <NRadioButton value="default">{{ t('overview.ots_scope_default') }}</NRadioButton>
-                </NRadioGroup>
-              </div>
-              <div class="field-error-label"></div>
-            </div>
-          </NFormItem>
-
-          <NFormItem v-if="formData.scope === 'brand'" :label="t('overview.ots_pick_brand')">
+          <NFormItem :label="t('overview.ots_pick_brand')">
             <div class="field-stack">
               <div ref="sourceFieldRef" class="field-error-shell" :class="{ 'field-error-shell--active': !!fieldErrors.source }">
                 <NSelect
@@ -682,24 +663,6 @@ onMounted(async () => {
                   filterable
                   style="width: 100%"
                   @update:value="onBrandChange"
-                />
-              </div>
-              <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.source }">
-                {{ fieldErrors.source || '\u00A0' }}
-              </div>
-            </div>
-          </NFormItem>
-
-          <NFormItem v-if="formData.scope !== 'brand'" :label="t('overview.ots_pick_dj')">
-            <div class="field-stack">
-              <div ref="sourceFieldRef" class="field-error-shell" :class="{ 'field-error-shell--active': !!fieldErrors.source }">
-                <NSelect
-                  v-model:value="formData.agentSlug"
-                  :options="agentOptions"
-                  :loading="loadingAgents"
-                  :placeholder="t('overview.ots_pick_dj')"
-                  filterable
-                  style="width: 100%"
                 />
               </div>
               <div class="field-error-label" :class="{ 'field-error-label--visible': !!fieldErrors.source }">

@@ -315,7 +315,7 @@ export default {
     ots_scope_label: 'Musikquelle',
     ots_scope_brand: 'Katalog einer Marke verwenden',
     ots_scope_default: 'Standard (eigene Songs)',
-    ots_pick_brand: 'Marke wählen',
+    ots_pick_brand: 'Playlist einer Marke wählen',
     ots_pick_dj: 'DJ wählen',
     ots_pick_dj_override: 'DJ-Override (optional)',
     ots_agent_required: 'Wähle einen DJ, um fortzufahren.',

@@ -276,7 +276,7 @@ export default {
     ots_scope_label: '音楽ソース',
     ots_scope_brand: 'ブランドのカタログを使用',
     ots_scope_default: 'デフォルト(自分の曲)',
-    ots_pick_brand: 'ブランドを選択',
+    ots_pick_brand: 'ブランドのプレイリストを選択',
     ots_pick_dj: 'DJを選択',
     ots_pick_dj_override: 'DJオーバーライド(任意)',
     ots_agent_required: '続行するにはDJを選択してください。',

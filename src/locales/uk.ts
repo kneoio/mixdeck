@@ -276,7 +276,7 @@ export default {
     ots_scope_label: 'Джерело музики',
     ots_scope_brand: 'Використати каталог бренду',
     ots_scope_default: 'За замовчуванням (мої власні пісні)',
-    ots_pick_brand: 'Виберіть бренд',
+    ots_pick_brand: 'Виберіть плейлист бренду',
     ots_pick_dj: 'Виберіть діджея',
     ots_pick_dj_override: "Заміна діджея (необов'язково)",
     ots_agent_required: 'Виберіть діджея, щоб продовжити.',

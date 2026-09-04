@@ -276,7 +276,7 @@ export default {
     ots_scope_label: 'مصدر الموسيقى',
     ots_scope_brand: 'استخدام كتالوج علامة تجارية',
     ots_scope_default: 'افتراضي (أغانيّ الخاصة)',
-    ots_pick_brand: 'اختر علامة تجارية',
+    ots_pick_brand: 'اختر قائمة تشغيل من علامة تجارية',
     ots_pick_dj: 'اختر دي جي',
     ots_pick_dj_override: 'تجاوز الدي جي (اختياري)',
     ots_agent_required: 'اختر دي جي للمتابعة.',

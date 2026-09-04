@@ -314,7 +314,7 @@ export default {
     ots_scope_label: '음악 소스',
     ots_scope_brand: '브랜드 카탈로그 사용',
     ots_scope_default: '기본값 (내 노래)',
-    ots_pick_brand: '브랜드 선택',
+    ots_pick_brand: '브랜드 재생목록 선택',
     ots_pick_dj: 'DJ 선택',
     ots_pick_dj_override: 'DJ 재정의 (선택 사항)',
     ots_agent_required: '계속하려면 DJ를 선택하세요.',

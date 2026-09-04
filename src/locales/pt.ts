@@ -277,7 +277,7 @@ export default {
     ots_scope_label: 'Fonte de música',
     ots_scope_brand: 'Usar o catálogo de uma marca',
     ots_scope_default: 'Padrão (minhas próprias músicas)',
-    ots_pick_brand: 'Escolha uma marca',
+    ots_pick_brand: 'Escolha uma playlist da marca',
     ots_pick_dj: 'Escolha um DJ',
     ots_pick_dj_override: 'Substituição de DJ (opcional)',
     ots_agent_required: 'Selecione um DJ para continuar.',

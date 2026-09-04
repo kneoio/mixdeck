@@ -276,7 +276,7 @@ export default {
     ots_scope_label: 'მუსიკის წყარო',
     ots_scope_brand: 'ბრენდის კატალოგის გამოყენება',
     ots_scope_default: 'ნაგულისხმევი (ჩემი საკუთარი სიმღერები)',
-    ots_pick_brand: 'აირჩიეთ ბრენდი',
+    ots_pick_brand: 'აირჩიეთ ბრენდის დასაკრავი სია',
     ots_pick_dj: 'აირჩიეთ დიჯეი',
     ots_pick_dj_override: 'დიჯეის გადაფარვა (არასავალდებულო)',
     ots_agent_required: 'გასაგრძელებლად აირჩიეთ დიჯეი.',
