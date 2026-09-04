@@ -204,15 +204,13 @@ onMounted(async () => {
 
       <NTabPane name="userData" :tab="t('listenerForm.user_data')">
         <NForm :label-placement="formLabelPlacement" label-width="140" :disabled="loading">
-          <NFormItem :label="t('listenerForm.user_data')">
-            <div class="userdata-list">
-              <div v-for="item in userDataArray" :key="item.key" class="userdata-row">
-                <span class="userdata-key">{{ item.key }}</span>
-                <span class="userdata-val">{{ item.value }}</span>
-              </div>
-              <span v-if="!userDataArray.length" class="userdata-empty">—</span>
+          <div class="userdata-list">
+            <div v-for="item in userDataArray" :key="item.key" class="userdata-row">
+              <span class="userdata-key">{{ item.key }}</span>
+              <span class="userdata-val">{{ item.value }}</span>
             </div>
-          </NFormItem>
+            <span v-if="!userDataArray.length" class="userdata-empty">—</span>
+          </div>
         </NForm>
       </NTabPane>
     </NTabs>
