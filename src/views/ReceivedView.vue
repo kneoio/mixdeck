@@ -31,22 +31,26 @@ const loading = ref(true)
 const totalCount = ref(0)
 const { pageNum, pageSize, setPage, setPageSize, resetPage, syncToQuery } = useRoutePagination()
 const selectedIds = ref<string[]>([])
-const boostingId = ref<string | null>(null)
+const boostingKey = ref<string | null>(null)
 const searchTerm = ref('')
+
+function receivedRowKey(row: any): string {
+  return `${row.targetBrandSlug}/${row.slugName}`
+}
 
 async function changeBoost(row: any, delta: number, e: MouseEvent) {
   e.stopPropagation()
   const cur = row.boost ?? 0
   const next = Math.min(2, Math.max(-1, cur + delta))
   if (next === cur) return
-  boostingId.value = row.id
+  boostingKey.value = receivedRowKey(row)
   try {
-    await datanestApiService.patchSoundFragmentBoost(row.slugName, row.targetBrandId, next, 'shared')
+    await datanestApiService.patchSoundFragmentBoost(row.slugName, row.targetBrandSlug, next, 'shared')
     row.boost = next
   } catch (err: any) {
     handleApiError(err, message)
   } finally {
-    boostingId.value = null
+    boostingKey.value = null
   }
 }
 
@@ -110,7 +114,7 @@ function statusTag(row: any) {
 
 function renderBoostControls(row: any) {
   const boost = row.boost ?? 0
-  const busy = boostingId.value === row.id
+  const busy = boostingKey.value === receivedRowKey(row)
   const upBtn = h(NButton, {
     text: true, size: 'tiny',
     disabled: busy || boost >= 2,
@@ -261,11 +265,11 @@ async function handleBulkDelete() {
     loading.value = true
     // Rejected rows are already dimmed in this list (see isRejectedRow) - clicking remove on one
     // of those permanently deletes it; on anything else it just rejects it (row stays, dims).
-    await Promise.all(selectedIds.value.map(id => {
-      const row = entries.value.find(e => e.id === id)
+    await Promise.all(selectedIds.value.map(key => {
+      const row = entries.value.find(e => receivedRowKey(e) === key)
       return isRejectedRow(row)
-        ? datanestApiService.deleteReceivedSoundFragment(id)
-        : datanestApiService.rejectReceivedSoundFragment(id)
+        ? datanestApiService.deleteReceivedSoundFragment(row.targetBrandSlug, row.slugName)
+        : datanestApiService.rejectReceivedSoundFragment(row.targetBrandSlug, row.slugName)
     }))
     message.success(t('playlistView.received_removed', { count: selectedIds.value.length }))
     selectedIds.value = []
@@ -316,7 +320,7 @@ onMounted(async () => {
         :columns="columns"
         :data="entries"
         :loading="loading"
-        :row-key="(row: any) => row.id || row.slugName"
+        :row-key="receivedRowKey"
         v-model:checked-row-keys="selectedIds"
         :pagination="pagination"
         remote
@@ -324,7 +328,7 @@ onMounted(async () => {
           style: isRejectedRow(row) ? 'cursor:pointer;opacity:0.45' : 'cursor:pointer',
           onClick: (e: MouseEvent) => {
             if ((e.target as HTMLElement).closest('.n-data-table-td--selection')) return
-            router.push({ path: `/sound-library/received/${row.id}`, query: { returnTo: route.fullPath } })
+            router.push({ path: `/sound-library/received/${row.targetBrandSlug}/${row.slugName}`, query: { returnTo: route.fullPath } })
           }
         })"
         @update:page="(p) => { setPage(p); fetchData(p) }"

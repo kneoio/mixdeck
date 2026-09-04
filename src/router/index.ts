@@ -135,7 +135,7 @@ const router = createRouter({
           meta: { requiresAuth: true }
         },
         {
-          path: '/sound-library/received/:fragmentId',
+          path: '/sound-library/received/:brandSlug/:fragmentSlug',
           name: 'sound-library-received-edit',
           component: () => import('../components/forms/ReceivedForm.vue'),
           meta: { requiresAuth: true }

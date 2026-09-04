@@ -49,7 +49,8 @@ const statusInfo = computed(() => {
   return { text: t('playlistView.status_accepted'), type: 'success' as const }
 })
 
-const fragmentId = computed(() => String(route.params.fragmentId ?? ''))
+const brandSlug = computed(() => String(route.params.brandSlug ?? ''))
+const fragmentSlug = computed(() => String(route.params.fragmentSlug ?? ''))
 const formLabelPlacement = computed(() => (isMobile.value ? 'top' : 'left'))
 const formTitle = computed(() => t('menu.songs'))
 const formSubtitle = computed(() => {
@@ -69,7 +70,7 @@ function handleClose() {
 async function handleApprove() {
   actionBusy.value = true
   try {
-    await datanestApiService.acceptReceivedSoundFragment(fragmentId.value)
+    await datanestApiService.acceptReceivedSoundFragment(brandSlug.value, fragmentSlug.value)
     message.success(t('playlistView.approved'))
     handleClose()
   } catch (error: unknown) {
@@ -85,7 +86,7 @@ const isAccepted = computed(() => formData.value.status === 500)
 async function handleReject() {
   actionBusy.value = true
   try {
-    await datanestApiService.rejectReceivedSoundFragment(fragmentId.value)
+    await datanestApiService.rejectReceivedSoundFragment(brandSlug.value, fragmentSlug.value)
     message.success(t('playlistView.rejected'))
     handleClose()
   } catch (error: unknown) {
@@ -115,7 +116,7 @@ async function loadData() {
     const [, , fragment] = await Promise.allSettled([
       dictionaryStore.loadGenres(),
       dictionaryStore.loadSoundFragmentLabels(),
-      datanestApiService.getReceivedItem(fragmentId.value),
+      datanestApiService.getReceivedItem(brandSlug.value, fragmentSlug.value),
     ])
 
     if (fragment.status !== 'fulfilled') throw fragment.reason

@@ -244,8 +244,11 @@ class DatanestApiService extends ApiClient {
     }
   }
 
-  async getReceivedItem(id: string): Promise<any> {
-    return this.getDocument<any>('/shared-sound-fragments/received', id)
+  async getReceivedItem(brandSlug: string, fragmentSlug: string): Promise<any> {
+    return this.getDocument<any>(
+      `/public/shared-sound-fragments/received/${encodeURIComponent(brandSlug)}`,
+      encodeURIComponent(fragmentSlug)
+    )
   }
 
   async getSoundAssets(page = 1, pageSize = 10, searchTerm = ''): Promise<PagedResult<any>> {
@@ -276,18 +279,27 @@ class DatanestApiService extends ApiClient {
   }
 
   /** Reject a received share — keeps it visible (tagged rejected) until explicitly deleted. */
-  async rejectReceivedSoundFragment(id: string): Promise<void> {
-    await this.request<void>(`/shared-sound-fragments/received/${id}/reject`, { method: 'PATCH' })
+  async rejectReceivedSoundFragment(brandSlug: string, fragmentSlug: string): Promise<void> {
+    await this.request<void>(
+      `/public/shared-sound-fragments/received/${encodeURIComponent(brandSlug)}/${encodeURIComponent(fragmentSlug)}/reject`,
+      { method: 'PATCH' }
+    )
   }
 
   /** Permanently delete an already-rejected received share. Backend requires status = rejected. */
-  async deleteReceivedSoundFragment(id: string): Promise<void> {
-    await this.deleteDictionaryItem('/shared-sound-fragments/received', id)
+  async deleteReceivedSoundFragment(brandSlug: string, fragmentSlug: string): Promise<void> {
+    await this.request<void>(
+      `/public/shared-sound-fragments/received/${encodeURIComponent(brandSlug)}/${encodeURIComponent(fragmentSlug)}`,
+      { method: 'DELETE' }
+    )
   }
 
   /** Approve a received item for the current user (accept share, or approve a chat submission). */
-  async acceptReceivedSoundFragment(id: string): Promise<void> {
-    await this.request<void>(`/shared-sound-fragments/received/${id}/accept`, { method: 'PATCH' })
+  async acceptReceivedSoundFragment(brandSlug: string, fragmentSlug: string): Promise<void> {
+    await this.request<void>(
+      `/public/shared-sound-fragments/received/${encodeURIComponent(brandSlug)}/${encodeURIComponent(fragmentSlug)}/accept`,
+      { method: 'PATCH' }
+    )
   }
 
   /** Revoke current user's access to a sound fragment (backend: DELETE …/:id/access). */
