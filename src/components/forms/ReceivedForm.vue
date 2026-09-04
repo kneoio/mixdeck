@@ -23,6 +23,8 @@ const loading = ref(false)
 const isMobile = ref(false)
 const actionBusy = ref(false)
 const activeTab = ref('properties')
+const regDate = ref('')
+const lastModifiedDate = ref('')
 
 const formData = ref({
   title: '',
@@ -121,6 +123,8 @@ async function loadData() {
 
     if (fragment.status !== 'fulfilled') throw fragment.reason
 
+    regDate.value = fragment.value?.regDate || ''
+    lastModifiedDate.value = fragment.value?.lastModifiedDate || ''
     formData.value = {
       title: fragment.value?.title || '',
       artist: fragment.value?.artist || '',
@@ -164,6 +168,12 @@ onBeforeUnmount(() => {
     :subtitle="formSubtitle"
     :loading="loading"
   >
+    <template #header-actions>
+      <div v-if="regDate" style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;font-size:12px;opacity:0.5;line-height:1.4;">
+        <span>Created: {{ regDate }}</span>
+        <span v-if="lastModifiedDate !== regDate">Modified: {{ lastModifiedDate }}</span>
+      </div>
+    </template>
     <template #actions>
       <div class="gsap-row">
         <NPopconfirm @positive-click="handleApprove">

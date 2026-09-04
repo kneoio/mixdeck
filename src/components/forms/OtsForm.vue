@@ -29,6 +29,8 @@ const otsDefinitionsStore = useOtsDefinitionsStore()
 const isEditing = computed(() => !!route.params.slugName && route.params.slugName !== 'new')
 const loading = ref(false)
 const isMobile = ref(false)
+const regDate = ref('')
+const lastModifiedDate = ref('')
 const activeTab = ref('variables')
 const isTabChangeFromValidation = ref(false)
 const saveAttempted = ref(false)
@@ -516,6 +518,8 @@ onMounted(async () => {
   try {
     if (isEditing.value) {
       const def = await otsDefinitionsStore.fetchOtsDefinition(route.params.slugName as string)
+      regDate.value = def.regDate || ''
+      lastModifiedDate.value = def.lastModifiedDate || ''
       formData.value.name = def.name ?? ''
       formData.value.scriptSlug = def.scriptSlug
       formData.value.color = def.color || '#000000'
@@ -565,6 +569,12 @@ onMounted(async () => {
   <FormWrapper :title="formTitle" :subtitle="formSubtitle" :loading="loading">
     <template v-if="isEditing && otsStatus" #title-after>
       <span class="ots-header-status">{{ otsStatus }}</span>
+    </template>
+    <template #header-actions>
+      <div v-if="regDate" style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;font-size:12px;opacity:0.5;line-height:1.4;">
+        <span>Created: {{ regDate }}</span>
+        <span v-if="lastModifiedDate !== regDate">Modified: {{ lastModifiedDate }}</span>
+      </div>
     </template>
     <template #actions>
       <div class="gsap-row">

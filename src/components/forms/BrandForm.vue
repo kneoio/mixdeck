@@ -61,6 +61,8 @@ const formTitle = computed(() => {
 
 const loading = ref(false)
 const brandSlug = ref<string | null>(null)
+const regDate = ref('')
+const lastModifiedDate = ref('')
 const activeTab = ref('properties')
 const isTabChangeFromValidation = ref(false)
 const saveAttempted = ref(false)
@@ -1005,6 +1007,8 @@ function normalizeBitRateFromServer(raw: number | null | undefined): number {
 
 function applyBrandToForm(brand: any) {
   brandSlug.value = brand.slugName ?? null
+  regDate.value = brand.regDate || ''
+  lastModifiedDate.value = brand.lastModifiedDate || ''
   const ln = brand.localizedName || {}
   localizedNames.value = Object.entries(ln).map(([lang, name]) => ({ lang, name: String(name ?? '') }))
   if (!localizedNames.value.length) localizedNames.value = [{ lang: 'en', name: '' }]
@@ -1225,6 +1229,12 @@ watch(activeTab, async (tab) => {
     :subtitle="isEditing ? 'settings' : t('brandForm.create_subtitle')"
     :loading="loading"
   >
+    <template #header-actions>
+      <div v-if="regDate" style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;font-size:12px;opacity:0.5;line-height:1.4;">
+        <span>Created: {{ regDate }}</span>
+        <span v-if="lastModifiedDate !== regDate">Modified: {{ lastModifiedDate }}</span>
+      </div>
+    </template>
     <template #actions>
       <div class="gsap-row">
         <GsapButton @click="router.push(backRoute)"><span>{{ t('common.close') }}</span></GsapButton>

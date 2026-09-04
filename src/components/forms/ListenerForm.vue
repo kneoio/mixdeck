@@ -36,6 +36,8 @@ const formLabelPlacement = computed(() => (isMobile.value ? 'top' : 'left'))
 const loading = ref(false)
 const saving = ref(false)
 const isMobile = ref(false)
+const regDate = ref('')
+const lastModifiedDate = ref('')
 
 const localizedNames = ref<{ lang: string; name: string }[]>([{ lang: 'en', name: '' }])
 const labels = ref<string[]>([])
@@ -119,6 +121,8 @@ onMounted(async () => {
 
     if (isEditing.value) {
       const data = await store.fetchListener(listenerId.value)
+      regDate.value = data.regDate || ''
+      lastModifiedDate.value = data.lastModifiedDate || ''
       const ln = data.localizedName || {}
       localizedNames.value = Object.entries(ln).map(([lang, name]) => ({ lang, name: String(name ?? '') }))
       if (!localizedNames.value.length) localizedNames.value = [{ lang: 'en', name: '' }]
@@ -140,6 +144,12 @@ onMounted(async () => {
     :subtitle="isEditing ? t('listenerForm.edit_subtitle') : t('listenerForm.create_subtitle')"
     :loading="loading"
   >
+    <template #header-actions>
+      <div v-if="regDate" style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;font-size:12px;opacity:0.5;line-height:1.4;">
+        <span>Created: {{ regDate }}</span>
+        <span v-if="lastModifiedDate !== regDate">Modified: {{ lastModifiedDate }}</span>
+      </div>
+    </template>
     <template #actions>
       <div class="gsap-row">
         <GsapButton @click="router.push(backRoute)">
