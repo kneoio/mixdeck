@@ -1379,7 +1379,7 @@ watch([activeTab, genreRows], async () => {
 .brand-boost-caption {
   font-size: 11px;
   line-height: 1;
-  min-width: 4.2em;
+  min-width: 7.5em;
   text-align: center;
   padding: 0 2px;
 }
