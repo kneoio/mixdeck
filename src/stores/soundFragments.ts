@@ -44,6 +44,8 @@ export interface SoundFragment {
   streamUrl?: string
   length?: string | number
   expiresAt?: string
+  playCode?: string | null
+  playCodeExpiresAt?: string | null
   uploadedFiles?: UploadedFile[]
   playHistory?: any[]
   likes?: number

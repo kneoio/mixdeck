@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { gsap } from 'gsap'
 import {
   NSpace, NForm, NFormItem, NInput, NSelect, NTreeSelect, NDynamicTags,
-  NTabs, NTabPane, NUpload, NProgress, NTag, NButton, NPopover, NPopselect, NTree, NScrollbar, NEmpty, NIcon, useMessage,
+  NTabs, NTabPane, NUpload, NProgress, NTag, NButton, NPopover, NPopselect, NTree, NScrollbar, NEmpty, NIcon, NDatePicker, useMessage,
 } from 'naive-ui'
 import { CheckmarkCircle, ArrowUpOutline, ArrowDownOutline } from '@vicons/ionicons5'
 import GsapButton from '@/components/GsapButton.vue'
@@ -241,6 +241,8 @@ const formData = ref({
   length: null as number | null,
   source: 'USER_UPLOAD' as string,
   streamUrl: '' as string,
+  playCode: '' as string,
+  playCodeExpiresAt: null as string | null,
 })
 
 const sourceOptions = computed(() => [
@@ -480,6 +482,17 @@ const isSharedRoute = computed(() => route.path.startsWith('/shared'))
 const backRoute = computed(() => returnToRoute.value ?? (isSharedRoute.value ? '/shared' : (brandSlug.value ? `/playlist?brand=${encodeURIComponent(brandSlug.value)}` : '/playlist')))
 const formLabelPlacement = computed(() => (isMobile.value ? 'top' : 'left'))
 
+const playCodeExpiresAtValue = computed(() => {
+  const v = formData.value.playCodeExpiresAt
+  if (!v) return null
+  const t = Date.parse(v)
+  return Number.isNaN(t) ? null : t
+})
+
+function onPlayCodeExpiresAtChange(v: number | null) {
+  formData.value.playCodeExpiresAt = v == null ? null : new Date(v).toISOString()
+}
+
 function updateIsMobile() {
   isMobile.value = window.innerWidth <= 768
 }
@@ -623,7 +636,12 @@ async function handleSave() {
   try {
     loading.value = true
     const id = isEditing.value ? (route.params.fragmentId as string) : null
-    const payload: any = { ...formData.value, customTags: customTags.value }
+    const payload: any = {
+      ...formData.value,
+      playCode: formData.value.playCode,
+      playCodeExpiresAt: formData.value.playCodeExpiresAt || null,
+      customTags: customTags.value,
+    }
     if (uploadedFileNames.value.length) payload.newlyUploaded = uploadedFileNames.value
     if (payload.representedInBrands) {
       payload.brands = payload.representedInBrands
@@ -697,6 +715,8 @@ onMounted(async () => {
           : (typeof frag.length === 'string' ? parseInt(frag.length) || null : null),
         source: frag.source || 'USER_UPLOAD',
         streamUrl: frag.streamUrl || '',
+        playCode: frag.playCode || '',
+        playCodeExpiresAt: frag.playCodeExpiresAt || null,
       }
       regDate.value = frag.regDate || ''
       lastModifiedDate.value = frag.lastModifiedDate || ''
@@ -1034,6 +1054,34 @@ watch([activeTab, genreRows], async () => {
             </div>
           </NFormItem>
 
+          <NFormItem :label="t('fragmentForm.play_code')">
+            <div class="field-stack">
+              <div class="field-error-shell">
+                <NInput
+                  v-model:value="formData.playCode"
+                  :maxlength="64"
+                  style="width: 100%"
+                />
+              </div>
+              <div class="field-hint">{{ t('fragmentForm.play_code_hint') }}</div>
+            </div>
+          </NFormItem>
+
+          <NFormItem :label="t('fragmentForm.play_code_expires')">
+            <div class="field-stack">
+              <div class="field-error-shell">
+                <NDatePicker
+                  :value="playCodeExpiresAtValue"
+                  type="datetime"
+                  clearable
+                  style="width: 100%"
+                  @update:value="onPlayCodeExpiresAtChange"
+                />
+              </div>
+              <div class="field-error-label"></div>
+            </div>
+          </NFormItem>
+
           <NFormItem v-if="formData.expiresAt" :label="t('fragmentForm.expires_at')">
             <div class="field-stack">
               <div class="field-error-shell">
@@ -1223,6 +1271,15 @@ watch([activeTab, genreRows], async () => {
 
 .field-error-shell--active {
   border-left-color: rgba(255, 77, 79, 0.95);
+}
+
+.field-hint {
+  margin-top: 3px;
+  min-height: 12px;
+  padding-left: 10px;
+  font-size: 11px;
+  line-height: 1.3;
+  opacity: 0.45;
 }
 
 .field-error-label {
