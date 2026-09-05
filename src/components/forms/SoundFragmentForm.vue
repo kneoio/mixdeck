@@ -1090,69 +1090,6 @@ watch([activeTab, genreRows], async () => {
         </NForm>
       </NTabPane>
 
-      <NTabPane name="playCode" :tab="t('fragmentForm.tab_play_code')">
-        <NForm :label-placement="formLabelPlacement" label-width="120" :disabled="loading || isUploading">
-          <NFormItem :label="t('fragmentForm.play_code')">
-            <div class="field-stack">
-              <div class="field-error-shell">
-                <div class="play-code-row">
-                  <NInput
-                    v-model:value="formData.playCode"
-                    :maxlength="64"
-                  />
-                  <NButton
-                    dashed
-                    size="small"
-                    :disabled="!fragmentSlug"
-                    :title="t('fragmentForm.play_code_generate')"
-                    @click="generatePlayCode"
-                  >
-                    <template #icon>
-                      <NIcon :component="RefreshOutline" :size="14" />
-                    </template>
-                  </NButton>
-                  <NButton
-                    dashed
-                    size="small"
-                    :disabled="!formData.playCode"
-                    :title="t('fragmentForm.play_code_copy')"
-                    @click="copyPlayCode"
-                  >
-                    <template #icon>
-                      <NIcon :component="CopyOutline" :size="14" />
-                    </template>
-                  </NButton>
-                </div>
-              </div>
-              <div class="field-hint">{{ t('fragmentForm.play_code_hint') }}</div>
-            </div>
-          </NFormItem>
-
-          <NFormItem :label="t('fragmentForm.play_code_expires')">
-            <div class="field-stack">
-              <div class="field-error-shell">
-                <div class="play-code-row">
-                  <NDatePicker
-                    :value="playCodeExpiresAtValue"
-                    type="datetime"
-                    clearable
-                    style="width: 240px; flex: none"
-                    @update:value="onPlayCodeExpiresAtChange"
-                  />
-                  <NButton dashed size="small" @click="setPlayCodeExpiresIn('week')">
-                    {{ t('fragmentForm.play_code_expires_week') }}
-                  </NButton>
-                  <NButton dashed size="small" @click="setPlayCodeExpiresIn('month')">
-                    {{ t('fragmentForm.play_code_expires_month') }}
-                  </NButton>
-                </div>
-              </div>
-              <div class="field-error-label"></div>
-            </div>
-          </NFormItem>
-        </NForm>
-      </NTabPane>
-
       <NTabPane name="description" :tab="t('fragmentForm.tab_description')">
         <NForm :label-placement="formLabelPlacement" label-width="120" :disabled="loading || isUploading">
           <NFormItem :label="t('fragmentForm.description')">
@@ -1245,6 +1182,68 @@ watch([activeTab, genreRows], async () => {
           {{ t('fragmentForm.sharing_empty') }}
         </div>
       </NTabPane>
+
+      <NTabPane name="playCode" :tab="t('fragmentForm.tab_play_code')">
+        <NForm :label-placement="formLabelPlacement" label-width="120" :disabled="loading || isUploading">
+          <NFormItem :label="t('fragmentForm.play_code')">
+            <div class="field-stack">
+              <div class="field-error-shell">
+                <div class="play-code-row">
+                  <NInput
+                    v-model:value="formData.playCode"
+                    :maxlength="64"
+                  />
+                  <NButton
+                    dashed
+                    size="small"
+                    :disabled="!fragmentSlug"
+                    :title="t('fragmentForm.play_code_generate')"
+                    @click="generatePlayCode"
+                  >
+                    <template #icon>
+                      <NIcon :component="RefreshOutline" :size="14" />
+                    </template>
+                  </NButton>
+                  <NButton
+                    dashed
+                    size="small"
+                    :disabled="!formData.playCode"
+                    :title="t('fragmentForm.play_code_copy')"
+                    @click="copyPlayCode"
+                  >
+                    <template #icon>
+                      <NIcon :component="CopyOutline" :size="14" />
+                    </template>
+                  </NButton>
+                </div>
+              </div>
+            </div>
+          </NFormItem>
+
+          <NFormItem :label="t('fragmentForm.play_code_expires')">
+            <div class="field-stack">
+              <div class="field-error-shell">
+                <div class="play-code-row">
+                  <NDatePicker
+                    :value="playCodeExpiresAtValue"
+                    type="datetime"
+                    clearable
+                    style="width: 240px; flex: none"
+                    @update:value="onPlayCodeExpiresAtChange"
+                  />
+                  <NButton dashed size="small" @click="setPlayCodeExpiresIn('week')">
+                    {{ t('fragmentForm.play_code_expires_week') }}
+                  </NButton>
+                  <NButton dashed size="small" @click="setPlayCodeExpiresIn('month')">
+                    {{ t('fragmentForm.play_code_expires_month') }}
+                  </NButton>
+                </div>
+              </div>
+              <div class="field-error-label"></div>
+            </div>
+          </NFormItem>
+        </NForm>
+      </NTabPane>
     </NTabs>
   </FormWrapper>
 
@@ -1330,15 +1329,6 @@ watch([activeTab, genreRows], async () => {
 
 .field-error-shell--active {
   border-left-color: rgba(255, 77, 79, 0.95);
-}
-
-.field-hint {
-  margin-top: 3px;
-  min-height: 12px;
-  padding-left: 10px;
-  font-size: 11px;
-  line-height: 1.3;
-  opacity: 0.45;
 }
 
 .play-code-row {

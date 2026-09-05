@@ -470,7 +470,6 @@ export default {
     description: 'Description',
     expires_at: 'Expires At',
     play_code: 'Play code',
-    play_code_hint: 'Listener types this in station chat to queue the song.',
     play_code_expires: 'Play code expires',
     play_code_expires_week: '1 week',
     play_code_expires_month: '1 month',
