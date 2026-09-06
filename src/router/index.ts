@@ -17,6 +17,12 @@ const router = createRouter({
       meta: { requiresAuth: false }
     },
     {
+      path: '/welcome-neon',
+      name: 'welcome-neon',
+      component: () => import('../views/WelcomeNeon.vue'),
+      meta: { requiresAuth: false }
+    },
+    {
       path: '/login',
       name: 'login',
       component: () => import('../views/LoginView.vue'),
