@@ -38,7 +38,6 @@
       </section>
 
       <footer class="footer">
-        <div class="logo">MIXPLA</div>
         <div class="status">{{ t('welcome.footer_status') }}</div>
         <div class="copyright">© Mixpla</div>
         <router-link class="privacy-link" to="/privacy">{{ t('welcome.footer_privacy') }}</router-link>
@@ -107,7 +106,7 @@ function goToBrands() {
 .nav {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   gap: 24px;
   padding-bottom: 16px;
 }
