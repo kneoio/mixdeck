@@ -138,6 +138,16 @@ async function onAddTrack() {
   await nextTick()
   revealEntitlementNotice(createNoticeEl.value)
 }
+
+async function onBulkUpload() {
+  if (canCreate.value) {
+    showBulkUpload.value = true
+    return
+  }
+  showCreateNotice.value = true
+  await nextTick()
+  revealEntitlementNotice(createNoticeEl.value)
+}
 const brandOptions = computed(() => [
   { label: t('menu.filter_all_brands'), value: '', style: { fontWeight: 700 } },
   { label: t('menu.unassigned_brands'), value: UNASSIGNED_VALUE },
@@ -448,7 +458,7 @@ watch(showBulkUpload, (isOpen, wasOpen) => {
           <GsapButton type="primary" :look-disabled="!canCreate" @click="onAddTrack">
             <span>{{ t('playlistView.new_track') }}</span>
           </GsapButton>
-          <GsapButton :disabled="!selectedBrand" @click="showBulkUpload = true"><span>{{ t('playlistView.bulk_upload') }}</span></GsapButton>
+          <GsapButton :look-disabled="!canCreate" @click="onBulkUpload"><span>{{ t('playlistView.bulk_upload') }}</span></GsapButton>
           <GsapButton :disabled="selectedIds.length === 0" @click="openShareBulk">
             <span>{{ t('playlistView.share_btn', { count: selectedIds.length }) }}</span>
           </GsapButton>
