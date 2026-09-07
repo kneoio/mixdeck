@@ -330,7 +330,7 @@ class DatanestApiService extends ApiClient {
     signal?: AbortSignal
   ): Promise<void> {
     return new Promise((resolve, reject) => {
-      const url = `${this.baseUrl}/soundfragments-bulk/files?batchId=${encodeURIComponent(batchId)}&brandSlug=${encodeURIComponent(brandSlug)}&fileId=${encodeURIComponent(fileId)}`
+      const url = `${this.baseUrl}/public/soundfragments-bulk/files?batchId=${encodeURIComponent(batchId)}&brandSlug=${encodeURIComponent(brandSlug)}&fileId=${encodeURIComponent(fileId)}`
       const formData = new FormData()
       formData.append('file', file)
 
@@ -367,7 +367,7 @@ class DatanestApiService extends ApiClient {
   }
 
   /**
-   * POST /soundfragments-bulk/chunk — shared by bulk (omit entityId, use SSE after) and
+   * POST /public/soundfragments-bulk/chunk — shared by bulk (omit entityId, use SSE after) and
    * single-entity upload (set entityId; final JSON body is the complete DTO).
    */
   async uploadFileChunked(
@@ -402,7 +402,7 @@ class DatanestApiService extends ApiClient {
       if (brandSlug) params.set('brandSlug', brandSlug)
       if (entityId) params.set('entityId', entityId)
 
-      const res = await fetch(`${this.baseUrl}/soundfragments-bulk/chunk?${params}`, {
+      const res = await fetch(`${this.baseUrl}/public/soundfragments-bulk/chunk?${params}`, {
         method: 'POST',
         headers: authHeaders as HeadersInit,
         body: form,
@@ -454,7 +454,7 @@ class DatanestApiService extends ApiClient {
   }
 
   getBulkStatusStreamUrl(batchId: string): string {
-    const path = `${this.baseUrl}/soundfragments-bulk/status/${encodeURIComponent(batchId)}/stream`
+    const path = `${this.baseUrl}/public/soundfragments-bulk/status/${encodeURIComponent(batchId)}/stream`
     const token = authService.getToken()
     if (!token) return path
     const sep = path.includes('?') ? '&' : '?'
