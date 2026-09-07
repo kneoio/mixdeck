@@ -564,7 +564,6 @@ function resolveBrandSaveId(): string | null {
     return (route.params.slug as string) || brandSlug.value
   }
   if (brandSlug.value) return brandSlug.value
-  if (brandId.value && brandId.value !== 'new') return brandId.value
   return null
 }
 
@@ -831,8 +830,6 @@ async function handleSave() {
     const savedSlug = slugFromBrandPayload(savedBrand)
     if (savedSlug) {
       brandSlug.value = savedSlug
-      const savedId = (savedBrand as any)?.id ?? (savedBrand as any)?.docData?.id
-      if (savedId) brandId.value = savedId
     }
     if (!isEditing.value) {
       if (savedSlug) {
@@ -1078,7 +1075,7 @@ function applyBrandToForm(brand: any) {
   }
   mp3Enabled.value = isEditing.value && (brand.streamingOptions?.codecs ?? []).includes('MP3')
   const logoSlug = (brand as any).logoFiles?.[0]?.slugName
-  const logoBrandKey = brandSlug.value ?? brandId.value
+  const logoBrandKey = brandSlug.value
   if (logoSlug && logoBrandKey) {
     logoSlugName.value = logoSlug
     loadLogoPreview(logoBrandKey, logoSlug)
