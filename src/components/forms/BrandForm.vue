@@ -529,7 +529,7 @@ function createCoOwner() {
 
 async function loadLogoPreview(bId: string, slug: string) {
   try {
-    const url = `${appConfig.datanestServer}/brands/files/${encodeURIComponent(bId)}/${encodeURIComponent(slug)}`
+    const url = `${appConfig.datanestServer}/public/brands/files/${encodeURIComponent(bId)}/${encodeURIComponent(slug)}`
     logoPreviewUrl.value = await datanestApiService.fetchBlobUrl(url)
   } catch {}
 }
