@@ -69,10 +69,11 @@
                   <n-input
                     v-model:value="code"
                     :placeholder="t('submission.code_placeholder')"
-                    :disabled="!codeSent"
+                    :disabled="!codeSent || codeLocked"
+                    maxlength="6"
                     @keydown.enter="verifyAndNext"
                   />
-                  <GsapButton type="primary" :disabled="loading || !codeSent" @click="verifyAndNext">
+                  <GsapButton type="primary" :disabled="loading || !codeSent || codeLocked" @click="verifyAndNext">
                     <span>{{ t('submission.verify') }}</span>
                   </GsapButton>
                 </div>
@@ -271,13 +272,16 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { NConfigProvider, NInput, NProgress, NSelect, NTreeSelect, NCheckbox, NSkeleton, NCollapse, NCollapseItem, darkTheme, type GlobalThemeOverrides } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
+import authService, { AuthRequestError } from '@/services/auth'
 import datanestApiService from '@/services/datanestApi'
+import { useAuthStore } from '@/stores/auth'
 import { useDictionaryStore } from '@/stores/dictionary'
 import { useThemeStore } from '@/stores/theme'
 import { toGenreTreeOptions } from '@/utils/genreTree'
 
 const { t } = useI18n()
 const router = useRouter()
+const authStore = useAuthStore()
 const dictionaryStore = useDictionaryStore()
 const themeStore = useThemeStore()
 
@@ -321,6 +325,8 @@ const step = ref(1)
 const email = ref('')
 const code = ref('')
 const codeSent = ref(false)
+const failCount = ref(0)
+const codeLocked = ref(false)
 const verified = ref(false)
 const submitted = ref(false)
 const stationSlugs = ref<string[]>([])
@@ -358,23 +364,39 @@ const lastSubmission = computed(() => ({
 }))
 
 onMounted(async () => {
+  if (authStore.isLoading) await authStore.initializeAuth()
+  if (authStore.isAuthenticated) {
+    email.value = authStore.userEmail || ''
+    verified.value = true
+    step.value = 2
+  }
   stationOptions.value = await datanestApiService.getPublicBrands()
   stationsLoading.value = false
   dictionaryStore.loadGenres()
 })
 
+function isValidEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+}
+
 async function sendCode() {
   fieldErrors.value.email = ''
-  if (!email.value.trim() || !email.value.includes('@')) {
+  const trimmed = email.value.trim()
+  if (!isValidEmail(trimmed)) {
     fieldErrors.value.email = t('submission.error_email')
     return
   }
   loading.value = true
   try {
-    await datanestApiService.requestSubmissionCode(email.value.trim())
+    email.value = trimmed
+    await authService.requestOtp(trimmed)
     codeSent.value = true
+    codeLocked.value = false
+    failCount.value = 0
+    code.value = ''
   } catch (e: any) {
-    fieldErrors.value.email = e?.message || 'Error sending code.'
+    fieldErrors.value.email =
+      e instanceof AuthRequestError ? t('auth.error_send_failed') : e?.message || t('auth.error_send_failed')
   } finally {
     loading.value = false
   }
@@ -382,12 +404,30 @@ async function sendCode() {
 
 async function verifyAndNext() {
   fieldErrors.value.code = ''
-  if (!code.value.trim()) {
+  if (codeLocked.value) return
+  const otp = code.value.trim()
+  if (!otp) {
     fieldErrors.value.code = t('submission.error_code')
     return
   }
-  verified.value = true
-  step.value = 2
+  loading.value = true
+  try {
+    await authService.verifyOtp(email.value.trim(), otp)
+    authStore.onLoginSuccess()
+    verified.value = true
+    step.value = 2
+  } catch {
+    failCount.value += 1
+    code.value = ''
+    if (failCount.value >= authService.maxOtpFailures) {
+      codeLocked.value = true
+      fieldErrors.value.code = t('auth.error_code_exhausted')
+    } else {
+      fieldErrors.value.code = t('auth.error_code_invalid')
+    }
+  } finally {
+    loading.value = false
+  }
 }
 
 function onFileChange(e: Event) {

@@ -574,10 +574,11 @@ class DatanestApiService extends ApiClient {
   }
 
   /**
-   * Chunked public song upload (no auth header — uses email+code OTP). Mirrors
-   * uploadFileChunked's chunk-loop shape, but station/email/code are re-sent per chunk (the
-   * backend re-validates them on every chunk) while descriptive metadata (artist/genre/etc.) is
-   * only sent on the last chunk — that's the only one the backend ever reads it from.
+   * Chunked public song upload. A Mixdeck Bearer session is enough (same as /ots); otherwise
+   * email+code OTP is still accepted. Mirrors uploadFileChunked's chunk-loop shape, but
+   * station/email/code are re-sent per chunk (the backend re-validates them on every chunk)
+   * while descriptive metadata (artist/genre/etc.) is only sent on the last chunk — that's
+   * the only one the backend ever reads it from.
    */
   async uploadPublicSongChunked(
     file: File,
@@ -621,6 +622,7 @@ class DatanestApiService extends ApiClient {
 
       const res = await fetch(`${this.baseUrl}/public/songs/chunk?${params}`, {
         method: 'POST',
+        headers: { ...authService.getAuthHeader() },
         body: form,
       })
 
