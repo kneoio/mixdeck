@@ -1,5 +1,5 @@
 import authService from './auth'
-import { ApiValidationError, ApiNotEnoughSongsError, ApiPaymentActionRequiredError, ApiEntitlementLimitError, isEntitlementLimitCode, type ValidationError } from '@/utils/errorHandler'
+import { ApiValidationError, ApiNotEnoughSongsError, ApiPaymentActionRequiredError, ApiEntitlementLimitError, entitlementLimitFromBody, type ValidationError } from '@/utils/errorHandler'
 import { parseActions, type EntitlementAction } from '@/utils/entitlements'
 import { LOCALE_KEY } from '@/i18n'
 
@@ -65,15 +65,8 @@ export class ApiClient {
           throw new ApiPaymentActionRequiredError((data as any).clientSecret)
         }
 
-        if (response.status === 403 && isEntitlementLimitCode((data as any).code)) {
-          throw new ApiEntitlementLimitError(
-            (data as any).title || 'Limit reached',
-            (data as any).detail || (data as any).title || 'Limit reached',
-            (data as any).upgradeHint,
-            (data as any).upgradeTo,
-            (data as any).code,
-          )
-        }
+        const entitlement = entitlementLimitFromBody(data)
+        if (entitlement) throw entitlement
 
         if (typeof (data as any).error === 'string') {
           errorMessage = (data as any).error

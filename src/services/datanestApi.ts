@@ -2,6 +2,7 @@ import { ApiClient, type PagedResult } from './base'
 import { appConfig } from '@/config/appConfig'
 import authService from './auth'
 import { parseActions } from '@/utils/entitlements'
+import { entitlementLimitFromBody } from '@/utils/errorHandler'
 
 /** Chunked bulk upload: chunk body size (per POST). */
 export const BULK_UPLOAD_CHUNK_SIZE = 5 * 1024 * 1024
@@ -341,15 +342,20 @@ class DatanestApiService extends ApiClient {
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) resolve()
         else {
-          let msg = `Upload failed (${xhr.status})`
           try {
             const body = JSON.parse(xhr.responseText)
+            const entitlement = entitlementLimitFromBody(body)
+            if (entitlement) {
+              reject(entitlement)
+              return
+            }
             const detail = body?.message || body?.error || body?.detail
+            let msg = `Upload failed (${xhr.status})`
             if (detail) msg += `: ${detail}`
+            reject(new Error(msg))
           } catch {
-            if (xhr.responseText?.trim()) msg += `: ${xhr.responseText.trim().slice(0, 120)}`
+            reject(new Error(xhr.responseText?.trim()?.slice(0, 120) || `Upload failed (${xhr.status})`))
           }
-          reject(new Error(msg))
         }
       }
       xhr.onerror = () => reject(new Error('Network error during upload'))
@@ -410,28 +416,27 @@ class DatanestApiService extends ApiClient {
       })
 
       if (!res.ok) {
-        let msg = `Chunk ${i + 1}/${totalChunks} failed (${res.status})`
+        const text = (await res.text()).trim()
         try {
-          const text = (await res.text()).trim()
-          if (text) {
-            try {
-              const body = JSON.parse(text)
-              const detail = body?.message || body?.error || body?.detail
-              msg += detail ? `: ${detail}` : `: ${text.slice(0, 120)}`
-            } catch {
-              msg += `: ${text.slice(0, 120)}`
-            }
-          }
-        } catch {
-          /* ignore */
+          const body = JSON.parse(text)
+          const entitlement = entitlementLimitFromBody(body)
+          if (entitlement) throw entitlement
+          const detail = body?.message || body?.error || body?.detail
+          throw new Error(detail || `Chunk ${i + 1}/${totalChunks} failed (${res.status})`)
+        } catch (err) {
+          if (err instanceof Error && (err.name === 'ApiEntitlementLimitError' || !(err instanceof SyntaxError))) throw err
+          throw new Error(text ? `${text.slice(0, 120)}` : `Chunk ${i + 1}/${totalChunks} failed (${res.status})`)
         }
-        throw new Error(msg)
       }
 
       try {
         lastResponse = await res.json()
       } catch {
         lastResponse = null
+      }
+      if (lastResponse?.status === 'error') {
+        const entitlement = entitlementLimitFromBody(lastResponse)
+        if (entitlement) throw entitlement
       }
       onProgress(Math.round(((i + 1) / totalChunks) * 100))
     }
@@ -661,7 +666,9 @@ class DatanestApiService extends ApiClient {
           resolve()
         } else if (fd.status === 'error') {
           es.close()
-          reject(new Error(fd.errorMessage || 'Processing failed after upload'))
+          const entitlement = entitlementLimitFromBody(fd)
+          if (entitlement) reject(entitlement)
+          else reject(new Error(fd.errorMessage || 'Processing failed after upload'))
         } else {
           onProgress(90)
         }

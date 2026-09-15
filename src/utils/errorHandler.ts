@@ -47,6 +47,26 @@ export function isEntitlementLimitCode(code: unknown): boolean {
   return typeof code === 'string' && (ENTITLEMENT_LIMIT_CODES as readonly string[]).includes(code)
 }
 
+/** Datanest Mixdeck contract: HTTP `{ code, title, detail }` or upload `{ errorCode, errorMessage }`. */
+export function entitlementLimitFromBody(data: any): ApiEntitlementLimitError | null {
+  if (!data || typeof data !== 'object') return null
+  const code = data.code ?? data.errorCode
+  if (!isEntitlementLimitCode(code)) return null
+  const title = (typeof data.title === 'string' && data.title) || 'Limit reached'
+  const detail =
+    (typeof data.detail === 'string' && data.detail)
+    || (typeof data.errorMessage === 'string' && data.errorMessage)
+    || (typeof data.reason === 'string' && data.reason)
+    || title
+  return new ApiEntitlementLimitError(
+    title,
+    detail,
+    typeof data.upgradeHint === 'string' ? data.upgradeHint : undefined,
+    typeof data.upgradeTo === 'string' ? data.upgradeTo : undefined,
+    code,
+  )
+}
+
 export class ApiValidationError extends Error {
   constructor(
     public readonly validationError: ValidationError,

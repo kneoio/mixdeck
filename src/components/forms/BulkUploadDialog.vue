@@ -73,6 +73,7 @@ import LedYellow from '@/components/LedYellow.vue'
 import LedIndicator from '@/components/LedIndicator.vue'
 import LoaderProgress from '@/components/LoaderProgress.vue'
 import datanestApiService, { BULK_UPLOAD_CHUNKED_THRESHOLD } from '@/services/datanestApi'
+import { isEntitlementLimitCode, isEntitlementLimitError } from '@/utils/errorHandler'
 
 const props = defineProps<{
   show: boolean
@@ -217,8 +218,10 @@ const columns = computed(() => {
       render(row: any) {
         const st = fileStatuses.value[row.id]
         if (!st) return null
-        if (st.classification === 'error')
-          return h(NText, { type: 'error', style: 'font-size:12px;' }, { default: () => st.errorMessage || t('bulkUpload.status_error') })
+        if (st.classification === 'error') {
+          const limit = isEntitlementLimitCode(st.errorCode)
+          return h(NText, { type: limit ? 'warning' : 'error', style: 'font-size:12px;' }, { default: () => st.errorMessage || t('bulkUpload.status_error') })
+        }
         if (st.classification === 'warning')
           return h(NText, { type: 'warning', style: 'font-size:12px;' }, { default: () => t('bulkUpload.status_warning') })
         if (st.classification === 'ok')
@@ -253,11 +256,12 @@ function startSSE() {
     for (const [id, fd] of Object.entries(data) as [string, any][]) {
       const classification = classifyStatus(fd)
       const prev = next[id]
-      if (!prev || prev.status !== fd.status || prev.classification !== classification) {
+      if (!prev || prev.status !== fd.status || prev.classification !== classification || prev.errorCode !== fd.errorCode || prev.errorMessage !== fd.errorMessage) {
         next[id] = {
           fileId: id,
           fileName: fd.fileName,
           status: fd.status,
+          errorCode: fd.errorCode,
           errorMessage: fd.errorMessage,
           metadata: fd.metadata ?? null,
           classification,
@@ -270,10 +274,17 @@ function startSSE() {
     if (done === totalFiles.value && totalFiles.value > 0) {
       eventSource.value?.close()
       eventSource.value = null
-      const errors = Object.values(next).filter((f: any) => f.classification === 'error').length
+      const errorFiles = Object.values(next).filter((f: any) => f.classification === 'error')
+      const errors = errorFiles.length
       const warnings = Object.values(next).filter((f: any) => f.classification === 'warning').length
       const ok = Object.values(next).filter((f: any) => f.classification === 'ok').length
-      if (errors > 0 && warnings > 0)
+      const limitMessages = [...new Set(errorFiles
+        .filter((f: any) => isEntitlementLimitCode(f.errorCode))
+        .map((f: any) => f.errorMessage)
+        .filter(Boolean))]
+      if (limitMessages.length && errorFiles.every((f: any) => isEntitlementLimitCode(f.errorCode)))
+        inlineAlert.value = { type: 'warning', text: limitMessages.join(' ') }
+      else if (errors > 0 && warnings > 0)
         inlineAlert.value = { type: 'warning', text: t('bulkUpload.summary_mixed', { ok, warnings, errors }) }
       else if (errors > 0)
         inlineAlert.value = { type: 'error', text: t('bulkUpload.summary_errors', { ok, errors }) }
@@ -344,7 +355,11 @@ async function handleFileUpload({ file, onProgress, onFinish, onError }: UploadC
       )
       onFinish?.()
     } catch (err: any) {
-      if (err?.name !== 'AbortError') inlineAlert.value = { type: 'error', text: err.message || `Upload failed: ${file.name}` }
+      if (err?.name !== 'AbortError') {
+        inlineAlert.value = isEntitlementLimitError(err)
+          ? { type: 'warning', text: err.detail }
+          : { type: 'error', text: err.message || `Upload failed: ${file.name}` }
+      }
       onError?.()
     } finally {
       activeUploads.value--

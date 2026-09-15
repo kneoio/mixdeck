@@ -1,4 +1,5 @@
 import { gsap } from 'gsap'
+import { isEntitlementLimitCode } from '@/utils/errorHandler'
 
 export interface EntitlementAction {
   id: string
@@ -35,6 +36,7 @@ export function isActionEnabled(actions: EntitlementAction[] | undefined | null,
 export function entitlementNotice(actions: EntitlementAction[] | undefined | null, id = 'create'): string {
   const action = getAction(actions, id)
   if (!action || action.enabled) return ''
+  if (isEntitlementLimitCode(action.code)) return action.reason || action.code
   return action.reason || ''
 }
 
