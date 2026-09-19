@@ -13,7 +13,7 @@ import {
   DEFAULT_VOCAL_ENTRY, HEAD_SECONDS, MAX_VOICE_SECONDS, TAIL_SECONDS,
 } from '@/utils/djAudio'
 import {
-  bStartFor, DEFAULT_DUCK, duckEnvelope, encodeWav, junctionWindow, LinkPreview, renderLink, type DuckParams, type LinkModel,
+  bStartFor, defaultDuck, duckEnvelope, encodeWav, junctionWindow, LinkPreview, renderLink, type DuckShape, type LinkModel,
 } from '@/utils/djMix'
 
 const { t } = useI18n()
@@ -133,7 +133,7 @@ watch(songB, s => loadSong(s, 'b'))
 const voice = shallowRef<AudioBuffer | null>(null)
 const voiceStart = ref(0)
 const vocalEntry = ref(DEFAULT_VOCAL_ENTRY)
-const duck = ref<DuckParams>({ ...DEFAULT_DUCK })
+const duck = ref<DuckShape>(defaultDuck())
 
 const bStart = computed(() => bStartFor(aBuf.value?.duration ?? TAIL_SECONDS))
 const total = computed(() => bStart.value + (bBuf.value?.duration ?? HEAD_SECONDS))

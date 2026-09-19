@@ -1,8 +1,14 @@
 import { getAudioContext, OVERLAP_SECONDS, WINDOW_SECONDS } from './djAudio'
 
-/** Fade-out lead before the voice, fade-in tail after it, and the ducked music volume. */
-export interface DuckParams { attack: number; release: number; level: number }
-export const DEFAULT_DUCK: DuckParams = { attack: 0.35, release: 0.7, level: 0.22 }
+/** One point of the music envelope, positioned relative to the voice's start or end so it follows the voice. */
+export interface DuckPoint { ref: 'start' | 'end'; dt: number; vol: number }
+export type DuckShape = DuckPoint[]
+export const defaultDuck = (): DuckShape => [
+  { ref: 'start', dt: -0.35, vol: 1 },
+  { ref: 'start', dt: 0, vol: 0.22 },
+  { ref: 'end', dt: 0, vol: 0.22 },
+  { ref: 'end', dt: 0.7, vol: 1 },
+]
 const EDGE_FADE = 0.04
 /** Seconds of music kept ahead of the voice inside the junction window. */
 const WINDOW_PRE_ROLL = 6
@@ -17,20 +23,15 @@ export interface LinkModel {
   voice: AudioBuffer | null
   bStart: number
   voiceStart: number
-  duck: DuckParams
+  duck: DuckShape
 }
 
 export const bStartFor = (aDuration: number) => Math.max(0, aDuration - OVERLAP_SECONDS)
 
 /** Music volume envelope: dip under the voice, recover after it. Empty without a voice. */
-export function duckEnvelope(voiceStart: number, voiceDuration: number, duck: DuckParams): EnvelopePoint[] {
+export function duckEnvelope(voiceStart: number, voiceDuration: number, duck: DuckShape): EnvelopePoint[] {
   const end = voiceStart + voiceDuration
-  return [
-    { time: Math.max(0, voiceStart - duck.attack), volume: 1 },
-    { time: voiceStart, volume: duck.level },
-    { time: end, volume: duck.level },
-    { time: end + duck.release, volume: 1 },
-  ]
+  return duck.map(p => ({ time: Math.max(0, (p.ref === 'start' ? voiceStart : end) + p.dt), volume: p.vol }))
 }
 
 export function envelopeAt(points: EnvelopePoint[], t: number): number {
