@@ -7,7 +7,7 @@ import RecordPlugin from 'wavesurfer.js/plugins/record'
 import RegionsPlugin, { type Region } from 'wavesurfer.js/plugins/regions'
 import TimelinePlugin from 'wavesurfer.js/plugins/timeline'
 import { peaksOf } from '@/utils/djAudio'
-import { envelopeAt, type EnvelopePoint, type MixWindow } from '@/utils/djMix'
+import { envelopeAt, type DuckParams, type EnvelopePoint, type MixWindow } from '@/utils/djMix'
 
 const LANE_H = 96
 const WAVE_H = 84
@@ -23,6 +23,7 @@ const props = defineProps<{
   /** Vocal entry, seconds into B's head. */
   vocalEntry: number
   envelope: EnvelopePoint[]
+  duck: DuckParams
   window: MixWindow
   playhead: number | null
   recording: boolean
@@ -32,6 +33,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:voiceStart': [seconds: number]
   'update:vocalEntry': [seconds: number]
+  'update:duck': [duck: DuckParams]
   'record-end': [blob: Blob]
   'record-error': [error: unknown]
 }>()
@@ -63,11 +65,46 @@ const voiceStyle = computed(() =>
 function envelopeLine(start: number, end: number): string {
   const times = [start, ...props.envelope.map(p => p.time).filter(tm => tm > start && tm < end), end]
   return times
-    .map(tm => `${tm * pps.value},${4 + (1 - envelopeAt(props.envelope, tm)) * (LANE_H - 8)}`)
+    .map(tm => `${tm * pps.value},${yOf(envelopeAt(props.envelope, tm))}`)
     .join(' ')
 }
 const envLineA = computed(() => (props.a ? envelopeLine(0, props.a.duration) : ''))
 const envLineB = computed(() => (props.b ? envelopeLine(props.bStart, props.bStart + props.b.duration) : ''))
+
+type HandleKind = 'attack' | 'level' | 'release'
+const LEVEL_MAX = 0.9
+const yOf = (volume: number) => 4 + (1 - volume) * (LANE_H - 8)
+
+/** Draggable points on the ducking curve: fade-out start, ducked level, fade-in end. */
+const handles = computed(() => {
+  if (!props.voice) return []
+  const end = props.voiceStart + voiceDuration.value
+  return [
+    { kind: 'attack' as HandleKind, time: Math.max(0, props.voiceStart - props.duck.attack), volume: 1 },
+    { kind: 'level' as HandleKind, time: props.voiceStart + voiceDuration.value / 2, volume: props.duck.level },
+    { kind: 'release' as HandleKind, time: end + props.duck.release, volume: 1 },
+  ]
+})
+const handlesIn = (start: number, end: number) => handles.value.filter(h => h.time >= start && h.time <= end)
+
+let handleDrag: { kind: HandleKind; svg: SVGSVGElement } | null = null
+function onHandleDown(e: PointerEvent, kind: HandleKind) {
+  const svg = (e.currentTarget as SVGElement).ownerSVGElement
+  if (!svg || pps.value <= 0) return
+  handleDrag = { kind, svg }
+  ;(e.currentTarget as Element).setPointerCapture(e.pointerId)
+}
+function onHandleMove(e: PointerEvent) {
+  if (!handleDrag) return
+  const rect = handleDrag.svg.getBoundingClientRect()
+  const t = (e.clientX - rect.left) / pps.value
+  const next = { ...props.duck }
+  if (handleDrag.kind === 'attack') next.attack = Math.min(Math.max(props.voiceStart - t, 0.05), 3)
+  else if (handleDrag.kind === 'release') next.release = Math.min(Math.max(t - (props.voiceStart + voiceDuration.value), 0.05), 4)
+  else next.level = Math.min(Math.max(1 - (e.clientY - rect.top - 4) / (LANE_H - 8), 0), LEVEL_MAX)
+  emit('update:duck', next)
+}
+function onHandleUp() { handleDrag = null }
 
 let rulerWs: WaveSurfer | null = null
 let aWs: WaveSurfer | null = null
@@ -227,7 +264,14 @@ function onKey(e: KeyboardEvent) {
         <div v-if="!a" class="dj-lane-empty">{{ t('dj.pick_a') }}</div>
         <div ref="aEl" class="dj-track" :style="aStyle" />
         <span v-if="a && titleA" class="dj-lane-title">{{ titleA }}</span>
-        <svg v-if="a" class="dj-env" :width="areaWidth" :height="LANE_H"><polyline :points="envLineA" /></svg>
+        <svg v-if="a" class="dj-env" :width="areaWidth" :height="LANE_H">
+          <polyline :points="envLineA" />
+          <circle
+            v-for="h in handlesIn(0, a.duration)" :key="h.kind" class="dj-handle" :class="`dj-handle-${h.kind}`"
+            :cx="h.time * pps" :cy="yOf(h.volume)" r="6"
+            @pointerdown="onHandleDown($event, h.kind)" @pointermove="onHandleMove" @pointerup="onHandleUp" @pointercancel="onHandleUp"
+          />
+        </svg>
       </div>
 
       <div class="dj-lane dj-lane-voice">
@@ -250,7 +294,14 @@ function onKey(e: KeyboardEvent) {
         <div v-if="!b" class="dj-lane-empty">{{ t('dj.pick_b') }}</div>
         <div ref="bEl" class="dj-track" :style="bStyle" />
         <span v-if="b && titleB" class="dj-lane-title dj-lane-title-b" :style="{ left: px(bStart) }">{{ titleB }}</span>
-        <svg v-if="b" class="dj-env" :width="areaWidth" :height="LANE_H"><polyline :points="envLineB" /></svg>
+        <svg v-if="b" class="dj-env" :width="areaWidth" :height="LANE_H">
+          <polyline :points="envLineB" />
+          <circle
+            v-for="h in handlesIn(bStart, bStart + b.duration)" :key="h.kind" class="dj-handle" :class="`dj-handle-${h.kind}`"
+            :cx="h.time * pps" :cy="yOf(h.volume)" r="6"
+            @pointerdown="onHandleDown($event, h.kind)" @pointermove="onHandleMove" @pointerup="onHandleUp" @pointercancel="onHandleUp"
+          />
+        </svg>
       </div>
 
       <div class="dj-overlay">
@@ -394,6 +445,23 @@ function onKey(e: KeyboardEvent) {
   stroke-width: 2;
   stroke-linejoin: round;
   filter: drop-shadow(0 0 3px var(--dj-accent));
+}
+.dj-handle {
+  fill: var(--dj-surface);
+  stroke: var(--dj-accent);
+  stroke-width: 2;
+  pointer-events: all;
+  touch-action: none;
+}
+.dj-handle:hover {
+  fill: var(--dj-accent);
+}
+.dj-handle-attack,
+.dj-handle-release {
+  cursor: ew-resize;
+}
+.dj-handle-level {
+  cursor: ns-resize;
 }
 .dj-overlay {
   position: absolute;

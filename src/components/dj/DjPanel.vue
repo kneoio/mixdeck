@@ -13,7 +13,7 @@ import {
   DEFAULT_VOCAL_ENTRY, HEAD_SECONDS, MAX_VOICE_SECONDS, TAIL_SECONDS,
 } from '@/utils/djAudio'
 import {
-  bStartFor, duckEnvelope, encodeWav, junctionWindow, LinkPreview, renderLink, type LinkModel,
+  bStartFor, DEFAULT_DUCK, duckEnvelope, encodeWav, junctionWindow, LinkPreview, renderLink, type DuckParams, type LinkModel,
 } from '@/utils/djMix'
 
 const { t } = useI18n()
@@ -133,10 +133,11 @@ watch(songB, s => loadSong(s, 'b'))
 const voice = shallowRef<AudioBuffer | null>(null)
 const voiceStart = ref(0)
 const vocalEntry = ref(DEFAULT_VOCAL_ENTRY)
+const duck = ref<DuckParams>({ ...DEFAULT_DUCK })
 
 const bStart = computed(() => bStartFor(aBuf.value?.duration ?? TAIL_SECONDS))
 const total = computed(() => bStart.value + (bBuf.value?.duration ?? HEAD_SECONDS))
-const envelope = computed(() => (voice.value ? duckEnvelope(voiceStart.value, voice.value.duration) : []))
+const envelope = computed(() => (voice.value ? duckEnvelope(voiceStart.value, voice.value.duration, duck.value) : []))
 const win = computed(() => junctionWindow({
   bStart: bStart.value, voiceStart: voiceStart.value, total: total.value, hasVoice: !!voice.value,
 }))
@@ -149,7 +150,7 @@ watch([aBuf, bBuf], () => { voiceStart.value = clampVoice(voiceStart.value) })
 
 const model = computed<LinkModel | null>(() =>
   aBuf.value && bBuf.value
-    ? { a: aBuf.value, b: bBuf.value, voice: voice.value, bStart: bStart.value, voiceStart: voiceStart.value }
+    ? { a: aBuf.value, b: bBuf.value, voice: voice.value, bStart: bStart.value, voiceStart: voiceStart.value, duck: duck.value }
     : null,
 )
 
@@ -217,7 +218,7 @@ function togglePreview() {
   previewing.value = true
   preview.play(model.value, win.value, tm => { playhead.value = tm }, stopPreview)
 }
-watch([voice, voiceStart, vocalEntry, aBuf, bBuf], stopPreview)
+watch([voice, voiceStart, vocalEntry, duck, aBuf, bBuf], stopPreview)
 
 // ── Send to air ─────────────────────────────────────────────────────
 const sending = ref(false)
@@ -313,6 +314,7 @@ onBeforeUnmount(() => {
         ref="editor"
         v-model:voice-start="voiceStart"
         v-model:vocal-entry="vocalEntry"
+        v-model:duck="duck"
         :a="aBuf"
         :b="bBuf"
         :voice="voice"

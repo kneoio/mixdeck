@@ -1,8 +1,8 @@
 import { getAudioContext, OVERLAP_SECONDS, WINDOW_SECONDS } from './djAudio'
 
-export const DUCK_LEVEL = 0.22
-const DUCK_ATTACK = 0.35
-const DUCK_RELEASE = 0.7
+/** Fade-out lead before the voice, fade-in tail after it, and the ducked music volume. */
+export interface DuckParams { attack: number; release: number; level: number }
+export const DEFAULT_DUCK: DuckParams = { attack: 0.35, release: 0.7, level: 0.22 }
 const EDGE_FADE = 0.04
 /** Seconds of music kept ahead of the voice inside the junction window. */
 const WINDOW_PRE_ROLL = 6
@@ -17,18 +17,19 @@ export interface LinkModel {
   voice: AudioBuffer | null
   bStart: number
   voiceStart: number
+  duck: DuckParams
 }
 
 export const bStartFor = (aDuration: number) => Math.max(0, aDuration - OVERLAP_SECONDS)
 
 /** Music volume envelope: dip under the voice, recover after it. Empty without a voice. */
-export function duckEnvelope(voiceStart: number, voiceDuration: number): EnvelopePoint[] {
+export function duckEnvelope(voiceStart: number, voiceDuration: number, duck: DuckParams): EnvelopePoint[] {
   const end = voiceStart + voiceDuration
   return [
-    { time: Math.max(0, voiceStart - DUCK_ATTACK), volume: 1 },
-    { time: voiceStart, volume: DUCK_LEVEL },
-    { time: end, volume: DUCK_LEVEL },
-    { time: end + DUCK_RELEASE, volume: 1 },
+    { time: Math.max(0, voiceStart - duck.attack), volume: 1 },
+    { time: voiceStart, volume: duck.level },
+    { time: end, volume: duck.level },
+    { time: end + duck.release, volume: 1 },
   ]
 }
 
@@ -72,7 +73,7 @@ export function scheduleMix(
   master.gain.linearRampToValueAtTime(0, when + length)
   master.connect(dest)
 
-  const envelope = model.voice ? duckEnvelope(model.voiceStart, model.voice.duration) : []
+  const envelope = model.voice ? duckEnvelope(model.voiceStart, model.voice.duration, model.duck) : []
   const layers = [
     { buf: model.a, start: 0, duck: true },
     { buf: model.b, start: model.bStart, duck: true },
