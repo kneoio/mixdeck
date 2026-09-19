@@ -248,6 +248,13 @@ const router = createRouter({
       ]
     },
     {
+      // Full-page DJ Mode editor — deliberately outside the dashboard shell
+      path: '/dj/:brandSlug',
+      name: 'dj',
+      component: () => import('../views/DjView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
       component: () => import('../views/NotFoundView.vue'),

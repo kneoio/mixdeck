@@ -28,7 +28,8 @@
     "vue-advanced-cropper": "^2.8.9",
     "vue-codemirror6": "^1.5.2",
     "vue-i18n": "^11.3.2",
-    "vue-router": "^4.5.1"
+    "vue-router": "^4.5.1",
+    "wavesurfer.js": "^7.12.12"
   },
   "devDependencies": {
     "@tsconfig/node22": "^22.0.2",

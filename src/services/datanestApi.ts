@@ -524,6 +524,14 @@ class DatanestApiService extends ApiClient {
     return URL.createObjectURL(blob)
   }
 
+  /** Fetch authenticated audio (or any binary) as raw bytes, e.g. for `decodeAudioData`. */
+  async fetchArrayBuffer(url: string): Promise<ArrayBuffer> {
+    const authHeaders = authService.getAuthHeader()
+    const response = await fetch(url, { headers: authHeaders })
+    if (!response.ok) throw new Error(`Failed to load file (${response.status})`)
+    return response.arrayBuffer()
+  }
+
   async getPublicArray<T>(endpoint: string): Promise<T[]> {
     return this.request<T[]>(endpoint)
   }

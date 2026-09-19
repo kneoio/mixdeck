@@ -14,6 +14,14 @@
           <div class="brand-head">
             <span class="brand-name" @click="goPlaylist(brand)">{{ brandLabel(brand) }}</span>
             <span v-if="dashboardSnapshotReceived" class="brand-status">{{ ledState(brand).label }}</span>
+            <NButton
+              v-if="canUseDjMode && dashboardSnapshotReceived && brand.slugName"
+              size="tiny"
+              secondary
+              type="primary"
+              :disabled="!isAlive(brand)"
+              @click="goDj(brand)"
+            >{{ t('dj.take_over') }}</NButton>
           </div>
         </template>
 
@@ -142,8 +150,9 @@
 import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { NCard, NCollapse, NCollapseItem, NPopover } from 'naive-ui'
+import { NButton, NCard, NCollapse, NCollapseItem, NPopover } from 'naive-ui'
 import QRCode from 'qrcode'
+import { canUseDjMode } from '@/config/features'
 import { useBrandsStore, type Brand, type BrandStatus } from '@/stores/brands'
 import { useOtsDefinitionsStore, type OtsDefinition } from '@/stores/otsDefinitions'
 import aivoxApiService, { type AivoxDashboardStreamEntry, type AivoxQueueEntry } from '@/services/aivoxApi'
@@ -181,6 +190,10 @@ function ledState(brand: Brand): { active: boolean; color: string; label: string
   if (isWarmingUp) return { active: true, color: '#FFD600', label: t('overview.ots_status_warming_up') }
   if (isIdle) return { active: true, color: '#FFD600', label: t('overview.idle') }
   return { active: false, color: '#00FF3C', label: t('overview.offline') }
+}
+
+function goDj(brand: Brand) {
+  router.push({ name: 'dj', params: { brandSlug: brand.slugName } })
 }
 
 function goPlaylist(brand: Brand) {
