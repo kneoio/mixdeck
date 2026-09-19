@@ -271,6 +271,11 @@ class DatanestApiService extends ApiClient {
     await this.request<void>(`/public/soundfragments/${slugName}`, { method: 'DELETE' })
   }
 
+  /** GET `/public/soundfragments/files/:slugName/:fileSlug` — both path parts are slugs, not UUIDs. */
+  soundFragmentFileUrl(fragmentSlug: string, fileSlug: string): string {
+    return `${this.baseUrl}/public/soundfragments/files/${encodeURIComponent(fragmentSlug)}/${encodeURIComponent(fileSlug)}`
+  }
+
   async patchSoundFragmentBoost(id: string, brandId: string, boost: number, type: 'brand' | 'shared' = 'brand'): Promise<void> {
     await this.request<void>(`/public/soundfragments/${id}/boost/${brandId}`, {
       method: 'PATCH',

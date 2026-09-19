@@ -285,6 +285,8 @@ async function handleSave() {
     const id = isEditing.value ? (route.params.fragmentId as string) : null
     const payload: any = { ...formData.value }
     if (uploadedFileNames.value.length) payload.newlyUploaded = uploadedFileNames.value
+    payload.brands = payload.representedInBrands
+    delete payload.representedInBrands
     if (isPrerecorded.value) payload.uploadedFiles = existingFiles.value.map(f => ({ id: f.id, status: f.status }))
     if (formData.value.type === 'PRERECORDED_ADVERTISEMENT') {
       payload.schedule = {
@@ -364,14 +366,14 @@ if (isPrerecorded.value) {
         existingFiles.value = (frag.uploadedFiles || []).map((f: any) => ({
           id: f.id,
           name: f.name || f.id,
-          url: f.url || '',
+          url: datanestApiService.soundFragmentFileUrl(route.params.fragmentId as string, f.id),
           status: f.status,
         }))
       } else {
         const opusFile = frag.uploadedFiles?.find((f: any) => f.type === 'opus')
         const f0 = opusFile || frag.uploadedFiles?.[0]
         activeFileType.value = f0?.type ?? 'unknown'
-        const fileUrl = f0?.url || frag.url || ''
+        const fileUrl = f0 ? datanestApiService.soundFragmentFileUrl(route.params.fragmentId as string, f0.id) : (frag.url || '')
         existingUrl.value = fileUrl
         existingFileName.value = frag.uploadedFiles?.find((f: any) => f.type === 'original')?.name || f0?.name || fileUrl.split('/').pop()?.split('?')[0] || ''
       }
