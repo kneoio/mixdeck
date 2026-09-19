@@ -19,7 +19,6 @@
               size="tiny"
               secondary
               type="primary"
-              :disabled="!isAlive(brand)"
               @click="goDj(brand)"
             >{{ t('dj.take_over') }}</NButton>
           </div>
