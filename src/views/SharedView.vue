@@ -170,7 +170,7 @@ async function handleBulkUnshare() {
   try {
     loading.value = true
     await Promise.all(selectedIds.value.map(async id => {
-      const raw = await datanestApiService.getDocument<any>('/soundfragments', String(id))
+      const raw = await datanestApiService.getDocument<any>('/public/soundfragments', String(id))
       const frag = raw?.payload?.docData ?? raw?.docData ?? raw
       const brandSlugs: string[] = Array.isArray(frag?.sharedWith)
         ? frag.sharedWith

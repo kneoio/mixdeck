@@ -752,7 +752,7 @@ onMounted(async () => {
       const opusFile = frag.uploadedFiles?.find((f: any) => f.type === 'opus')
       isOpusPreview.value = !!opusFile
       const f0 = opusFile || frag.uploadedFiles?.[0]
-      const fileUrl = f0?.url || frag.url || ''
+      const fileUrl = f0 ? datanestApiService.soundFragmentFileUrl(fragmentSlug.value, f0.id) : (frag.url || '')
       existingUrl.value = fileUrl
       existingFileName.value = frag.uploadedFiles?.find((f: any) => f.type === 'original')?.name || f0?.name || fileUrl.split('/').pop()?.split('?')[0] || ''
     }

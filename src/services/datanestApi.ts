@@ -309,8 +309,8 @@ class DatanestApiService extends ApiClient {
   }
 
   /** Revoke current user's access to a sound fragment (backend: DELETE …/:id/access). */
-  async revokeSoundFragmentAccess(id: string): Promise<void> {
-    await this.request<void>(`/soundfragments/${id}/access`, { method: 'DELETE' })
+  async revokeSoundFragmentAccess(slugName: string): Promise<void> {
+    await this.request<void>(`/public/soundfragments/${encodeURIComponent(slugName)}/access`, { method: 'DELETE' })
   }
 
   bulkUploadFile(

@@ -192,7 +192,7 @@ export const useAudioPlayerStore = defineStore('audioPlayer', () => {
       const doc = frag?.payload?.docData ?? frag?.docData ?? frag
       const opusFile = doc?.uploadedFiles?.find((f: any) => f.type === 'opus')
       const fileEntry = opusFile || doc?.uploadedFiles?.[0]
-      const rawUrl = fileEntry?.url || doc?.url || ''
+      const rawUrl = fileEntry ? datanestApiService.soundFragmentFileUrl(opts.id, fileEntry.id) : (doc?.url || '')
       if (!rawUrl) return
       const blobUrl = await resolveBlobUrl(opts.id, rawUrl, reqId)
       if (!blobUrl || reqId !== playRequestId) return
