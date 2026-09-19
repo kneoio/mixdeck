@@ -1,16 +1,13 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { NButton, useMessage } from 'naive-ui'
+import { NButton, useMessage, useThemeVars } from 'naive-ui'
 import LedIndicator from '@/components/LedIndicator.vue'
 import AivoxQueue from '@/components/AivoxQueue.vue'
 import DjLinkEditor from '@/components/dj/DjLinkEditor.vue'
 import DjSongPicker, { type DjSong } from '@/components/dj/DjSongPicker.vue'
-import { canUseDjMode } from '@/config/features'
 import djApiService from '@/services/djApi'
 import aivoxApiService, { type AivoxQueueEntry } from '@/services/aivoxApi'
-import { useBrandsStore } from '@/stores/brands'
 import {
   cropHead, cropTail, decodeBlob, fetchSongBuffer,
   DEFAULT_VOCAL_ENTRY, HEAD_SECONDS, MAX_VOICE_SECONDS, TAIL_SECONDS,
@@ -20,16 +17,26 @@ import {
 } from '@/utils/djMix'
 
 const { t } = useI18n()
-const route = useRoute()
-const router = useRouter()
 const message = useMessage()
-const brandsStore = useBrandsStore()
+const themeVars = useThemeVars()
 
-const brandSlug = computed(() => String(route.params.brandSlug ?? ''))
-if (!canUseDjMode) void router.replace({ name: 'overview' })
+const props = defineProps<{ brandSlug: string }>()
+const emit = defineEmits<{ close: [] }>()
+const brandSlug = computed(() => props.brandSlug)
+
+/** Follow the app theme (light/dark and the chosen accent) through Naive UI's theme variables. */
+const themeStyle = computed(() => ({
+  '--dj-text': themeVars.value.textColor1,
+  '--dj-muted': themeVars.value.textColor3,
+  '--dj-border': themeVars.value.borderColor,
+  '--dj-surface': themeVars.value.actionColor,
+  '--dj-accent': themeVars.value.primaryColor,
+  '--dj-accent-hover': themeVars.value.primaryColorHover,
+  '--dj-live': themeVars.value.successColor,
+  '--dj-danger': themeVars.value.errorColor,
+}))
 
 // ── Session / ON AIR ────────────────────────────────────────────────
-const stationName = ref('')
 const sessionState = ref<'starting' | 'active' | 'error'>('starting')
 const startedAt = ref(0)
 const now = ref(Date.now())
@@ -91,7 +98,7 @@ async function endSession() {
   } finally {
     ending.value = false
   }
-  void router.push({ name: 'overview' })
+  emit('close')
 }
 
 // ── Songs ───────────────────────────────────────────────────────────
@@ -243,16 +250,13 @@ async function sendToAir() {
 
 const ready = computed(() => sessionState.value === 'active')
 const canRecord = computed(() => ready.value && !!model.value && !sending.value)
-const canPreview = computed(() => ready.value && !!model.value && !!voice.value && !recording.value && !sending.value)
+const canPreview = computed(() => ready.value && !!model.value && !recording.value && !sending.value)
 const canSend = computed(() => canPreview.value && !ending.value)
 
 const songLabel = (s: DjSong | null) => (s ? [s.artist, s.title].filter(Boolean).join(' — ') : '')
 
 onMounted(async () => {
   clockTimer = setInterval(() => { now.value = Date.now() }, 1000)
-  void brandsStore.fetchBrand(brandSlug.value)
-    .then(b => { stationName.value = b.localizedName?.['en'] || b.title || brandSlug.value })
-    .catch(() => { stationName.value = brandSlug.value })
   void pollLive()
   void pollQueue()
   liveTimer = setInterval(pollLive, 5000)
@@ -274,11 +278,10 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="dj-page">
+  <div class="dj-panel" :style="themeStyle">
     <header class="dj-topbar">
-      <h1 class="dj-station">{{ stationName || brandSlug }}</h1>
       <div class="dj-onair" :class="{ 'dj-onair--live': onAir === true }">
-        <LedIndicator :active="onAir === true" :pulse="onAir === true" color="#00FF3C" :size="26" />
+        <LedIndicator :active="onAir === true" :pulse="onAir === true" :color="themeVars.successColor" :size="26" />
         <span>{{ onAir === null ? t('dj.on_air_unknown') : onAir ? t('dj.on_air') : t('dj.off_air') }}</span>
       </div>
       <div class="dj-timer">
@@ -329,7 +332,8 @@ onBeforeUnmount(() => {
           <span class="dj-rec-dot" :class="{ 'dj-rec-dot--on': recording }" />
           {{ recording ? `${t('dj.rec_stop')} ${recSeconds}s / ${MAX_VOICE_SECONDS}s` : t('dj.rec') }}
         </NButton>
-        <NButton size="large" :disabled="!canPreview" @click="togglePreview">
+        <NButton size="large" type="primary" secondary :disabled="!canPreview" @click="togglePreview">
+          <span class="dj-preview-icon">{{ previewing ? '■' : '▶' }}</span>
           {{ previewing ? t('dj.preview_stop') : t('dj.preview') }}
         </NButton>
         <NButton type="primary" size="large" :loading="sending" :disabled="!canSend" @click="sendToAir">
@@ -347,11 +351,11 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.dj-page {
-  min-height: 100vh;
-  padding: 16px 24px 48px;
-  background: var(--color-background);
-  color: var(--color-text);
+.dj-panel {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--dj-border);
+  color: var(--dj-text);
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -359,36 +363,28 @@ onBeforeUnmount(() => {
 .dj-topbar {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 24px;
   flex-wrap: wrap;
-}
-.dj-station {
-  margin: 0;
-  font-size: 1.4rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  margin-right: auto;
 }
 .dj-onair {
   display: flex;
   align-items: center;
   gap: 10px;
+  margin-right: auto;
   padding: 6px 18px;
   border-radius: 8px;
-  border: 1px solid var(--color-border-hover);
+  border: 1px solid var(--dj-border);
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  opacity: 0.55;
+  color: var(--dj-muted);
 }
 .dj-onair--live {
-  opacity: 1;
-  border-color: #00FF3C;
-  color: #00FF3C;
-  text-shadow: 0 0 10px rgba(0, 255, 60, 0.6);
-  box-shadow: 0 0 14px rgba(0, 255, 60, 0.25);
+  border-color: var(--dj-live);
+  color: var(--dj-live);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--dj-live) 30%, transparent);
 }
 .dj-timer {
   display: flex;
@@ -400,7 +396,7 @@ onBeforeUnmount(() => {
   font-size: 0.65rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  opacity: 0.6;
+  color: var(--dj-muted);
 }
 .dj-timer span {
   font-size: 1.6rem;
@@ -412,13 +408,13 @@ onBeforeUnmount(() => {
   padding: 8px 12px;
   border-radius: 6px;
   font-size: 0.85rem;
-  background: rgba(124, 58, 237, 0.12);
+  background: color-mix(in srgb, var(--dj-accent) 12%, transparent);
   display: flex;
   align-items: center;
   gap: 12px;
 }
 .dj-banner--error {
-  background: rgba(229, 57, 53, 0.12);
+  background: color-mix(in srgb, var(--dj-danger) 12%, transparent);
 }
 .dj-section {
   display: flex;
@@ -429,7 +425,7 @@ onBeforeUnmount(() => {
   margin: 0;
   font-size: 0.85rem;
   font-weight: 600;
-  opacity: 0.6;
+  color: var(--dj-muted);
   text-transform: uppercase;
 }
 .dj-pickers {
@@ -442,12 +438,16 @@ onBeforeUnmount(() => {
   gap: 12px;
   flex-wrap: wrap;
 }
+.dj-preview-icon {
+  margin-right: 8px;
+  font-size: 0.8em;
+}
 .dj-rec-dot {
   width: 10px;
   height: 10px;
   margin-right: 8px;
   border-radius: 50%;
-  background: #e53935;
+  background: var(--dj-danger);
 }
 .dj-rec-dot--on {
   animation: dj-rec-blink 1s infinite;
@@ -458,12 +458,9 @@ onBeforeUnmount(() => {
 .dj-empty {
   margin: 0;
   font-size: 0.85rem;
-  opacity: 0.5;
+  color: var(--dj-muted);
 }
 @media (max-width: 768px) {
-  .dj-page {
-    padding: 12px 16px 40px;
-  }
   .dj-pickers {
     grid-template-columns: 1fr;
   }

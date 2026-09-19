@@ -19,7 +19,8 @@
               size="tiny"
               secondary
               type="primary"
-              @click="goDj(brand)"
+              :disabled="djBrand === brand.slugName"
+              @click="djBrand = brand.slugName ?? null"
             >{{ t('dj.take_over') }}</NButton>
           </div>
         </template>
@@ -54,6 +55,11 @@
           :brand-slug="brand.slugName"
           :timezone="brand.timeZone"
           :status="brand.status"
+        />
+        <DjPanel
+          v-if="canUseDjMode && brand.slugName && djBrand === brand.slugName"
+          :brand-slug="brand.slugName"
+          @close="djBrand = null"
         />
 
         <!--
@@ -146,7 +152,7 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { defineAsyncComponent, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { NButton, NCard, NCollapse, NCollapseItem, NPopover } from 'naive-ui'
@@ -163,6 +169,7 @@ import StatusOrbitBadge from '@/components/StatusOrbitBadge.vue'
 import AgendaCard from '@/components/AgendaCard.vue'
 import GsapLoader from '@/components/GsapLoader.vue'
 import AivoxQueue from '@/components/AivoxQueue.vue'
+const DjPanel = defineAsyncComponent(() => import('@/components/dj/DjPanel.vue'))
 
 const { t } = useI18n()
 const router = useRouter()
@@ -191,9 +198,8 @@ function ledState(brand: Brand): { active: boolean; color: string; label: string
   return { active: false, color: '#00FF3C', label: t('overview.offline') }
 }
 
-function goDj(brand: Brand) {
-  router.push({ name: 'dj', params: { brandSlug: brand.slugName } })
-}
+/** Slug of the station whose card currently has DJ Mode expanded. */
+const djBrand = ref<string | null>(null)
 
 function goPlaylist(brand: Brand) {
   router.push({ path: '/playlist', query: { brand: brand.slugName } })

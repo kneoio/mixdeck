@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useThemeVars } from 'naive-ui'
 import WaveSurfer from 'wavesurfer.js'
 import RecordPlugin from 'wavesurfer.js/plugins/record'
 import RegionsPlugin, { type Region } from 'wavesurfer.js/plugins/regions'
@@ -35,6 +36,7 @@ const emit = defineEmits<{
   'record-error': [error: unknown]
 }>()
 const { t } = useI18n()
+const themeVars = useThemeVars()
 
 const areaEl = ref<HTMLElement | null>(null)
 const timelineEl = ref<HTMLElement | null>(null)
@@ -109,7 +111,7 @@ async function syncB() {
     end: start + VOCAL_MARKER_SECONDS,
     drag: true,
     resize: false,
-    color: 'rgba(157, 91, 244, 0.85)',
+    color: themeVars.value.primaryColorHover,
   })
 }
 
@@ -128,10 +130,10 @@ onMounted(() => {
     hideScrollbar: true,
     plugins: [TimelinePlugin.create({ container: timelineEl.value!, timeInterval: 5, primaryLabelInterval: 10, secondaryLabelInterval: 5 })],
   })
-  aWs = WaveSurfer.create({ ...laneOptions, container: aEl.value!, waveColor: '#7C3AED', progressColor: '#7C3AED' })
+  aWs = WaveSurfer.create({ ...laneOptions, container: aEl.value!, waveColor: themeVars.value.primaryColor, progressColor: themeVars.value.primaryColor })
   regions = RegionsPlugin.create()
-  bWs = WaveSurfer.create({ ...laneOptions, container: bEl.value!, waveColor: '#7C3AED', progressColor: '#7C3AED', plugins: [regions] })
-  voiceWs = WaveSurfer.create({ ...laneOptions, container: voiceEl.value!, waveColor: '#00FF3C', progressColor: '#00FF3C' })
+  bWs = WaveSurfer.create({ ...laneOptions, container: bEl.value!, waveColor: themeVars.value.primaryColor, progressColor: themeVars.value.primaryColor, plugins: [regions] })
+  voiceWs = WaveSurfer.create({ ...laneOptions, container: voiceEl.value!, waveColor: themeVars.value.successColor, progressColor: themeVars.value.successColor })
 
   record = voiceWs.registerPlugin(RecordPlugin.create({
     scrollingWaveform: true,
@@ -155,6 +157,10 @@ onBeforeUnmount(() => {
   for (const ws of [rulerWs, aWs, bWs, voiceWs]) ws?.destroy()
 })
 
+watch(() => [themeVars.value.primaryColor, themeVars.value.successColor], ([accent, live]) => {
+  for (const ws of [aWs, bWs]) ws?.setOptions({ waveColor: accent, progressColor: accent })
+  voiceWs?.setOptions({ waveColor: live, progressColor: live })
+})
 watch(() => props.total, syncRuler)
 watch(() => props.a, buf => show(aWs, buf))
 watch(() => props.b, syncB)
@@ -269,9 +275,9 @@ function onKey(e: KeyboardEvent) {
   --lane-h: 96px;
   display: grid;
   grid-template-columns: 84px 1fr;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--dj-border);
   border-radius: 10px;
-  background: var(--color-background-soft);
+  background: var(--dj-surface);
   overflow: hidden;
 }
 .dj-gutter-ruler,
@@ -284,7 +290,7 @@ function onKey(e: KeyboardEvent) {
   flex-direction: column;
   justify-content: center;
   padding: 0 10px;
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--dj-border);
 }
 .dj-gutter-lane b {
   font-size: 0.9rem;
@@ -297,7 +303,7 @@ function onKey(e: KeyboardEvent) {
   line-height: 1.2;
 }
 .dj-gutter-voice b {
-  color: #00FF3C;
+  color: var(--dj-live);
 }
 .dj-area {
   position: relative;
@@ -317,7 +323,7 @@ function onKey(e: KeyboardEvent) {
 .dj-lane {
   position: relative;
   height: var(--lane-h);
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--dj-border);
   overflow: hidden;
 }
 .dj-track {
@@ -328,22 +334,22 @@ function onKey(e: KeyboardEvent) {
 .dj-track-drag {
   cursor: grab;
   border-radius: 4px;
-  background: rgba(0, 255, 60, 0.08);
-  outline: 1px solid rgba(0, 255, 60, 0.45);
+  background: color-mix(in srgb, var(--dj-live) 8%, transparent);
+  outline: 1px solid color-mix(in srgb, var(--dj-live) 45%, transparent);
   touch-action: none;
 }
 .dj-track-drag:active {
   cursor: grabbing;
 }
 .dj-track-drag:focus-visible {
-  outline: 2px solid var(--vt-c-primary-light);
+  outline: 2px solid var(--dj-accent);
 }
 .dj-track-overrun {
-  outline-color: #e53935;
-  background: rgba(229, 57, 53, 0.1);
+  outline-color: var(--dj-danger);
+  background: color-mix(in srgb, var(--dj-danger) 10%, transparent);
 }
 .dj-track-recording {
-  outline: 1px solid #e53935;
+  outline: 1px solid var(--dj-danger);
 }
 .dj-lane-empty {
   position: absolute;
@@ -351,7 +357,7 @@ function onKey(e: KeyboardEvent) {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px dashed var(--color-border-hover);
+  border: 1px dashed var(--dj-border);
   border-radius: 6px;
   font-size: 0.75rem;
   letter-spacing: 0.06em;
@@ -384,10 +390,10 @@ function onKey(e: KeyboardEvent) {
 }
 .dj-env polyline {
   fill: none;
-  stroke: var(--vt-c-primary-light);
+  stroke: var(--dj-accent);
   stroke-width: 2;
   stroke-linejoin: round;
-  filter: drop-shadow(0 0 3px var(--vt-c-primary));
+  filter: drop-shadow(0 0 3px var(--dj-accent));
 }
 .dj-overlay {
   position: absolute;
@@ -404,10 +410,10 @@ function onKey(e: KeyboardEvent) {
   position: absolute;
   top: 26px;
   bottom: 0;
-  border: 1px solid var(--vt-c-primary-light);
+  border: 1px solid var(--dj-accent);
   border-top: 0;
   border-bottom: 0;
-  background: rgba(124, 58, 237, 0.06);
+  background: color-mix(in srgb, var(--dj-accent) 6%, transparent);
 }
 .dj-window span {
   position: absolute;
@@ -416,13 +422,13 @@ function onKey(e: KeyboardEvent) {
   font-size: 0.6rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--vt-c-primary-light);
+  color: var(--dj-accent);
 }
 .dj-vocal-guide {
   position: absolute;
   top: 26px;
   bottom: 0;
-  border-left: 2px dashed var(--vt-c-primary-hover);
+  border-left: 2px dashed var(--dj-accent-hover);
 }
 .dj-vocal-guide span {
   position: absolute;
@@ -431,7 +437,7 @@ function onKey(e: KeyboardEvent) {
   font-size: 0.6rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--vt-c-primary-hover);
+  color: var(--dj-accent-hover);
   white-space: nowrap;
 }
 .dj-playhead {
@@ -448,7 +454,7 @@ function onKey(e: KeyboardEvent) {
   margin: 0;
   padding: 6px 12px;
   font-size: 0.75rem;
-  color: #e53935;
-  border-top: 1px solid var(--color-border);
+  color: var(--dj-danger);
+  border-top: 1px solid var(--dj-border);
 }
 </style>

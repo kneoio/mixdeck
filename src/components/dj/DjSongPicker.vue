@@ -102,7 +102,7 @@ onMounted(() => search())
   justify-content: center;
   font-weight: 700;
   font-size: 0.85rem;
-  background: var(--vt-c-primary);
+  background: var(--dj-accent);
   color: #fff;
 }
 .dj-picker :deep(.n-select) {
