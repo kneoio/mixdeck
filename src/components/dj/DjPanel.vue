@@ -569,7 +569,7 @@ onBeforeUnmount(() => {
       <div class="dj-pickers">
         <DjSongPicker v-model="songA" class="dj-asset-field dj-asset-field--a" label="A" :placeholder="t('dj.pick_a')" :brand-slug="brandSlug" :exclude-slug="songB?.slugName" :loading="loadingA" :disabled="aLocked" />
         <div v-for="(v, n) in voices" :key="v.id" class="dj-asset-row">
-          <span class="dj-asset-slot">B{{ n + 1 }}</span>
+          <span class="dj-asset-slot">{{ voices.length > 1 ? `B${n + 1}` : 'B' }}</span>
           <NButton :type="recordingId === v.id ? 'error' : 'default'" size="small" :disabled="!canRecord || (recording && recordingId !== v.id)" @click="toggleRec(v.id)">
             <span class="dj-rec-dot" :class="{ 'dj-rec-dot--on': recordingId === v.id }" />
             {{ recordingId === v.id ? `${t('dj.rec_stop')} ${recSeconds}s / ${MAX_VOICE_SECONDS}s` : t('dj.rec') }}
@@ -595,7 +595,7 @@ onBeforeUnmount(() => {
           <NButton v-if="voices.length > 1" size="small" quaternary :disabled="recordingId === v.id" :title="t('dj.remove_lane')" :aria-label="t('dj.remove_lane')" @click="removeLane(v.id)">✕</NButton>
         </div>
         <NButton v-if="voices.length < MAX_VOICE_LANES" class="dj-add-lane" size="small" dashed :disabled="recording || sending" @click="addLane">
-          {{ t('dj.add_lane', { n: voices.length + 1 }) }}
+          {{ t('dj.add_lane') }}
         </NButton>
         <input ref="fileEl" class="dj-file-input" type="file" accept="audio/*" @change="onPickFile">
         <DjSongPicker v-model="songB" class="dj-asset-field dj-asset-field--c" label="C" :placeholder="t('dj.pick_b')" :brand-slug="brandSlug" :exclude-slug="songA?.slugName" :loading="loadingB" />

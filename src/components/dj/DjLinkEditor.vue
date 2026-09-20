@@ -243,8 +243,8 @@ onMounted(() => {
         timeInterval: 5,
         primaryLabelInterval: 10,
         secondaryLabelInterval: 5,
-        // Plain seconds all the way across; a junction is too short for m:ss to help.
-        formatTimeCallback: (seconds: number) => `${Math.round(seconds)}`,
+        // Plain seconds all the way across, unit shown; a junction is too short for m:ss to help.
+        formatTimeCallback: (seconds: number) => `${Math.round(seconds)}s`,
       })],
   })
   aWs = WaveSurfer.create({ ...laneOptions, container: aEl.value!, waveColor: djColors.value.a, progressColor: djColors.value.a })
@@ -401,7 +401,7 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
         <span v-if="infoA?.key" class="dj-param">{{ infoA.key }}</span>
       </div>
       <div v-for="(v, n) in voices" :key="v.id" class="dj-gutter-lane dj-gutter-voice dj-tone-b">
-        <b class="dj-letter-b">B{{ n + 1 }}</b><small>{{ t('dj.lane_voice') }}</small>
+        <b class="dj-letter-b">{{ voices.length > 1 ? `B${n + 1}` : 'B' }}</b><small>{{ t('dj.lane_voice') }}</small>
         <small v-if="v.source">{{ t(`dj.voice_source_${v.source}`) }}</small>
         <div class="dj-fx">
           <label v-for="fx in effectsOf(v)" :key="fx.key" class="dj-fx-col" :title="`${fx.label} ${fx.pct}%`">
