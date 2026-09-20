@@ -12,11 +12,11 @@ import djApiService, { type DjChatContext } from '@/services/djApi'
 import datanestApiService from '@/services/datanestApi'
 import aivoxApiService, { type AivoxQueueEntry } from '@/services/aivoxApi'
 import {
-  cropHead, cropTail, decodeBlob, fetchSongBuffer,
+  decodeBlob, fetchSongBuffer,
   HEAD_SECONDS, MAX_VOICE_LANES, MAX_VOICE_SECONDS, TAIL_SECONDS,
 } from '@/utils/djAudio'
 import {
-  autoCrossfade, autoDuck, bStartFor, emptyLane, encodeWav, flatCurve, LinkPreview, pairedCurve, renderLink, type EnvelopePoint, type LinkModel, type VoiceLane,
+  autoCrossfade, autoDuck, bStartFor, emptyLane, encodeWav, flatCurve, LinkPreview, pairedCurve, renderLink, type EnvelopePoint, type LinkModel, type MixWindow, type VoiceLane,
 } from '@/utils/djMix'
 
 const { t } = useI18n()
@@ -152,7 +152,8 @@ async function loadSong(song: DjSong | null, slot: 'a' | 'b') {
   try {
     const full = await fetchSongBuffer(song.slugName)
     if (current() !== song.slugName) return
-    target.value = slot === 'a' ? cropTail(full) : cropHead(full)
+    // The whole song is loaded so it can all be seen; the play / send range decides what is heard.
+    target.value = full
   } catch {
     if (current() === song.slugName) message.error(t('dj.song_error'))
   } finally {
@@ -206,8 +207,24 @@ const overhang = computed(() =>
   voices.value.flatMap((v, n) =>
     v.buf && v.start + v.buf.duration > total.value + 0.05 ? [voices.value.length > 1 ? `B${n + 1}` : 'B'] : []),
 )
-/** Play and send cover the whole timeline: every clip the DJ placed and all of the tail and head loaded. */
-const win = computed(() => ({ start: 0, end: total.value }))
+/**
+ * What Play and Send cover. Until the DJ drags the range on the ruler it follows the junction: from
+ * a little before C comes in (or the first B clip) to a little after A ends and the last clip ends.
+ */
+const manualRange = ref<MixWindow | null>(null)
+const win = computed<MixWindow>(() => {
+  const end = total.value
+  const manual = manualRange.value
+  if (manual) {
+    const start = Math.min(Math.max(0, manual.start), Math.max(0, end - 1))
+    return { start, end: Math.min(end, Math.max(manual.end, start + 1)) }
+  }
+  const first = Math.min(bStart.value, voiceStart.value ?? bStart.value)
+  const last = Math.max((aBuf.value?.duration ?? 0) + 15, voiceEnd.value + 8)
+  return { start: Math.max(0, first - 10), end: Math.min(end, last) }
+})
+// A new pair of songs is a new junction, so the range starts out following it again.
+watch([aBuf, bBuf], () => { manualRange.value = null })
 const clampStart = (duration: number, s: number) => Math.min(Math.max(0, s), Math.max(0, total.value - duration))
 
 /** The stretch where both songs play together, in junction seconds. */
@@ -460,7 +477,7 @@ function onScrubEnd() {
 }
 
 // Edits are heard as they are made; only losing the model (a song removed) ends the audition.
-watch([voices, duckA, duckB, aBuf, bBuf, bStart], () => {
+watch([voices, duckA, duckB, aBuf, bBuf, bStart, win], () => {
   if (!previewing.value) return
   if (model.value) preview.refresh(model.value, win.value)
   else stopPreview()
@@ -622,6 +639,7 @@ onBeforeUnmount(() => {
         :linked="linkCurves"
         @record-end="onRecordEnd"
         @record-error="onRecordError"
+        @update:window="manualRange = $event"
         @scrub-start="onScrubStart"
         @scrub="onScrub"
         @scrub-end="onScrubEnd"
@@ -632,6 +650,7 @@ onBeforeUnmount(() => {
         <NButton size="small" :disabled="!aBuf || !bBuf || recording" @click="applyAutoDuck">{{ t('dj.auto_duck') }}</NButton>
         <NCheckbox v-model:checked="linkCurves" size="small">{{ t('dj.link_curves') }}</NCheckbox>
         <NButton size="small" :disabled="!aBuf && !bBuf" @click="resetCurve">{{ t('dj.reset_curve') }}</NButton>
+        <NButton size="small" :disabled="!manualRange" @click="manualRange = null">{{ t('dj.auto_range') }}</NButton>
         <span>{{ t('dj.fade_hint') }}</span>
       </div>
       <div class="dj-controls">

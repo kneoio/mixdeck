@@ -39,6 +39,7 @@ const emit = defineEmits<{
   'update:duckA': [duck: EnvelopePoint[]]
   'update:duckB': [duck: EnvelopePoint[]]
   'update:bStart': [seconds: number]
+  'update:window': [range: MixWindow]
   'record-end': [blob: Blob, id: number]
   'record-error': [error: unknown]
   'scrub-start': []
@@ -68,15 +69,23 @@ const timelineEl = ref<HTMLElement | null>(null)
 const rulerEl = ref<HTMLElement | null>(null)
 const aEl = ref<HTMLElement | null>(null)
 const bEl = ref<HTMLElement | null>(null)
-const areaWidth = ref(0)
+const viewWidth = ref(0)
 
-/** Horizontal zoom: 1 fits the whole timeline in view, more spreads it out and scrolls. */
+/**
+ * Scale: at 100% the view holds BASE_VIEW_SECONDS of the timeline, so a junction fills the screen.
+ * Below that more of the songs comes into view (down to 10%, room for two whole songs), and above
+ * it the view closes in on the detail. The timeline scrolls whenever it is wider than the view.
+ */
+const BASE_VIEW_SECONDS = 80
+const MIN_ZOOM = 0.1
 const MAX_ZOOM = 8
 const ZOOM_STEP = 1.5
 const zoom = ref(1)
+const pps = computed(() => (viewWidth.value > 0 ? (viewWidth.value / BASE_VIEW_SECONDS) * zoom.value : 0))
+const areaWidth = computed(() => Math.max(1, props.total * pps.value))
 async function zoomTo(next: number, anchorClientX?: number) {
   const vp = viewportEl.value
-  const z = clamp(next, 1, MAX_ZOOM)
+  const z = clamp(next, MIN_ZOOM, MAX_ZOOM)
   if (!vp || z === zoom.value) return
   // Keeps whatever sits under the pointer (or the middle of the view) where it is on screen.
   const focus = anchorClientX !== undefined ? anchorClientX - vp.getBoundingClientRect().left : vp.clientWidth / 2
@@ -88,15 +97,20 @@ async function zoomTo(next: number, anchorClientX?: number) {
 function onWheel(e: WheelEvent) {
   void zoomTo(zoom.value * (e.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP), e.clientX)
 }
-// While zoomed in, the view follows the cursor so playback never runs off screen.
+// When the timeline is wider than the view, the view follows the cursor so playback never runs off screen.
 watch(() => props.playhead, t => {
   const vp = viewportEl.value
-  if (!vp || zoom.value <= 1 || pps.value <= 0) return
+  if (!vp || vp.scrollWidth <= vp.clientWidth || pps.value <= 0) return
   const x = t * pps.value
   if (x < vp.scrollLeft || x > vp.scrollLeft + vp.clientWidth - 24) vp.scrollLeft = x - vp.clientWidth * 0.25
 })
+// Whole songs are long, so once both are in, bring the junction into view.
+watch([() => props.a, () => props.b], async ([a, b]) => {
+  if (!a || !b) return
+  await nextTick()
+  if (viewportEl.value) viewportEl.value.scrollLeft = Math.max(0, (props.bStart - 25) * pps.value)
+})
 
-const pps = computed(() => (props.total > 0 ? areaWidth.value / props.total : 0))
 const px = (seconds: number) => `${seconds * pps.value}px`
 const trackStyle = (start: number, duration: number) => ({ left: px(start), width: px(duration) })
 const aStyle = computed(() => trackStyle(0, props.a?.duration ?? 0))
@@ -252,11 +266,14 @@ function syncRuler() {
   void rulerWs?.load('', [new Float32Array([0, 0])], Math.max(1, props.total))
 }
 
-onMounted(() => {
-  observer = new ResizeObserver(([entry]) => { areaWidth.value = entry.contentRect.width })
-  observer.observe(areaEl.value!)
-  areaWidth.value = areaEl.value!.clientWidth
-
+/** Labels are spaced to stay readable at any scale: the smallest step that leaves them ~70px apart. */
+const RULER_STEPS = [5, 10, 15, 30, 60, 120, 300]
+const rulerStep = computed(() => RULER_STEPS.find(step => step * pps.value >= 70) ?? 300)
+const formatTick = (seconds: number) =>
+  seconds < 60 ? `${Math.round(seconds)}s` : `${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, '0')}`
+function buildRuler() {
+  rulerWs?.destroy()
+  const step = rulerStep.value
   rulerWs = WaveSurfer.create({
     container: rulerEl.value!,
     height: 1,
@@ -266,18 +283,26 @@ onMounted(() => {
     interact: false,
     hideScrollbar: true,
     plugins: [TimelinePlugin.create({
-        container: timelineEl.value!,
-        timeInterval: 5,
-        primaryLabelInterval: 10,
-        secondaryLabelInterval: 5,
-        // Plain seconds all the way across, unit shown; a junction is too short for m:ss to help.
-        formatTimeCallback: (seconds: number) => `${Math.round(seconds)}s`,
-      })],
+      container: timelineEl.value!,
+      timeInterval: step,
+      primaryLabelInterval: step * 2,
+      secondaryLabelInterval: step,
+      formatTimeCallback: formatTick,
+    })],
   })
+  syncRuler()
+}
+watch(rulerStep, buildRuler)
+
+onMounted(() => {
+  observer = new ResizeObserver(([entry]) => { viewWidth.value = entry.contentRect.width })
+  observer.observe(viewportEl.value!)
+  viewWidth.value = viewportEl.value!.clientWidth
+
+  buildRuler()
   aWs = WaveSurfer.create({ ...laneOptions, container: aEl.value!, waveColor: djColors.value.a, progressColor: djColors.value.a })
   bWs = WaveSurfer.create({ ...laneOptions, container: bEl.value!, waveColor: djColors.value.c, progressColor: djColors.value.c })
 
-  syncRuler()
   void show(aWs, props.a)
   void show(bWs, props.b)
 })
@@ -355,12 +380,8 @@ function onSongMove(e: PointerEvent) {
     songDrag.live = true
     dragging.value = true
   }
-  // Sliding C right lengthens the timeline, which shrinks the scale as it goes, so the position
-  // is solved from where C's edge should sit on screen: x = W * start / (start + length of C).
-  const width = areaWidth.value
-  const x = clamp(e.clientX - songDrag.grab - songDrag.left, 0, width - 1)
-  const length = props.b?.duration ?? 0
-  songDrag.next = clamp((x * length) / (width - x), 0, (props.a?.duration ?? 0) + MAX_GAP_SECONDS)
+  const x = e.clientX - songDrag.grab - songDrag.left
+  songDrag.next = clamp(x / pps.value, 0, (props.a?.duration ?? 0) + MAX_GAP_SECONDS)
   if (!songDrag.raf) songDrag.raf = requestAnimationFrame(flushSong)
 }
 function flushSong() {
@@ -415,6 +436,30 @@ function onScrubUp() {
   emit('scrub-end')
 }
 
+// The play / send range: the two grips on the ruler set which part of the timeline is heard and sent.
+const MIN_RANGE = 1
+let rangeDrag: { edge: 'start' | 'end'; left: number } | null = null
+function onRangeDown(e: PointerEvent, edge: 'start' | 'end') {
+  const area = areaEl.value
+  if (!area || pps.value <= 0) return
+  e.preventDefault()
+  rangeDrag = { edge, left: area.getBoundingClientRect().left }
+  dragging.value = true
+  capture(e)
+}
+function onRangeMove(e: PointerEvent) {
+  if (!rangeDrag) return
+  const t = (e.clientX - rangeDrag.left) / pps.value
+  const { start, end } = props.window
+  emit('update:window', rangeDrag.edge === 'start'
+    ? { start: clamp(t, 0, end - MIN_RANGE), end }
+    : { start, end: clamp(t, start + MIN_RANGE, props.total) })
+}
+function onRangeUp() {
+  rangeDrag = null
+  dragging.value = false
+}
+
 function onKey(e: KeyboardEvent, v: VoiceLane) {
   if (!v.buf || props.recordingId !== null) return
   const step = e.shiftKey ? 1 : 0.1
@@ -430,7 +475,7 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
     <div class="dj-gutter">
       <div class="dj-gutter-ruler">
         <div class="dj-zoom">
-          <button type="button" :disabled="zoom <= 1" :title="t('dj.zoom_out')" :aria-label="t('dj.zoom_out')" @click="zoomTo(zoom / ZOOM_STEP)">−</button>
+          <button type="button" :disabled="zoom <= MIN_ZOOM" :title="t('dj.zoom_out')" :aria-label="t('dj.zoom_out')" @click="zoomTo(zoom / ZOOM_STEP)">−</button>
           <span>{{ Math.round(zoom * 100) }}%</span>
           <button type="button" :disabled="zoom >= MAX_ZOOM" :title="t('dj.zoom_in')" :aria-label="t('dj.zoom_in')" @click="zoomTo(zoom * ZOOM_STEP)">+</button>
         </div>
@@ -462,7 +507,7 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
     </div>
 
     <div ref="viewportEl" class="dj-viewport" @wheel.ctrl.prevent="onWheel">
-    <div ref="areaEl" class="dj-area" :style="{ width: `${zoom * 100}%` }">
+    <div ref="areaEl" class="dj-area" :style="{ width: `${areaWidth + 10}px` }">
       <div class="dj-ruler">
         <div ref="timelineEl" />
         <div ref="rulerEl" class="dj-ruler-ws" />
@@ -566,11 +611,28 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
       </div>
 
       <div class="dj-overlay">
+        <template v-if="a && b">
+          <div class="dj-dim" :style="{ left: 0, width: px(window.start) }" />
+          <div class="dj-dim" :style="{ left: px(window.end), right: 0 }" />
+          <div class="dj-window" :style="{ left: px(window.start), width: px(window.end - window.start) }">
+            <span>{{ t('dj.window') }}</span>
+          </div>
+        </template>
         <div
           class="dj-scrub-strip"
           @pointerdown="onScrubDown" @pointermove="onScrubMove"
           @pointerup="onScrubUp" @pointercancel="onScrubUp"
         />
+        <template v-if="a && b">
+          <span
+            class="dj-range-grip dj-range-grip--start" :style="{ left: px(window.start) }" :title="t('dj.range_start')"
+            @pointerdown.stop="onRangeDown($event, 'start')" @pointermove="onRangeMove" @pointerup="onRangeUp" @pointercancel="onRangeUp"
+          />
+          <span
+            class="dj-range-grip dj-range-grip--end" :style="{ left: px(window.end) }" :title="t('dj.range_end')"
+            @pointerdown.stop="onRangeDown($event, 'end')" @pointermove="onRangeMove" @pointerup="onRangeUp" @pointercancel="onRangeUp"
+          />
+        </template>
         <div class="dj-playhead" :style="{ left: px(playhead) }">
           <span
             class="dj-playhead-grip"
@@ -908,6 +970,65 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
   position: absolute;
   inset: 0;
   pointer-events: none;
+}
+.dj-dim {
+  position: absolute;
+  top: 26px;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.35);
+}
+.dj-window {
+  position: absolute;
+  top: 26px;
+  bottom: 0;
+  border: 1px solid var(--dj-accent);
+  border-top: 0;
+  border-bottom: 0;
+  background: color-mix(in srgb, var(--dj-accent) 6%, transparent);
+}
+.dj-window span {
+  position: absolute;
+  top: 2px;
+  left: 6px;
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dj-accent);
+}
+/** The two ends of the play / send range, standing on the ruler. */
+.dj-range-grip {
+  position: absolute;
+  top: 0;
+  width: 14px;
+  height: 26px;
+  margin-left: -7px;
+  pointer-events: all;
+  touch-action: none;
+  cursor: col-resize;
+}
+.dj-range-grip::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 6px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--dj-accent);
+}
+.dj-range-grip::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  width: 6px;
+  height: 2px;
+  background: var(--dj-accent);
+}
+.dj-range-grip--start::before {
+  left: 8px;
+}
+.dj-range-grip--end::before {
+  left: 0;
 }
 .dj-playhead {
   position: absolute;
