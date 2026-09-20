@@ -554,7 +554,7 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
 .dj-editor {
   --lane-h: 96px;
   display: grid;
-  grid-template-columns: 200px 1fr;
+  grid-template-columns: 224px 1fr;
   border: 1px solid var(--dj-border);
   border-radius: 10px;
   background: var(--dj-surface);
@@ -584,6 +584,8 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
 }
 .dj-gutter-voice {
   position: relative;
+  /* Keeps the caption clear of the slider block standing at the right of the cell. */
+  padding-right: 158px;
 }
 /** The effect sliders stand upright in a row at the right of B's cell, each with its name under it. */
 .dj-fx {
@@ -599,7 +601,7 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  width: 38px;
+  width: 34px;
   cursor: pointer;
 }
 .dj-fx-slider {
