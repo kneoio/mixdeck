@@ -3,7 +3,6 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch 
 import { useI18n } from 'vue-i18n'
 import { NButton, NCheckbox, NDrawer, NDrawerContent, NIcon, NSelect, useMessage, useThemeVars } from 'naive-ui'
 import { ChatbubblesOutline } from '@vicons/ionicons5'
-import LedIndicator from '@/components/LedIndicator.vue'
 import AivoxQueue from '@/components/AivoxQueue.vue'
 import DjLinkEditor from '@/components/dj/DjLinkEditor.vue'
 import DjSongPicker, { type DjSong } from '@/components/dj/DjSongPicker.vue'
@@ -51,11 +50,9 @@ const themeStyle = computed(() => ({
 const sessionState = ref<'starting' | 'active' | 'error'>('starting')
 const startedAt = ref(0)
 const now = ref(Date.now())
-const onAir = ref<boolean | null>(null)
 const ending = ref(false)
 let sessionEnded = false
 let clockTimer: ReturnType<typeof setInterval> | null = null
-let liveTimer: ReturnType<typeof setInterval> | null = null
 let queueTimer: ReturnType<typeof setInterval> | null = null
 
 const elapsed = computed(() => {
@@ -73,14 +70,6 @@ async function startSession() {
     sessionState.value = 'active'
   } catch {
     sessionState.value = 'error'
-  }
-}
-
-async function pollLive() {
-  try {
-    onAir.value = await djApiService.getOnAir(brandSlug.value)
-  } catch {
-    onAir.value = null
   }
 }
 
@@ -505,16 +494,13 @@ const songLabel = (s: DjSong | null) => (s ? [s.artist, s.title].filter(Boolean)
 
 onMounted(async () => {
   clockTimer = setInterval(() => { now.value = Date.now() }, 1000)
-  void pollLive()
   void pollQueue()
-  liveTimer = setInterval(pollLive, 5000)
   queueTimer = setInterval(pollQueue, 10000)
   await startSession()
 })
 
 onBeforeUnmount(() => {
   if (clockTimer) clearInterval(clockTimer)
-  if (liveTimer) clearInterval(liveTimer)
   if (queueTimer) clearInterval(queueTimer)
   clearRecTimer()
   preview.stop()
@@ -528,10 +514,6 @@ onBeforeUnmount(() => {
 <template>
   <div class="dj-panel" :style="themeStyle">
     <header class="dj-topbar">
-      <div class="dj-onair" :class="{ 'dj-onair--live': onAir === true }">
-        <LedIndicator :active="onAir === true" :pulse="onAir === true" :color="themeVars.successColor" :size="26" />
-        <span>{{ onAir === null ? t('dj.on_air_unknown') : onAir ? t('dj.on_air') : t('dj.off_air') }}</span>
-      </div>
       <div class="dj-timer">
         <small>{{ t('dj.session') }}</small>
         <span>{{ ready ? elapsed : '--:--' }}</span>
@@ -669,25 +651,6 @@ onBeforeUnmount(() => {
   justify-content: flex-end;
   gap: 24px;
   flex-wrap: wrap;
-}
-.dj-onair {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-right: auto;
-  padding: 6px 18px;
-  border-radius: 8px;
-  border: 1px solid var(--dj-border);
-  font-size: 1.5rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--dj-muted);
-}
-.dj-onair--live {
-  border-color: var(--dj-live);
-  color: var(--dj-live);
-  box-shadow: 0 0 14px color-mix(in srgb, var(--dj-live) 30%, transparent);
 }
 .dj-timer {
   display: flex;
@@ -857,9 +820,6 @@ onBeforeUnmount(() => {
 @media (max-width: 768px) {
   .dj-asset-field {
     width: 100%;
-  }
-  .dj-onair {
-    font-size: 1.1rem;
   }
 }
 </style>
