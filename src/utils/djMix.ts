@@ -1,8 +1,6 @@
 import { getAudioContext, OVERLAP_SECONDS } from './djAudio'
 
 const EDGE_FADE = 0.04
-/** Seconds of music kept before the first and after the last thing that happens in the junction. */
-const WINDOW_PAD = 6
 
 export interface EnvelopePoint { time: number; volume: number }
 export interface MixWindow { start: number; end: number }
@@ -221,26 +219,6 @@ export function envelopeAt(points: EnvelopePoint[], t: number): number {
     }
   }
   return points[points.length - 1].volume
-}
-
-/**
- * The slice of the junction that is previewed and sent. It is not a fixed length: it runs from a
- * little before the earliest thing that starts (C coming in, or the first B clip) to a little after
- * the last thing that ends (A's outro, or the last B clip), so everything the DJ placed is heard.
- */
-export function junctionWindow(model: {
-  bStart: number
-  aEnd: number
-  total: number
-  voiceStart: number | null
-  voiceEnd: number
-}): MixWindow {
-  const first = Math.min(model.bStart, model.voiceStart ?? model.bStart)
-  const last = Math.max(model.aEnd, model.voiceEnd)
-  return {
-    start: Math.max(0, first - WINDOW_PAD),
-    end: Math.min(model.total, last + WINDOW_PAD),
-  }
 }
 
 /**

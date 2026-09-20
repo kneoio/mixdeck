@@ -16,7 +16,7 @@ import {
   HEAD_SECONDS, MAX_VOICE_LANES, MAX_VOICE_SECONDS, TAIL_SECONDS,
 } from '@/utils/djAudio'
 import {
-  autoCrossfade, autoDuck, bStartFor, emptyLane, encodeWav, flatCurve, junctionWindow, LinkPreview, pairedCurve, renderLink, type EnvelopePoint, type LinkModel, type VoiceLane,
+  autoCrossfade, autoDuck, bStartFor, emptyLane, encodeWav, flatCurve, LinkPreview, pairedCurve, renderLink, type EnvelopePoint, type LinkModel, type VoiceLane,
 } from '@/utils/djMix'
 
 const { t } = useI18n()
@@ -201,10 +201,8 @@ const linkCurves = ref(false)
 const bStart = ref(bStartFor(TAIL_SECONDS))
 watch(aBuf, buf => { bStart.value = bStartFor(buf?.duration ?? TAIL_SECONDS) })
 const total = computed(() => bStart.value + (bBuf.value?.duration ?? HEAD_SECONDS))
-const win = computed(() => junctionWindow({
-  bStart: bStart.value, aEnd: aBuf.value?.duration ?? TAIL_SECONDS, total: total.value,
-  voiceStart: voiceStart.value, voiceEnd: voiceEnd.value,
-}))
+/** Play and send cover the whole timeline: every clip the DJ placed and all of the tail and head loaded. */
+const win = computed(() => ({ start: 0, end: total.value }))
 const clampStart = (duration: number, s: number) => Math.min(Math.max(0, s), Math.max(0, total.value - duration))
 
 /** The stretch where both songs play together, in junction seconds. */
@@ -253,7 +251,7 @@ watch(linkCurves, on => {
 watch(bStart, (_now, prev) => syncLinked(prev))
 watch(aBuf, buf => { duckA.value = flatCurve(buf?.duration ?? 0) })
 watch(bBuf, buf => { duckB.value = flatCurve(buf?.duration ?? 0) })
-watch([aBuf, bBuf], () => {
+watch([aBuf, bBuf, bStart], () => {
   voices.value = voices.value.map(v => (v.buf ? { ...v, start: clampStart(v.buf.duration, v.start) } : v))
 })
 

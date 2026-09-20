@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import WaveSurfer from 'wavesurfer.js'
 import TimelinePlugin from 'wavesurfer.js/plugins/timeline'
-import { peaksOf } from '@/utils/djAudio'
+import { MAX_GAP_SECONDS, peaksOf } from '@/utils/djAudio'
 import { pairedCurve, type EnvelopePoint, type MixWindow, type VoiceLane } from '@/utils/djMix'
 import { NSlider } from 'naive-ui'
 import { useDjColors } from '@/utils/djColors'
@@ -308,25 +308,32 @@ function onDragEnd() {
   dragging.value = false
 }
 /**
- * Sliding C along the timeline to set how far it overlaps A. Movement has to clear a few pixels
+ * Sliding C along the timeline to set how far it overlaps A, or how much room it leaves after A. Movement has to clear a few pixels
  * first, so pressing on the lane still adds a duck point instead of nudging the song.
  */
-let songDrag: { x: number; start: number; live: boolean; next: number | null; raf: number } | null = null
+let songDrag: { x: number; grab: number; left: number; live: boolean; next: number | null; raf: number } | null = null
 
 function onSongDown(e: PointerEvent) {
-  if (!props.b || !props.a || pps.value <= 0) return
-  songDrag = { x: e.clientX, start: props.bStart, live: false, next: null, raf: 0 }
+  const area = areaEl.value
+  if (!props.b || !props.a || !area || pps.value <= 0) return
+  const left = area.getBoundingClientRect().left
+  // `grab` is where on C's leading edge the pointer took hold, so the edge stays under it.
+  songDrag = { x: e.clientX, grab: e.clientX - (left + props.bStart * pps.value), left, live: false, next: null, raf: 0 }
   capture(e)
 }
 function onSongMove(e: PointerEvent) {
   if (!songDrag) return
-  const dx = e.clientX - songDrag.x
   if (!songDrag.live) {
-    if (Math.abs(dx) < 3) return
+    if (Math.abs(e.clientX - songDrag.x) < 3) return
     songDrag.live = true
     dragging.value = true
   }
-  songDrag.next = clamp(songDrag.start + dx / pps.value, 0, props.a?.duration ?? props.total)
+  // Sliding C right lengthens the timeline, which shrinks the scale as it goes, so the position
+  // is solved from where C's edge should sit on screen: x = W * start / (start + length of C).
+  const width = areaWidth.value
+  const x = clamp(e.clientX - songDrag.grab - songDrag.left, 0, width - 1)
+  const length = props.b?.duration ?? 0
+  songDrag.next = clamp((x * length) / (width - x), 0, (props.a?.duration ?? 0) + MAX_GAP_SECONDS)
   if (!songDrag.raf) songDrag.raf = requestAnimationFrame(flushSong)
 }
 function flushSong() {
@@ -525,13 +532,6 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
       </div>
 
       <div class="dj-overlay">
-        <template v-if="a && b">
-          <div class="dj-dim" :style="{ left: 0, width: px(window.start) }" />
-          <div class="dj-dim" :style="{ left: px(window.end), right: 0 }" />
-          <div class="dj-window" :style="{ left: px(window.start), width: px(window.end - window.start) }">
-            <span>{{ t('dj.window') }}</span>
-          </div>
-        </template>
         <div
           class="dj-scrub-strip"
           @pointerdown="onScrubDown" @pointermove="onScrubMove"
@@ -838,30 +838,6 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
   position: absolute;
   inset: 0;
   pointer-events: none;
-}
-.dj-dim {
-  position: absolute;
-  top: 26px;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.35);
-}
-.dj-window {
-  position: absolute;
-  top: 26px;
-  bottom: 0;
-  border: 1px solid var(--dj-accent);
-  border-top: 0;
-  border-bottom: 0;
-  background: color-mix(in srgb, var(--dj-accent) 6%, transparent);
-}
-.dj-window span {
-  position: absolute;
-  top: 2px;
-  left: 6px;
-  font-size: 0.6rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--dj-accent);
 }
 .dj-playhead {
   position: absolute;
