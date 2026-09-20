@@ -559,7 +559,7 @@ function onKey(e: KeyboardEvent) {
 .dj-editor {
   --lane-h: 96px;
   display: grid;
-  grid-template-columns: 164px 1fr;
+  grid-template-columns: 200px 1fr;
   border: 1px solid var(--dj-border);
   border-radius: 10px;
   background: var(--dj-surface);
@@ -604,7 +604,7 @@ function onKey(e: KeyboardEvent) {
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  width: 26px;
+  width: 38px;
   cursor: pointer;
 }
 .dj-fx-slider {
@@ -612,8 +612,9 @@ function onKey(e: KeyboardEvent) {
   min-height: 0;
 }
 .dj-fx-name {
-  font-size: 0.52rem;
+  font-size: 0.56rem;
   letter-spacing: 0;
+  white-space: nowrap;
   color: var(--dj-muted);
 }
 .dj-param {
