@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import WaveSurfer from 'wavesurfer.js'
 import TimelinePlugin from 'wavesurfer.js/plugins/timeline'
@@ -62,12 +62,39 @@ function patchVoice(id: number, patch: Partial<VoiceLane>) {
 }
 const setEffect = (id: number, key: EffectKey, pct: number) => patchVoice(id, { [key]: pct / 100 })
 
+const viewportEl = ref<HTMLElement | null>(null)
 const areaEl = ref<HTMLElement | null>(null)
 const timelineEl = ref<HTMLElement | null>(null)
 const rulerEl = ref<HTMLElement | null>(null)
 const aEl = ref<HTMLElement | null>(null)
 const bEl = ref<HTMLElement | null>(null)
 const areaWidth = ref(0)
+
+/** Horizontal zoom: 1 fits the whole timeline in view, more spreads it out and scrolls. */
+const MAX_ZOOM = 8
+const ZOOM_STEP = 1.5
+const zoom = ref(1)
+async function zoomTo(next: number, anchorClientX?: number) {
+  const vp = viewportEl.value
+  const z = clamp(next, 1, MAX_ZOOM)
+  if (!vp || z === zoom.value) return
+  // Keeps whatever sits under the pointer (or the middle of the view) where it is on screen.
+  const focus = anchorClientX !== undefined ? anchorClientX - vp.getBoundingClientRect().left : vp.clientWidth / 2
+  const fraction = (vp.scrollLeft + focus) / vp.scrollWidth
+  zoom.value = z
+  await nextTick()
+  vp.scrollLeft = fraction * vp.scrollWidth - focus
+}
+function onWheel(e: WheelEvent) {
+  void zoomTo(zoom.value * (e.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP), e.clientX)
+}
+// While zoomed in, the view follows the cursor so playback never runs off screen.
+watch(() => props.playhead, t => {
+  const vp = viewportEl.value
+  if (!vp || zoom.value <= 1 || pps.value <= 0) return
+  const x = t * pps.value
+  if (x < vp.scrollLeft || x > vp.scrollLeft + vp.clientWidth - 24) vp.scrollLeft = x - vp.clientWidth * 0.25
+})
 
 const pps = computed(() => (props.total > 0 ? areaWidth.value / props.total : 0))
 const px = (seconds: number) => `${seconds * pps.value}px`
@@ -401,7 +428,13 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
 <template>
   <div class="dj-editor" :class="{ 'dj-editor-dragging': dragging }">
     <div class="dj-gutter">
-      <div class="dj-gutter-ruler" />
+      <div class="dj-gutter-ruler">
+        <div class="dj-zoom">
+          <button type="button" :disabled="zoom <= 1" :title="t('dj.zoom_out')" :aria-label="t('dj.zoom_out')" @click="zoomTo(zoom / ZOOM_STEP)">−</button>
+          <span>{{ Math.round(zoom * 100) }}%</span>
+          <button type="button" :disabled="zoom >= MAX_ZOOM" :title="t('dj.zoom_in')" :aria-label="t('dj.zoom_in')" @click="zoomTo(zoom * ZOOM_STEP)">+</button>
+        </div>
+      </div>
       <div class="dj-gutter-lane dj-tone-a">
         <b class="dj-letter-a">A</b><small>{{ t('dj.lane_tail') }}</small>
         <span v-if="infoA?.bpm" class="dj-param">{{ t('dj.bpm', { bpm: Math.round(infoA.bpm) }) }}</span>
@@ -428,7 +461,8 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
       </div>
     </div>
 
-    <div ref="areaEl" class="dj-area">
+    <div ref="viewportEl" class="dj-viewport" @wheel.ctrl.prevent="onWheel">
+    <div ref="areaEl" class="dj-area" :style="{ width: `${zoom * 100}%` }">
       <div class="dj-ruler">
         <div ref="timelineEl" />
         <div ref="rulerEl" class="dj-ruler-ws" />
@@ -546,6 +580,7 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
         </div>
       </div>
     </div>
+    </div>
 
   </div>
 </template>
@@ -644,6 +679,41 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
 }
 .dj-lane {
   background: color-mix(in srgb, var(--tone) 4%, transparent);
+}
+.dj-viewport {
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* Room for a handle sitting on the very first frame or the lowest volume to show in full. */
+  padding: 0 0 8px 8px;
+}
+.dj-zoom {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 0 10px;
+  font-size: 0.7rem;
+  color: var(--dj-muted);
+}
+.dj-zoom button {
+  width: 22px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--dj-border);
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.dj-zoom button:hover:not(:disabled) {
+  color: var(--dj-text);
+  border-color: var(--dj-accent);
+}
+.dj-zoom button:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 .dj-area {
   position: relative;

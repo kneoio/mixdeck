@@ -110,6 +110,8 @@ export default {
     delete_rec: 'Delete',
     add_effect: 'Add effect',
     add_lane: 'Add lane',
+    zoom_in: 'Zoom in (or Ctrl + scroll)',
+    zoom_out: 'Zoom out',
     overhang: '{lanes} runs past the end of the timeline, so the end of it will be cut off. Slide C to the right to make room.',
     remove_lane: 'Remove this lane',
     pick_effect: 'Effect from assets',
