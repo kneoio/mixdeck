@@ -108,7 +108,7 @@ export default {
     link_curves: 'Crossfade',
     reset_curve: 'Reset curve',
     delete_rec: 'Delete',
-    add_effect: 'Add effect',
+    add_effect: 'Add audio file',
     add_lane: 'Add lane',
     zoom_in: 'Zoom in (or Ctrl + scroll)',
     zoom_out: 'Zoom out',
