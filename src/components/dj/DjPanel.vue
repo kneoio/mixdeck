@@ -201,6 +201,11 @@ const linkCurves = ref(false)
 const bStart = ref(bStartFor(TAIL_SECONDS))
 watch(aBuf, buf => { bStart.value = bStartFor(buf?.duration ?? TAIL_SECONDS) })
 const total = computed(() => bStart.value + (bBuf.value?.duration ?? HEAD_SECONDS))
+/** B lanes whose clip is longer than the timeline has room for; the part past the end is not played or sent. */
+const overhang = computed(() =>
+  voices.value.flatMap((v, n) =>
+    v.buf && v.start + v.buf.duration > total.value + 0.05 ? [voices.value.length > 1 ? `B${n + 1}` : 'B'] : []),
+)
 /** Play and send cover the whole timeline: every clip the DJ placed and all of the tail and head loaded. */
 const win = computed(() => ({ start: 0, end: total.value }))
 const clampStart = (duration: number, s: number) => Math.min(Math.max(0, s), Math.max(0, total.value - duration))
@@ -613,6 +618,7 @@ onBeforeUnmount(() => {
         @scrub-end="onScrubEnd"
         @delete-voice="onDeleteVoice"
       />
+      <p v-if="overhang.length" class="dj-overhang">{{ t('dj.overhang', { lanes: overhang.join(', ') }) }}</p>
       <div class="dj-curve-tools">
         <NButton size="small" :disabled="!aBuf || !bBuf || recording" @click="applyAutoDuck">{{ t('dj.auto_duck') }}</NButton>
         <NCheckbox v-model:checked="linkCurves" size="small">{{ t('dj.link_curves') }}</NCheckbox>
@@ -745,6 +751,11 @@ onBeforeUnmount(() => {
   flex-wrap: wrap;
   gap: 10px;
   min-width: 0;
+}
+.dj-overhang {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--dj-warn);
 }
 .dj-add-lane {
   align-self: flex-start;
