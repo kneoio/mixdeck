@@ -112,9 +112,15 @@ function roomFor(ctx: BaseAudioContext): AudioBuffer {
 
 export const bStartFor = (aDuration: number) => Math.max(0, aDuration - OVERLAP_SECONDS)
 
-/** A curve that leaves the song alone: flat and open, with a handle at each end to grab. */
-export function flatCurve(duration: number): EnvelopePoint[] {
-  return [{ time: 0, volume: 1 }, { time: Math.max(0.01, duration), volume: 1 }]
+/**
+ * A curve that leaves the song alone: flat and open, with a handle at each end to grab. `mid`
+ * adds a third handle part-way along, where the fade usually starts, so there is one to take hold of.
+ */
+export function flatCurve(duration: number, mid?: number): EnvelopePoint[] {
+  const end = Math.max(0.01, duration)
+  const points = [{ time: 0, volume: 1 }, { time: end, volume: 1 }]
+  if (mid !== undefined && mid > 0.05 && mid < end - 0.05) points.splice(1, 0, { time: mid, volume: 1 })
+  return points
 }
 
 /**

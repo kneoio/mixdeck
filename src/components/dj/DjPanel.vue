@@ -254,8 +254,20 @@ watch(linkCurves, on => {
 })
 // Sliding B moves the overlap, so B is paired with A again over its new position.
 watch(bStart, (_now, prev) => syncLinked(prev))
-watch(aBuf, buf => { duckA.value = flatCurve(buf?.duration ?? 0) })
-watch(bBuf, buf => { duckB.value = flatCurve(buf?.duration ?? 0) })
+/**
+ * Each song's curve starts with a handle where its fade usually happens: A's where C comes in, and
+ * C's where A ends, both at the edges of the overlap.
+ */
+function defaultCurveA() {
+  return flatCurve(aBuf.value?.duration ?? 0, bStart.value)
+}
+function defaultCurveC() {
+  const length = bBuf.value?.duration ?? 0
+  const overlapLength = (aBuf.value?.duration ?? 0) - bStart.value
+  return flatCurve(length, overlapLength > 0.05 ? overlapLength : length * 0.25)
+}
+watch(aBuf, () => { duckA.value = defaultCurveA() })
+watch(bBuf, () => { duckB.value = defaultCurveC() })
 watch([aBuf, bBuf, bStart], () => {
   voices.value = voices.value.map(v => (v.buf ? { ...v, start: clampStart(v.buf.duration, v.start) } : v))
 })
@@ -290,8 +302,8 @@ function applyAutoDuck() {
   duckB.value = autoCrossfade(from, to, bStart.value, b.duration, true)
 }
 function resetCurve() {
-  duckA.value = flatCurve(aBuf.value?.duration ?? 0)
-  duckB.value = flatCurve(bBuf.value?.duration ?? 0)
+  duckA.value = defaultCurveA()
+  duckB.value = defaultCurveC()
 }
 function onDeleteVoice(id: number) {
   if (sending.value) return
