@@ -200,8 +200,14 @@ const linkCurves = ref(false)
 
 /** Where B comes in. Seeded from the default overlap, then the DJ can slide B in time. */
 const bStart = ref(bStartFor(TAIL_SECONDS))
-watch(aBuf, buf => { bStart.value = bStartFor(buf?.duration ?? TAIL_SECONDS) })
-const total = computed(() => bStart.value + (bBuf.value?.duration ?? HEAD_SECONDS))
+/** Where A starts. Zero until the DJ slides A along the timeline. */
+const aStart = ref(0)
+const aEnd = computed(() => aStart.value + (aBuf.value?.duration ?? TAIL_SECONDS))
+watch(aBuf, buf => {
+  aStart.value = 0
+  bStart.value = bStartFor(buf?.duration ?? TAIL_SECONDS)
+})
+const total = computed(() => Math.max(aEnd.value, bStart.value + (bBuf.value?.duration ?? HEAD_SECONDS)))
 /** B lanes whose clip is longer than the timeline has room for; the part past the end is not played or sent. */
 const overhang = computed(() =>
   voices.value.flatMap((v, n) =>
@@ -220,7 +226,7 @@ const win = computed<MixWindow>(() => {
     return { start, end: Math.min(end, Math.max(manual.end, start + 1)) }
   }
   const first = Math.min(bStart.value, voiceStart.value ?? bStart.value)
-  const last = Math.max((aBuf.value?.duration ?? 0) + 15, voiceEnd.value + 8)
+  const last = Math.max(aEnd.value + 15, voiceEnd.value + 8)
   return { start: Math.max(0, first - 10), end: Math.min(end, last) }
 })
 // A new pair of songs is a new junction, so the range starts out following it again.
@@ -229,22 +235,22 @@ const clampStart = (duration: number, s: number) => Math.min(Math.max(0, s), Mat
 
 /** The stretch where both songs play together, in junction seconds. */
 const overlap = () => ({
-  from: bStart.value,
-  to: Math.min(aBuf.value?.duration ?? 0, bStart.value + (bBuf.value?.duration ?? 0)),
+  from: Math.max(aStart.value, bStart.value),
+  to: Math.min(aEnd.value, bStart.value + (bBuf.value?.duration ?? 0)),
 })
 /**
- * Pairs B's curve with A's over the overlap. `prevBStart` is passed when B has just slid: the
- * points B was given for the old overlap belong to that overlap, not to B, so they are dropped
+ * Pairs B's curve with A's over the overlap. `prev` is passed when a song has just slid: the
+ * points C was given for the old overlap belong to that overlap, not to C, so they are dropped
  * rather than kept, or every step of a slide would leave a few more behind.
  */
-function syncLinked(prevBStart?: number) {
+function syncLinked(prev?: { aStart: number; bStart: number }) {
   const a = aBuf.value
   const b = bBuf.value
   if (!linkCurves.value || !a || !b) return
-  const own = prevBStart === undefined
+  const own = prev === undefined
     ? duckB.value
-    : duckB.value.filter(p => p.time > a.duration - prevBStart + 1e-6)
-  duckB.value = pairedCurve(duckA.value, 0, a.duration, own, bStart.value, b.duration)
+    : duckB.value.filter(p => p.time > prev.aStart + a.duration - prev.bStart + 1e-6)
+  duckB.value = pairedCurve(duckA.value, aStart.value, a.duration, own, bStart.value, b.duration)
 }
 /** A falls and B rises across the overlap; whatever A does before it is left as it was. */
 function applyCrossfade() {
@@ -252,12 +258,15 @@ function applyCrossfade() {
   if (!a || !bBuf.value) return
   const { from, to } = overlap()
   if (to - from < 0.05) return
-  const before = duckA.value.filter(p => p.time < from - 1e-6)
+  // A's curve is in A's own seconds, so the overlap is taken relative to where A starts.
+  const fromA = from - aStart.value
+  const toA = to - aStart.value
+  const before = duckA.value.filter(p => p.time < fromA - 1e-6)
   duckA.value = [
     ...before,
-    { time: from, volume: 1 },
-    { time: to, volume: 0 },
-    ...(to < a.duration - 1e-6 ? [{ time: a.duration, volume: 0 }] : []),
+    { time: fromA, volume: 1 },
+    { time: toA, volume: 0 },
+    ...(toA < a.duration - 1e-6 ? [{ time: a.duration, volume: 0 }] : []),
   ]
   syncLinked()
 }
@@ -265,12 +274,13 @@ function applyCrossfade() {
 watch(linkCurves, on => {
   if (!on || !aBuf.value || !bBuf.value) return
   const { from } = overlap()
-  const untouched = !duckA.value.some(p => p.volume < 0.999 && p.time >= from - 1e-6)
+  const untouched = !duckA.value.some(p => p.volume < 0.999 && p.time >= from - aStart.value - 1e-6)
   if (untouched) applyCrossfade()
   else syncLinked()
 })
-// Sliding B moves the overlap, so B is paired with A again over its new position.
-watch(bStart, (_now, prev) => syncLinked(prev))
+// Sliding either song moves the overlap, so C is paired with A again over its new position.
+watch(bStart, (_now, prev) => syncLinked({ aStart: aStart.value, bStart: prev }))
+watch(aStart, (_now, prev) => syncLinked({ aStart: prev, bStart: bStart.value }))
 /** Seconds in from its edge that a song's default fade handle sits: 5 s before A ends, 5 s after C begins. */
 const FADE_HANDLE_SECONDS = 5
 function defaultCurveA() {
@@ -282,7 +292,7 @@ function defaultCurveC() {
 }
 watch(aBuf, () => { duckA.value = defaultCurveA() })
 watch(bBuf, () => { duckB.value = defaultCurveC() })
-watch([aBuf, bBuf, bStart], () => {
+watch([aBuf, bBuf, aStart, bStart], () => {
   voices.value = voices.value.map(v => (v.buf ? { ...v, start: clampStart(v.buf.duration, v.start) } : v))
 })
 
@@ -290,7 +300,7 @@ const model = computed<LinkModel | null>(() =>
   aBuf.value && bBuf.value
     ? {
         a: aBuf.value, b: bBuf.value, voices: voices.value,
-        bStart: bStart.value,
+        aStart: aStart.value, bStart: bStart.value,
         duckA: duckA.value, duckB: duckB.value,
       }
     : null,
@@ -305,14 +315,13 @@ function applyAutoDuck() {
   if (voiceStart.value !== null) {
     // Ducks across the whole voiced stretch, from the first clip's start to the last one's end.
     const length = voiceEnd.value - voiceStart.value
-    duckA.value = autoDuck(voiceStart.value, length, 0, a.duration)
+    duckA.value = autoDuck(voiceStart.value, length, aStart.value, a.duration)
     duckB.value = autoDuck(voiceStart.value, length, bStart.value, b.duration)
     return
   }
   // Nothing to duck under, so blend the songs across the stretch where they play together.
-  const from = bStart.value
-  const to = Math.min(a.duration, bStart.value + b.duration)
-  duckA.value = autoCrossfade(from, to, 0, a.duration, false)
+  const { from, to } = overlap()
+  duckA.value = autoCrossfade(from, to, aStart.value, a.duration, false)
   duckB.value = autoCrossfade(from, to, bStart.value, b.duration, true)
 }
 function resetCurve() {
@@ -477,7 +486,7 @@ function onScrubEnd() {
 }
 
 // Edits are heard as they are made; only losing the model (a song removed) ends the audition.
-watch([voices, duckA, duckB, aBuf, bBuf, bStart, win], () => {
+watch([voices, duckA, duckB, aBuf, bBuf, aStart, bStart, win], () => {
   if (!previewing.value) return
   if (model.value) preview.refresh(model.value, win.value)
   else stopPreview()
@@ -625,6 +634,7 @@ onBeforeUnmount(() => {
         v-model:voices="voices"
         v-model:duck-a="duckA"
         v-model:duck-b="duckB"
+        v-model:a-start="aStart"
         v-model:b-start="bStart"
         :a="aBuf"
         :b="bBuf"

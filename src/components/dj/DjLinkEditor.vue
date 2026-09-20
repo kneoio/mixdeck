@@ -17,6 +17,7 @@ const props = defineProps<{
   b: AudioBuffer | null
   /** The B lanes, top to bottom. Each has its own clip, curve and effects. */
   voices: VoiceLane[]
+  aStart: number
   bStart: number
   total: number
   /** A volume curve per song, in that song's own seconds, edited by the DJ. */
@@ -38,6 +39,7 @@ const emit = defineEmits<{
   'update:voices': [voices: VoiceLane[]]
   'update:duckA': [duck: EnvelopePoint[]]
   'update:duckB': [duck: EnvelopePoint[]]
+  'update:aStart': [seconds: number]
   'update:bStart': [seconds: number]
   'update:window': [range: MixWindow]
   'record-end': [blob: Blob, id: number]
@@ -113,7 +115,7 @@ watch([() => props.a, () => props.b], async ([a, b]) => {
 
 const px = (seconds: number) => `${seconds * pps.value}px`
 const trackStyle = (start: number, duration: number) => ({ left: px(start), width: px(duration) })
-const aStyle = computed(() => trackStyle(0, props.a?.duration ?? 0))
+const aStyle = computed(() => trackStyle(props.aStart, props.a?.duration ?? 0))
 const bStyle = computed(() => trackStyle(props.bStart, props.b?.duration ?? 0))
 const voiceStyle = (v: VoiceLane) =>
   props.recordingId === v.id ? { left: '0px', width: '100%' } : trackStyle(v.start, v.buf?.duration ?? 0)
@@ -129,7 +131,7 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), h
  */
 type Lane = 'a' | 'b' | number
 const voiceOf = (id: number) => props.voices.find(v => v.id === id)
-const laneStart = (lane: Lane) => (lane === 'a' ? 0 : lane === 'b' ? props.bStart : voiceOf(lane)?.start ?? 0)
+const laneStart = (lane: Lane) => (lane === 'a' ? props.aStart : lane === 'b' ? props.bStart : voiceOf(lane)?.start ?? 0)
 const laneDuration = (lane: Lane) =>
   lane === 'a' ? props.a?.duration ?? 0 : lane === 'b' ? props.b?.duration ?? 0 : voiceDuration(voiceOf(lane) ?? ({} as VoiceLane))
 const laneCurve = (lane: Lane): EnvelopePoint[] =>
@@ -363,14 +365,15 @@ function onDragEnd() {
  * Sliding C along the timeline to set how far it overlaps A, or how much room it leaves after A. Movement has to clear a few pixels
  * first, so pressing on the lane still adds a duck point instead of nudging the song.
  */
-let songDrag: { x: number; grab: number; left: number; live: boolean; next: number | null; raf: number } | null = null
+let songDrag: { which: 'a' | 'b'; x: number; grab: number; left: number; live: boolean; next: number | null; raf: number } | null = null
 
-function onSongDown(e: PointerEvent) {
+function onSongDown(e: PointerEvent, which: 'a' | 'b') {
   const area = areaEl.value
   if (!props.b || !props.a || !area || pps.value <= 0) return
   const left = area.getBoundingClientRect().left
-  // `grab` is where on C's leading edge the pointer took hold, so the edge stays under it.
-  songDrag = { x: e.clientX, grab: e.clientX - (left + props.bStart * pps.value), left, live: false, next: null, raf: 0 }
+  const start = which === 'a' ? props.aStart : props.bStart
+  // `grab` is where on the song's leading edge the pointer took hold, so the edge stays under it.
+  songDrag = { which, x: e.clientX, grab: e.clientX - (left + start * pps.value), left, live: false, next: null, raf: 0 }
   capture(e)
 }
 function onSongMove(e: PointerEvent) {
@@ -380,15 +383,19 @@ function onSongMove(e: PointerEvent) {
     songDrag.live = true
     dragging.value = true
   }
-  const x = e.clientX - songDrag.grab - songDrag.left
-  songDrag.next = clamp(x / pps.value, 0, (props.a?.duration ?? 0) + MAX_GAP_SECONDS)
+  const at = (e.clientX - songDrag.grab - songDrag.left) / pps.value
+  songDrag.next = songDrag.which === 'a'
+    // A can start anywhere up to where C ends; C can go up to a gap past the end of A.
+    ? clamp(at, 0, props.bStart + (props.b?.duration ?? 0))
+    : clamp(at, 0, props.aStart + (props.a?.duration ?? 0) + MAX_GAP_SECONDS)
   if (!songDrag.raf) songDrag.raf = requestAnimationFrame(flushSong)
 }
 function flushSong() {
   if (!songDrag) return
   songDrag.raf = 0
   if (songDrag.next === null) return
-  emit('update:bStart', songDrag.next)
+  if (songDrag.which === 'a') emit('update:aStart', songDrag.next)
+  else emit('update:bStart', songDrag.next)
   songDrag.next = null
 }
 function onSongUp() {
@@ -516,8 +523,11 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
       <div class="dj-lane dj-tone-a">
         <div v-if="!a" class="dj-lane-empty">{{ t('dj.pick_a') }}</div>
         <div ref="aEl" class="dj-track" :style="aStyle" />
-        <span v-if="a && titleA" class="dj-lane-title">{{ titleA }}</span>
-        <svg v-if="a" class="dj-env" :width="areaWidth" :height="LANE_H">
+        <span v-if="a && titleA" class="dj-lane-title dj-lane-title-b" :style="{ left: px(aStart) }">{{ titleA }}</span>
+        <svg
+          v-if="a" class="dj-env dj-env-slidable" :width="areaWidth" :height="LANE_H"
+          @pointerdown="onSongDown($event, 'a')" @pointermove="onSongMove" @pointerup="onSongUp" @pointercancel="onSongUp"
+        >
           <polyline
             class="dj-env-hit" :points="envelopeLine('a')"
             @pointerdown.stop="onLineDown($event, 'a')" @pointermove="onHandleMove"
@@ -529,8 +539,8 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
             @pointerdown.stop="onHandleDown($event, 'a', i)" @pointermove="onHandleMove" @pointerup="onHandleUp" @pointercancel="onHandleUp"
             @dblclick.stop="removePoint('a', i)"
           >
-            <circle class="dj-handle-hit" :cx="p.time * pps" :cy="yOf(p.volume)" r="15" />
-            <circle class="dj-handle" :cx="p.time * pps" :cy="yOf(p.volume)" r="7" />
+            <circle class="dj-handle-hit" :cx="(aStart + p.time) * pps" :cy="yOf(p.volume)" r="15" />
+            <circle class="dj-handle" :cx="(aStart + p.time) * pps" :cy="yOf(p.volume)" r="7" />
           </g>
         </svg>
       </div>
@@ -591,7 +601,7 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
         <span v-if="b && titleB" class="dj-lane-title dj-lane-title-b" :style="{ left: px(bStart) }">{{ titleB }}</span>
         <svg
           v-if="b" class="dj-env dj-env-slidable" :width="areaWidth" :height="LANE_H"
-          @pointerdown="onSongDown" @pointermove="onSongMove" @pointerup="onSongUp" @pointercancel="onSongUp"
+          @pointerdown="onSongDown($event, 'b')" @pointermove="onSongMove" @pointerup="onSongUp" @pointercancel="onSongUp"
         >
           <polyline
             class="dj-env-hit" :points="envelopeLine('b')"

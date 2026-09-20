@@ -27,11 +27,12 @@ export const emptyLane = (id: number): VoiceLane => ({
   id, buf: null, source: null, start: 0, duck: [], reverb: 0, echo: 0, radio: 0, distortion: 0,
 })
 
-/** Junction timeline: A's tail starts at 0, C's head at `bStart`, and each B lane at its own `start`. */
+/** Junction timeline: A starts at `aStart`, C at `bStart`, and each B lane at its own `start`. */
 export interface LinkModel {
   a: AudioBuffer
   b: AudioBuffer
   voices: VoiceLane[]
+  aStart: number
   bStart: number
   /**
    * A volume curve per song, in that song's own seconds from its first sample. Keeping them
@@ -241,7 +242,7 @@ interface FxNodes {
 
 function layersOf(model: LinkModel) {
   return [
-    { key: 'a', buf: model.a, start: 0, env: model.duckA, fx: null as FxAmounts | null },
+    { key: 'a', buf: model.a, start: model.aStart, env: model.duckA, fx: null as FxAmounts | null },
     { key: 'c', buf: model.b, start: model.bStart, env: model.duckB, fx: null as FxAmounts | null },
     ...model.voices.flatMap(v => v.buf
       ? [{
