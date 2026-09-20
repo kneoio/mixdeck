@@ -7,7 +7,7 @@ import RecordPlugin from 'wavesurfer.js/plugins/record'
 import RegionsPlugin, { type Region } from 'wavesurfer.js/plugins/regions'
 import TimelinePlugin from 'wavesurfer.js/plugins/timeline'
 import { peaksOf } from '@/utils/djAudio'
-import { envelopeAt, type DuckShape, type EnvelopePoint, type MixWindow } from '@/utils/djMix'
+import { envelopeAt, type EnvelopePoint, type MixWindow } from '@/utils/djMix'
 
 const LANE_H = 96
 const WAVE_H = 84
@@ -22,8 +22,8 @@ const props = defineProps<{
   voiceStart: number
   /** Vocal entry, seconds into B's head. */
   vocalEntry: number
-  envelope: EnvelopePoint[]
-  duck: DuckShape
+  /** Music volume curve (absolute timeline seconds), edited by the DJ. */
+  duck: EnvelopePoint[]
   window: MixWindow
   playhead: number | null
   recording: boolean
@@ -33,7 +33,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:voiceStart': [seconds: number]
   'update:vocalEntry': [seconds: number]
-  'update:duck': [duck: DuckShape]
+  'update:duck': [duck: EnvelopePoint[]]
   'record-end': [blob: Blob]
   'record-error': [error: unknown]
 }>()
@@ -63,9 +63,9 @@ const voiceStyle = computed(() =>
 
 /** The ducking curve, drawn over the music it applies to. */
 function envelopeLine(start: number, end: number): string {
-  const times = [start, ...props.envelope.map(p => p.time).filter(tm => tm > start && tm < end), end]
+  const times = [start, ...props.duck.map(p => p.time).filter(tm => tm > start && tm < end), end]
   return times
-    .map(tm => `${tm * pps.value},${yOf(envelopeAt(props.envelope, tm))}`)
+    .map(tm => `${tm * pps.value},${yOf(envelopeAt(props.duck, tm))}`)
     .join(' ')
 }
 const envLineA = computed(() => (props.a ? envelopeLine(0, props.a.duration) : ''))
@@ -75,9 +75,7 @@ const yOf = (volume: number) => 4 + (1 - volume) * (LANE_H - 8)
 const MIN_GAP = 0.05
 const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi)
 
-/** One draggable handle per envelope point, free in both time and volume. */
-const handles = computed(() => (props.voice ? props.envelope.map((p, i) => ({ i, time: p.time, volume: p.volume })) : []))
-const handlesIn = (start: number, end: number) => handles.value.filter(h => h.time >= start && h.time <= end)
+const fadeLine = computed(() => envelopeLine(0, props.total))
 
 let handleDrag: { i: number; svg: SVGSVGElement } | null = null
 function onHandleDown(e: PointerEvent, i: number) {
@@ -90,17 +88,31 @@ function onHandleMove(e: PointerEvent) {
   if (!handleDrag) return
   const { i, svg } = handleDrag
   const rect = svg.getBoundingClientRect()
-  const pts = props.envelope
+  const pts = props.duck
   const time = clamp(
     (e.clientX - rect.left) / pps.value,
     i > 0 ? pts[i - 1].time + MIN_GAP : 0,
     i < pts.length - 1 ? pts[i + 1].time - MIN_GAP : props.total,
   )
-  const vol = clamp(1 - (e.clientY - rect.top - 4) / (LANE_H - 8), 0, 1)
-  const base = props.duck[i].ref === 'start' ? props.voiceStart : props.voiceStart + voiceDuration.value
-  emit('update:duck', props.duck.map((p, j) => (j === i ? { ...p, dt: time - base, vol } : p)))
+  const volume = clamp(1 - (e.clientY - rect.top - 4) / (LANE_H - 8), 0, 1)
+  emit('update:duck', pts.map((p, j) => (j === i ? { time, volume } : p)))
 }
 function onHandleUp() { handleDrag = null }
+
+/** Double-click the fade row to add a point; the first one also anchors both ends of the timeline. */
+function addPoint(e: MouseEvent) {
+  const rect = (e.currentTarget as SVGSVGElement).getBoundingClientRect()
+  const time = clamp((e.clientX - rect.left) / pps.value, 0, props.total)
+  const volume = clamp(1 - (e.clientY - rect.top - 4) / (LANE_H - 8), 0, 1)
+  const pts = props.duck.length ? [...props.duck] : [{ time: 0, volume: 1 }, { time: props.total, volume: 1 }]
+  if (pts.some(p => Math.abs(p.time - time) < MIN_GAP)) return
+  pts.push({ time, volume })
+  pts.sort((x, y) => x.time - y.time)
+  emit('update:duck', pts)
+}
+function removePoint(i: number) {
+  emit('update:duck', props.duck.filter((_, j) => j !== i))
+}
 
 let rulerWs: WaveSurfer | null = null
 let aWs: WaveSurfer | null = null
@@ -248,6 +260,7 @@ function onKey(e: KeyboardEvent) {
       <div class="dj-gutter-lane"><b>A</b><small>{{ t('dj.lane_tail') }}</small></div>
       <div class="dj-gutter-lane dj-gutter-voice"><b>{{ t('dj.lane_voice') }}</b><small>{{ t('dj.lane_drag') }}</small></div>
       <div class="dj-gutter-lane"><b>B</b><small>{{ t('dj.lane_head') }}</small></div>
+      <div class="dj-gutter-lane dj-gutter-fade"><b>{{ t('dj.lane_fade') }}</b><small>{{ t('dj.lane_fade_hint') }}</small></div>
     </div>
 
     <div ref="areaEl" class="dj-area">
@@ -260,14 +273,7 @@ function onKey(e: KeyboardEvent) {
         <div v-if="!a" class="dj-lane-empty">{{ t('dj.pick_a') }}</div>
         <div ref="aEl" class="dj-track" :style="aStyle" />
         <span v-if="a && titleA" class="dj-lane-title">{{ titleA }}</span>
-        <svg v-if="a" class="dj-env" :width="areaWidth" :height="LANE_H">
-          <polyline :points="envLineA" />
-          <circle
-            v-for="h in handlesIn(0, a.duration)" :key="h.i" class="dj-handle"
-            :cx="h.time * pps" :cy="yOf(h.volume)" r="6"
-            @pointerdown="onHandleDown($event, h.i)" @pointermove="onHandleMove" @pointerup="onHandleUp" @pointercancel="onHandleUp"
-          />
-        </svg>
+        <svg v-if="a" class="dj-env" :width="areaWidth" :height="LANE_H"><polyline :points="envLineA" /></svg>
       </div>
 
       <div class="dj-lane dj-lane-voice">
@@ -290,12 +296,17 @@ function onKey(e: KeyboardEvent) {
         <div v-if="!b" class="dj-lane-empty">{{ t('dj.pick_b') }}</div>
         <div ref="bEl" class="dj-track" :style="bStyle" />
         <span v-if="b && titleB" class="dj-lane-title dj-lane-title-b" :style="{ left: px(bStart) }">{{ titleB }}</span>
-        <svg v-if="b" class="dj-env" :width="areaWidth" :height="LANE_H">
-          <polyline :points="envLineB" />
+        <svg v-if="b" class="dj-env" :width="areaWidth" :height="LANE_H"><polyline :points="envLineB" /></svg>
+      </div>
+
+      <div class="dj-lane dj-lane-fade">
+        <svg class="dj-fade" :width="areaWidth" :height="LANE_H" @dblclick="addPoint">
+          <line class="dj-fade-base" x1="0" :x2="areaWidth" :y1="yOf(1)" :y2="yOf(1)" />
+          <polyline :points="fadeLine" />
           <circle
-            v-for="h in handlesIn(bStart, bStart + b.duration)" :key="h.i" class="dj-handle"
-            :cx="h.time * pps" :cy="yOf(h.volume)" r="6"
-            @pointerdown="onHandleDown($event, h.i)" @pointermove="onHandleMove" @pointerup="onHandleUp" @pointercancel="onHandleUp"
+            v-for="(p, i) in duck" :key="i" class="dj-handle" :cx="p.time * pps" :cy="yOf(p.volume)" r="7"
+            @pointerdown="onHandleDown($event, i)" @pointermove="onHandleMove" @pointerup="onHandleUp" @pointercancel="onHandleUp"
+            @dblclick.stop="removePoint(i)"
           />
         </svg>
       </div>
@@ -437,21 +448,41 @@ function onKey(e: KeyboardEvent) {
 }
 .dj-env polyline {
   fill: none;
-  stroke: var(--dj-accent);
+  stroke: var(--dj-fade);
   stroke-width: 2;
   stroke-linejoin: round;
-  filter: drop-shadow(0 0 3px var(--dj-accent));
+  filter: drop-shadow(0 0 3px var(--dj-fade));
+}
+.dj-lane-fade {
+  overflow: visible;
+}
+.dj-fade {
+  display: block;
+  cursor: crosshair;
+}
+.dj-fade polyline {
+  fill: none;
+  stroke: var(--dj-fade);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.dj-fade-base {
+  stroke: var(--dj-border);
+  stroke-dasharray: 4 4;
+}
+.dj-gutter-fade b {
+  color: var(--dj-fade);
 }
 .dj-handle {
   fill: var(--dj-surface);
-  stroke: var(--dj-accent);
+  stroke: var(--dj-fade);
   stroke-width: 2;
   pointer-events: all;
   touch-action: none;
   cursor: move;
 }
 .dj-handle:hover {
-  fill: var(--dj-accent);
+  fill: var(--dj-fade);
 }
 .dj-overlay {
   position: absolute;

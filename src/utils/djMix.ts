@@ -1,14 +1,5 @@
 import { getAudioContext, OVERLAP_SECONDS, WINDOW_SECONDS } from './djAudio'
 
-/** One point of the music envelope, positioned relative to the voice's start or end so it follows the voice. */
-export interface DuckPoint { ref: 'start' | 'end'; dt: number; vol: number }
-export type DuckShape = DuckPoint[]
-export const defaultDuck = (): DuckShape => [
-  { ref: 'start', dt: -0.35, vol: 1 },
-  { ref: 'start', dt: 0, vol: 0.22 },
-  { ref: 'end', dt: 0, vol: 0.22 },
-  { ref: 'end', dt: 0.7, vol: 1 },
-]
 const EDGE_FADE = 0.04
 /** Seconds of music kept ahead of the voice inside the junction window. */
 const WINDOW_PRE_ROLL = 6
@@ -23,15 +14,21 @@ export interface LinkModel {
   voice: AudioBuffer | null
   bStart: number
   voiceStart: number
-  duck: DuckShape
+  /** Music volume envelope, absolute timeline seconds. Empty = no ducking. */
+  duck: EnvelopePoint[]
 }
 
 export const bStartFor = (aDuration: number) => Math.max(0, aDuration - OVERLAP_SECONDS)
 
-/** Music volume envelope: dip under the voice, recover after it. Empty without a voice. */
-export function duckEnvelope(voiceStart: number, voiceDuration: number, duck: DuckShape): EnvelopePoint[] {
+/** Starting point for a manual curve: dip under the voice, recover after it. */
+export function autoDuck(voiceStart: number, voiceDuration: number): EnvelopePoint[] {
   const end = voiceStart + voiceDuration
-  return duck.map(p => ({ time: Math.max(0, (p.ref === 'start' ? voiceStart : end) + p.dt), volume: p.vol }))
+  return [
+    { time: Math.max(0, voiceStart - 0.35), volume: 1 },
+    { time: voiceStart, volume: 0.22 },
+    { time: end, volume: 0.22 },
+    { time: end + 0.7, volume: 1 },
+  ]
 }
 
 export function envelopeAt(points: EnvelopePoint[], t: number): number {
@@ -74,7 +71,7 @@ export function scheduleMix(
   master.gain.linearRampToValueAtTime(0, when + length)
   master.connect(dest)
 
-  const envelope = model.voice ? duckEnvelope(model.voiceStart, model.voice.duration, model.duck) : []
+  const envelope = model.duck
   const layers = [
     { buf: model.a, start: 0, duck: true },
     { buf: model.b, start: model.bStart, duck: true },

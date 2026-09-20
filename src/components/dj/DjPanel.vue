@@ -13,7 +13,7 @@ import {
   DEFAULT_VOCAL_ENTRY, HEAD_SECONDS, MAX_VOICE_SECONDS, TAIL_SECONDS,
 } from '@/utils/djAudio'
 import {
-  bStartFor, defaultDuck, duckEnvelope, encodeWav, junctionWindow, LinkPreview, renderLink, type DuckShape, type LinkModel,
+  autoDuck, bStartFor, encodeWav, junctionWindow, LinkPreview, renderLink, type EnvelopePoint, type LinkModel,
 } from '@/utils/djMix'
 
 const { t } = useI18n()
@@ -34,6 +34,8 @@ const themeStyle = computed(() => ({
   '--dj-accent-hover': themeVars.value.primaryColorHover,
   '--dj-live': themeVars.value.successColor,
   '--dj-danger': themeVars.value.errorColor,
+  /** The project's yellow (LedYellow, free-plan badge). */
+  '--dj-fade': '#FFD600',
 }))
 
 // ── Session / ON AIR ────────────────────────────────────────────────
@@ -133,11 +135,11 @@ watch(songB, s => loadSong(s, 'b'))
 const voice = shallowRef<AudioBuffer | null>(null)
 const voiceStart = ref(0)
 const vocalEntry = ref(DEFAULT_VOCAL_ENTRY)
-const duck = ref<DuckShape>(defaultDuck())
+/** Music volume curve. Empty until the DJ adds points or presses Auto duck. */
+const duck = ref<EnvelopePoint[]>([])
 
 const bStart = computed(() => bStartFor(aBuf.value?.duration ?? TAIL_SECONDS))
 const total = computed(() => bStart.value + (bBuf.value?.duration ?? HEAD_SECONDS))
-const envelope = computed(() => (voice.value ? duckEnvelope(voiceStart.value, voice.value.duration, duck.value) : []))
 const win = computed(() => junctionWindow({
   bStart: bStart.value, voiceStart: voiceStart.value, total: total.value, hasVoice: !!voice.value,
 }))
@@ -153,6 +155,18 @@ const model = computed<LinkModel | null>(() =>
     ? { a: aBuf.value, b: bBuf.value, voice: voice.value, bStart: bStart.value, voiceStart: voiceStart.value, duck: duck.value }
     : null,
 )
+
+function applyAutoDuck() {
+  if (voice.value) duck.value = autoDuck(voiceStart.value, voice.value.duration)
+}
+function resetCurve() {
+  duck.value = []
+}
+function deleteRecording() {
+  stopPreview()
+  voice.value = null
+  voiceStart.value = 0
+}
 
 // ── Recording ───────────────────────────────────────────────────────
 const editor = ref<InstanceType<typeof DjLinkEditor> | null>(null)
@@ -320,7 +334,6 @@ onBeforeUnmount(() => {
         :voice="voice"
         :b-start="bStart"
         :total="total"
-        :envelope="envelope"
         :window="win"
         :playhead="playhead"
         :recording="recording"
@@ -329,10 +342,18 @@ onBeforeUnmount(() => {
         @record-end="onRecordEnd"
         @record-error="onRecordError"
       />
+      <div class="dj-curve-tools">
+        <NButton size="small" :disabled="!voice || recording" @click="applyAutoDuck">{{ t('dj.auto_duck') }}</NButton>
+        <NButton size="small" :disabled="!duck.length" @click="resetCurve">{{ t('dj.reset_curve') }}</NButton>
+        <span>{{ t('dj.fade_hint') }}</span>
+      </div>
       <div class="dj-controls">
         <NButton :type="recording ? 'error' : 'default'" size="large" :disabled="!canRecord" @click="toggleRec">
           <span class="dj-rec-dot" :class="{ 'dj-rec-dot--on': recording }" />
           {{ recording ? `${t('dj.rec_stop')} ${recSeconds}s / ${MAX_VOICE_SECONDS}s` : t('dj.rec') }}
+        </NButton>
+        <NButton size="large" :disabled="!voice || recording || sending" @click="deleteRecording">
+          {{ t('dj.delete_rec') }}
         </NButton>
         <NButton size="large" type="primary" secondary :disabled="!canPreview" @click="togglePreview">
           <span class="dj-preview-icon">{{ previewing ? '■' : '▶' }}</span>
@@ -434,6 +455,14 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
+}
+.dj-curve-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  color: var(--dj-muted);
 }
 .dj-controls {
   display: flex;
