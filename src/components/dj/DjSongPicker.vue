@@ -10,6 +10,9 @@ export interface DjSong {
   id: string
   title: string
   artist: string
+  /** Deck parameters, when the library knows them. */
+  bpm?: number
+  key?: string
 }
 
 const props = defineProps<{
@@ -20,6 +23,7 @@ const props = defineProps<{
   /** Slug of the song already chosen in the other slot. */
   excludeSlug?: string | null
   loading?: boolean
+  disabled?: boolean
 }>()
 const emit = defineEmits<{ 'update:modelValue': [song: DjSong | null] }>()
 
@@ -42,6 +46,8 @@ async function search(term = '') {
       id: e.id ?? e.slugName,
       title: e.title ?? '',
       artist: e.artist ?? '',
+      bpm: e.bpm ?? undefined,
+      key: e.key ?? undefined,
     }))
   } catch {
     if (seq === searchSeq) songs.value = []
@@ -75,6 +81,7 @@ onMounted(() => search())
       :value="modelValue?.slugName ?? null"
       :options="options"
       :loading="searching || loading"
+      :disabled="disabled"
       filterable
       remote
       clearable
@@ -102,8 +109,8 @@ onMounted(() => search())
   justify-content: center;
   font-weight: 700;
   font-size: 0.85rem;
-  background: var(--dj-accent);
-  color: #fff;
+  background: var(--dj-slot, var(--dj-accent));
+  color: #1a1a1a;
 }
 .dj-picker :deep(.n-select) {
   flex: 1;

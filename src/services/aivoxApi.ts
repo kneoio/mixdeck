@@ -21,10 +21,20 @@ export interface AivoxQueueEntry {
   }
 }
 
+/** How long the DJ still has to finish and send the current link. Assumed shape, not confirmed with the backend. */
+export interface AivoxDeadline {
+  /** Seconds until the queued "up next" song actually starts and can no longer be changed. */
+  secondsUntilLocked: number
+  /** Seconds the system reserves to render/upload the finished mix before air. */
+  stitchBufferSeconds: number
+}
+
 export interface AivoxQueueResponse {
   brandId: string
   updatedAt: string
   fullQueue: AivoxQueueEntry[]
+  /** Absent or `null` when nothing is queued yet, or the backend doesn't report a deadline. */
+  deadline?: AivoxDeadline | null
 }
 
 export type AivoxDashboardStreamType = 'RADIO' | 'OTS'

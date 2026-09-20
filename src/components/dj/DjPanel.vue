@@ -1,24 +1,28 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NButton, useMessage, useThemeVars } from 'naive-ui'
+import { NButton, NCheckbox, NDrawer, NDrawerContent, NIcon, useMessage, useThemeVars } from 'naive-ui'
+import { ChatbubblesOutline } from '@vicons/ionicons5'
 import LedIndicator from '@/components/LedIndicator.vue'
 import AivoxQueue from '@/components/AivoxQueue.vue'
 import DjLinkEditor from '@/components/dj/DjLinkEditor.vue'
 import DjSongPicker, { type DjSong } from '@/components/dj/DjSongPicker.vue'
-import djApiService from '@/services/djApi'
+import DjChat from '@/components/dj/DjChat.vue'
+import { useDjColors } from '@/utils/djColors'
+import djApiService, { type DjChatContext } from '@/services/djApi'
 import aivoxApiService, { type AivoxQueueEntry } from '@/services/aivoxApi'
 import {
   cropHead, cropTail, decodeBlob, fetchSongBuffer,
-  DEFAULT_VOCAL_ENTRY, HEAD_SECONDS, MAX_VOICE_SECONDS, TAIL_SECONDS,
+  HEAD_SECONDS, MAX_VOICE_SECONDS, TAIL_SECONDS,
 } from '@/utils/djAudio'
 import {
-  autoDuck, bStartFor, encodeWav, junctionWindow, LinkPreview, renderLink, type EnvelopePoint, type LinkModel,
+  autoCrossfade, autoDuck, bStartFor, encodeWav, flatCurve, junctionWindow, LinkPreview, pairedCurve, renderLink, type EnvelopePoint, type LinkModel,
 } from '@/utils/djMix'
 
 const { t } = useI18n()
 const message = useMessage()
 const themeVars = useThemeVars()
+const djColors = useDjColors()
 
 const props = defineProps<{ brandSlug: string }>()
 const emit = defineEmits<{ close: [] }>()
@@ -34,8 +38,12 @@ const themeStyle = computed(() => ({
   '--dj-accent-hover': themeVars.value.primaryColorHover,
   '--dj-live': themeVars.value.successColor,
   '--dj-danger': themeVars.value.errorColor,
+  '--dj-warn': themeVars.value.warningColor,
   /** The project's yellow (LedYellow, free-plan badge). */
   '--dj-fade': '#FFD600',
+  '--dj-a': djColors.value.a,
+  '--dj-b': djColors.value.b,
+  '--dj-c': djColors.value.c,
 }))
 
 // ── Session / ON AIR ────────────────────────────────────────────────
@@ -76,14 +84,45 @@ async function pollLive() {
 }
 
 const queueEntries = ref<AivoxQueueEntry[]>([])
+/** Wall-clock time the queued song locks in, and how much of that the system needs for itself. */
+const deadlineAt = ref<number | null>(null)
+const stitchBuffer = ref(0)
 async function pollQueue() {
   try {
     const res = await aivoxApiService.queue(brandSlug.value)
     const all = Array.isArray(res.fullQueue) ? res.fullQueue : []
     queueEntries.value = all.filter(e => e.tech.queueType === 'prioritized' || e.tech.queueType === 'regular')
+    if (res.deadline) {
+      deadlineAt.value = Date.now() + res.deadline.secondsUntilLocked * 1000
+      stitchBuffer.value = res.deadline.stitchBufferSeconds
+    } else {
+      deadlineAt.value = null
+    }
   } catch {
     queueEntries.value = []
+    deadlineAt.value = null
   }
+}
+
+/** Visual scale only (the backend reports a remaining time, not a fixed total). */
+const DEADLINE_VISUAL_MAX_SECONDS = 90
+const deadlineSeconds = computed(() => {
+  if (deadlineAt.value === null) return null
+  return Math.max(0, Math.round((deadlineAt.value - now.value) / 1000) - stitchBuffer.value)
+})
+const deadlineUrgency = computed(() => {
+  if (deadlineSeconds.value === null) return 'ok'
+  if (deadlineSeconds.value <= 10) return 'critical'
+  if (deadlineSeconds.value <= 30) return 'warn'
+  return 'ok'
+})
+const deadlinePct = computed(() =>
+  deadlineSeconds.value === null ? 0 : Math.min(100, (deadlineSeconds.value / DEADLINE_VISUAL_MAX_SECONDS) * 100),
+)
+function formatCountdown(seconds: number) {
+  const mm = Math.floor(seconds / 60)
+  const ss = String(seconds % 60).padStart(2, '0')
+  return `${mm}:${ss}`
 }
 
 async function endSession() {
@@ -106,6 +145,8 @@ async function endSession() {
 // ── Songs ───────────────────────────────────────────────────────────
 const songA = ref<DjSong | null>(null)
 const songB = ref<DjSong | null>(null)
+/** Locked once a link is sent to air: the next A is always the song that just went out. */
+const aLocked = ref(false)
 const aBuf = shallowRef<AudioBuffer | null>(null)
 const bBuf = shallowRef<AudioBuffer | null>(null)
 const loadingA = ref(false)
@@ -133,38 +174,119 @@ watch(songB, s => loadSong(s, 'b'))
 
 // ── Junction timeline ───────────────────────────────────────────────
 const voice = shallowRef<AudioBuffer | null>(null)
+const voiceSource = ref<'rec' | 'ai' | 'file' | null>(null)
 const voiceStart = ref(0)
-const vocalEntry = ref(DEFAULT_VOCAL_ENTRY)
-/** Music volume curve. Empty until the DJ adds points or presses Auto duck. */
-const duck = ref<EnvelopePoint[]>([])
+/** Effects on whatever is in B, each 0 to 1. Heard in Play and baked into what is sent. */
+const reverb = ref(0)
+const echo = ref(0)
+const radio = ref(0)
+const distortion = ref(0)
+/**
+ * A volume curve per song, in that song's own seconds. Each is seeded flat and open the moment
+ * its song loads, so there are always handles on the lane to take hold of.
+ */
+const duckA = ref<EnvelopePoint[]>([])
+const duckB = ref<EnvelopePoint[]>([])
+/** Optional: while on, the two curves are one, as they used to be. Off by default. */
+const linkCurves = ref(false)
 
-const bStart = computed(() => bStartFor(aBuf.value?.duration ?? TAIL_SECONDS))
+/** Where B comes in. Seeded from the default overlap, then the DJ can slide B in time. */
+const bStart = ref(bStartFor(TAIL_SECONDS))
+watch(aBuf, buf => { bStart.value = bStartFor(buf?.duration ?? TAIL_SECONDS) })
 const total = computed(() => bStart.value + (bBuf.value?.duration ?? HEAD_SECONDS))
 const win = computed(() => junctionWindow({
   bStart: bStart.value, voiceStart: voiceStart.value, total: total.value, hasVoice: !!voice.value,
 }))
 const clampVoice = (s: number) => Math.min(Math.max(0, s), Math.max(0, total.value - (voice.value?.duration ?? 0)))
 
-watch(bBuf, b => {
-  vocalEntry.value = Math.min(DEFAULT_VOCAL_ENTRY, Math.max(0, (b?.duration ?? HEAD_SECONDS) - 1))
+/** The stretch where both songs play together, in junction seconds. */
+const overlap = () => ({
+  from: bStart.value,
+  to: Math.min(aBuf.value?.duration ?? 0, bStart.value + (bBuf.value?.duration ?? 0)),
 })
+/**
+ * Pairs B's curve with A's over the overlap. `prevBStart` is passed when B has just slid: the
+ * points B was given for the old overlap belong to that overlap, not to B, so they are dropped
+ * rather than kept, or every step of a slide would leave a few more behind.
+ */
+function syncLinked(prevBStart?: number) {
+  const a = aBuf.value
+  const b = bBuf.value
+  if (!linkCurves.value || !a || !b) return
+  const own = prevBStart === undefined
+    ? duckB.value
+    : duckB.value.filter(p => p.time > a.duration - prevBStart + 1e-6)
+  duckB.value = pairedCurve(duckA.value, 0, a.duration, own, bStart.value, b.duration)
+}
+/** A falls and B rises across the overlap; whatever A does before it is left as it was. */
+function applyCrossfade() {
+  const a = aBuf.value
+  if (!a || !bBuf.value) return
+  const { from, to } = overlap()
+  if (to - from < 0.05) return
+  const before = duckA.value.filter(p => p.time < from - 1e-6)
+  duckA.value = [
+    ...before,
+    { time: from, volume: 1 },
+    { time: to, volume: 0 },
+    ...(to < a.duration - 1e-6 ? [{ time: a.duration, volume: 0 }] : []),
+  ]
+  syncLinked()
+}
+// Linking two untouched curves would leave B silent through the overlap, so start from a crossfade.
+watch(linkCurves, on => {
+  if (!on || !aBuf.value || !bBuf.value) return
+  const { from } = overlap()
+  const untouched = !duckA.value.some(p => p.volume < 0.999 && p.time >= from - 1e-6)
+  if (untouched) applyCrossfade()
+  else syncLinked()
+})
+// Sliding B moves the overlap, so B is paired with A again over its new position.
+watch(bStart, (_now, prev) => syncLinked(prev))
+watch(aBuf, buf => { duckA.value = flatCurve(buf?.duration ?? 0) })
+watch(bBuf, buf => { duckB.value = flatCurve(buf?.duration ?? 0) })
 watch([aBuf, bBuf], () => { voiceStart.value = clampVoice(voiceStart.value) })
 
 const model = computed<LinkModel | null>(() =>
   aBuf.value && bBuf.value
-    ? { a: aBuf.value, b: bBuf.value, voice: voice.value, bStart: bStart.value, voiceStart: voiceStart.value, duck: duck.value }
+    ? {
+        a: aBuf.value, b: bBuf.value, voice: voice.value,
+        bStart: bStart.value, voiceStart: voiceStart.value,
+        duckA: duckA.value, duckB: duckB.value,
+        reverb: reverb.value, echo: echo.value, radio: radio.value, distortion: distortion.value,
+      }
     : null,
 )
 
 function applyAutoDuck() {
-  if (voice.value) duck.value = autoDuck(voiceStart.value, voice.value.duration)
+  // Linked, the curves are a crossfade, so "auto" means the crossfade rather than a duck.
+  if (linkCurves.value) return applyCrossfade()
+  const a = aBuf.value
+  const b = bBuf.value
+  if (!a || !b) return
+  if (voice.value) {
+    const length = voice.value.duration
+    duckA.value = autoDuck(voiceStart.value, length, 0, a.duration)
+    duckB.value = autoDuck(voiceStart.value, length, bStart.value, b.duration)
+    return
+  }
+  // Nothing to duck under, so blend the songs across the stretch where they play together.
+  const from = bStart.value
+  const to = Math.min(a.duration, bStart.value + b.duration)
+  duckA.value = autoCrossfade(from, to, 0, a.duration, false)
+  duckB.value = autoCrossfade(from, to, bStart.value, b.duration, true)
 }
 function resetCurve() {
-  duck.value = []
+  duckA.value = flatCurve(aBuf.value?.duration ?? 0)
+  duckB.value = flatCurve(bBuf.value?.duration ?? 0)
+}
+function onDeleteVoice() {
+  if (!sending.value) deleteRecording()
 }
 function deleteRecording() {
   stopPreview()
   voice.value = null
+  voiceSource.value = null
   voiceStart.value = 0
 }
 
@@ -195,15 +317,48 @@ async function toggleRec() {
   }, 1000)
 }
 
+function setVoice(buf: AudioBuffer, source: 'rec' | 'ai' | 'file') {
+  voice.value = buf
+  voiceSource.value = source
+  // Land the voice so it finishes as B comes in; the DJ can drag from there.
+  voiceStart.value = clampVoice(bStart.value - buf.duration)
+}
+
+/** The voice slot also takes a ready-made sound asset, not just a live recording. */
+const fileEl = ref<HTMLInputElement | null>(null)
+async function onPickFile(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  stopPreview()
+  try {
+    setVoice(await decodeBlob(file), 'file')
+  } catch {
+    message.error(t('dj.file_error'))
+  }
+}
+
+// ── Chat ────────────────────────────────────────────────────────────
+const chatOpen = ref(false)
+const chatContext = computed<DjChatContext>(() => ({
+  songA: songA.value ? { id: songA.value.id, title: songA.value.title, artist: songA.value.artist } : null,
+  songB: songB.value ? { id: songB.value.id, title: songB.value.title, artist: songB.value.artist } : null,
+  maxVoiceSeconds: MAX_VOICE_SECONDS,
+}))
+function onVoiceGenerated(buf: AudioBuffer, _script: string) {
+  void _script
+  stopPreview()
+  setVoice(buf, 'ai')
+}
+
 async function onRecordEnd(blob: Blob) {
   clearRecTimer()
   recording.value = false
   try {
     const buf = await decodeBlob(blob)
     if (buf.duration < 0.3) return
-    voice.value = buf
-    // Land the voice so it finishes just before the vocal entry; the DJ can drag from there.
-    voiceStart.value = clampVoice(bStart.value + vocalEntry.value - buf.duration - 0.3)
+    setVoice(buf, 'rec')
   } catch {
     message.error(t('dj.mic_error'))
   }
@@ -218,21 +373,38 @@ function onRecordError() {
 // ── Preview ─────────────────────────────────────────────────────────
 const preview = new LinkPreview()
 const previewing = ref(false)
-const playhead = ref<number | null>(null)
+/** The edit cursor. Always on screen, so the DJ can place it before pressing play. */
+const playhead = ref(0)
+const clampHead = (t: number) => Math.min(Math.max(t, win.value.start), win.value.end)
 
 function stopPreview() {
   preview.stop()
   previewing.value = false
-  playhead.value = null
 }
 
 function togglePreview() {
   if (previewing.value) return stopPreview()
   if (!model.value) return
+  // Parked at the end, play again from the top rather than not at all.
+  const from = playhead.value >= win.value.end - 0.05 ? win.value.start : clampHead(playhead.value)
+  playhead.value = from
   previewing.value = true
-  preview.play(model.value, win.value, tm => { playhead.value = tm }, stopPreview)
+  preview.play(model.value, win.value, tm => { playhead.value = tm }, stopPreview, from)
 }
-watch([voice, voiceStart, vocalEntry, duck, aBuf, bBuf], stopPreview)
+
+/** Scrubbing: the cursor follows the pointer, and audio re-joins only once the drag ends. */
+function onScrubStart() {
+  if (previewing.value) preview.suspend()
+}
+function onScrub(t: number) {
+  playhead.value = clampHead(t)
+}
+function onScrubEnd() {
+  if (previewing.value) preview.seek(playhead.value)
+}
+
+watch([voice, voiceStart, duckA, duckB, aBuf, bBuf, bStart, reverb, echo, radio, distortion], stopPreview)
+watch([aBuf, bBuf], () => { playhead.value = win.value.start })
 
 // ── Send to air ─────────────────────────────────────────────────────
 const sending = ref(false)
@@ -256,6 +428,13 @@ async function sendToAir() {
       artist: [...new Set([a.artist, b.artist].filter(Boolean))].join(' / '),
     })
     message.success(t('dj.sent'))
+    // The station will play a → b next, so the next link continues from b.
+    songA.value = b
+    songB.value = null
+    aLocked.value = true
+    voice.value = null
+    voiceSource.value = null
+    voiceStart.value = 0
   } catch {
     message.error(t('dj.send_error'))
   } finally {
@@ -264,7 +443,8 @@ async function sendToAir() {
 }
 
 const ready = computed(() => sessionState.value === 'active')
-const canRecord = computed(() => ready.value && !!model.value && !sending.value)
+// Recording needs a live session, not songs: a voice can be captured first and placed later.
+const canRecord = computed(() => ready.value && !sending.value)
 const canPreview = computed(() => ready.value && !!model.value && !recording.value && !sending.value)
 const canSend = computed(() => canPreview.value && !ending.value)
 
@@ -303,10 +483,20 @@ onBeforeUnmount(() => {
         <small>{{ t('dj.session') }}</small>
         <span>{{ ready ? elapsed : '--:--' }}</span>
       </div>
+      <NButton secondary @click="chatOpen = true">
+        <template #icon><NIcon :component="ChatbubblesOutline" /></template>
+        {{ t('dj.chat_open') }}
+      </NButton>
       <NButton type="error" secondary :loading="ending" :disabled="sessionState === 'starting'" @click="endSession">
         {{ t('dj.end_session') }}
       </NButton>
     </header>
+
+    <NDrawer v-model:show="chatOpen" placement="right" :width="360">
+      <NDrawerContent :title="t('dj.chat_title')" closable>
+        <DjChat :brand-slug="brandSlug" :context="chatContext" @voice-generated="onVoiceGenerated" />
+      </NDrawerContent>
+    </NDrawer>
 
     <p v-if="sessionState === 'starting'" class="dj-banner">{{ t('dj.starting') }}</p>
     <p v-else-if="sessionState === 'error'" class="dj-banner dj-banner--error">
@@ -314,11 +504,29 @@ onBeforeUnmount(() => {
       <NButton size="small" @click="startSession">{{ t('dj.retry') }}</NButton>
     </p>
 
+    <div v-if="deadlineSeconds !== null" class="dj-deadline" :class="`dj-deadline--${deadlineUrgency}`">
+      <div class="dj-deadline-bar"><div class="dj-deadline-fill" :style="{ width: deadlinePct + '%' }" /></div>
+      <span class="dj-deadline-text">
+        {{ deadlineSeconds > 0 ? t('dj.deadline_label', { time: formatCountdown(deadlineSeconds) }) : t('dj.deadline_locked') }}
+      </span>
+    </div>
+
     <section class="dj-section">
       <h3 class="dj-section-title">{{ t('dj.songs') }}</h3>
       <div class="dj-pickers">
-        <DjSongPicker v-model="songA" label="A" :placeholder="t('dj.pick_a')" :brand-slug="brandSlug" :exclude-slug="songB?.slugName" :loading="loadingA" />
-        <DjSongPicker v-model="songB" label="B" :placeholder="t('dj.pick_b')" :brand-slug="brandSlug" :exclude-slug="songA?.slugName" :loading="loadingB" />
+        <DjSongPicker v-model="songA" class="dj-asset-field dj-asset-field--a" label="A" :placeholder="t('dj.pick_a')" :brand-slug="brandSlug" :exclude-slug="songB?.slugName" :loading="loadingA" :disabled="aLocked" />
+        <div class="dj-asset-row">
+          <span class="dj-asset-slot">B</span>
+          <NButton :type="recording ? 'error' : 'default'" size="small" :disabled="!canRecord" @click="toggleRec">
+            <span class="dj-rec-dot" :class="{ 'dj-rec-dot--on': recording }" />
+            {{ recording ? `${t('dj.rec_stop')} ${recSeconds}s / ${MAX_VOICE_SECONDS}s` : t('dj.rec') }}
+          </NButton>
+          <NButton size="small" :disabled="recording || sending" @click="fileEl?.click()">
+            {{ t('dj.add_effect') }}
+          </NButton>
+          <input ref="fileEl" class="dj-file-input" type="file" accept="audio/*" @change="onPickFile">
+        </div>
+        <DjSongPicker v-model="songB" class="dj-asset-field dj-asset-field--c" label="C" :placeholder="t('dj.pick_b')" :brand-slug="brandSlug" :exclude-slug="songA?.slugName" :loading="loadingB" />
       </div>
     </section>
 
@@ -327,36 +535,42 @@ onBeforeUnmount(() => {
       <DjLinkEditor
         ref="editor"
         v-model:voice-start="voiceStart"
-        v-model:vocal-entry="vocalEntry"
-        v-model:duck="duck"
+        v-model:duck-a="duckA"
+        v-model:duck-b="duckB"
+        v-model:b-start="bStart"
+        v-model:reverb="reverb"
+        v-model:echo="echo"
+        v-model:radio="radio"
+        v-model:distortion="distortion"
         :a="aBuf"
         :b="bBuf"
         :voice="voice"
-        :b-start="bStart"
+        :voice-source="voiceSource"
         :total="total"
         :window="win"
         :playhead="playhead"
         :recording="recording"
         :title-a="songLabel(songA)"
         :title-b="songLabel(songB)"
+        :info-a="songA"
+        :info-b="songB"
+        :linked="linkCurves"
         @record-end="onRecordEnd"
         @record-error="onRecordError"
+        @scrub-start="onScrubStart"
+        @scrub="onScrub"
+        @scrub-end="onScrubEnd"
+        @delete-voice="onDeleteVoice"
       />
       <div class="dj-curve-tools">
-        <NButton size="small" :disabled="!voice || recording" @click="applyAutoDuck">{{ t('dj.auto_duck') }}</NButton>
-        <NButton size="small" :disabled="!duck.length" @click="resetCurve">{{ t('dj.reset_curve') }}</NButton>
+        <NButton size="small" :disabled="!aBuf || !bBuf || recording" @click="applyAutoDuck">{{ t('dj.auto_duck') }}</NButton>
+        <NCheckbox v-model:checked="linkCurves" size="small">{{ t('dj.link_curves') }}</NCheckbox>
+        <NButton size="small" :disabled="!aBuf && !bBuf" @click="resetCurve">{{ t('dj.reset_curve') }}</NButton>
         <span>{{ t('dj.fade_hint') }}</span>
       </div>
       <div class="dj-controls">
-        <NButton :type="recording ? 'error' : 'default'" size="large" :disabled="!canRecord" @click="toggleRec">
-          <span class="dj-rec-dot" :class="{ 'dj-rec-dot--on': recording }" />
-          {{ recording ? `${t('dj.rec_stop')} ${recSeconds}s / ${MAX_VOICE_SECONDS}s` : t('dj.rec') }}
-        </NButton>
-        <NButton size="large" :disabled="!voice || recording || sending" @click="deleteRecording">
-          {{ t('dj.delete_rec') }}
-        </NButton>
         <NButton size="large" type="primary" secondary :disabled="!canPreview" @click="togglePreview">
-          <span class="dj-preview-icon">{{ previewing ? '■' : '▶' }}</span>
+          <span class="dj-preview-icon" :class="{ 'dj-preview-icon--stop': previewing }">{{ previewing ? '■' : '▶' }}</span>
           {{ previewing ? t('dj.preview_stop') : t('dj.preview') }}
         </NButton>
         <NButton type="primary" size="large" :loading="sending" :disabled="!canSend" @click="sendToAir">
@@ -439,6 +653,43 @@ onBeforeUnmount(() => {
 .dj-banner--error {
   background: color-mix(in srgb, var(--dj-danger) 12%, transparent);
 }
+.dj-deadline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.dj-deadline-bar {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--dj-border);
+  overflow: hidden;
+}
+.dj-deadline-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--dj-live);
+  transition: width 1s linear;
+}
+.dj-deadline--warn .dj-deadline-fill {
+  background: var(--dj-warn);
+}
+.dj-deadline--critical .dj-deadline-fill {
+  background: var(--dj-danger);
+}
+.dj-deadline-text {
+  flex: none;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--dj-muted);
+}
+.dj-deadline--warn .dj-deadline-text {
+  color: var(--dj-warn);
+}
+.dj-deadline--critical .dj-deadline-text {
+  color: var(--dj-danger);
+  font-weight: 700;
+}
 .dj-section {
   display: flex;
   flex-direction: column;
@@ -452,9 +703,44 @@ onBeforeUnmount(() => {
   text-transform: uppercase;
 }
 .dj-pickers {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.dj-asset-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-width: 0;
+}
+/** Each asset keeps its own colour on the chip beside its field. */
+.dj-asset-field--a {
+  --dj-slot: var(--dj-a);
+}
+.dj-asset-field--c {
+  --dj-slot: var(--dj-c);
+}
+/** The song fields take half the width; a full-width select was far more than a title needs. */
+.dj-asset-field {
+  width: 50%;
+}
+/** Matches the slot chip on the song pickers above and below it. */
+.dj-asset-slot {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  background: var(--dj-b);
+  color: #1a1a1a;
+}
+.dj-file-input {
+  display: none;
 }
 .dj-curve-tools {
   display: flex;
@@ -472,6 +758,11 @@ onBeforeUnmount(() => {
 .dj-preview-icon {
   margin-right: 8px;
   font-size: 0.8em;
+}
+/** While playing the button stops the audio, so its square reads as a red stop mark, a little larger. */
+.dj-preview-icon--stop {
+  color: var(--dj-danger);
+  font-size: 1.05em;
 }
 .dj-rec-dot {
   width: 10px;
@@ -492,8 +783,8 @@ onBeforeUnmount(() => {
   color: var(--dj-muted);
 }
 @media (max-width: 768px) {
-  .dj-pickers {
-    grid-template-columns: 1fr;
+  .dj-asset-field {
+    width: 100%;
   }
   .dj-onair {
     font-size: 1.1rem;
