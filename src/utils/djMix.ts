@@ -69,7 +69,6 @@ const DISTORTION_DRIVE_MAX = 14
  * so this pulls it back to roughly the level of the clean clip.
  */
 const DISTORTION_MATCH = 0.22
-const NO_FX = { reverb: 0, echo: 0, radio: 0, distortion: 0 }
 const rooms = new WeakMap<BaseAudioContext, AudioBuffer>()
 
 let clip: Float32Array | null = null
@@ -221,6 +220,118 @@ export function envelopeAt(points: EnvelopePoint[], t: number): number {
   return points[points.length - 1].volume
 }
 
+interface FxAmounts { reverb: number; echo: number; radio: number; distortion: number }
+
+/** The parts of one clip's effect chain that a slider can reach while the mix is running. */
+interface FxNodes {
+  distDrive: GainNode
+  distOut: GainNode
+  distDry: GainNode
+  radioDry: GainNode
+  radioOut: GainNode
+  reverbWet: GainNode
+  echoWet: GainNode
+}
+
+function layersOf(model: LinkModel) {
+  return [
+    { key: 'a', buf: model.a, start: 0, env: model.duckA, fx: null as FxAmounts | null },
+    { key: 'c', buf: model.b, start: model.bStart, env: model.duckB, fx: null as FxAmounts | null },
+    ...model.voices.flatMap(v => v.buf
+      ? [{
+          key: `v${v.id}`, buf: v.buf, start: v.start, env: v.duck,
+          fx: { reverb: v.reverb, echo: v.echo, radio: v.radio, distortion: v.distortion } as FxAmounts | null,
+        }]
+      : []),
+  ]
+}
+
+/**
+ * The whole effect chain is always built, with each effect turned down to nothing rather than left
+ * out, so an amount can be changed while the mix plays without rebuilding anything. Distortion
+ * drives the raw signal, then radio squeezes it, and the room and the echo hear the result.
+ */
+function buildFx(ctx: BaseAudioContext, input: AudioNode, master: AudioNode, amounts: FxAmounts): FxNodes {
+  // No oversampling on the clipper: it delays the driven path, which then partly cancels against the dry one.
+  const distDrive = ctx.createGain()
+  const clipper = ctx.createWaveShaper()
+  clipper.curve = clipCurve()
+  const distOut = ctx.createGain()
+  const distDry = ctx.createGain()
+  const distMerged = ctx.createGain()
+  input.connect(distDry).connect(distMerged)
+  input.connect(distDrive).connect(clipper).connect(distOut).connect(distMerged)
+
+  const radioDry = ctx.createGain()
+  const radioOut = ctx.createGain()
+  const radioMerged = ctx.createGain()
+  // Each edge is cut twice: a single pass is too gentle, and the crunch stage would boost what leaks.
+  const band = (type: BiquadFilterType, hz: number) => {
+    const f = ctx.createBiquadFilter()
+    f.type = type
+    f.frequency.value = hz
+    f.Q.value = 0.9
+    return f
+  }
+  const crunch = ctx.createWaveShaper()
+  crunch.curve = crunchCurve()
+  distMerged.connect(radioDry).connect(radioMerged)
+  distMerged
+    .connect(band('highpass', RADIO_LOW_HZ)).connect(band('highpass', RADIO_LOW_HZ))
+    .connect(band('lowpass', RADIO_HIGH_HZ)).connect(band('lowpass', RADIO_HIGH_HZ))
+    .connect(crunch)
+    // The crunch makes harmonics above the band; this takes them back off.
+    .connect(band('lowpass', RADIO_HIGH_HZ * 1.2))
+    .connect(radioOut).connect(radioMerged)
+  radioMerged.connect(master)
+
+  // The room's tail keeps ringing after the clip ends.
+  const room = ctx.createConvolver()
+  room.buffer = roomFor(ctx)
+  const reverbWet = ctx.createGain()
+  radioMerged.connect(room).connect(reverbWet).connect(master)
+
+  // A delay that feeds part of itself back, so each repeat is quieter than the last.
+  const delay = ctx.createDelay(1)
+  delay.delayTime.value = ECHO_SECONDS
+  const feedback = ctx.createGain()
+  feedback.gain.value = ECHO_FEEDBACK
+  const echoWet = ctx.createGain()
+  radioMerged.connect(delay)
+  delay.connect(feedback).connect(delay)
+  delay.connect(echoWet).connect(master)
+
+  const nodes: FxNodes = { distDrive, distOut, distDry, radioDry, radioOut, reverbWet, echoWet }
+  applyFx(ctx, nodes, amounts, true)
+  return nodes
+}
+
+/** Sets the amounts on a built chain; a running mix glides to them so a slider drag does not click. */
+function applyFx(ctx: BaseAudioContext, n: FxNodes, a: FxAmounts, immediate: boolean) {
+  const set = (param: AudioParam, value: number) => {
+    if (immediate) param.value = value
+    else param.setTargetAtTime(value, ctx.currentTime, 0.03)
+  }
+  set(n.distDrive.gain, DISTORTION_DRIVE_MIN + a.distortion * (DISTORTION_DRIVE_MAX - DISTORTION_DRIVE_MIN))
+  // Equal-power blend, so the level holds steady instead of dipping in the middle of the slider.
+  set(n.distOut.gain, Math.sin(a.distortion * Math.PI / 2) * DISTORTION_MATCH)
+  set(n.distDry.gain, Math.cos(a.distortion * Math.PI / 2))
+  const radioWet = Math.min(1, a.radio / RADIO_FULL_AT)
+  set(n.radioDry.gain, 1 - radioWet)
+  set(n.radioOut.gain, radioWet * RADIO_MAKEUP)
+  set(n.reverbWet.gain, a.reverb * REVERB_WET)
+  set(n.echoWet.gain, a.echo * ECHO_WET)
+}
+
+export interface MixHandle {
+  stop(): void
+  /**
+   * Applies curve and effect changes to the mix while it plays. Returns false when the layout
+   * itself changed (a clip moved, a song was swapped, the window is different), which needs a rebuild.
+   */
+  update(model: LinkModel, win: MixWindow): boolean
+}
+
 /**
  * Wires the whole mix into `dest` for `win`, starting at context time `when`.
  * Used by both the live preview and the offline render, so what is auditioned is what is sent.
@@ -235,7 +346,7 @@ export function scheduleMix(
   win: MixWindow,
   when: number,
   from: number = win.start,
-): () => void {
+): MixHandle {
   const length = win.end - win.start
   const at = (t: number) => when + Math.max(0, t - from)
 
@@ -254,107 +365,60 @@ export function scheduleMix(
   }
   master.connect(dest)
 
-  const layers = [
-    { buf: model.a, start: 0, env: model.duckA, fx: NO_FX },
-    { buf: model.b, start: model.bStart, env: model.duckB, fx: NO_FX },
-    ...model.voices.flatMap(v => v.buf
-      ? [{ buf: v.buf, start: v.start, env: v.duck, fx: { reverb: v.reverb, echo: v.echo, radio: v.radio, distortion: v.distortion } }]
-      : []),
-  ]
-  const sources: AudioBufferSourceNode[] = []
-
-  for (const { buf, start, env, fx } of layers) {
-    if (start + buf.duration <= from || start >= win.end) continue
-    const playFrom = Math.max(from, start)
-    const gain = ctx.createGain()
-    // The curve is in the song's own seconds, so it shifts with the song along the timeline.
-    gain.gain.setValueAtTime(envelopeAt(env, playFrom - start), at(playFrom))
+  /** Puts a clip's volume curve on its gain from timeline time `t0` on. The curve is in the clip's own seconds. */
+  const shapeGain = (gain: GainNode, env: EnvelopePoint[], start: number, t0: number, ctxT0: number, fresh: boolean) => {
+    if (!fresh) gain.gain.cancelScheduledValues(ctxT0)
+    gain.gain.setValueAtTime(envelopeAt(env, t0 - start), ctxT0)
     for (const p of env) {
       const tm = start + p.time
-      if (tm > playFrom && tm < win.end) gain.gain.linearRampToValueAtTime(p.volume, at(tm))
+      if (tm > t0 && tm < win.end) gain.gain.linearRampToValueAtTime(p.volume, at(tm))
     }
+  }
+
+  const built: { key: string; buf: AudioBuffer; start: number; gain: GainNode | null; fx: FxNodes | null }[] = []
+  const sources: AudioBufferSourceNode[] = []
+
+  for (const { key, buf, start, env, fx } of layersOf(model)) {
+    if (start + buf.duration <= from || start >= win.end) {
+      built.push({ key, buf, start, gain: null, fx: null })
+      continue
+    }
+    const playFrom = Math.max(from, start)
+    const gain = ctx.createGain()
+    shapeGain(gain, env, start, playFrom, at(playFrom), true)
     const src = ctx.createBufferSource()
     src.buffer = buf
     src.connect(gain)
-
-    // Distortion drives the raw signal, then radio squeezes it, and the room and the echo hear the result.
-    let tone: AudioNode = gain
-    if (fx.distortion > 0) {
-      const drive = ctx.createGain()
-      drive.gain.value = DISTORTION_DRIVE_MIN + fx.distortion * (DISTORTION_DRIVE_MAX - DISTORTION_DRIVE_MIN)
-      const clipper = ctx.createWaveShaper()
-      clipper.curve = clipCurve()
-      // No oversampling: it delays the driven path, which then partly cancels against the dry one.
-      const out = ctx.createGain()
-      // Equal-power blend, so the level holds steady instead of dipping in the middle of the slider.
-      out.gain.value = Math.sin(fx.distortion * Math.PI / 2) * DISTORTION_MATCH
-      const dry = ctx.createGain()
-      dry.gain.value = Math.cos(fx.distortion * Math.PI / 2)
-      const merged = ctx.createGain()
-      gain.connect(dry).connect(merged)
-      gain.connect(drive).connect(clipper).connect(out).connect(merged)
-      tone = merged
-    }
-    if (fx.radio > 0) {
-      const wetAmount = Math.min(1, fx.radio / RADIO_FULL_AT)
-      const merged = ctx.createGain()
-      const dry = ctx.createGain()
-      dry.gain.value = 1 - wetAmount
-      // Each edge is cut twice: a single pass is too gentle, and the crunch stage would boost what leaks.
-      const band = (type: BiquadFilterType, hz: number) => {
-        const f = ctx.createBiquadFilter()
-        f.type = type
-        f.frequency.value = hz
-        f.Q.value = 0.9
-        return f
-      }
-      const crunch = ctx.createWaveShaper()
-      crunch.curve = crunchCurve()
-      const out = ctx.createGain()
-      out.gain.value = wetAmount * RADIO_MAKEUP
-      tone.connect(dry).connect(merged)
-      tone
-        .connect(band('highpass', RADIO_LOW_HZ)).connect(band('highpass', RADIO_LOW_HZ))
-        .connect(band('lowpass', RADIO_HIGH_HZ)).connect(band('lowpass', RADIO_HIGH_HZ))
-        .connect(crunch)
-        // The crunch makes harmonics above the band; this takes them back off.
-        .connect(band('lowpass', RADIO_HIGH_HZ * 1.2))
-        .connect(out).connect(merged)
-      tone = merged
-    }
-    tone.connect(master)
-
-    if (fx.reverb > 0) {
-      // The room hears the same signal as the dry path, and its tail keeps ringing after the clip ends.
-      const room = ctx.createConvolver()
-      room.buffer = roomFor(ctx)
-      const wet = ctx.createGain()
-      wet.gain.value = fx.reverb * REVERB_WET
-      tone.connect(room).connect(wet).connect(master)
-    }
-    if (fx.echo > 0) {
-      // A delay that feeds part of itself back, so each repeat is quieter than the last.
-      const delay = ctx.createDelay(1)
-      delay.delayTime.value = ECHO_SECONDS
-      const feedback = ctx.createGain()
-      feedback.gain.value = ECHO_FEEDBACK
-      const wet = ctx.createGain()
-      wet.gain.value = fx.echo * ECHO_WET
-      tone.connect(delay)
-      delay.connect(feedback).connect(delay)
-      delay.connect(wet).connect(master)
-    }
+    const nodes = fx ? buildFx(ctx, gain, master, fx) : null
+    if (!nodes) gain.connect(master)
     src.start(at(playFrom), playFrom - start)
     src.stop(when + (win.end - from))
     sources.push(src)
+    built.push({ key, buf, start, gain, fx: nodes })
   }
 
-  return () => {
-    for (const s of sources) {
-      try { s.stop() } catch { /* not started or already stopped */ }
-      s.disconnect()
-    }
-    master.disconnect()
+  return {
+    stop() {
+      for (const s of sources) {
+        try { s.stop() } catch { /* not started or already stopped */ }
+        s.disconnect()
+      }
+      master.disconnect()
+    },
+    update(next, nextWin) {
+      if (nextWin.start !== win.start || Math.abs(nextWin.end - win.end) > 1e-6) return false
+      const layers = layersOf(next)
+      const same = layers.length === built.length
+        && layers.every((l, i) => l.key === built[i].key && l.buf === built[i].buf && l.start === built[i].start)
+      if (!same) return false
+      const t0 = from + Math.max(0, ctx.currentTime - when)
+      layers.forEach((l, i) => {
+        const b = built[i]
+        if (b.gain) shapeGain(b.gain, l.env, b.start, t0, ctx.currentTime, false)
+        if (b.fx && l.fx) applyFx(ctx, b.fx, l.fx, false)
+      })
+      return true
+    },
   }
 }
 
@@ -388,15 +452,18 @@ export function encodeWav(buf: AudioBuffer): Blob {
   return new Blob([view], { type: 'audio/wav' })
 }
 
-/** Plays only the junction window; `onTick` gets the position on the junction timeline. */
+/** Plays the mix; `onTick` gets the position on the junction timeline. Edits are heard as they are made. */
 export class LinkPreview {
-  private cancel: (() => void) | null = null
+  private handle: MixHandle | null = null
   private raf = 0
+  private pending: ReturnType<typeof setTimeout> | null = null
+  /** Where the running graph began, so the current position can be worked out at any moment. */
+  private started = { when: 0, from: 0 }
   /** Kept so a seek can rebuild the graph without the caller passing everything again. */
   private current: { model: LinkModel; win: MixWindow; onTick: (t: number) => void; onEnd: () => void } | null = null
 
   get playing() {
-    return !!this.cancel
+    return !!this.handle
   }
 
   play(model: LinkModel, win: MixWindow, onTick: (t: number) => void, onEnd: () => void, from = win.start) {
@@ -412,17 +479,42 @@ export class LinkPreview {
   seek(t: number) {
     const cur = this.current
     if (!cur) return
-    cancelAnimationFrame(this.raf)
-    this.cancel?.()
-    this.cancel = null
+    this.silence()
     this.run(Math.min(Math.max(t, cur.win.start), cur.win.end))
+  }
+
+  /**
+   * Feeds an edit to the running mix. Curve and effect changes are applied in place, with no gap.
+   * A change to the layout (a clip moved, a song swapped) needs the graph rebuilt at the current
+   * position, which is held back briefly so a drag does not rebuild on every step.
+   */
+  refresh(model: LinkModel, win: MixWindow) {
+    const cur = this.current
+    if (!cur || !this.handle) return
+    cur.model = model
+    cur.win = win
+    if (this.handle.update(model, win)) return
+    if (this.pending) clearTimeout(this.pending)
+    this.pending = setTimeout(() => {
+      this.pending = null
+      if (this.handle) this.seek(this.position())
+    }, 120)
+  }
+
+  private position() {
+    return this.started.from + Math.max(0, getAudioContext().currentTime - this.started.when)
   }
 
   /** Silence the graph but stay armed, so a following `seek` can pick the audition back up. */
   suspend() {
+    this.silence()
+  }
+
+  private silence() {
     cancelAnimationFrame(this.raf)
-    this.cancel?.()
-    this.cancel = null
+    if (this.pending) { clearTimeout(this.pending); this.pending = null }
+    this.handle?.stop()
+    this.handle = null
   }
 
   private run(from: number) {
@@ -431,10 +523,11 @@ export class LinkPreview {
     const ctx = getAudioContext()
     void ctx.resume()
     const when = ctx.currentTime + 0.08
-    this.cancel = scheduleMix(ctx, ctx.destination, cur.model, cur.win, when, from)
-    const end = when + (cur.win.end - from)
+    this.started = { when, from }
+    this.handle = scheduleMix(ctx, ctx.destination, cur.model, cur.win, when, from)
     const tick = () => {
-      if (ctx.currentTime >= end) {
+      // The window can change under a running mix, so its end is read fresh each frame.
+      if (ctx.currentTime >= when + (cur.win.end - from)) {
         this.stop()
         cur.onEnd()
         return
@@ -446,9 +539,7 @@ export class LinkPreview {
   }
 
   stop() {
-    cancelAnimationFrame(this.raf)
-    this.cancel?.()
-    this.cancel = null
+    this.silence()
     this.current = null
   }
 }
