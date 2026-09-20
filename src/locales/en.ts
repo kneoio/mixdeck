@@ -109,6 +109,7 @@ export default {
     reset_curve: 'Reset curve',
     delete_rec: 'Delete',
     add_effect: 'Add effect',
+    pick_effect: 'Effect from assets',
     reverb: 'Reverb',
     echo: 'Echo',
     radio: 'Radio',

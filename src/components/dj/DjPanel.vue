@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NButton, NCheckbox, NDrawer, NDrawerContent, NIcon, useMessage, useThemeVars } from 'naive-ui'
+import { NButton, NCheckbox, NDrawer, NDrawerContent, NIcon, NSelect, useMessage, useThemeVars } from 'naive-ui'
 import { ChatbubblesOutline } from '@vicons/ionicons5'
 import LedIndicator from '@/components/LedIndicator.vue'
 import AivoxQueue from '@/components/AivoxQueue.vue'
@@ -10,6 +10,7 @@ import DjSongPicker, { type DjSong } from '@/components/dj/DjSongPicker.vue'
 import DjChat from '@/components/dj/DjChat.vue'
 import { useDjColors } from '@/utils/djColors'
 import djApiService, { type DjChatContext } from '@/services/djApi'
+import datanestApiService from '@/services/datanestApi'
 import aivoxApiService, { type AivoxQueueEntry } from '@/services/aivoxApi'
 import {
   cropHead, cropTail, decodeBlob, fetchSongBuffer,
@@ -339,6 +340,40 @@ async function onPickFile(e: Event) {
   }
 }
 
+/** Effects come from the station's sound assets (the Sound Assets page), loaded like any fragment. */
+const effectOptions = ref<{ label: string; value: string }[]>([])
+const effectsLoading = ref(false)
+const effectValue = ref<string | null>(null)
+let effectSeq = 0
+
+async function searchEffects(term = '') {
+  const seq = ++effectSeq
+  effectsLoading.value = true
+  try {
+    const res = await datanestApiService.getSoundAssets(1, 30, term.trim())
+    if (seq !== effectSeq) return
+    effectOptions.value = res.entries.map((e: any) => ({ label: e.title || e.slugName, value: e.slugName }))
+  } catch {
+    if (seq === effectSeq) effectOptions.value = []
+  } finally {
+    if (seq === effectSeq) effectsLoading.value = false
+  }
+}
+
+async function onPickEffect(slug: string | null) {
+  if (!slug) return
+  stopPreview()
+  effectsLoading.value = true
+  try {
+    setVoice(await fetchSongBuffer(slug), 'file')
+  } catch {
+    message.error(t('dj.file_error'))
+  } finally {
+    effectsLoading.value = false
+    effectValue.value = null
+  }
+}
+
 // ── Chat ────────────────────────────────────────────────────────────
 const chatOpen = ref(false)
 const chatContext = computed<DjChatContext>(() => ({
@@ -525,6 +560,21 @@ onBeforeUnmount(() => {
             {{ t('dj.add_effect') }}
           </NButton>
           <input ref="fileEl" class="dj-file-input" type="file" accept="audio/*" @change="onPickFile">
+          <NSelect
+            class="dj-effect-select"
+            size="small"
+            :value="effectValue"
+            :options="effectOptions"
+            :loading="effectsLoading"
+            :disabled="recording || sending"
+            :placeholder="t('dj.pick_effect')"
+            filterable
+            remote
+            clearable
+            @focus="searchEffects()"
+            @search="searchEffects"
+            @update:value="onPickEffect"
+          />
         </div>
         <DjSongPicker v-model="songB" class="dj-asset-field dj-asset-field--c" label="C" :placeholder="t('dj.pick_b')" :brand-slug="brandSlug" :exclude-slug="songA?.slugName" :loading="loadingB" />
       </div>
@@ -738,6 +788,9 @@ onBeforeUnmount(() => {
   font-size: 0.85rem;
   background: var(--dj-b);
   color: #1a1a1a;
+}
+.dj-effect-select {
+  width: 180px;
 }
 .dj-file-input {
   display: none;
