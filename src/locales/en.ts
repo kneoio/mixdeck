@@ -109,6 +109,8 @@ export default {
     reset_curve: 'Reset curve',
     delete_rec: 'Delete',
     add_effect: 'Add effect',
+    add_lane: 'Add lane B{n}',
+    remove_lane: 'Remove this lane',
     pick_effect: 'Effect from assets',
     reverb: 'Reverb',
     echo: 'Echo',

@@ -14,10 +14,10 @@ import datanestApiService from '@/services/datanestApi'
 import aivoxApiService, { type AivoxQueueEntry } from '@/services/aivoxApi'
 import {
   cropHead, cropTail, decodeBlob, fetchSongBuffer,
-  HEAD_SECONDS, MAX_VOICE_SECONDS, TAIL_SECONDS,
+  HEAD_SECONDS, MAX_VOICE_LANES, MAX_VOICE_SECONDS, TAIL_SECONDS,
 } from '@/utils/djAudio'
 import {
-  autoCrossfade, autoDuck, bStartFor, encodeWav, flatCurve, junctionWindow, LinkPreview, pairedCurve, renderLink, type EnvelopePoint, type LinkModel,
+  autoCrossfade, autoDuck, bStartFor, emptyLane, encodeWav, flatCurve, junctionWindow, LinkPreview, pairedCurve, renderLink, type EnvelopePoint, type LinkModel, type VoiceLane,
 } from '@/utils/djMix'
 
 const { t } = useI18n()
@@ -174,14 +174,31 @@ watch(songA, s => loadSong(s, 'a'))
 watch(songB, s => loadSong(s, 'b'))
 
 // ── Junction timeline ───────────────────────────────────────────────
-const voice = shallowRef<AudioBuffer | null>(null)
-const voiceSource = ref<'rec' | 'ai' | 'file' | null>(null)
-const voiceStart = ref(0)
-/** Effects on whatever is in B, each 0 to 1. Heard in Play and baked into what is sent. */
-const reverb = ref(0)
-const echo = ref(0)
-const radio = ref(0)
-const distortion = ref(0)
+/**
+ * The B lanes: voices, recordings, generated links and effect clips. Each carries its own place on
+ * the timeline, volume curve and effects. Replaced rather than mutated, so the array can stay shallow.
+ */
+const voices = shallowRef<VoiceLane[]>([emptyLane(1)])
+let nextLaneId = 2
+const filledVoices = computed(() => voices.value.filter(v => v.buf))
+/** Where the earliest clip starts, or null while every lane is empty. */
+const voiceStart = computed<number | null>(() =>
+  filledVoices.value.length ? Math.min(...filledVoices.value.map(v => v.start)) : null,
+)
+const voiceEnd = computed(() => Math.max(0, ...filledVoices.value.map(v => v.start + (v.buf?.duration ?? 0))))
+function patchLane(id: number, patch: Partial<VoiceLane>) {
+  voices.value = voices.value.map(v => (v.id === id ? { ...v, ...patch } : v))
+}
+function addLane() {
+  if (voices.value.length >= MAX_VOICE_LANES) return
+  voices.value = [...voices.value, emptyLane(nextLaneId++)]
+}
+function removeLane(id: number) {
+  if (recordingId.value === id) return
+  stopPreview()
+  // The last lane is only ever emptied, so there is always somewhere to record.
+  voices.value = voices.value.length > 1 ? voices.value.filter(v => v.id !== id) : [emptyLane(nextLaneId++)]
+}
 /**
  * A volume curve per song, in that song's own seconds. Each is seeded flat and open the moment
  * its song loads, so there are always handles on the lane to take hold of.
@@ -196,9 +213,9 @@ const bStart = ref(bStartFor(TAIL_SECONDS))
 watch(aBuf, buf => { bStart.value = bStartFor(buf?.duration ?? TAIL_SECONDS) })
 const total = computed(() => bStart.value + (bBuf.value?.duration ?? HEAD_SECONDS))
 const win = computed(() => junctionWindow({
-  bStart: bStart.value, voiceStart: voiceStart.value, total: total.value, hasVoice: !!voice.value,
+  bStart: bStart.value, voiceStart: voiceStart.value, total: total.value,
 }))
-const clampVoice = (s: number) => Math.min(Math.max(0, s), Math.max(0, total.value - (voice.value?.duration ?? 0)))
+const clampStart = (duration: number, s: number) => Math.min(Math.max(0, s), Math.max(0, total.value - duration))
 
 /** The stretch where both songs play together, in junction seconds. */
 const overlap = () => ({
@@ -246,15 +263,16 @@ watch(linkCurves, on => {
 watch(bStart, (_now, prev) => syncLinked(prev))
 watch(aBuf, buf => { duckA.value = flatCurve(buf?.duration ?? 0) })
 watch(bBuf, buf => { duckB.value = flatCurve(buf?.duration ?? 0) })
-watch([aBuf, bBuf], () => { voiceStart.value = clampVoice(voiceStart.value) })
+watch([aBuf, bBuf], () => {
+  voices.value = voices.value.map(v => (v.buf ? { ...v, start: clampStart(v.buf.duration, v.start) } : v))
+})
 
 const model = computed<LinkModel | null>(() =>
   aBuf.value && bBuf.value
     ? {
-        a: aBuf.value, b: bBuf.value, voice: voice.value,
-        bStart: bStart.value, voiceStart: voiceStart.value,
+        a: aBuf.value, b: bBuf.value, voices: voices.value,
+        bStart: bStart.value,
         duckA: duckA.value, duckB: duckB.value,
-        reverb: reverb.value, echo: echo.value, radio: radio.value, distortion: distortion.value,
       }
     : null,
 )
@@ -265,8 +283,9 @@ function applyAutoDuck() {
   const a = aBuf.value
   const b = bBuf.value
   if (!a || !b) return
-  if (voice.value) {
-    const length = voice.value.duration
+  if (voiceStart.value !== null) {
+    // Ducks across the whole voiced stretch, from the first clip's start to the last one's end.
+    const length = voiceEnd.value - voiceStart.value
     duckA.value = autoDuck(voiceStart.value, length, 0, a.duration)
     duckB.value = autoDuck(voiceStart.value, length, bStart.value, b.duration)
     return
@@ -281,19 +300,17 @@ function resetCurve() {
   duckA.value = flatCurve(aBuf.value?.duration ?? 0)
   duckB.value = flatCurve(bBuf.value?.duration ?? 0)
 }
-function onDeleteVoice() {
-  if (!sending.value) deleteRecording()
-}
-function deleteRecording() {
+function onDeleteVoice(id: number) {
+  if (sending.value) return
   stopPreview()
-  voice.value = null
-  voiceSource.value = null
-  voiceStart.value = 0
+  patchLane(id, { buf: null, source: null, start: 0, duck: [] })
 }
 
 // ── Recording ───────────────────────────────────────────────────────
 const editor = ref<InstanceType<typeof DjLinkEditor> | null>(null)
-const recording = ref(false)
+/** Id of the B lane the microphone is filling. */
+const recordingId = ref<number | null>(null)
+const recording = computed(() => recordingId.value !== null)
 const recSeconds = ref(0)
 let recTimer: ReturnType<typeof setInterval> | null = null
 
@@ -301,32 +318,35 @@ function clearRecTimer() {
   if (recTimer) { clearInterval(recTimer); recTimer = null }
 }
 
-async function toggleRec() {
-  if (recording.value) {
-    editor.value?.stopRec()
+async function toggleRec(id: number) {
+  if (recordingId.value !== null) {
+    if (recordingId.value === id) editor.value?.stopRec(id)
     return
   }
   stopPreview()
-  recording.value = true
+  recordingId.value = id
   recSeconds.value = 0
   await nextTick()
-  await editor.value?.startRec()
-  if (!recording.value) return
+  await editor.value?.startRec(id)
+  if (recordingId.value !== id) return
   recTimer = setInterval(() => {
     recSeconds.value += 1
-    if (recSeconds.value >= MAX_VOICE_SECONDS) editor.value?.stopRec()
+    if (recSeconds.value >= MAX_VOICE_SECONDS) editor.value?.stopRec(id)
   }, 1000)
 }
 
-function setVoice(buf: AudioBuffer, source: 'rec' | 'ai' | 'file') {
-  voice.value = buf
-  voiceSource.value = source
-  // Land the voice so it finishes as B comes in; the DJ can drag from there.
-  voiceStart.value = clampVoice(bStart.value - buf.duration)
+function setVoice(id: number, buf: AudioBuffer, source: 'rec' | 'ai' | 'file') {
+  // Land the clip so it finishes as C comes in; the DJ can drag from there. A new clip starts with a flat curve.
+  patchLane(id, { buf, source, start: clampStart(buf.duration, bStart.value - buf.duration), duck: flatCurve(buf.duration) })
 }
 
 /** The voice slot also takes a ready-made sound asset, not just a live recording. */
 const fileEl = ref<HTMLInputElement | null>(null)
+let fileLane = 0
+function pickFile(id: number) {
+  fileLane = id
+  fileEl.value?.click()
+}
 async function onPickFile(e: Event) {
   const input = e.target as HTMLInputElement
   const file = input.files?.[0]
@@ -334,7 +354,7 @@ async function onPickFile(e: Event) {
   if (!file) return
   stopPreview()
   try {
-    setVoice(await decodeBlob(file), 'file')
+    setVoice(fileLane, await decodeBlob(file), 'file')
   } catch {
     message.error(t('dj.file_error'))
   }
@@ -343,7 +363,6 @@ async function onPickFile(e: Event) {
 /** Effects come from the station's sound assets (the Sound Assets page), loaded like any fragment. */
 const effectOptions = ref<{ label: string; value: string }[]>([])
 const effectsLoading = ref(false)
-const effectValue = ref<string | null>(null)
 let effectSeq = 0
 
 async function searchEffects(term = '') {
@@ -360,17 +379,16 @@ async function searchEffects(term = '') {
   }
 }
 
-async function onPickEffect(slug: string | null) {
+async function onPickEffect(slug: string | null, id: number) {
   if (!slug) return
   stopPreview()
   effectsLoading.value = true
   try {
-    setVoice(await fetchSongBuffer(slug), 'file')
+    setVoice(id, await fetchSongBuffer(slug), 'file')
   } catch {
     message.error(t('dj.file_error'))
   } finally {
     effectsLoading.value = false
-    effectValue.value = null
   }
 }
 
@@ -384,16 +402,17 @@ const chatContext = computed<DjChatContext>(() => ({
 function onVoiceGenerated(buf: AudioBuffer, _script: string) {
   void _script
   stopPreview()
-  setVoice(buf, 'ai')
+  // A generated link goes to the first empty B lane, or replaces B1 when they are all taken.
+  setVoice((voices.value.find(v => !v.buf) ?? voices.value[0]).id, buf, 'ai')
 }
 
-async function onRecordEnd(blob: Blob) {
+async function onRecordEnd(blob: Blob, id: number) {
   clearRecTimer()
-  recording.value = false
+  recordingId.value = null
   try {
     const buf = await decodeBlob(blob)
     if (buf.duration < 0.3) return
-    setVoice(buf, 'rec')
+    setVoice(id, buf, 'rec')
   } catch {
     message.error(t('dj.mic_error'))
   }
@@ -401,7 +420,7 @@ async function onRecordEnd(blob: Blob) {
 
 function onRecordError() {
   clearRecTimer()
-  recording.value = false
+  recordingId.value = null
   message.error(t('dj.mic_error'))
 }
 
@@ -438,7 +457,7 @@ function onScrubEnd() {
   if (previewing.value) preview.seek(playhead.value)
 }
 
-watch([voice, voiceStart, duckA, duckB, aBuf, bBuf, bStart, reverb, echo, radio, distortion], stopPreview)
+watch([voices, duckA, duckB, aBuf, bBuf, bStart], stopPreview)
 watch([aBuf, bBuf], () => { playhead.value = win.value.start })
 
 // ── Send to air ─────────────────────────────────────────────────────
@@ -448,7 +467,7 @@ async function sendToAir() {
   const m = model.value
   const a = songA.value
   const b = songB.value
-  if (!m || !m.voice || !a || !b || sending.value) return
+  if (!m || !filledVoices.value.length || !a || !b || sending.value) return
   stopPreview()
   sending.value = true
   try {
@@ -467,9 +486,7 @@ async function sendToAir() {
     songA.value = b
     songB.value = null
     aLocked.value = true
-    voice.value = null
-    voiceSource.value = null
-    voiceStart.value = 0
+    voices.value = [emptyLane(nextLaneId++)]
   } catch {
     message.error(t('dj.send_error'))
   } finally {
@@ -550,20 +567,19 @@ onBeforeUnmount(() => {
       <h3 class="dj-section-title">{{ t('dj.songs') }}</h3>
       <div class="dj-pickers">
         <DjSongPicker v-model="songA" class="dj-asset-field dj-asset-field--a" label="A" :placeholder="t('dj.pick_a')" :brand-slug="brandSlug" :exclude-slug="songB?.slugName" :loading="loadingA" :disabled="aLocked" />
-        <div class="dj-asset-row">
-          <span class="dj-asset-slot">B</span>
-          <NButton :type="recording ? 'error' : 'default'" size="small" :disabled="!canRecord" @click="toggleRec">
-            <span class="dj-rec-dot" :class="{ 'dj-rec-dot--on': recording }" />
-            {{ recording ? `${t('dj.rec_stop')} ${recSeconds}s / ${MAX_VOICE_SECONDS}s` : t('dj.rec') }}
+        <div v-for="(v, n) in voices" :key="v.id" class="dj-asset-row">
+          <span class="dj-asset-slot">B{{ n + 1 }}</span>
+          <NButton :type="recordingId === v.id ? 'error' : 'default'" size="small" :disabled="!canRecord || (recording && recordingId !== v.id)" @click="toggleRec(v.id)">
+            <span class="dj-rec-dot" :class="{ 'dj-rec-dot--on': recordingId === v.id }" />
+            {{ recordingId === v.id ? `${t('dj.rec_stop')} ${recSeconds}s / ${MAX_VOICE_SECONDS}s` : t('dj.rec') }}
           </NButton>
-          <NButton size="small" :disabled="recording || sending" @click="fileEl?.click()">
+          <NButton size="small" :disabled="recording || sending" @click="pickFile(v.id)">
             {{ t('dj.add_effect') }}
           </NButton>
-          <input ref="fileEl" class="dj-file-input" type="file" accept="audio/*" @change="onPickFile">
           <NSelect
             class="dj-effect-select"
             size="small"
-            :value="effectValue"
+            :value="null"
             :options="effectOptions"
             :loading="effectsLoading"
             :disabled="recording || sending"
@@ -573,9 +589,14 @@ onBeforeUnmount(() => {
             clearable
             @focus="searchEffects()"
             @search="searchEffects"
-            @update:value="onPickEffect"
+            @update:value="onPickEffect($event, v.id)"
           />
+          <NButton v-if="voices.length > 1" size="small" quaternary :disabled="recordingId === v.id" :title="t('dj.remove_lane')" :aria-label="t('dj.remove_lane')" @click="removeLane(v.id)">✕</NButton>
         </div>
+        <NButton v-if="voices.length < MAX_VOICE_LANES" class="dj-add-lane" size="small" dashed :disabled="recording || sending" @click="addLane">
+          {{ t('dj.add_lane', { n: voices.length + 1 }) }}
+        </NButton>
+        <input ref="fileEl" class="dj-file-input" type="file" accept="audio/*" @change="onPickFile">
         <DjSongPicker v-model="songB" class="dj-asset-field dj-asset-field--c" label="C" :placeholder="t('dj.pick_b')" :brand-slug="brandSlug" :exclude-slug="songA?.slugName" :loading="loadingB" />
       </div>
     </section>
@@ -584,22 +605,16 @@ onBeforeUnmount(() => {
       <h3 class="dj-section-title">{{ t('dj.link_editor') }}</h3>
       <DjLinkEditor
         ref="editor"
-        v-model:voice-start="voiceStart"
+        v-model:voices="voices"
         v-model:duck-a="duckA"
         v-model:duck-b="duckB"
         v-model:b-start="bStart"
-        v-model:reverb="reverb"
-        v-model:echo="echo"
-        v-model:radio="radio"
-        v-model:distortion="distortion"
         :a="aBuf"
         :b="bBuf"
-        :voice="voice"
-        :voice-source="voiceSource"
         :total="total"
         :window="win"
         :playhead="playhead"
-        :recording="recording"
+        :recording-id="recordingId"
         :title-a="songLabel(songA)"
         :title-b="songLabel(songB)"
         :info-a="songA"
@@ -763,6 +778,9 @@ onBeforeUnmount(() => {
   flex-wrap: wrap;
   gap: 10px;
   min-width: 0;
+}
+.dj-add-lane {
+  align-self: flex-start;
 }
 /** Each asset keeps its own colour on the chip beside its field. */
 .dj-asset-field--a {

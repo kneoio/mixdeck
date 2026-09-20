@@ -7,13 +7,34 @@ const WINDOW_PRE_ROLL = 6
 export interface EnvelopePoint { time: number; volume: number }
 export interface MixWindow { start: number; end: number }
 
-/** Junction timeline: A's tail starts at 0, B's head at `bStart`, the voice at `voiceStart`. */
+/**
+ * One of the B lanes: a voice, a recording, a generated link or an effect clip, with its own
+ * place on the timeline, its own volume curve (in the clip's own seconds) and its own effects.
+ */
+export interface VoiceLane {
+  id: number
+  buf: AudioBuffer | null
+  source: 'rec' | 'ai' | 'file' | null
+  /** Where the clip starts, in junction seconds. */
+  start: number
+  duck: EnvelopePoint[]
+  /** Each 0 to 1. */
+  reverb: number
+  echo: number
+  radio: number
+  distortion: number
+}
+
+export const emptyLane = (id: number): VoiceLane => ({
+  id, buf: null, source: null, start: 0, duck: [], reverb: 0, echo: 0, radio: 0, distortion: 0,
+})
+
+/** Junction timeline: A's tail starts at 0, C's head at `bStart`, and each B lane at its own `start`. */
 export interface LinkModel {
   a: AudioBuffer
   b: AudioBuffer
-  voice: AudioBuffer | null
+  voices: VoiceLane[]
   bStart: number
-  voiceStart: number
   /**
    * A volume curve per song, in that song's own seconds from its first sample. Keeping them
    * song-local means a curve travels with its song when B slides along the timeline, and the
@@ -21,14 +42,6 @@ export interface LinkModel {
    */
   duckA: EnvelopePoint[]
   duckB: EnvelopePoint[]
-  /** How much room to put around the B clip, 0 (dry) to 1. */
-  reverb: number
-  /** Repeats of the B clip, 0 (none) to 1. */
-  echo: number
-  /** How far the B clip is squeezed into a radio / telephone sound, 0 (untouched) to 1. */
-  radio: number
-  /** How hard the B clip is driven into clipping, 0 (clean) to 1. */
-  distortion: number
 }
 
 /** Length of the synthetic room, in seconds. */
@@ -211,8 +224,8 @@ export function envelopeAt(points: EnvelopePoint[], t: number): number {
 }
 
 /** The ~30s slice of the junction that is previewed and sent. */
-export function junctionWindow(model: Pick<LinkModel, 'bStart' | 'voiceStart'> & { total: number; hasVoice: boolean }): MixWindow {
-  const anchor = model.hasVoice ? model.voiceStart - WINDOW_PRE_ROLL : model.bStart - 10
+export function junctionWindow(model: { bStart: number; total: number; voiceStart: number | null }): MixWindow {
+  const anchor = model.voiceStart !== null ? model.voiceStart - WINDOW_PRE_ROLL : model.bStart - 10
   const start = Math.min(Math.max(0, anchor), Math.max(0, model.total - WINDOW_SECONDS))
   return { start, end: Math.min(model.total, start + WINDOW_SECONDS) }
 }
@@ -253,7 +266,9 @@ export function scheduleMix(
   const layers = [
     { buf: model.a, start: 0, env: model.duckA, fx: NO_FX },
     { buf: model.b, start: model.bStart, env: model.duckB, fx: NO_FX },
-    ...(model.voice ? [{ buf: model.voice, start: model.voiceStart, env: [] as EnvelopePoint[], fx: { reverb: model.reverb, echo: model.echo, radio: model.radio, distortion: model.distortion } }] : []),
+    ...model.voices.flatMap(v => v.buf
+      ? [{ buf: v.buf, start: v.start, env: v.duck, fx: { reverb: v.reverb, echo: v.echo, radio: v.radio, distortion: v.distortion } }]
+      : []),
   ]
   const sources: AudioBufferSourceNode[] = []
 

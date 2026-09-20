@@ -2,12 +2,12 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import WaveSurfer from 'wavesurfer.js'
-import RecordPlugin from 'wavesurfer.js/plugins/record'
 import TimelinePlugin from 'wavesurfer.js/plugins/timeline'
 import { peaksOf } from '@/utils/djAudio'
-import { pairedCurve, type EnvelopePoint, type MixWindow } from '@/utils/djMix'
+import { pairedCurve, type EnvelopePoint, type MixWindow, type VoiceLane } from '@/utils/djMix'
 import { NSlider } from 'naive-ui'
 import { useDjColors } from '@/utils/djColors'
+import DjVoiceTrack from '@/components/dj/DjVoiceTrack.vue'
 
 const LANE_H = 96
 const WAVE_H = 84
@@ -15,97 +15,90 @@ const WAVE_H = 84
 const props = defineProps<{
   a: AudioBuffer | null
   b: AudioBuffer | null
-  voice: AudioBuffer | null
+  /** The B lanes, top to bottom. Each has its own clip, curve and effects. */
+  voices: VoiceLane[]
   bStart: number
   total: number
-  voiceStart: number
   /** A volume curve per song, in that song's own seconds, edited by the DJ. */
   duckA: EnvelopePoint[]
   duckB: EnvelopePoint[]
   window: MixWindow
   playhead: number
-  recording: boolean
-  voiceSource: 'rec' | 'ai' | 'file' | null
+  /** Id of the B lane the microphone is filling, if any. */
+  recordingId: number | null
   titleA?: string
   titleB?: string
   /** Deck parameters shown beside each song, when the library knows them. */
   infoA?: { bpm?: number; key?: string } | null
   infoB?: { bpm?: number; key?: string } | null
-  /** Effects on the B clip, each 0 to 1. */
-  reverb?: number
-  echo?: number
-  radio?: number
-  distortion?: number
   /** When on, the two curves are a crossfade: one song falls as the other rises. */
   linked?: boolean
 }>()
 const emit = defineEmits<{
-  'update:voiceStart': [seconds: number]
+  'update:voices': [voices: VoiceLane[]]
   'update:duckA': [duck: EnvelopePoint[]]
   'update:duckB': [duck: EnvelopePoint[]]
   'update:bStart': [seconds: number]
-  'update:reverb': [amount: number]
-  'update:echo': [amount: number]
-  'update:radio': [amount: number]
-  'update:distortion': [amount: number]
-  'record-end': [blob: Blob]
+  'record-end': [blob: Blob, id: number]
   'record-error': [error: unknown]
   'scrub-start': []
   scrub: [seconds: number]
   'scrub-end': []
-  'delete-voice': []
+  'delete-voice': [id: number]
 }>()
 const { t } = useI18n()
 const djColors = useDjColors()
-/** The effects on B, in the order their sliders stand. */
-const effects = computed(() => [
-  { key: 'reverb' as const, label: t('dj.reverb'), pct: Math.round((props.reverb ?? 0) * 100) },
-  { key: 'echo' as const, label: t('dj.echo'), pct: Math.round((props.echo ?? 0) * 100) },
-  { key: 'radio' as const, label: t('dj.radio'), pct: Math.round((props.radio ?? 0) * 100) },
-  { key: 'distortion' as const, label: t('dj.distortion'), pct: Math.round((props.distortion ?? 0) * 100) },
-])
-function setEffect(key: 'reverb' | 'echo' | 'radio' | 'distortion', pct: number) {
-  if (key === 'reverb') emit('update:reverb', pct / 100)
-  else if (key === 'echo') emit('update:echo', pct / 100)
-  else if (key === 'radio') emit('update:radio', pct / 100)
-  else emit('update:distortion', pct / 100)
+
+type EffectKey = 'reverb' | 'echo' | 'radio' | 'distortion'
+/** The effects on a B lane, in the order their sliders stand. */
+const effectsOf = (v: VoiceLane) => [
+  { key: 'reverb' as const, label: t('dj.reverb'), pct: Math.round(v.reverb * 100) },
+  { key: 'echo' as const, label: t('dj.echo'), pct: Math.round(v.echo * 100) },
+  { key: 'radio' as const, label: t('dj.radio'), pct: Math.round(v.radio * 100) },
+  { key: 'distortion' as const, label: t('dj.distortion'), pct: Math.round(v.distortion * 100) },
+]
+function patchVoice(id: number, patch: Partial<VoiceLane>) {
+  emit('update:voices', props.voices.map(v => (v.id === id ? { ...v, ...patch } : v)))
 }
+const setEffect = (id: number, key: EffectKey, pct: number) => patchVoice(id, { [key]: pct / 100 })
 
 const areaEl = ref<HTMLElement | null>(null)
 const timelineEl = ref<HTMLElement | null>(null)
 const rulerEl = ref<HTMLElement | null>(null)
 const aEl = ref<HTMLElement | null>(null)
-const voiceEl = ref<HTMLElement | null>(null)
 const bEl = ref<HTMLElement | null>(null)
 const areaWidth = ref(0)
 
 const pps = computed(() => (props.total > 0 ? areaWidth.value / props.total : 0))
 const px = (seconds: number) => `${seconds * pps.value}px`
-const voiceDuration = computed(() => props.voice?.duration ?? 0)
 const trackStyle = (start: number, duration: number) => ({ left: px(start), width: px(duration) })
 const aStyle = computed(() => trackStyle(0, props.a?.duration ?? 0))
 const bStyle = computed(() => trackStyle(props.bStart, props.b?.duration ?? 0))
-const voiceStyle = computed(() =>
-  props.recording ? { left: '0px', width: '100%' } : trackStyle(props.voiceStart, voiceDuration.value),
-)
+const voiceStyle = (v: VoiceLane) =>
+  props.recordingId === v.id ? { left: '0px', width: '100%' } : trackStyle(v.start, v.buf?.duration ?? 0)
+const voiceDuration = (v: VoiceLane) => v.buf?.duration ?? 0
 
 const yOf = (volume: number) => 4 + (1 - volume) * (LANE_H - 8)
 const MIN_GAP = 0.05
 const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi)
 
 /**
- * Each song owns its curve and each curve is in its song's own seconds, so the two can be
- * shaped against each other and a curve travels with its song when B slides along.
+ * Every clip owns its curve and each curve is in its clip's own seconds, so a curve travels with
+ * its clip when it slides. `a` and `b` are the two songs; a number is the id of a B lane.
  */
-type Lane = 'a' | 'b'
-const laneStart = (lane: Lane) => (lane === 'a' ? 0 : props.bStart)
-const laneDuration = (lane: Lane) => (lane === 'a' ? props.a?.duration ?? 0 : props.b?.duration ?? 0)
-const laneCurve = (lane: Lane) => (lane === 'a' ? props.duckA : props.duckB)
+type Lane = 'a' | 'b' | number
+const voiceOf = (id: number) => props.voices.find(v => v.id === id)
+const laneStart = (lane: Lane) => (lane === 'a' ? 0 : lane === 'b' ? props.bStart : voiceOf(lane)?.start ?? 0)
+const laneDuration = (lane: Lane) =>
+  lane === 'a' ? props.a?.duration ?? 0 : lane === 'b' ? props.b?.duration ?? 0 : voiceDuration(voiceOf(lane) ?? ({} as VoiceLane))
+const laneCurve = (lane: Lane): EnvelopePoint[] =>
+  lane === 'a' ? props.duckA : lane === 'b' ? props.duckB : voiceOf(lane)?.duck ?? []
 function putCurve(lane: Lane, pts: EnvelopePoint[]) {
+  if (typeof lane === 'number') return patchVoice(lane, { duck: pts })
   if (lane === 'a') emit('update:duckA', pts)
   else emit('update:duckB', pts)
   if (!props.linked) return
-  const other: Lane = lane === 'a' ? 'b' : 'a'
+  const other: 'a' | 'b' = lane === 'a' ? 'b' : 'a'
   const carried = pairedCurve(
     pts, laneStart(lane), laneDuration(lane),
     laneCurve(other), laneStart(other), laneDuration(other),
@@ -118,10 +111,7 @@ function envelopeLine(lane: Lane): string {
   const s = laneStart(lane)
   return laneCurve(lane).map(p => `${(s + p.time) * pps.value},${yOf(p.volume)}`).join(' ')
 }
-const envLineA = computed(() => (props.a ? envelopeLine('a') : ''))
-const envLineB = computed(() => (props.b ? envelopeLine('b') : ''))
-const handlesA = computed(() => (props.a ? props.duckA.map((p, i) => ({ p, i })) : []))
-const handlesB = computed(() => (props.b ? props.duckB.map((p, i) => ({ p, i })) : []))
+const handlesOf = (lane: Lane) => laneCurve(lane).map((p, i) => ({ p, i }))
 
 /**
  * Pointer events fire faster than the screen refreshes, so a drag coalesces into one
@@ -150,7 +140,7 @@ function onHandleMove(e: PointerEvent) {
   if (!handleDrag) return
   const { lane, i, rect } = handleDrag
   const pts = laneCurve(lane)
-  // Held inside its own song and between its neighbours, so it can never be dragged out of sight.
+  // Held inside its own clip and between its neighbours, so it can never be dragged out of sight.
   const min = i > 0 ? pts[i - 1].time + MIN_GAP : 0
   const max = i < pts.length - 1 ? pts[i + 1].time - MIN_GAP : laneDuration(lane)
   const local = (e.clientX - rect.left) / pps.value - laneStart(lane)
@@ -179,7 +169,7 @@ function onHandleUp() {
 /**
  * Press anywhere on a curve to drop a point there and shape it in the same gesture, the way
  * any automation lane behaves. Taking it on pointerdown rather than click also keeps it working
- * on B, where a plain click is swallowed by the pointer capture that slides the song.
+ * on the song lane that slides, where a plain click is swallowed by the pointer capture.
  */
 function onLineDown(e: PointerEvent, lane: Lane) {
   const svg = (e.currentTarget as SVGElement).ownerSVGElement
@@ -211,9 +201,7 @@ function removePoint(lane: Lane, i: number) {
 
 let rulerWs: WaveSurfer | null = null
 let aWs: WaveSurfer | null = null
-let voiceWs: WaveSurfer | null = null
 let bWs: WaveSurfer | null = null
-let record: ReturnType<typeof RecordPlugin.create> | null = null
 let observer: ResizeObserver | null = null
 
 const laneOptions = {
@@ -236,7 +224,6 @@ function show(ws: WaveSurfer | null, buf: AudioBuffer | null): Promise<void> | v
 function syncRuler() {
   void rulerWs?.load('', [new Float32Array([0, 0])], Math.max(1, props.total))
 }
-
 
 onMounted(() => {
   observer = new ResizeObserver(([entry]) => { areaWidth.value = entry.contentRect.width })
@@ -262,69 +249,55 @@ onMounted(() => {
   })
   aWs = WaveSurfer.create({ ...laneOptions, container: aEl.value!, waveColor: djColors.value.a, progressColor: djColors.value.a })
   bWs = WaveSurfer.create({ ...laneOptions, container: bEl.value!, waveColor: djColors.value.c, progressColor: djColors.value.c })
-  voiceWs = WaveSurfer.create({ ...laneOptions, container: voiceEl.value!, waveColor: djColors.value.b, progressColor: djColors.value.b })
-
-  record = voiceWs.registerPlugin(RecordPlugin.create({
-    scrollingWaveform: true,
-    scrollingWaveformWindow: 8,
-    renderRecordedAudio: false,
-  }))
-  record.on('record-end', blob => emit('record-end', blob))
 
   syncRuler()
   void show(aWs, props.a)
   void show(bWs, props.b)
-  void show(voiceWs, props.voice)
 })
 
 onBeforeUnmount(() => {
   observer?.disconnect()
-  for (const ws of [rulerWs, aWs, bWs, voiceWs]) ws?.destroy()
+  for (const ws of [rulerWs, aWs, bWs]) ws?.destroy()
 })
 
-watch(djColors, ({ a, b, c }) => {
+watch(djColors, ({ a, c }) => {
   aWs?.setOptions({ waveColor: a, progressColor: a })
-  voiceWs?.setOptions({ waveColor: b, progressColor: b })
   bWs?.setOptions({ waveColor: c, progressColor: c })
 })
 watch(() => props.total, syncRuler)
 watch(() => props.a, buf => show(aWs, buf))
 watch(() => props.b, buf => show(bWs, buf))
-watch(() => props.voice, buf => show(voiceWs, buf))
 
-async function startRec() {
-  if (!record) return
-  try {
-    await record.startRecording()
-  } catch (e) {
-    emit('record-error', e)
-  }
+/** Each B lane's waveform and microphone live in its own track component. */
+const tracks = new Map<number, InstanceType<typeof DjVoiceTrack>>()
+function setTrack(id: number, el: unknown) {
+  if (el) tracks.set(id, el as InstanceType<typeof DjVoiceTrack>)
+  else tracks.delete(id)
 }
-function stopRec() {
-  record?.stopRecording()
-}
+const startRec = (id: number) => tracks.get(id)?.startRec()
+const stopRec = (id: number) => tracks.get(id)?.stopRec()
 defineExpose({ startRec, stopRec })
 
-// Dragging the voice in time against both songs
-let drag: { x: number; start: number; next: number | null; raf: number } | null = null
-const clampVoice = (s: number) => Math.min(Math.max(0, s), Math.max(0, props.total - voiceDuration.value))
+// Dragging a B clip in time against both songs
+let drag: { id: number; x: number; start: number; next: number | null; raf: number } | null = null
+const clampStart = (v: VoiceLane, s: number) => clamp(s, 0, Math.max(0, props.total - voiceDuration(v)))
 
-function onDragStart(e: PointerEvent) {
-  if (!props.voice || props.recording || pps.value <= 0) return
-  drag = { x: e.clientX, start: props.voiceStart, next: null, raf: 0 }
+function onDragStart(e: PointerEvent, v: VoiceLane) {
+  if (!v.buf || props.recordingId !== null || pps.value <= 0) return
+  drag = { id: v.id, x: e.clientX, start: v.start, next: null, raf: 0 }
   dragging.value = true
   capture(e)
 }
-function onDragMove(e: PointerEvent) {
-  if (!drag) return
-  drag.next = clampVoice(drag.start + (e.clientX - drag.x) / pps.value)
+function onDragMove(e: PointerEvent, v: VoiceLane) {
+  if (!drag || drag.id !== v.id) return
+  drag.next = clampStart(v, drag.start + (e.clientX - drag.x) / pps.value)
   if (!drag.raf) drag.raf = requestAnimationFrame(flushDrag)
 }
 function flushDrag() {
   if (!drag) return
   drag.raf = 0
   if (drag.next === null) return
-  emit('update:voiceStart', drag.next)
+  patchVoice(drag.id, { start: drag.next })
   drag.next = null
 }
 function onDragEnd() {
@@ -335,8 +308,8 @@ function onDragEnd() {
   dragging.value = false
 }
 /**
- * Sliding B along the timeline to set how far it overlaps A. Movement has to clear a few pixels
- * first, so a double-click on the lane still adds a duck point instead of nudging the song.
+ * Sliding C along the timeline to set how far it overlaps A. Movement has to clear a few pixels
+ * first, so pressing on the lane still adds a duck point instead of nudging the song.
  */
 let songDrag: { x: number; start: number; live: boolean; next: number | null; raf: number } | null = null
 
@@ -408,11 +381,11 @@ function onScrubUp() {
   emit('scrub-end')
 }
 
-function onKey(e: KeyboardEvent) {
-  if (!props.voice || props.recording) return
+function onKey(e: KeyboardEvent, v: VoiceLane) {
+  if (!v.buf || props.recordingId !== null) return
   const step = e.shiftKey ? 1 : 0.1
-  if (e.key === 'ArrowLeft') emit('update:voiceStart', clampVoice(props.voiceStart - step))
-  else if (e.key === 'ArrowRight') emit('update:voiceStart', clampVoice(props.voiceStart + step))
+  if (e.key === 'ArrowLeft') patchVoice(v.id, { start: clampStart(v, v.start - step) })
+  else if (e.key === 'ArrowRight') patchVoice(v.id, { start: clampStart(v, v.start + step) })
   else return
   e.preventDefault()
 }
@@ -427,15 +400,15 @@ function onKey(e: KeyboardEvent) {
         <span v-if="infoA?.bpm" class="dj-param">{{ t('dj.bpm', { bpm: Math.round(infoA.bpm) }) }}</span>
         <span v-if="infoA?.key" class="dj-param">{{ infoA.key }}</span>
       </div>
-      <div class="dj-gutter-lane dj-gutter-voice dj-tone-b">
-        <b class="dj-letter-b">B</b><small>{{ t('dj.lane_voice') }}</small>
-        <small v-if="voiceSource">{{ t(`dj.voice_source_${voiceSource}`) }}</small>
+      <div v-for="(v, n) in voices" :key="v.id" class="dj-gutter-lane dj-gutter-voice dj-tone-b">
+        <b class="dj-letter-b">B{{ n + 1 }}</b><small>{{ t('dj.lane_voice') }}</small>
+        <small v-if="v.source">{{ t(`dj.voice_source_${v.source}`) }}</small>
         <div class="dj-fx">
-          <label v-for="fx in effects" :key="fx.key" class="dj-fx-col" :title="`${fx.label} ${fx.pct}%`">
+          <label v-for="fx in effectsOf(v)" :key="fx.key" class="dj-fx-col" :title="`${fx.label} ${fx.pct}%`">
             <NSlider
               class="dj-fx-slider" vertical :theme-overrides="{ handleSize: '12px' }" :value="fx.pct"
               :min="0" :max="100" :step="5" :tooltip="false" :aria-label="fx.label"
-              @update:value="setEffect(fx.key, $event)"
+              @update:value="setEffect(v.id, fx.key, $event)"
             />
             <span class="dj-fx-name">{{ fx.label }}</span>
           </label>
@@ -460,13 +433,13 @@ function onKey(e: KeyboardEvent) {
         <span v-if="a && titleA" class="dj-lane-title">{{ titleA }}</span>
         <svg v-if="a" class="dj-env" :width="areaWidth" :height="LANE_H">
           <polyline
-            class="dj-env-hit" :points="envLineA"
+            class="dj-env-hit" :points="envelopeLine('a')"
             @pointerdown.stop="onLineDown($event, 'a')" @pointermove="onHandleMove"
             @pointerup="onHandleUp" @pointercancel="onHandleUp"
           />
-          <polyline :points="envLineA" />
+          <polyline :points="envelopeLine('a')" />
           <g
-            v-for="{ p, i } in handlesA" :key="i" class="dj-handle-grip"
+            v-for="{ p, i } in handlesOf('a')" :key="i" class="dj-handle-grip"
             @pointerdown.stop="onHandleDown($event, 'a', i)" @pointermove="onHandleMove" @pointerup="onHandleUp" @pointercancel="onHandleUp"
             @dblclick.stop="removePoint('a', i)"
           >
@@ -476,32 +449,54 @@ function onKey(e: KeyboardEvent) {
         </svg>
       </div>
 
-      <div class="dj-lane dj-lane-voice dj-tone-b">
-        <div v-if="!voice && !recording" class="dj-lane-empty">{{ t('dj.rec_hint') }}</div>
-        <div
-          ref="voiceEl"
+      <div v-for="v in voices" :key="v.id" class="dj-lane dj-lane-voice dj-tone-b">
+        <div v-if="!v.buf && recordingId !== v.id" class="dj-lane-empty">{{ t('dj.rec_hint') }}</div>
+        <DjVoiceTrack
+          :ref="(el: unknown) => setTrack(v.id, el)"
           class="dj-track dj-track-voice"
-          :class="{ 'dj-track-drag': !!voice && !recording, 'dj-track-recording': recording }"
-          :style="voiceStyle"
-          :tabindex="voice && !recording ? 0 : -1"
-          @pointerdown="onDragStart"
-          @pointermove="onDragMove"
+          :class="{ 'dj-track-drag': !!v.buf && recordingId === null, 'dj-track-recording': recordingId === v.id }"
+          :style="voiceStyle(v)"
+          :buf="v.buf"
+          :color="djColors.b"
+          :tabindex="v.buf && recordingId === null ? 0 : -1"
+          @pointerdown="onDragStart($event, v)"
+          @pointermove="onDragMove($event, v)"
           @pointerup="onDragEnd"
           @pointercancel="onDragEnd"
-          @keydown="onKey"
+          @keydown="onKey($event, v)"
+          @record-end="emit('record-end', $event, v.id)"
+          @record-error="emit('record-error', $event)"
         />
-        <button
-          v-if="voice && !recording" type="button" class="dj-voice-x"
-          :style="{ left: `calc(${voiceStyle.left} + ${voiceStyle.width})` }"
-          :title="t('dj.delete_rec')" :aria-label="t('dj.delete_rec')"
-          @click="emit('delete-voice')"
-        >✕</button>
-        <span
-          v-if="voice && voiceSource" class="dj-voice-badge" :class="`dj-voice-badge--${voiceSource}`"
-          :style="{ left: voiceStyle.left }"
-        >
-          {{ t(`dj.voice_source_${voiceSource}`) }}
-        </span>
+        <template v-if="v.buf && recordingId !== v.id">
+          <svg class="dj-env dj-env-voice" :width="areaWidth" :height="LANE_H">
+            <polyline
+              class="dj-env-hit" :points="envelopeLine(v.id)"
+              @pointerdown.stop="onLineDown($event, v.id)" @pointermove="onHandleMove"
+              @pointerup="onHandleUp" @pointercancel="onHandleUp"
+            />
+            <polyline :points="envelopeLine(v.id)" />
+            <g
+              v-for="{ p, i } in handlesOf(v.id)" :key="i" class="dj-handle-grip"
+              @pointerdown.stop="onHandleDown($event, v.id, i)" @pointermove="onHandleMove" @pointerup="onHandleUp" @pointercancel="onHandleUp"
+              @dblclick.stop="removePoint(v.id, i)"
+            >
+              <circle class="dj-handle-hit" :cx="(v.start + p.time) * pps" :cy="yOf(p.volume)" r="15" />
+              <circle class="dj-handle" :cx="(v.start + p.time) * pps" :cy="yOf(p.volume)" r="7" />
+            </g>
+          </svg>
+          <button
+            type="button" class="dj-voice-x"
+            :style="{ left: `calc(${voiceStyle(v).left} + ${voiceStyle(v).width})` }"
+            :title="t('dj.delete_rec')" :aria-label="t('dj.delete_rec')"
+            @click="emit('delete-voice', v.id)"
+          >✕</button>
+          <span
+            v-if="v.source" class="dj-voice-badge" :class="`dj-voice-badge--${v.source}`"
+            :style="{ left: voiceStyle(v).left }"
+          >
+            {{ t(`dj.voice_source_${v.source}`) }}
+          </span>
+        </template>
       </div>
 
       <div class="dj-lane dj-tone-c">
@@ -513,13 +508,13 @@ function onKey(e: KeyboardEvent) {
           @pointerdown="onSongDown" @pointermove="onSongMove" @pointerup="onSongUp" @pointercancel="onSongUp"
         >
           <polyline
-            class="dj-env-hit" :points="envLineB"
+            class="dj-env-hit" :points="envelopeLine('b')"
             @pointerdown.stop="onLineDown($event, 'b')" @pointermove="onHandleMove"
             @pointerup="onHandleUp" @pointercancel="onHandleUp"
           />
-          <polyline :points="envLineB" />
+          <polyline :points="envelopeLine('b')" />
           <g
-            v-for="{ p, i } in handlesB" :key="i" class="dj-handle-grip"
+            v-for="{ p, i } in handlesOf('b')" :key="i" class="dj-handle-grip"
             @pointerdown.stop="onHandleDown($event, 'b', i)" @pointermove="onHandleMove" @pointerup="onHandleUp" @pointercancel="onHandleUp"
             @dblclick.stop="removePoint('b', i)"
           >
@@ -806,6 +801,10 @@ function onKey(e: KeyboardEvent) {
 }
 .dj-env-slidable {
   cursor: grab;
+}
+/* A voice lane's clip sits under its curve, so only the line and its points may catch the pointer. */
+.dj-env-voice {
+  pointer-events: none;
 }
 .dj-editor-dragging .dj-env-slidable {
   cursor: grabbing;

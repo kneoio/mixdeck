@@ -8,6 +8,8 @@ export const WINDOW_SECONDS = 30
 /** How far B's head starts before A's tail ends. */
 export const OVERLAP_SECONDS = 4
 export const MAX_VOICE_SECONDS = 20
+/** How many voice / effect lanes (B1, B2 …) a link can carry. */
+export const MAX_VOICE_LANES = 4
 /** Default position of the vocal entry marker, seconds into B's head. */
 export const DEFAULT_VOCAL_ENTRY = 12
 
