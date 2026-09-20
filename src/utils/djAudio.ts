@@ -3,8 +3,6 @@ import datanestApiService from '@/services/datanestApi'
 /** Only the tail of A and the head of B are ever loaded into the editor. */
 export const TAIL_SECONDS = 40
 export const HEAD_SECONDS = 40
-/** Length of the junction window that is previewed and sent to air. */
-export const WINDOW_SECONDS = 30
 /** How far B's head starts before A's tail ends. */
 export const OVERLAP_SECONDS = 4
 export const MAX_VOICE_SECONDS = 20

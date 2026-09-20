@@ -213,7 +213,8 @@ const bStart = ref(bStartFor(TAIL_SECONDS))
 watch(aBuf, buf => { bStart.value = bStartFor(buf?.duration ?? TAIL_SECONDS) })
 const total = computed(() => bStart.value + (bBuf.value?.duration ?? HEAD_SECONDS))
 const win = computed(() => junctionWindow({
-  bStart: bStart.value, voiceStart: voiceStart.value, total: total.value,
+  bStart: bStart.value, aEnd: aBuf.value?.duration ?? TAIL_SECONDS, total: total.value,
+  voiceStart: voiceStart.value, voiceEnd: voiceEnd.value,
 }))
 const clampStart = (duration: number, s: number) => Math.min(Math.max(0, s), Math.max(0, total.value - duration))
 
