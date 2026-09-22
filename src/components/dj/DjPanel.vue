@@ -9,6 +9,7 @@ import DjSongPicker, { type DjSong } from '@/components/dj/DjSongPicker.vue'
 import DjChat from '@/components/dj/DjChat.vue'
 import DjBufferBar from '@/components/dj/DjBufferBar.vue'
 import { useDjColors } from '@/utils/djColors'
+import { useBrandsStore } from '@/stores/brands'
 import djApiService, { type DjChatContext } from '@/services/djApi'
 import datanestApiService from '@/services/datanestApi'
 import aivoxApiService, { type AivoxQueueEntry } from '@/services/aivoxApi'
@@ -97,6 +98,7 @@ async function pollQueue() {
 
 /** Visual scale only (the backend reports a remaining time, not a fixed total). */
 const DEADLINE_VISUAL_MAX_SECONDS = 90
+
 const deadlineSeconds = computed(() => {
   if (deadlineAt.value === null) return null
   return Math.max(0, Math.round((deadlineAt.value - now.value) / 1000) - stitchBuffer.value)
@@ -232,6 +234,29 @@ const win = computed<MixWindow>(() => {
 })
 // A new pair of songs is a new junction, so the range starts out following it again.
 watch([aBuf, bBuf], () => { manualRange.value = null })
+
+/** The join currently on air, which the next one is stitched onto. */
+const lastJoinId = ref<string | null>(null)
+const lastJoinIncomingStart = ref(0)
+/** Seconds aivox needs to render the stitch; a cut closer than this to the live edge is refused. */
+const STITCH_MARGIN_SECONDS = 8
+
+const brandsStore = useBrandsStore()
+/** How far into the join on air aivox has already published; that part can no longer be cut. */
+const committedSeconds = computed(() => {
+  const state = brandsStore.bufferStates[brandSlug.value]
+  if (!state) return null
+  return state.buffer.committedSeconds + Math.max(0, (now.value - state.receivedAt) / 1000)
+})
+/** Where this link cuts into the join on air, in that file's seconds. */
+const cutInPreviousJoin = computed(() =>
+  lastJoinIncomingStart.value + Math.max(0, win.value.start - aStart.value))
+const secondsUntilLock = computed(() => {
+  const committed = committedSeconds.value
+  if (lastJoinId.value === null || committed === null) return null
+  return cutInPreviousJoin.value - committed - STITCH_MARGIN_SECONDS
+})
+const tooLate = computed(() => secondsUntilLock.value !== null && secondsUntilLock.value <= 0)
 const clampStart = (duration: number, s: number) => Math.min(Math.max(0, s), Math.max(0, total.value - duration))
 
 /** The stretch where both songs play together, in junction seconds. */
@@ -502,20 +527,28 @@ async function sendToAir() {
   const a = songA.value
   const b = songB.value
   if (!m || !filledVoices.value.length || !a || !b || sending.value) return
+  if (tooLate.value) {
+    message.error(t('dj.too_late'))
+    return
+  }
   stopPreview()
   sending.value = true
   try {
     const rendered = await renderLink(m, win.value)
-    const filename = `dj-link-${Date.now()}.wav`
-    const stored = await djApiService.uploadTemp(encodeWav(rendered), filename)
+    const joinId = crypto.randomUUID()
     await djApiService.sendToAir(brandSlug.value, {
-      filename: stored,
+      blob: encodeWav(rendered),
+      joinId,
+      continuesJoinId: lastJoinId.value,
       durationSeconds: Math.round(rendered.duration * 100) / 100,
-      songIds: [a.id, b.id],
-      title: [a.title, b.title].filter(Boolean).join(' → '),
-      artist: [...new Set([a.artist, b.artist].filter(Boolean))].join(' / '),
+      incomingSongStartSeconds: Math.max(0, bStart.value - win.value.start),
+      outgoingSongFromSeconds: Math.max(0, win.value.start - aStart.value),
+      songAId: a.id,
+      songBId: b.id,
     })
     message.success(t('dj.sent'))
+    lastJoinId.value = joinId
+    lastJoinIncomingStart.value = Math.max(0, bStart.value - win.value.start)
     // The station will play a → b next, so the next link continues from b.
     songA.value = b
     songB.value = null
@@ -523,6 +556,9 @@ async function sendToAir() {
     voices.value = [emptyLane(nextLaneId++)]
   } catch {
     message.error(t('dj.send_error'))
+    // The cut can no longer be made, so A has to be picked again from whatever is on air.
+    lastJoinId.value = null
+    aLocked.value = false
   } finally {
     sending.value = false
   }
@@ -532,7 +568,7 @@ const ready = computed(() => sessionState.value === 'active')
 // Recording needs a live session, not songs: a voice can be captured first and placed later.
 const canRecord = computed(() => ready.value && !sending.value)
 const canPreview = computed(() => ready.value && !!model.value && !recording.value && !sending.value)
-const canSend = computed(() => canPreview.value && !ending.value)
+const canSend = computed(() => canPreview.value && !ending.value && !tooLate.value)
 
 const songLabel = (s: DjSong | null) => (s ? [s.artist, s.title].filter(Boolean).join(' — ') : '')
 
@@ -592,10 +628,12 @@ onBeforeUnmount(() => {
 
     <DjBufferBar :brand-slug="brandSlug" />
 
+    <p v-if="tooLate" class="dj-banner dj-banner--error">{{ t('dj.too_late') }}</p>
+
     <section class="dj-section">
       <h3 class="dj-section-title">{{ t('dj.songs') }}</h3>
       <div class="dj-pickers">
-        <DjSongPicker v-model="songA" class="dj-asset-field dj-asset-field--a" label="A" :placeholder="t('dj.pick_a')" :brand-slug="brandSlug" :exclude-slug="songB?.slugName" :loading="loadingA" :disabled="aLocked" />
+        <DjSongPicker v-model="songA" class="dj-asset-field dj-asset-field--a" label="A" :placeholder="t('dj.pick_a')" :brand-slug="brandSlug" :exclude-slug="songB?.slugName" :loading="loadingA" :disabled="aLocked && !tooLate" />
         <div v-for="(v, n) in voices" :key="v.id" class="dj-asset-row">
           <span class="dj-asset-slot">{{ voices.length > 1 ? `B${n + 1}` : 'B' }}</span>
           <NButton :type="recordingId === v.id ? 'error' : 'default'" size="small" :disabled="!canRecord || (recording && recordingId !== v.id)" @click="toggleRec(v.id)">

@@ -4,18 +4,24 @@ import authService from './auth'
 import { decodeBlob, MAX_VOICE_SECONDS } from '@/utils/djAudio'
 
 /**
- * DJ Mode backend. Single swap point: set MOCK_DJ_BACKEND = false once the jesoos
- * DJ endpoints ship. The live ON AIR endpoint already exists and is always real.
+ * DJ Mode backend. The session and air endpoints are live; chat and voice generation are still mocked
+ * until jesoos ships them.
  */
 const MOCK_DJ_BACKEND = true
 
 export interface DjAirRequest {
-  filename: string
+  /** The rendered join, already mixed in the browser. */
+  blob: Blob
+  joinId: string
+  /** The join this one cuts into; null for the first join of a session. */
+  continuesJoinId: string | null
   durationSeconds: number
-  /** [A, B] */
-  songIds: [string, string]
-  title: string
-  artist: string
+  /** Where second 0 of the incoming song sits in this file. */
+  incomingSongStartSeconds: number
+  /** Where in the outgoing song this file begins. */
+  outgoingSongFromSeconds: number
+  songAId: string
+  songBId: string
 }
 
 export interface DjChatSong {
@@ -109,23 +115,26 @@ class DjApiService extends ApiClient {
     super(appConfig.jesoosServer)
   }
 
+  private tokenParam(): string {
+    const token = authService.getToken()
+    if (!token) throw new Error('Unauthorized')
+    return `token=${encodeURIComponent(token)}`
+  }
+
   /** POST /dj/{brand}/session — take over the station. Resolves with the session start time (ms). */
   async startSession(brandSlug: string): Promise<{ startedAt: number }> {
-    if (MOCK_DJ_BACKEND) {
-      await sleep(400)
-      return { startedAt: Date.now() }
-    }
-    await this.request<void>(`/dj/${encodeURIComponent(brandSlug)}/session`, { method: 'POST' })
-    return { startedAt: Date.now() }
+    const response = await fetch(
+      `${this.baseUrl}/dj/${encodeURIComponent(brandSlug)}/session?${this.tokenParam()}`, { method: 'POST' })
+    if (!response.ok) throw new Error(`Session start failed (${response.status})`)
+    const body = await response.json()
+    return { startedAt: typeof body?.startedAt === 'number' ? body.startedAt : Date.now() }
   }
 
   /** DELETE /dj/{brand}/session — hand the station back to the AI agenda. */
   async endSession(brandSlug: string): Promise<void> {
-    if (MOCK_DJ_BACKEND) {
-      await sleep(250)
-      return
-    }
-    await this.request<void>(`/dj/${encodeURIComponent(brandSlug)}/session`, { method: 'DELETE' })
+    const response = await fetch(
+      `${this.baseUrl}/dj/${encodeURIComponent(brandSlug)}/session?${this.tokenParam()}`, { method: 'DELETE' })
+    if (!response.ok) throw new Error(`Session end failed (${response.status})`)
   }
 
   /** GET /info/{brand}/live — ON AIR state. `null` when the response shape is not recognised. */
@@ -135,33 +144,20 @@ class DjApiService extends ApiClient {
     return typeof res?.onAir === 'boolean' ? res.onAir : null
   }
 
-  /** POST /chat/upload-temp?token= — multipart audio upload. Resolves with the stored filename. */
-  async uploadTemp(blob: Blob, filename: string): Promise<string> {
-    if (MOCK_DJ_BACKEND) {
-      await sleep(600)
-      return filename
-    }
-    const token = authService.getToken()
-    if (!token) throw new Error('Unauthorized')
-    const form = new FormData()
-    form.append('file', blob, filename)
-    const response = await fetch(`${this.baseUrl}/chat/upload-temp?token=${encodeURIComponent(token)}`, {
-      method: 'POST',
-      body: form,
-    })
-    if (!response.ok) throw new Error(`Upload failed (${response.status})`)
-    const body = await response.json()
-    return typeof body?.filename === 'string' ? body.filename : filename
-  }
-
-  /** POST /dj/{brand}/air — queue the uploaded segment as an ordinary song. */
+  /** POST /dj/{brand}/air — upload the rendered join and queue it. aivox stitches it onto the previous one. */
   async sendToAir(brandSlug: string, body: DjAirRequest): Promise<void> {
-    if (MOCK_DJ_BACKEND) {
-      await sleep(500)
-      console.info('[dj mock] air', brandSlug, body)
-      return
-    }
-    await this.post<void>(`/dj/${encodeURIComponent(brandSlug)}/air`, body)
+    const form = new FormData()
+    form.append('file', body.blob, `${body.joinId}.wav`)
+    form.append('joinId', body.joinId)
+    if (body.continuesJoinId) form.append('continuesJoinId', body.continuesJoinId)
+    form.append('durationSeconds', String(body.durationSeconds))
+    form.append('incomingSongStartSeconds', String(body.incomingSongStartSeconds))
+    form.append('outgoingSongFromSeconds', String(body.outgoingSongFromSeconds))
+    form.append('songAId', body.songAId)
+    form.append('songBId', body.songBId)
+    const response = await fetch(
+      `${this.baseUrl}/dj/${encodeURIComponent(brandSlug)}/air?${this.tokenParam()}`, { method: 'POST', body: form })
+    if (!response.ok) throw new Error(`Send failed (${response.status})`)
   }
 
   /**
