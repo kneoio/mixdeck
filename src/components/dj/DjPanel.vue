@@ -146,12 +146,20 @@ const bBuf = shallowRef<AudioBuffer | null>(null)
 const loadingA = ref(false)
 const loadingB = ref(false)
 
+/** C's decoded audio, handed to A after a send so the next link starts without refetching it. */
+let carriedBuffer: AudioBuffer | null = null
+
 async function loadSong(song: DjSong | null, slot: 'a' | 'b') {
   const target = slot === 'a' ? aBuf : bBuf
   const loading = slot === 'a' ? loadingA : loadingB
   const current = () => (slot === 'a' ? songA : songB).value?.slugName
   target.value = null
   if (!song) return
+  if (slot === 'a' && carriedBuffer) {
+    target.value = carriedBuffer
+    carriedBuffer = null
+    return
+  }
   loading.value = true
   try {
     const full = await fetchSongBuffer(song.slugName)
@@ -550,7 +558,8 @@ async function sendToAir() {
     message.success(t('dj.sent'))
     lastJoinId.value = joinId
     lastJoinIncomingStart.value = Math.max(0, bStart.value - win.value.start)
-    // The station will play a → b next, so the next link continues from b.
+    // The station will play a → b next, so the next link continues from b, with its audio already decoded.
+    carriedBuffer = bBuf.value
     songA.value = b
     songB.value = null
     aLocked.value = true
