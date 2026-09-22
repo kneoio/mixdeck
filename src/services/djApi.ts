@@ -131,12 +131,11 @@ class DjApiService extends ApiClient {
     const meta = await this.post<{ filename: string; durationSeconds: number; script: string }>(
       `/dj/${encodeURIComponent(brandSlug)}/generate-voice`, body,
     )
-    const token = authService.getToken()
-    if (!token) throw new Error('Unauthorized')
     // Assumed: generated audio is served back the same way /chat/upload-temp addresses an
     // upload. Not confirmed with the backend owner.
     const response = await fetch(
-      `${this.baseUrl}/chat/download-temp/${encodeURIComponent(meta.filename)}?token=${encodeURIComponent(token)}`,
+      `${this.baseUrl}/chat/download-temp/${encodeURIComponent(meta.filename)}`,
+      { headers: authService.getAuthHeader() },
     )
     if (!response.ok) throw new Error(`Fetch failed (${response.status})`)
     const buffer = await decodeBlob(await response.blob())

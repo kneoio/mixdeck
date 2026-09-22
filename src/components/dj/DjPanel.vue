@@ -544,8 +544,8 @@ async function sendToAir() {
       durationSeconds: Math.round(rendered.duration * 100) / 100,
       incomingSongStartSeconds: Math.max(0, bStart.value - win.value.start),
       outgoingSongFromSeconds: Math.max(0, win.value.start - aStart.value),
-      songAId: a.id,
-      songBId: b.id,
+      songASlug: a.slugName,
+      songBSlug: b.slugName,
     })
     message.success(t('dj.sent'))
     lastJoinId.value = joinId

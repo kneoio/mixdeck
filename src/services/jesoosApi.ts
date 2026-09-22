@@ -66,8 +66,8 @@ export interface DjJoin {
   incomingSongStartSeconds: number
   /** Where in the outgoing song this file begins. */
   outgoingSongFromSeconds: number
-  songAId: string
-  songBId: string
+  songASlug: string
+  songBSlug: string
 }
 
 class JesoosApiService extends ApiClient {
@@ -92,8 +92,8 @@ class JesoosApiService extends ApiClient {
     form.append('durationSeconds', String(join.durationSeconds))
     form.append('incomingSongStartSeconds', String(join.incomingSongStartSeconds))
     form.append('outgoingSongFromSeconds', String(join.outgoingSongFromSeconds))
-    form.append('songAId', join.songAId)
-    form.append('songBId', join.songBId)
+    form.append('songASlug', join.songASlug)
+    form.append('songBSlug', join.songBSlug)
     await this.request<void>(`/dj/${encodeURIComponent(brandSlug)}/air`, { method: 'POST', body: form })
   }
 
