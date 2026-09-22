@@ -39,6 +39,15 @@ export interface AivoxQueueResponse {
 
 export type AivoxDashboardStreamType = 'RADIO' | 'OTS'
 
+/** The fragment currently going live: `committedSeconds` of it can no longer be cut, `pendingSeconds` of queued audio still can. */
+export interface AivoxStreamBuffer {
+  soundFragmentId: string
+  title: string
+  durationSeconds: number
+  committedSeconds: number
+  pendingSeconds: number
+}
+
 export interface AivoxDashboardStreamEntry {
   brand: string
   type: AivoxDashboardStreamType
@@ -46,6 +55,7 @@ export interface AivoxDashboardStreamEntry {
   heartbeat: boolean
   error: string | null
   remainingMinutes: number
+  buffer: AivoxStreamBuffer | null
 }
 
 class AivoxApiService extends ApiClient {

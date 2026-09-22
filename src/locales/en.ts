@@ -151,6 +151,8 @@ export default {
     generate_error: 'Could not generate the voice',
     deadline_label: 'Time left to finish this link: {time}',
     deadline_locked: 'Locked — the queued song is going out now',
+    buffer_committed: 'On air {committed} / {total}',
+    buffer_pending: 'buffer {pending}',
   },
   overview: {
     title: 'Streams',

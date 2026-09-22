@@ -2,6 +2,12 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import datanestApiService from '@/services/datanestApi'
 import type { EntitlementAction } from '@/utils/entitlements'
+import type { AivoxStreamBuffer } from '@/services/aivoxApi'
+
+export interface BufferState {
+  buffer: AivoxStreamBuffer
+  receivedAt: number
+}
 
 export type BrandStatus = 'OFF_LINE' | 'ON_LINE' | 'QUEUE_SATURATED' | 'WARMING_UP' | 'IDLE' | 'SYSTEM_ERROR'
 export type ManagedBy = 'ITSELF' | 'AI_AGENT' | 'MIX'
@@ -75,6 +81,7 @@ export const useBrandsStore = defineStore('brands', () => {
   const maxPage = ref(1)
   const streamingStates = ref<Record<string, boolean>>({})
   const heartbeatPulses = ref<Record<string, number>>({})
+  const bufferStates = ref<Record<string, BufferState | null>>({})
 
   async function loadBrands() {
     loading.value = true
@@ -117,6 +124,10 @@ export const useBrandsStore = defineStore('brands', () => {
     heartbeatPulses.value[slug] = (heartbeatPulses.value[slug] ?? 0) + 1
   }
 
+  function setBufferState(slug: string, buffer: AivoxStreamBuffer | null) {
+    bufferStates.value[slug] = buffer ? { buffer, receivedAt: Date.now() } : null
+  }
+
   return {
     brands,
     actions,
@@ -127,12 +138,14 @@ export const useBrandsStore = defineStore('brands', () => {
     maxPage,
     streamingStates,
     heartbeatPulses,
+    bufferStates,
     loadBrands,
     fetchBrand,
     saveBrand,
     deleteBrand,
     closeBrand,
     setStreamingState,
-    pulseHeartbeat
+    pulseHeartbeat,
+    setBufferState
   }
 })

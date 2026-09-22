@@ -7,6 +7,7 @@ import AivoxQueue from '@/components/AivoxQueue.vue'
 import DjLinkEditor from '@/components/dj/DjLinkEditor.vue'
 import DjSongPicker, { type DjSong } from '@/components/dj/DjSongPicker.vue'
 import DjChat from '@/components/dj/DjChat.vue'
+import DjBufferBar from '@/components/dj/DjBufferBar.vue'
 import { useDjColors } from '@/utils/djColors'
 import djApiService, { type DjChatContext } from '@/services/djApi'
 import datanestApiService from '@/services/datanestApi'
@@ -588,6 +589,8 @@ onBeforeUnmount(() => {
         {{ deadlineSeconds > 0 ? t('dj.deadline_label', { time: formatCountdown(deadlineSeconds) }) : t('dj.deadline_locked') }}
       </span>
     </div>
+
+    <DjBufferBar :brand-slug="brandSlug" />
 
     <section class="dj-section">
       <h3 class="dj-section-title">{{ t('dj.songs') }}</h3>
