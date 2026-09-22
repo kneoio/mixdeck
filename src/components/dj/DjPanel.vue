@@ -228,6 +228,7 @@ const overhang = computed(() =>
 /**
  * What Play and Send cover. Until the DJ drags the range on the ruler it follows the junction: from
  * a little before C comes in (or the first B clip) to a little after A ends and the last clip ends.
+ * The first join of a session has nothing on air to continue from, so it carries A whole.
  */
 const manualRange = ref<MixWindow | null>(null)
 const win = computed<MixWindow>(() => {
@@ -239,7 +240,8 @@ const win = computed<MixWindow>(() => {
   }
   const first = Math.min(bStart.value, voiceStart.value ?? bStart.value)
   const last = Math.max(aEnd.value + 15, voiceEnd.value + 8)
-  return { start: Math.max(0, first - 10), end: Math.min(end, last) }
+  const start = lastJoinId.value === null ? aStart.value : Math.max(0, first - 10)
+  return { start, end: Math.min(end, last) }
 })
 // A new pair of songs is a new junction, so the range starts out following it again.
 watch([aBuf, bBuf], () => { manualRange.value = null })
