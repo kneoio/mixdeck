@@ -166,7 +166,7 @@ class DjApiService extends ApiClient {
 
   /**
    * POST /dj/{brand}/chat — talk to the station's AI DJ about the current A/B link.
-   * Endpoint shape is proposed, not confirmed with the backend owner (see docs/PORTING.md).
+   * Endpoint shape is proposed, not confirmed with the backend owner.
    */
   async chat(brandSlug: string, body: DjChatRequest): Promise<DjChatReply> {
     if (MOCK_DJ_BACKEND) {
@@ -178,7 +178,7 @@ class DjApiService extends ApiClient {
 
   /**
    * POST /dj/{brand}/generate-voice — synthesize spoken audio for a script/instruction.
-   * Endpoint shape is proposed, not confirmed with the backend owner (see docs/PORTING.md).
+   * Endpoint shape is proposed, not confirmed with the backend owner.
    */
   async generateVoice(brandSlug: string, body: DjGenerateVoiceRequest): Promise<DjGeneratedVoice> {
     if (MOCK_DJ_BACKEND) {
@@ -191,7 +191,7 @@ class DjApiService extends ApiClient {
     const token = authService.getToken()
     if (!token) throw new Error('Unauthorized')
     // Assumed: generated audio is served back the same way /chat/upload-temp addresses an
-    // upload. Not confirmed with the backend owner — see docs/PORTING.md.
+    // upload. Not confirmed with the backend owner.
     const response = await fetch(
       `${this.baseUrl}/chat/download-temp/${encodeURIComponent(meta.filename)}?token=${encodeURIComponent(token)}`,
     )
