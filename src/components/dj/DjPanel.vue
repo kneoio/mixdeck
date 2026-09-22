@@ -13,6 +13,7 @@ import { useBrandsStore } from '@/stores/brands'
 import djApiService, { type DjChatContext } from '@/services/djApi'
 import datanestApiService from '@/services/datanestApi'
 import aivoxApiService, { type AivoxQueueEntry } from '@/services/aivoxApi'
+import jesoosApiService from '@/services/jesoosApi'
 import {
   decodeBlob, fetchSongBuffer,
   HEAD_SECONDS, MAX_VOICE_LANES, MAX_VOICE_SECONDS, TAIL_SECONDS,
@@ -68,7 +69,7 @@ const elapsed = computed(() => {
 async function startSession() {
   sessionState.value = 'starting'
   try {
-    startedAt.value = (await djApiService.startSession(brandSlug.value)).startedAt
+    startedAt.value = (await jesoosApiService.startDjSession(brandSlug.value)).startedAt
     sessionState.value = 'active'
   } catch {
     sessionState.value = 'error'
@@ -125,7 +126,7 @@ async function endSession() {
   try {
     if (!sessionEnded && sessionState.value === 'active') {
       sessionEnded = true
-      await djApiService.endSession(brandSlug.value)
+      await jesoosApiService.endDjSession(brandSlug.value)
     }
   } catch {
     message.error(t('dj.end_error'))
@@ -536,7 +537,7 @@ async function sendToAir() {
   try {
     const rendered = await renderLink(m, win.value)
     const joinId = crypto.randomUUID()
-    await djApiService.sendToAir(brandSlug.value, {
+    await jesoosApiService.sendDjJoin(brandSlug.value, {
       blob: encodeWav(rendered),
       joinId,
       continuesJoinId: lastJoinId.value,
@@ -586,7 +587,7 @@ onBeforeUnmount(() => {
   preview.stop()
   if (!sessionEnded && sessionState.value === 'active') {
     sessionEnded = true
-    void djApiService.endSession(brandSlug.value).catch(() => {})
+    void jesoosApiService.endDjSession(brandSlug.value).catch(() => {})
   }
 })
 </script>

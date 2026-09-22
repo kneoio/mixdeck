@@ -30,7 +30,8 @@ export class ApiClient {
     const response = await fetch(url, {
       ...options,
       headers: {
-        'Content-Type': 'application/json',
+        // FormData sets its own content type, boundary included.
+        ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
         'Accept-Language': getAcceptLanguage(),
         ...authHeaders,
         ...options.headers,

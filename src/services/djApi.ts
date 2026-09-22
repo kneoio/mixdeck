@@ -9,21 +9,6 @@ import { decodeBlob, MAX_VOICE_SECONDS } from '@/utils/djAudio'
  */
 const MOCK_DJ_BACKEND = true
 
-export interface DjAirRequest {
-  /** The rendered join, already mixed in the browser. */
-  blob: Blob
-  joinId: string
-  /** The join this one cuts into; null for the first join of a session. */
-  continuesJoinId: string | null
-  durationSeconds: number
-  /** Where second 0 of the incoming song sits in this file. */
-  incomingSongStartSeconds: number
-  /** Where in the outgoing song this file begins. */
-  outgoingSongFromSeconds: number
-  songAId: string
-  songBId: string
-}
-
 export interface DjChatSong {
   id: string
   title: string
@@ -115,49 +100,11 @@ class DjApiService extends ApiClient {
     super(appConfig.jesoosServer)
   }
 
-  private tokenParam(): string {
-    const token = authService.getToken()
-    if (!token) throw new Error('Unauthorized')
-    return `token=${encodeURIComponent(token)}`
-  }
-
-  /** POST /dj/{brand}/session — take over the station. Resolves with the session start time (ms). */
-  async startSession(brandSlug: string): Promise<{ startedAt: number }> {
-    const response = await fetch(
-      `${this.baseUrl}/dj/${encodeURIComponent(brandSlug)}/session?${this.tokenParam()}`, { method: 'POST' })
-    if (!response.ok) throw new Error(`Session start failed (${response.status})`)
-    const body = await response.json()
-    return { startedAt: typeof body?.startedAt === 'number' ? body.startedAt : Date.now() }
-  }
-
-  /** DELETE /dj/{brand}/session — hand the station back to the AI agenda. */
-  async endSession(brandSlug: string): Promise<void> {
-    const response = await fetch(
-      `${this.baseUrl}/dj/${encodeURIComponent(brandSlug)}/session?${this.tokenParam()}`, { method: 'DELETE' })
-    if (!response.ok) throw new Error(`Session end failed (${response.status})`)
-  }
-
   /** GET /info/{brand}/live — ON AIR state. `null` when the response shape is not recognised. */
   async getOnAir(brandSlug: string): Promise<boolean | null> {
     const res = await this.request<any>(`/info/${encodeURIComponent(brandSlug)}/live`)
     if (typeof res === 'boolean') return res
     return typeof res?.onAir === 'boolean' ? res.onAir : null
-  }
-
-  /** POST /dj/{brand}/air — upload the rendered join and queue it. aivox stitches it onto the previous one. */
-  async sendToAir(brandSlug: string, body: DjAirRequest): Promise<void> {
-    const form = new FormData()
-    form.append('file', body.blob, `${body.joinId}.wav`)
-    form.append('joinId', body.joinId)
-    if (body.continuesJoinId) form.append('continuesJoinId', body.continuesJoinId)
-    form.append('durationSeconds', String(body.durationSeconds))
-    form.append('incomingSongStartSeconds', String(body.incomingSongStartSeconds))
-    form.append('outgoingSongFromSeconds', String(body.outgoingSongFromSeconds))
-    form.append('songAId', body.songAId)
-    form.append('songBId', body.songBId)
-    const response = await fetch(
-      `${this.baseUrl}/dj/${encodeURIComponent(brandSlug)}/air?${this.tokenParam()}`, { method: 'POST', body: form })
-    if (!response.ok) throw new Error(`Send failed (${response.status})`)
   }
 
   /**

@@ -55,9 +55,46 @@ export interface DebugInstructionResponse {
   outputTokens: number
 }
 
+/** A transition the DJ rendered in the deck. aivox stitches it onto the join before it. */
+export interface DjJoin {
+  blob: Blob
+  joinId: string
+  /** The join this one cuts into; null for the first join of a session. */
+  continuesJoinId: string | null
+  durationSeconds: number
+  /** Where second 0 of the incoming song sits in this file. */
+  incomingSongStartSeconds: number
+  /** Where in the outgoing song this file begins. */
+  outgoingSongFromSeconds: number
+  songAId: string
+  songBId: string
+}
+
 class JesoosApiService extends ApiClient {
   constructor() {
     super(appConfig.jesoosServer)
+  }
+
+  /** Take the air: jesoos suspends the agenda until the session ends. */
+  async startDjSession(brandSlug: string): Promise<{ startedAt: number }> {
+    return this.request<{ startedAt: number }>(`/dj/${encodeURIComponent(brandSlug)}/session`, { method: 'POST' })
+  }
+
+  async endDjSession(brandSlug: string): Promise<void> {
+    await this.request<void>(`/dj/${encodeURIComponent(brandSlug)}/session`, { method: 'DELETE' })
+  }
+
+  async sendDjJoin(brandSlug: string, join: DjJoin): Promise<void> {
+    const form = new FormData()
+    form.append('file', join.blob, `${join.joinId}.wav`)
+    form.append('joinId', join.joinId)
+    if (join.continuesJoinId) form.append('continuesJoinId', join.continuesJoinId)
+    form.append('durationSeconds', String(join.durationSeconds))
+    form.append('incomingSongStartSeconds', String(join.incomingSongStartSeconds))
+    form.append('outgoingSongFromSeconds', String(join.outgoingSongFromSeconds))
+    form.append('songAId', join.songAId)
+    form.append('songBId', join.songBId)
+    await this.request<void>(`/dj/${encodeURIComponent(brandSlug)}/air`, { method: 'POST', body: form })
   }
 
   async debugInstruction(brandSlug: string, body: DebugInstructionRequest): Promise<DebugInstructionResponse> {
