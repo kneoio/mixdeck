@@ -4,8 +4,8 @@ import authService from './auth'
 import { decodeBlob, MAX_VOICE_SECONDS } from '@/utils/djAudio'
 
 /**
- * DJ Mode backend. The session and air endpoints are live; chat and voice generation are still mocked
- * until jesoos ships them.
+ * The DJ deck's AI helper. Sessions and joins go through jesoosApi; only chat and voice generation
+ * live here, and both are mocked until jesoos ships them.
  */
 const MOCK_DJ_BACKEND = true
 
