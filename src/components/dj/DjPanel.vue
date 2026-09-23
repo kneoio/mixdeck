@@ -59,6 +59,9 @@ const ending = ref(false)
 let sessionEnded = false
 let clockTimer: ReturnType<typeof setInterval> | null = null
 let queueTimer: ReturnType<typeof setInterval> | null = null
+let keepAliveTimer: ReturnType<typeof setInterval> | null = null
+/** Well inside the server's session TTL, so a working deck never lapses. */
+const KEEP_ALIVE_MS = 60_000
 
 const elapsed = computed(() => {
   const total = Math.max(0, Math.floor((now.value - startedAt.value) / 1000))
@@ -602,11 +605,16 @@ onMounted(async () => {
   void pollQueue()
   queueTimer = setInterval(pollQueue, 10000)
   await startSession()
+  // The session lapses on the server without this, so a closed laptop hands the air back.
+  keepAliveTimer = setInterval(() => {
+    if (sessionState.value === 'active') void jesoosApiService.startDjSession(brandSlug.value).catch(() => {})
+  }, KEEP_ALIVE_MS)
 })
 
 onBeforeUnmount(() => {
   if (clockTimer) clearInterval(clockTimer)
   if (queueTimer) clearInterval(queueTimer)
+  if (keepAliveTimer) clearInterval(keepAliveTimer)
   clearRecTimer()
   preview.stop()
   if (!sessionEnded && sessionState.value === 'active') {

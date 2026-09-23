@@ -14,14 +14,14 @@
           <div class="brand-head">
             <span class="brand-name" @click="goPlaylist(brand)">{{ brandLabel(brand) }}</span>
             <span v-if="dashboardSnapshotReceived" class="brand-status">{{ ledState(brand).label }}</span>
-            <NButton
+            <GsapButton
               v-if="canUseDjMode && dashboardSnapshotReceived && brand.slugName"
-              size="tiny"
-              secondary
+              class="take-over-btn"
+              size="small"
               type="primary"
               :disabled="djBrand === brand.slugName"
               @click="djBrand = brand.slugName ?? null"
-            >{{ t('dj.take_over') }}</NButton>
+            ><span>{{ t('dj.take_over') }}</span></GsapButton>
           </div>
         </template>
 
@@ -155,7 +155,7 @@
 import { defineAsyncComponent, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { NButton, NCard, NCollapse, NCollapseItem, NPopover } from 'naive-ui'
+import { NCard, NCollapse, NCollapseItem, NPopover } from 'naive-ui'
 import QRCode from 'qrcode'
 import { canUseDjMode } from '@/config/features'
 import { useBrandsStore, type Brand, type BrandStatus } from '@/stores/brands'
@@ -515,6 +515,14 @@ onBeforeUnmount(() => {
 }
 .brand-name:hover {
   color: var(--vt-c-primary);
+}
+/** Same footprint as the old tiny NButton this replaced — only the slanted GsapButton look is new. */
+.take-over-btn {
+  height: 22px;
+  padding: 0 10px;
+}
+.take-over-btn :deep(.gsap-btn__inner) {
+  font-size: 0.68rem;
 }
 .brand-status {
   font-size: 9px;
