@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { NButton, NCheckbox, NDrawer, NDrawerContent, NIcon, NSelect, useMessage, useThemeVars } from 'naive-ui'
 import { ChatbubblesOutline } from '@vicons/ionicons5'
 import AivoxQueue from '@/components/AivoxQueue.vue'
+import LedRed from '@/components/LedRed.vue'
 import DjLinkEditor from '@/components/dj/DjLinkEditor.vue'
 import DjSongPicker, { type DjSong } from '@/components/dj/DjSongPicker.vue'
 import DjChat from '@/components/dj/DjChat.vue'
@@ -660,7 +661,7 @@ onBeforeUnmount(() => {
         <div v-for="(v, n) in voices" :key="v.id" class="dj-asset-row">
           <span class="dj-asset-slot">{{ voices.length > 1 ? `B${n + 1}` : 'B' }}</span>
           <NButton :type="recordingId === v.id ? 'error' : 'default'" size="small" :disabled="!canRecord || (recording && recordingId !== v.id)" @click="toggleRec(v.id)">
-            <span class="dj-rec-dot" :class="{ 'dj-rec-dot--on': recordingId === v.id }" />
+            <LedRed class="dj-rec-led" :active="recordingId === v.id" />
             {{ recordingId === v.id ? `${t('dj.rec_stop')} ${recSeconds}s / ${MAX_VOICE_SECONDS}s` : t('dj.rec') }}
           </NButton>
           <NButton size="small" :disabled="recording || sending" @click="pickFile(v.id)">
@@ -915,18 +916,9 @@ onBeforeUnmount(() => {
   color: var(--dj-danger);
   font-size: 1.05em;
 }
-.dj-rec-dot {
-  width: 10px;
-  height: 10px;
-  margin-right: 8px;
-  border-radius: 50%;
-  background: var(--dj-danger);
-}
-.dj-rec-dot--on {
-  animation: dj-rec-blink 1s infinite;
-}
-@keyframes dj-rec-blink {
-  50% { opacity: 0.25; }
+.dj-rec-led {
+  margin-right: 6px;
+  vertical-align: -3px;
 }
 .dj-empty {
   margin: 0;
