@@ -61,7 +61,7 @@ const classes = computed(() => [
   justify-content: center;
   height: 34px;
   padding: 0 20px;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 3px;
   cursor: pointer;
   outline: none;
@@ -103,7 +103,7 @@ const classes = computed(() => [
 .gsap-btn--error   { background: #FF2D95; color: #fff; }
 .gsap-btn--warning { background: #1e1500; color: #F0A020; }
 .gsap-btn--success { background: #041509; color: #18A058; }
-.gsap-btn--text    { background: transparent; color: rgba(255,255,255,0.6); transform: none; }
+.gsap-btn--text    { background: transparent; border-color: transparent; color: rgba(255,255,255,0.6); transform: none; }
 .gsap-btn--text .gsap-btn__inner { transform: none; }
 .gsap-btn--text:not(:disabled):hover { transform: scale(1.03); }
 .gsap-btn--text:not(:disabled):active { transform: scale(0.96); }
@@ -121,6 +121,9 @@ const classes = computed(() => [
 }
 
 /* light theme overrides */
+:global(.n-config-provider:not([class*="dark"])) .gsap-btn {
+  border-color: rgba(0, 0, 0, 0.18);
+}
 :global(.n-config-provider:not([class*="dark"])) .gsap-btn--default {
   background: #f0f0f5;
   color: rgba(0,0,0,0.75);
