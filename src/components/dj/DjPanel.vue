@@ -699,7 +699,7 @@ onBeforeUnmount(() => {
         <div v-for="(v, n) in voices" :key="v.id" class="dj-asset-row">
           <span class="dj-asset-slot">{{ voices.length > 1 ? `B${n + 1}` : 'B' }}</span>
           <NButton size="small" :disabled="!canRecord || (recording && recordingId !== v.id)" @click="toggleRec(v.id)">
-            <LedRed class="dj-rec-led" :active="recordingId === v.id" />
+            <span class="dj-lamp dj-lamp--inline"><LedRed :active="recordingId === v.id" /></span>
             {{ t('dj.rec') }}
           </NButton>
           <span v-if="recordingId === v.id" class="dj-rec-time">{{ recSeconds }}s / {{ MAX_VOICE_SECONDS }}s</span>
@@ -769,8 +769,7 @@ onBeforeUnmount(() => {
       </div>
       <div class="dj-controls">
         <GsapButton size="large" :disabled="!canPreview" @click="togglePreview">
-          <LedGreen class="dj-preview-led" :active="previewing" />
-          <span class="dj-preview-icon">▶</span>
+          <span class="dj-lamp"><LedGreen :active="previewing" /></span>
           <span>{{ previewing ? t('dj.preview_stop') : t('dj.preview') }}</span>
         </GsapButton>
         <div class="dj-send">
@@ -965,14 +964,22 @@ onBeforeUnmount(() => {
   gap: 12px;
   flex-wrap: wrap;
 }
-.dj-preview-icon {
+/** A small bezel around a status LED, like the lamp housing on real hardware, so it reads as one indicator rather than a stray glyph. */
+.dj-lamp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 18px;
   margin-right: 8px;
-  font-size: 0.8em;
+  border: 1px solid var(--dj-border);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.35);
+  vertical-align: -4px;
 }
-.dj-preview-led {
-  vertical-align: -3px;
-}
-.dj-rec-led {
+.dj-lamp--inline {
+  width: 18px;
+  height: 16px;
   margin-right: 6px;
   vertical-align: -3px;
 }
