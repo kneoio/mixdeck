@@ -700,8 +700,9 @@ onBeforeUnmount(() => {
           <span class="dj-asset-slot">{{ voices.length > 1 ? `B${n + 1}` : 'B' }}</span>
           <NButton size="small" :disabled="!canRecord || (recording && recordingId !== v.id)" @click="toggleRec(v.id)">
             <LedRed class="dj-rec-led" :active="recordingId === v.id" />
-            {{ recordingId === v.id ? `${t('dj.rec_stop')} ${recSeconds}s / ${MAX_VOICE_SECONDS}s` : t('dj.rec') }}
+            {{ t('dj.rec') }}
           </NButton>
+          <span v-if="recordingId === v.id" class="dj-rec-time">{{ recSeconds }}s / {{ MAX_VOICE_SECONDS }}s</span>
           <NButton size="small" :disabled="recording || sending" @click="pickFile(v.id)">
             {{ t('dj.add_effect') }}
           </NButton>
@@ -974,6 +975,11 @@ onBeforeUnmount(() => {
 .dj-rec-led {
   margin-right: 6px;
   vertical-align: -3px;
+}
+.dj-rec-time {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--dj-danger);
 }
 .dj-empty {
   margin: 0;
