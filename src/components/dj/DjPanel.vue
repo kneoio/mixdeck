@@ -352,7 +352,8 @@ function applyAutoDuck() {
   if (voiceStart.value !== null) {
     // Ducks across the whole voiced stretch, from the first clip's start to the last one's end.
     const length = voiceEnd.value - voiceStart.value
-    duckA.value = autoDuck(voiceStart.value, length, aStart.value, a.duration)
+    // A ends soon after the voice anyway, so it dips and stays down rather than climbing back up just to stop.
+    duckA.value = autoDuck(voiceStart.value, length, aStart.value, a.duration, false)
     duckB.value = autoDuck(voiceStart.value, length, bStart.value, b.duration)
     return
   }
@@ -495,6 +496,11 @@ const previewing = ref(false)
 /** The edit cursor. Always on screen, so the DJ can place it before pressing play. */
 const playhead = ref(0)
 const clampHead = (t: number) => Math.min(Math.max(t, win.value.start), win.value.end)
+/** How long before the join the cursor parks by default, so Play starts right at the link, not at the range's edge. */
+const PLAY_LEAD_SECONDS = 3
+const joinCue = () => clampHead(bStart.value - PLAY_LEAD_SECONDS)
+/** Once the DJ has placed the cursor themselves, Play resumes from there instead of jumping back to the join. */
+const cursorPlaced = ref(false)
 
 function stopPreview() {
   preview.stop()
@@ -504,8 +510,8 @@ function stopPreview() {
 function togglePreview() {
   if (previewing.value) return stopPreview()
   if (!model.value) return
-  // Parked at the end, play again from the top rather than not at all.
-  const from = playhead.value >= win.value.end - 0.05 ? win.value.start : clampHead(playhead.value)
+  // Parked at the end, play again from the join rather than not at all.
+  const from = !cursorPlaced.value || playhead.value >= win.value.end - 0.05 ? joinCue() : playhead.value
   playhead.value = from
   previewing.value = true
   preview.play(model.value, win.value, tm => { playhead.value = tm }, stopPreview, from)
@@ -513,6 +519,7 @@ function togglePreview() {
 
 /** Scrubbing: the cursor follows the pointer, and audio re-joins only once the drag ends. */
 function onScrubStart() {
+  cursorPlaced.value = true
   if (previewing.value) preview.suspend()
 }
 function onScrub(t: number) {
@@ -528,7 +535,11 @@ watch([voices, duckA, duckB, aBuf, bBuf, aStart, bStart, win], () => {
   if (model.value) preview.refresh(model.value, win.value)
   else stopPreview()
 })
-watch([aBuf, bBuf], () => { playhead.value = win.value.start })
+// A new pair of songs is a new join; park the cursor there again until the DJ moves it themselves.
+watch([aBuf, bBuf], () => {
+  cursorPlaced.value = false
+  playhead.value = joinCue()
+})
 
 // ── Send to air ─────────────────────────────────────────────────────
 const sending = ref(false)

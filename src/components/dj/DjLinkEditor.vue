@@ -99,13 +99,6 @@ async function zoomTo(next: number, anchorClientX?: number) {
 function onWheel(e: WheelEvent) {
   void zoomTo(zoom.value * (e.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP), e.clientX)
 }
-// When the timeline is wider than the view, the view follows the cursor so playback never runs off screen.
-watch(() => props.playhead, t => {
-  const vp = viewportEl.value
-  if (!vp || vp.scrollWidth <= vp.clientWidth || pps.value <= 0) return
-  const x = t * pps.value
-  if (x < vp.scrollLeft || x > vp.scrollLeft + vp.clientWidth - 24) vp.scrollLeft = x - vp.clientWidth * 0.25
-})
 // Whole songs are long, so once both are in, bring the junction into view.
 watch([() => props.a, () => props.b], async ([a, b]) => {
   if (!a || !b) return

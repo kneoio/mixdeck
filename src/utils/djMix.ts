@@ -142,19 +142,23 @@ function localise(pts: EnvelopePoint[], songStart: number, songDuration: number)
   return out
 }
 
-/** Starting point for a manual curve: dip under the voice, recover after it. */
+/**
+ * Starting point for a manual curve: dip under the voice. `recover` (default on) brings the song
+ * back up to full afterwards; off, it stays down for the rest of the song — the right shape for A,
+ * which ends soon after the voice anyway, so climbing back up just to stop is pointless.
+ */
 export function autoDuck(
   voiceStart: number,
   voiceDuration: number,
   songStart: number,
   songDuration: number,
+  recover = true,
 ): EnvelopePoint[] {
   const end = voiceStart + voiceDuration
   return localise([
     { time: voiceStart - 0.35, volume: 1 },
     { time: voiceStart, volume: 0.22 },
-    { time: end, volume: 0.22 },
-    { time: end + 0.7, volume: 1 },
+    ...(recover ? [{ time: end, volume: 0.22 }, { time: end + 0.7, volume: 1 }] : []),
   ], songStart, songDuration)
 }
 
