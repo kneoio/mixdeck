@@ -5,6 +5,7 @@ import { NButton, NCheckbox, NDrawer, NDrawerContent, NIcon, NProgress, NSelect,
 import { ChatbubblesOutline } from '@vicons/ionicons5'
 import AivoxQueue from '@/components/AivoxQueue.vue'
 import LedRed from '@/components/LedRed.vue'
+import LedGreen from '@/components/LedGreen.vue'
 import GsapButton from '@/components/GsapButton.vue'
 import DjLinkEditor from '@/components/dj/DjLinkEditor.vue'
 import DjSongPicker, { type DjSong } from '@/components/dj/DjSongPicker.vue'
@@ -766,14 +767,15 @@ onBeforeUnmount(() => {
         <span>{{ t('dj.fade_hint') }}</span>
       </div>
       <div class="dj-controls">
-        <NButton size="large" type="primary" secondary :disabled="!canPreview" @click="togglePreview">
+        <GsapButton size="large" :disabled="!canPreview" @click="togglePreview">
+          <LedGreen class="dj-preview-led" :active="previewing" />
           <span class="dj-preview-icon" :class="{ 'dj-preview-icon--stop': previewing }">{{ previewing ? '■' : '▶' }}</span>
-          {{ previewing ? t('dj.preview_stop') : t('dj.preview') }}
-        </NButton>
+          <span>{{ previewing ? t('dj.preview_stop') : t('dj.preview') }}</span>
+        </GsapButton>
         <div class="dj-send">
-          <NButton type="primary" size="large" :loading="sending" :disabled="!canSend" @click="sendToAir">
-            {{ t('dj.send') }}
-          </NButton>
+          <GsapButton type="primary" size="large" :loading="sending" :disabled="!canSend" @click="sendToAir">
+            <span>{{ t('dj.send') }}</span>
+          </GsapButton>
           <NProgress
             v-if="sending"
             type="line"
@@ -970,6 +972,9 @@ onBeforeUnmount(() => {
 .dj-preview-icon--stop {
   color: var(--dj-danger);
   font-size: 1.05em;
+}
+.dj-preview-led {
+  vertical-align: -3px;
 }
 .dj-rec-led {
   margin-right: 6px;
