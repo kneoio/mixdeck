@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NButton, NCheckbox, NDrawer, NDrawerContent, NIcon, NSelect, useMessage, useThemeVars } from 'naive-ui'
+import { NButton, NCheckbox, NDrawer, NDrawerContent, NIcon, NProgress, NSelect, useMessage, useThemeVars } from 'naive-ui'
 import { ChatbubblesOutline } from '@vicons/ionicons5'
 import AivoxQueue from '@/components/AivoxQueue.vue'
 import LedRed from '@/components/LedRed.vue'
@@ -563,6 +563,8 @@ watch([aBuf, bBuf], () => {
 
 // ── Send to air ─────────────────────────────────────────────────────
 const sending = ref(false)
+/** Percent of the rendered join uploaded so far; the file is large enough to be worth watching. */
+const uploadProgress = ref(0)
 
 async function sendToAir() {
   const m = model.value
@@ -578,6 +580,7 @@ async function sendToAir() {
   try {
     const rendered = await renderLink(m, win.value)
     const joinId = crypto.randomUUID()
+    uploadProgress.value = 1
     await jesoosApiService.sendDjJoin(brandSlug.value, {
       blob: encodeWav(rendered),
       joinId,
@@ -587,7 +590,7 @@ async function sendToAir() {
       outgoingSongFromSeconds: Math.max(0, win.value.start - aStart.value),
       songASlug: a.slugName,
       songBSlug: b.slugName,
-    })
+    }, percent => { uploadProgress.value = percent })
     message.success(t('dj.sent'))
     lastJoinId.value = joinId
     lastJoinIncomingStart.value = Math.max(0, bStart.value - win.value.start)
@@ -604,6 +607,7 @@ async function sendToAir() {
     aLocked.value = false
   } finally {
     sending.value = false
+    uploadProgress.value = 0
   }
 }
 
@@ -766,9 +770,22 @@ onBeforeUnmount(() => {
           <span class="dj-preview-icon" :class="{ 'dj-preview-icon--stop': previewing }">{{ previewing ? '■' : '▶' }}</span>
           {{ previewing ? t('dj.preview_stop') : t('dj.preview') }}
         </NButton>
-        <NButton type="primary" size="large" :loading="sending" :disabled="!canSend" @click="sendToAir">
-          {{ t('dj.send') }}
-        </NButton>
+        <div class="dj-send">
+          <NButton type="primary" size="large" :loading="sending" :disabled="!canSend" @click="sendToAir">
+            {{ t('dj.send') }}
+          </NButton>
+          <NProgress
+            v-if="sending"
+            type="line"
+            :percentage="uploadProgress"
+            :show-indicator="false"
+            :height="2"
+            :border-radius="1"
+            :fill-border-radius="1"
+            color="#eff605"
+            rail-color="rgba(255,255,255,0.12)"
+          />
+        </div>
       </div>
     </section>
 
@@ -831,6 +848,11 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+.dj-send {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 .dj-deadline-bar {
   flex: 1;

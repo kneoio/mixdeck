@@ -55,6 +55,9 @@ export interface DebugInstructionResponse {
   outputTokens: number
 }
 
+/** Same chunk size the song upload uses. */
+const DJ_JOIN_CHUNK_SIZE = 5 * 1024 * 1024
+
 /** A transition the DJ rendered in the deck. aivox stitches it onto the join before it. */
 export interface DjJoin {
   blob: Blob
@@ -84,9 +87,28 @@ class JesoosApiService extends ApiClient {
     await this.request<void>(`/dj/${encodeURIComponent(brandSlug)}/session`, { method: 'DELETE' })
   }
 
-  async sendDjJoin(brandSlug: string, join: DjJoin): Promise<void> {
+  /**
+   * The rendered join is a whole song plus the link, so it goes up in chunks like an uploaded song;
+   * the metadata follows once the file is assembled.
+   */
+  async sendDjJoin(brandSlug: string, join: DjJoin, onProgress?: (percent: number) => void): Promise<void> {
+    const brand = encodeURIComponent(brandSlug)
+    const totalChunks = Math.ceil(join.blob.size / DJ_JOIN_CHUNK_SIZE)
+    for (let i = 0; i < totalChunks; i++) {
+      const start = i * DJ_JOIN_CHUNK_SIZE
+      const chunk = join.blob.slice(start, Math.min(start + DJ_JOIN_CHUNK_SIZE, join.blob.size))
+      const body = new FormData()
+      body.append('chunk', chunk, `${join.joinId}.wav`)
+      const params = new URLSearchParams({
+        joinId: join.joinId,
+        chunkIndex: String(i),
+        totalChunks: String(totalChunks),
+      })
+      await this.request<void>(`/dj/${brand}/air/chunk?${params}`, { method: 'POST', body })
+      onProgress?.(Math.round(((i + 1) / totalChunks) * 100))
+    }
+
     const form = new FormData()
-    form.append('file', join.blob, `${join.joinId}.wav`)
     form.append('joinId', join.joinId)
     if (join.continuesJoinId) form.append('continuesJoinId', join.continuesJoinId)
     form.append('durationSeconds', String(join.durationSeconds))
@@ -94,7 +116,7 @@ class JesoosApiService extends ApiClient {
     form.append('outgoingSongFromSeconds', String(join.outgoingSongFromSeconds))
     form.append('songASlug', join.songASlug)
     form.append('songBSlug', join.songBSlug)
-    await this.request<void>(`/dj/${encodeURIComponent(brandSlug)}/air`, { method: 'POST', body: form })
+    await this.request<void>(`/dj/${brand}/air`, { method: 'POST', body: form })
   }
 
   async debugInstruction(brandSlug: string, body: DebugInstructionRequest): Promise<DebugInstructionResponse> {
