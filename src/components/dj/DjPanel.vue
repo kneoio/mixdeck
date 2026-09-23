@@ -5,6 +5,7 @@ import { NButton, NCheckbox, NDrawer, NDrawerContent, NIcon, NSelect, useMessage
 import { ChatbubblesOutline } from '@vicons/ionicons5'
 import AivoxQueue from '@/components/AivoxQueue.vue'
 import LedRed from '@/components/LedRed.vue'
+import GsapButton from '@/components/GsapButton.vue'
 import DjLinkEditor from '@/components/dj/DjLinkEditor.vue'
 import DjSongPicker, { type DjSong } from '@/components/dj/DjSongPicker.vue'
 import DjChat from '@/components/dj/DjChat.vue'
@@ -622,13 +623,13 @@ onBeforeUnmount(() => {
         <small>{{ t('dj.session') }}</small>
         <span>{{ ready ? elapsed : '--:--' }}</span>
       </div>
-      <NButton secondary @click="chatOpen = true">
-        <template #icon><NIcon :component="ChatbubblesOutline" /></template>
-        {{ t('dj.chat_open') }}
-      </NButton>
-      <NButton type="error" secondary :loading="ending" :disabled="sessionState === 'starting'" @click="endSession">
-        {{ t('dj.end_session') }}
-      </NButton>
+      <GsapButton @click="chatOpen = true">
+        <NIcon :component="ChatbubblesOutline" />
+        <span>{{ t('dj.chat_open') }}</span>
+      </GsapButton>
+      <GsapButton type="error" :loading="ending" :disabled="sessionState === 'starting'" @click="endSession">
+        <span>{{ t('dj.end_session') }}</span>
+      </GsapButton>
     </header>
 
     <NDrawer v-model:show="chatOpen" placement="right" :width="360">
