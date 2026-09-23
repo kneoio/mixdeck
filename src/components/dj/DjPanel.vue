@@ -71,15 +71,30 @@ const elapsed = computed(() => {
   return h ? `${h}:${mm}:${ss}` : `${mm}:${ss}`
 })
 
+/** jesoos drops a session this long after it last heard from the deck. */
+const SESSION_TTL_MS = 15 * 60_000
+/** How much warning the DJ gets before that happens. */
+const SESSION_WARNING_MS = 5 * 60_000
+/** When jesoos last confirmed the session; each keep-alive that lands pushes it forward. */
+const lastAliveAt = ref(0)
+
 async function startSession() {
   sessionState.value = 'starting'
   try {
     startedAt.value = (await jesoosApiService.startDjSession(brandSlug.value)).startedAt
+    lastAliveAt.value = Date.now()
     sessionState.value = 'active'
   } catch {
     sessionState.value = 'error'
   }
 }
+
+/** Seconds until jesoos hands the air back, once the keep-alive has stopped landing. */
+const sessionExpiresIn = computed(() => {
+  if (sessionState.value !== 'active' || !lastAliveAt.value) return null
+  const left = Math.round((lastAliveAt.value + SESSION_TTL_MS - now.value) / 1000)
+  return left > SESSION_WARNING_MS / 1000 ? null : Math.max(0, left)
+})
 
 const queueEntries = ref<AivoxQueueEntry[]>([])
 /** Wall-clock time the queued song locks in, and how much of that the system needs for itself. */
@@ -607,7 +622,10 @@ onMounted(async () => {
   await startSession()
   // The session lapses on the server without this, so a closed laptop hands the air back.
   keepAliveTimer = setInterval(() => {
-    if (sessionState.value === 'active') void jesoosApiService.startDjSession(brandSlug.value).catch(() => {})
+    if (sessionState.value !== 'active') return
+    jesoosApiService.startDjSession(brandSlug.value)
+        .then(() => { lastAliveAt.value = Date.now() })
+        .catch(() => { /* the banner counts down; the next tick may still land */ })
   }, KEEP_ALIVE_MS)
 })
 
@@ -662,6 +680,12 @@ onBeforeUnmount(() => {
     <DjBufferBar :brand-slug="brandSlug" />
 
     <p v-if="tooLate" class="dj-banner dj-banner--error">{{ t('dj.too_late') }}</p>
+
+    <p v-if="sessionExpiresIn !== null" class="dj-banner dj-banner--error">
+      {{ sessionExpiresIn > 0
+        ? t('dj.session_expiring', { time: formatCountdown(sessionExpiresIn) })
+        : t('dj.session_expired') }}
+    </p>
 
     <section class="dj-section">
       <h3 class="dj-section-title">{{ t('dj.songs') }}</h3>

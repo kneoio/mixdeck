@@ -152,6 +152,8 @@ export default {
     deadline_label: 'Time left to finish this link: {time}',
     deadline_locked: 'Locked — the queued song is going out now',
     too_late: 'The cut has already gone out — pick A again from what is on air now',
+    session_expiring: 'Lost contact with the station — it takes the air back in {time}',
+    session_expired: 'The station has taken the air back',
     buffer_committed: 'On air {committed} / {total}',
     buffer_pending: 'buffer {pending}',
   },
