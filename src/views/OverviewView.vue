@@ -19,7 +19,7 @@
               class="take-over-btn"
               size="small"
               type="primary"
-              :disabled="djBrand === brand.slugName"
+              :disabled="djBrand === brand.slugName || !isAlive(brand)"
               @click="djBrand = brand.slugName ?? null"
             ><span>{{ t('dj.take_over') }}</span></GsapButton>
           </div>
