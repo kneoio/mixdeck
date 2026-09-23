@@ -693,7 +693,7 @@ onBeforeUnmount(() => {
         <DjSongPicker v-model="songA" class="dj-asset-field dj-asset-field--a" label="A" :placeholder="t('dj.pick_a')" :brand-slug="brandSlug" :exclude-slug="songB?.slugName" :loading="loadingA" :disabled="aLocked && !tooLate" />
         <div v-for="(v, n) in voices" :key="v.id" class="dj-asset-row">
           <span class="dj-asset-slot">{{ voices.length > 1 ? `B${n + 1}` : 'B' }}</span>
-          <NButton :type="recordingId === v.id ? 'error' : 'default'" size="small" :disabled="!canRecord || (recording && recordingId !== v.id)" @click="toggleRec(v.id)">
+          <NButton size="small" :disabled="!canRecord || (recording && recordingId !== v.id)" @click="toggleRec(v.id)">
             <LedRed class="dj-rec-led" :active="recordingId === v.id" />
             {{ recordingId === v.id ? `${t('dj.rec_stop')} ${recSeconds}s / ${MAX_VOICE_SECONDS}s` : t('dj.rec') }}
           </NButton>
