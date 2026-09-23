@@ -769,7 +769,7 @@ onBeforeUnmount(() => {
       <div class="dj-controls">
         <GsapButton size="large" :disabled="!canPreview" @click="togglePreview">
           <LedGreen class="dj-preview-led" :active="previewing" />
-          <span class="dj-preview-icon" :class="{ 'dj-preview-icon--stop': previewing }">{{ previewing ? '■' : '▶' }}</span>
+          <span class="dj-preview-icon">▶</span>
           <span>{{ previewing ? t('dj.preview_stop') : t('dj.preview') }}</span>
         </GsapButton>
         <div class="dj-send">
@@ -967,11 +967,6 @@ onBeforeUnmount(() => {
 .dj-preview-icon {
   margin-right: 8px;
   font-size: 0.8em;
-}
-/** While playing the button stops the audio, so its square reads as a red stop mark, a little larger. */
-.dj-preview-icon--stop {
-  color: var(--dj-danger);
-  font-size: 1.05em;
 }
 .dj-preview-led {
   vertical-align: -3px;
