@@ -3,19 +3,15 @@ import { computed, ref } from 'vue'
 import { appConfig } from '@/config/appConfig'
 import { authService } from '@/services/auth'
 
-/** Legacy keys from OTP / anon Ask sessions — purge on connect. */
-const LEGACY_SESSION_TOKEN_KEY = 'mixdeck_ask_token'
-const LEGACY_ANON_SESSION_KEY = 'mixdeck_ask_anon_id'
-
 const RECONNECT_BASE_DELAY_MS = 1000
 const RECONNECT_MAX_DELAY_MS = 30000
 const RECONNECT_MULTIPLIER = 2
 
-export type AskMessageType = 'USER' | 'BOT' | 'ERROR' | 'SYSTEM'
+export type StationChatMessageType = 'USER' | 'BOT' | 'ERROR' | 'SYSTEM'
 
-export interface AskChatMessage {
+export interface StationChatMessage {
   id: string | number
-  type: AskMessageType
+  type: StationChatMessageType
   username: string
   content: string
   timestamp?: number
@@ -36,21 +32,20 @@ function normalizeUserLabels(raw: unknown): string[] {
   return out
 }
 
-function purgeLegacyAskCredentials() {
-  localStorage.removeItem(LEGACY_SESSION_TOKEN_KEY)
-  localStorage.removeItem(LEGACY_ANON_SESSION_KEY)
-}
-
-/** OIDC access token only — no minted session UUID, no anonId. */
-function buildAskWsUrl(): string | null {
+/**
+ * The station's own chat — the same one listeners use in the player — opened from the deck. The deck
+ * is already signed in, so it passes its Keycloak token (`oidc`) instead of the player's email-code session.
+ */
+function buildWsUrl(): string | null {
   const token = authService.getToken()
   if (!token) return null
   const wsBase = appConfig.jesoosServer.replace(/^http/, 'ws')
-  return `${wsBase}/ws/ask?token=${encodeURIComponent(token)}`
+  return `${wsBase}/ws/chat?oidc=${encodeURIComponent(token)}`
 }
 
-export const useAskChatStore = defineStore('askChat', () => {
-  const messages = ref<AskChatMessage[]>([])
+/** Talking to the station's AI DJ from the DJ panel. One station at a time. */
+export const useStationChatStore = defineStore('stationChat', () => {
+  const messages = ref<StationChatMessage[]>([])
   const connected = ref(false)
   const processing = ref('')
   const username = ref('')
@@ -58,11 +53,12 @@ export const useAskChatStore = defineStore('askChat', () => {
   const userLabels = ref<string[]>([])
   /** True when the socket never opens because the OIDC token is missing/rejected. */
   const authError = ref(false)
-  /** In-flight assistant bubble id while CHUNKs are appending; cleared on BOT finalize / ERROR. */
+  /** In-flight DJ bubble id while CHUNKs are appending; cleared on BOT finalize / ERROR. */
   const streamingMessageId = ref<string | number | null>(null)
   const currentStreamContent = ref('')
-  /** True from sendMessage until BOT finalize or ERROR — keeps composer locked across gaps. */
+  /** True from send until BOT finalize or ERROR — keeps the composer locked across gaps. */
   const replyInFlight = ref(false)
+  const brandSlug = ref<string | null>(null)
 
   let ws: WebSocket | null = null
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null
@@ -74,6 +70,8 @@ export const useAskChatStore = defineStore('askChat', () => {
   const isBusy = computed(
     () => replyInFlight.value || !!processing.value || streamingMessageId.value != null,
   )
+  /** The station DJ's name, as the chat signs its replies. */
+  const djName = computed(() => [...messages.value].reverse().find(m => m.type === 'BOT' && m.username)?.username ?? '')
 
   function clearReconnectTimer() {
     if (reconnectTimer !== null) {
@@ -106,18 +104,12 @@ export const useAskChatStore = defineStore('askChat', () => {
     teardownSocket()
     intentionalDisconnect = false
     everOpened = false
-    purgeLegacyAskCredentials()
 
-    const url = buildAskWsUrl()
+    const url = buildWsUrl()
     if (!url) {
       connected.value = false
       authError.value = true
-      messages.value.push({
-        id: Date.now(),
-        type: 'ERROR',
-        username: 'system',
-        content: 'Authentication required',
-      })
+      messages.value.push({ id: Date.now(), type: 'ERROR', username: 'system', content: 'Authentication required' })
       return
     }
 
@@ -130,7 +122,7 @@ export const useAskChatStore = defineStore('askChat', () => {
       connected.value = true
       authError.value = false
       reconnectDelay = RECONNECT_BASE_DELAY_MS
-      socket.send(JSON.stringify({ action: 'getHistory', limit: 50 }))
+      socket.send(JSON.stringify({ action: 'getHistory', brandSlug: brandSlug.value, limit: 50 }))
     }
 
     socket.onmessage = (event) => {
@@ -144,22 +136,22 @@ export const useAskChatStore = defineStore('askChat', () => {
     socket.onclose = () => {
       connected.value = false
       if (ws === socket) ws = null
-      // 401 / bad token: upgrade never succeeds — surface as auth error, do not fall back.
+      // 401 / bad token: the upgrade never succeeds — surface it, do not fall back to anonymous.
       if (!everOpened && !intentionalDisconnect) {
         authError.value = true
-        messages.value.push({
-          id: Date.now(),
-          type: 'ERROR',
-          username: 'system',
-          content: 'Authentication failed',
-        })
+        messages.value.push({ id: Date.now(), type: 'ERROR', username: 'system', content: 'Authentication failed' })
         return
       }
       if (!intentionalDisconnect) scheduleReconnect()
     }
   }
 
-  function connect() {
+  function connect(slug: string) {
+    if (brandSlug.value !== slug) {
+      messages.value = []
+      endTurn()
+    }
+    brandSlug.value = slug
     clearReconnectTimer()
     intentionalDisconnect = false
     openSocket()
@@ -182,10 +174,10 @@ export const useAskChatStore = defineStore('askChat', () => {
   function appendChunk(content: string, chunkUsername?: string) {
     const fragment = content || ''
     if (streamingMessageId.value == null) {
-      const newMessage: AskChatMessage = {
+      const newMessage: StationChatMessage = {
         id: `streaming-${Date.now()}`,
         type: 'BOT',
-        username: chunkUsername || 'Mixpla Ask',
+        username: chunkUsername || djName.value || 'DJ',
         content: fragment,
         timestamp: Date.now(),
       }
@@ -201,7 +193,7 @@ export const useAskChatStore = defineStore('askChat', () => {
     streamingMsg.content = currentStreamContent.value
   }
 
-  /** Finalize the in-flight assistant bubble with canonical BOT text — never append on top of CHUNKs. */
+  /** Finalize the in-flight DJ bubble with canonical BOT text — never append on top of CHUNKs. */
   function finalizeBot(data: {
     id?: string
     username?: string
@@ -210,10 +202,10 @@ export const useAskChatStore = defineStore('askChat', () => {
     connectionId?: string
   }) {
     const canonical = data.content ?? ''
-    const finalized: AskChatMessage = {
+    const finalized: StationChatMessage = {
       id: data.id || Date.now(),
       type: 'BOT',
-      username: data.username || 'Mixpla Ask',
+      username: data.username || djName.value || 'DJ',
       content: canonical,
       timestamp: data.timestamp,
       connectionId: data.connectionId,
@@ -244,6 +236,9 @@ export const useAskChatStore = defineStore('askChat', () => {
       return
     }
 
+    // The player's upload / record buttons have no place in the deck.
+    if (data.type === 'COMMAND') return
+
     if (data.type === 'PROCESSING') {
       processing.value = typeof data.content === 'string' ? data.content : ''
       return
@@ -259,7 +254,7 @@ export const useAskChatStore = defineStore('askChat', () => {
       endTurn()
       messages.value = (data.messages || []).map((m: any, i: number) => ({
         id: m.data?.id || i,
-        type: (m.data?.type || 'BOT') as AskMessageType,
+        type: (m.data?.type || 'BOT') as StationChatMessageType,
         username: m.data?.username || '',
         content: m.data?.content || '',
         timestamp: m.data?.timestamp,
@@ -285,7 +280,7 @@ export const useAskChatStore = defineStore('askChat', () => {
       return
     }
 
-    // session_token now carries only userName + labels (no token field to store).
+    // On the deck's connection session_token carries no token, only the name and role labels.
     if (data.type === 'session_token') {
       if (data.userName) username.value = data.userName
       userLabels.value = normalizeUserLabels(data.labels ?? data.userLabels)
@@ -294,13 +289,7 @@ export const useAskChatStore = defineStore('askChat', () => {
 
     if (data.type === 'ERROR') {
       endTurn()
-      messages.value.push({
-        id: Date.now(),
-        type: 'ERROR',
-        username: 'system',
-        content: data.message || 'Error',
-      })
-      return
+      messages.value.push({ id: Date.now(), type: 'ERROR', username: 'system', content: data.message || 'Error' })
     }
   }
 
@@ -309,7 +298,7 @@ export const useAskChatStore = defineStore('askChat', () => {
     if (!msg || !ws || ws.readyState !== WebSocket.OPEN) return false
     if (isBusy.value) return false
 
-    ws.send(JSON.stringify({ action: 'sendMessage', content: msg }))
+    ws.send(JSON.stringify({ action: 'sendMessage', brandSlug: brandSlug.value, content: msg }))
     replyInFlight.value = true
     return true
   }
@@ -324,6 +313,7 @@ export const useAskChatStore = defineStore('askChat', () => {
     streamingMessageId,
     replyInFlight,
     isBusy,
+    djName,
     connect,
     disconnect,
     send,

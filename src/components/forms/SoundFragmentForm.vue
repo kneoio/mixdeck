@@ -513,7 +513,7 @@ async function copyPlayCode() {
     await navigator.clipboard.writeText(code)
     message.success(t('fragmentForm.play_code_copied'))
   } catch {
-    message.error(t('ask.copy_failed'))
+    message.error(t('help.copy_failed'))
   }
 }
 

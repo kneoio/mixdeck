@@ -31,9 +31,13 @@ function queueTypeLabel(item: AivoxQueueEntry): string {
   return t('dashboard.queue.inQueue')
 }
 
-/** A join the human DJ made: it gets its own colour so it is not mistaken for an agenda entry. */
+/**
+ * Part of the human DJ's line-up — their own joins and the AI DJ's announcements for them. It gets its own
+ * colour so it is not mistaken for an agenda entry.
+ */
 function isDjJoin(item: AivoxQueueEntry): boolean {
-  return String(item.tech.mergingMethod ?? '').trim() === 'DJ_JOIN'
+  const method = String(item.tech.mergingMethod ?? '').trim()
+  return method === 'DJ_JOIN' || method === 'DJ_ANNOUNCEMENT'
 }
 
 function mergingMethodLabel(item: AivoxQueueEntry): string {

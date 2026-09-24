@@ -2,7 +2,7 @@
   <div class="dock">
     <div ref="messagesEl" class="dock-messages" role="log" aria-live="polite">
       <div v-if="messages.length === 0 && !processing" class="dock-empty">
-        <p class="dock-welcome">{{ t('ask.empty_welcome') }}</p>
+        <p class="dock-welcome">{{ t('dj.chat_empty') }}</p>
         <div class="dock-suggestions">
           <button
             v-for="(prompt, i) in suggestedPrompts"
@@ -38,13 +38,13 @@
         ref="composerRef"
         v-model:value="draft"
         type="textarea"
-        :placeholder="connected ? t('ask.placeholder') : t('ask.connecting')"
+        :placeholder="connected ? t('dj.chat_placeholder') : t('dj.chat_connecting')"
         :disabled="!connected"
         :autosize="{ minRows: 1, maxRows: 4 }"
         @keydown="onComposerKeydown"
       />
       <n-button type="primary" :disabled="!canSend" @click="sendDraft">
-        {{ t('ask.send') }}
+        {{ t('dj.chat_send') }}
       </n-button>
     </div>
   </div>
@@ -56,11 +56,17 @@ import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import MarkdownIt from 'markdown-it'
 import { NInput, NButton, type InputInst } from 'naive-ui'
-import { useAskChatStore, type AskChatMessage } from '@/stores/askChat'
+import { useStationChatStore, type StationChatMessage } from '@/stores/stationChat'
+
+/**
+ * The station's AI DJ, as its listeners know it, talking to the human DJ at the deck. While the session
+ * is live it takes orders — for one, it can hand the air over with its own voice.
+ */
+const props = defineProps<{ brandSlug: string }>()
 
 const { t } = useI18n()
-const askStore = useAskChatStore()
-const { messages, connected, processing, isBusy } = storeToRefs(askStore)
+const chatStore = useStationChatStore()
+const { messages, connected, processing, isBusy } = storeToRefs(chatStore)
 
 const md = new MarkdownIt({ linkify: true, breaks: true })
 const draft = ref('')
@@ -69,9 +75,9 @@ const bottomEl = ref<HTMLElement | null>(null)
 const composerRef = ref<InputInst | null>(null)
 
 const suggestedPrompts = computed(() => [
-  t('ask.suggestion_1'),
-  t('ask.suggestion_2'),
-  t('ask.suggestion_3'),
+  t('dj.chat_suggestion_1'),
+  t('dj.chat_suggestion_2'),
+  t('dj.chat_suggestion_3'),
 ])
 
 const canSend = computed(() => connected.value && !isBusy.value && !!draft.value.trim())
@@ -84,7 +90,7 @@ function escapeHtml(text: string): string {
     .replace(/"/g, '&quot;')
 }
 
-function renderContent(msg: AskChatMessage): string {
+function renderContent(msg: StationChatMessage): string {
   if (msg.type === 'ERROR' || msg.type === 'SYSTEM' || msg.type === 'USER') {
     return escapeHtml(msg.content)
   }
@@ -103,15 +109,7 @@ function scrollToBottom() {
 
 watch(messages, () => scrollToBottom(), { deep: true })
 watch(processing, () => scrollToBottom())
-watch(() => askStore.streamingMessageId, () => scrollToBottom())
-watch(
-  () => {
-    const id = askStore.streamingMessageId
-    if (id == null) return ''
-    return messages.value.find((m) => m.id === id)?.content ?? ''
-  },
-  () => scrollToBottom(),
-)
+watch(() => chatStore.streamingMessageId, () => scrollToBottom())
 
 function focusComposer() {
   nextTick(() => composerRef.value?.focus())
@@ -138,7 +136,7 @@ watch(connected, (ok) => {
 function sendDraft() {
   const text = draft.value.trim()
   if (!text) return
-  if (askStore.send(text)) {
+  if (chatStore.send(text)) {
     draft.value = ''
     focusComposer()
     scrollToBottom()
@@ -146,7 +144,7 @@ function sendDraft() {
 }
 
 function sendSuggested(prompt: string) {
-  if (askStore.send(prompt)) {
+  if (chatStore.send(prompt)) {
     draft.value = ''
     focusComposer()
     scrollToBottom()
@@ -160,15 +158,15 @@ function onComposerKeydown(e: KeyboardEvent) {
   }
 }
 
-// The dock mounts inside an already-authenticated shell, so the store picks up
-// the OIDC token straight away — no auth init to wait on here.
+// The panel sits inside the signed-in deck, so the store has the OIDC token straight away.
 onMounted(() => {
-  askStore.connect()
+  chatStore.connect(props.brandSlug)
   activate()
 })
+watch(() => props.brandSlug, slug => chatStore.connect(slug))
 
 onBeforeUnmount(() => {
-  askStore.disconnect()
+  chatStore.disconnect()
 })
 </script>
 

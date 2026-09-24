@@ -84,8 +84,10 @@ export interface DjJoin {
   mixPointSeconds: number
   /** Where second 0 of the incoming song sits in plan B. */
   planBIncomingSongStartSeconds: number
-  songASlug: string
-  songBSlug: string
+  /** Null when the link opens with the DJ's voice straight into C (no A). */
+  songASlug: string | null
+  /** Null when the link ends with the DJ's voice (no C); nothing continues from it. */
+  songBSlug: string | null
 }
 
 class JesoosApiService extends ApiClient {
@@ -143,8 +145,8 @@ class JesoosApiService extends ApiClient {
     form.append('outgoingSongFromSeconds', String(join.outgoingSongFromSeconds))
     form.append('mixPointSeconds', String(join.mixPointSeconds))
     form.append('planBIncomingSongStartSeconds', String(join.planBIncomingSongStartSeconds))
-    form.append('songASlug', join.songASlug)
-    form.append('songBSlug', join.songBSlug)
+    if (join.songASlug) form.append('songASlug', join.songASlug)
+    if (join.songBSlug) form.append('songBSlug', join.songBSlug)
     await this.request<void>(`/dj/${brand}/air`, { method: 'POST', body: form })
   }
 

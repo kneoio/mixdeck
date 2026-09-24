@@ -9,10 +9,10 @@ import LedGreen from '@/components/LedGreen.vue'
 import GsapButton from '@/components/GsapButton.vue'
 import DjLinkEditor from '@/components/dj/DjLinkEditor.vue'
 import DjSongPicker, { type DjSong } from '@/components/dj/DjSongPicker.vue'
-import DjChat from '@/components/dj/DjChat.vue'
+import DjStationChat from '@/components/dj/DjStationChat.vue'
 import { useDjColors } from '@/utils/djColors'
 import { useBrandsStore } from '@/stores/brands'
-import { type DjChatContext } from '@/services/djApi'
+import { useStationChatStore } from '@/stores/stationChat'
 import datanestApiService from '@/services/datanestApi'
 import aivoxApiService, { type AivoxQueueEntry } from '@/services/aivoxApi'
 import jesoosApiService from '@/services/jesoosApi'
@@ -260,7 +260,8 @@ const fullWin = computed<MixWindow>(() => {
     const start = Math.min(Math.max(0, manual.start), Math.max(0, end - 1))
     return { start, end: Math.min(end, Math.max(manual.end, start + 1)) }
   }
-  return { start: aStart.value, end }
+  // With no C the link ends where the last of A and the DJ's voice ends.
+  return { start: aStart.value, end: noC.value ? Math.max(aEnd.value, voiceEnd.value) : end }
 })
 // A new pair of songs is a new junction, so the range starts out following it again.
 watch([aBuf, bBuf], () => { manualRange.value = null })
@@ -309,15 +310,39 @@ watch([() => sessionState.value, () => brandsStore.lastDjJoins[brandSlug.value]]
   }
 }, { immediate: true })
 
-const fullModel = computed<LinkModel | null>(() =>
-  aBuf.value && bBuf.value
+/**
+ * No A at all: nothing of the DJ's is on air to continue from and no A was picked, so the link opens with
+ * the DJ's own voice straight into C — typically right after the station's AI DJ has handed over.
+ */
+const noA = computed(() => !songA.value && lastJoinId.value === null)
+/** Stands in for A when there is none, so the timeline keeps its usual shape; it is never heard or sent. */
+const silentA = computed(() => {
+  const b = bBuf.value
+  if (!b) return null
+  return new AudioBuffer({ length: Math.ceil(TAIL_SECONDS * b.sampleRate), numberOfChannels: 2, sampleRate: b.sampleRate })
+})
+/**
+ * No C: the link is A, then the DJ's voice, with no song after it. Nothing can continue from it, so it
+ * ends the chain; whatever comes next (another link, or the agenda once the session ends) follows it.
+ */
+const noC = computed(() => !songB.value && !!aBuf.value)
+/** Stands in for C when there is none; placed beyond the end of the link, so it is never heard or sent. */
+const silentC = computed(() => {
+  const a = aBuf.value
+  if (!a) return null
+  return new AudioBuffer({ length: Math.ceil(0.05 * a.sampleRate), numberOfChannels: 2, sampleRate: a.sampleRate })
+})
+const fullModel = computed<LinkModel | null>(() => {
+  const a = aBuf.value ?? (noA.value ? silentA.value : null)
+  const b = bBuf.value ?? (noC.value ? silentC.value : null)
+  return a && b
     ? {
-        a: aBuf.value, b: bBuf.value, voices: voices.value,
-        aStart: aStart.value, bStart: bStart.value,
+        a, b, voices: voices.value,
+        aStart: aStart.value, bStart: noC.value ? Infinity : bStart.value,
         duckA: duckA.value, duckB: duckB.value,
       }
-    : null,
-)
+    : null
+})
 /** Where the mix begins, in A's own seconds. */
 const mixPointInA = computed(() => (fullModel.value ? mixPointOf(fullModel.value) - aStart.value : null))
 /**
@@ -330,9 +355,12 @@ const aGone = computed(() => {
   return aired !== null && mix !== null && aired + STITCH_MARGIN_SECONDS >= mix
 })
 
-/** What Play and the editor cover: the whole link, or plan B's once A is gone. */
+/** The link goes out without A: A has already aired past the mix, or there never was an A. */
+const withoutAOnAir = computed(() => aGone.value || noA.value)
+
+/** What Play and the editor cover: the whole link, or plan B's when it goes out without A. */
 const win = computed<MixWindow>(() =>
-  aGone.value && fullModel.value ? planBWindow(fullModel.value, fullWin.value) : fullWin.value)
+  withoutAOnAir.value && fullModel.value ? planBWindow(fullModel.value, fullWin.value) : fullWin.value)
 const clampStart = (duration: number, s: number) => Math.min(Math.max(0, s), Math.max(0, total.value - duration))
 
 /** The stretch where both songs play together, in junction seconds. */
@@ -400,7 +428,7 @@ watch([aBuf, bBuf, aStart, bStart], () => {
 
 /** What is auditioned: the whole link, or plan B once A is gone. */
 const model = computed<LinkModel | null>(() =>
-  fullModel.value && aGone.value ? withoutA(fullModel.value) : fullModel.value)
+  fullModel.value && withoutAOnAir.value ? withoutA(fullModel.value) : fullModel.value)
 
 function applyAutoDuck() {
   // Linked, the curves are a crossfade, so "auto" means the crossfade rather than a duck.
@@ -519,17 +547,8 @@ async function onPickEffect(slug: string | null, id: number) {
 
 // ── Chat ────────────────────────────────────────────────────────────
 const chatOpen = ref(false)
-const chatContext = computed<DjChatContext>(() => ({
-  songA: songA.value ? { id: songA.value.id, title: songA.value.title, artist: songA.value.artist } : null,
-  songB: songB.value ? { id: songB.value.id, title: songB.value.title, artist: songB.value.artist } : null,
-  maxVoiceSeconds: MAX_VOICE_SECONDS,
-}))
-function onVoiceGenerated(buf: AudioBuffer, _script: string) {
-  void _script
-  stopPreview()
-  // A generated link goes to the first empty B lane, or replaces B1 when they are all taken.
-  setVoice((voices.value.find(v => !v.buf) ?? voices.value[0]).id, buf, 'ai')
-}
+const stationChat = useStationChatStore()
+const stationChatRef = ref<{ activate: () => void } | null>(null)
 
 async function onRecordEnd(blob: Blob, id: number) {
   clearRecTimer()
@@ -557,7 +576,7 @@ const playhead = ref(0)
 const clampHead = (t: number) => Math.min(Math.max(t, win.value.start), win.value.end)
 /** How long before the join the cursor parks by default, so Play starts right at the link, not at the range's edge. */
 const PLAY_LEAD_SECONDS = 3
-const joinCue = () => clampHead(bStart.value - PLAY_LEAD_SECONDS)
+const joinCue = () => clampHead((noC.value ? voiceStart.value ?? bStart.value : bStart.value) - PLAY_LEAD_SECONDS)
 /** Once the DJ has placed the cursor themselves, Play resumes from there instead of jumping back to the join. */
 const cursorPlaced = ref(false)
 
@@ -609,16 +628,18 @@ async function sendToAir() {
   const m = fullModel.value
   const a = songA.value
   const b = songB.value
-  if (!m || !filledVoices.value.length || !a || !b || sending.value) return
+  if (!m || !filledVoices.value.length || (!a && !noA.value) || (!b && !noC.value) || sending.value) return
+  const endsChain = noC.value
   stopPreview()
   sending.value = true
   try {
     const full = fullWin.value
     const continuing = lastJoinId.value !== null
-    // Once A is gone only plan B can air; the first join has nothing on air for plan B to follow.
-    const fullRender = aGone.value ? null : await renderLink(m, full)
+    // Without A (gone on air, or never picked) only plan B can air. A first join with an A has nothing
+    // on air for plan B to follow, so it goes out as the full render alone.
+    const fullRender = withoutAOnAir.value ? null : await renderLink(m, full)
     const planBWin = planBWindow(m, full)
-    const planBRender = continuing ? await renderLink(withoutA(m), planBWin) : null
+    const planBRender = continuing || noA.value ? await renderLink(withoutA(m), planBWin) : null
     const joinId = crypto.randomUUID()
     uploadProgress.value = 1
     await jesoosApiService.sendDjJoin(brandSlug.value, {
@@ -627,14 +648,25 @@ async function sendToAir() {
       joinId,
       continuesJoinId: lastJoinId.value,
       durationSeconds: Math.round((fullRender ?? planBRender)!.duration * 100) / 100,
-      incomingSongStartSeconds: Math.max(0, bStart.value - full.start),
+      incomingSongStartSeconds: b ? Math.max(0, bStart.value - full.start) : 0,
       outgoingSongFromSeconds: Math.max(0, full.start - aStart.value),
       mixPointSeconds: Math.max(0, mixPointOf(m) - full.start),
-      planBIncomingSongStartSeconds: Math.max(0, bStart.value - planBWin.start),
-      songASlug: a.slugName,
-      songBSlug: b.slugName,
+      planBIncomingSongStartSeconds: b ? Math.max(0, bStart.value - planBWin.start) : 0,
+      songASlug: a?.slugName ?? null,
+      songBSlug: b?.slugName ?? null,
     }, percent => { uploadProgress.value = percent })
     message.success(t('dj.sent'))
+    voices.value = [emptyLane(nextLaneId++)]
+    if (endsChain || !b) {
+      // Nothing continues from a link without C: the next one starts fresh, with A to pick or none at all.
+      lastJoinId.value = null
+      lastJoinSeenOnAir.value = false
+      continuesSlug = null
+      carriedBuffer = null
+      songA.value = null
+      aLocked.value = false
+      return
+    }
     lastJoinId.value = joinId
     lastJoinSeenOnAir.value = false
     continuesSlug = b.slugName
@@ -643,7 +675,6 @@ async function sendToAir() {
     songA.value = b
     songB.value = null
     aLocked.value = true
-    voices.value = [emptyLane(nextLaneId++)]
   } catch {
     message.error(t('dj.send_error'))
     // The cut can no longer be made, so A has to be picked again from whatever is on air.
@@ -728,9 +759,31 @@ onBeforeUnmount(() => {
       </GsapButton>
     </header>
 
-    <NDrawer v-model:show="chatOpen" placement="right" :width="360">
-      <NDrawerContent :title="t('dj.chat_title')" closable>
-        <DjChat :brand-slug="brandSlug" :context="chatContext" @voice-generated="onVoiceGenerated" />
+    <!-- The station's own AI DJ, the one its listeners talk to; the deck joins as the signed-in owner. -->
+    <NDrawer v-model:show="chatOpen" class="dj-chat-drawer" placement="right" :width="440" @after-enter="stationChatRef?.activate()">
+      <NDrawerContent
+        closable
+        :native-scrollbar="false"
+        :body-style="{ overflow: 'hidden', display: 'flex', flexDirection: 'column', flex: '1 1 auto', height: '100%' }"
+        :body-content-style="{ flex: '1 1 auto', minHeight: 0, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxSizing: 'border-box' }"
+      >
+        <template #header>
+          <div class="dj-chat-header">
+            <span class="dj-chat-title">
+              {{ stationChat.djName ? t('dj.chat_title_named', { name: stationChat.djName }) : t('dj.chat_title') }}
+            </span>
+            <div v-if="stationChat.username || stationChat.userLabels.length" class="dj-chat-meta">
+              <span v-if="stationChat.username" class="dj-chat-user">{{ stationChat.username }}</span>
+              <span
+                v-for="label in stationChat.userLabels"
+                :key="label"
+                class="dj-chat-pill"
+                :class="`dj-chat-pill--${label}`"
+              >{{ label }}</span>
+            </div>
+          </div>
+        </template>
+        <DjStationChat ref="stationChatRef" :brand-slug="brandSlug" />
       </NDrawerContent>
     </NDrawer>
 
@@ -749,6 +802,8 @@ onBeforeUnmount(() => {
 
 
     <p v-if="aGone" class="dj-banner">{{ t('dj.too_late') }}</p>
+    <p v-else-if="noA && bBuf" class="dj-banner">{{ t('dj.no_a') }}</p>
+    <p v-else-if="noC" class="dj-banner">{{ t('dj.no_c') }}</p>
 
     <p v-if="sessionExpiresIn !== null" class="dj-banner dj-banner--error">
       {{ sessionExpiresIn > 0
@@ -804,7 +859,7 @@ onBeforeUnmount(() => {
         v-model:duck-b="duckB"
         v-model:a-start="aStart"
         v-model:b-start="bStart"
-        :a="aGone ? null : aBuf"
+        :a="withoutAOnAir ? null : aBuf"
         :b="bBuf"
         :total="total"
         :window="win"
@@ -1050,5 +1105,85 @@ onBeforeUnmount(() => {
   .dj-asset-field {
     width: 100%;
   }
+}
+.dj-chat-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  min-width: 0;
+  padding-right: 8px;
+}
+.dj-chat-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.dj-chat-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  min-width: 0;
+}
+.dj-chat-user {
+  font-size: 0.72rem;
+  font-weight: 500;
+  opacity: 0.65;
+}
+.dj-chat-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(128, 128, 128, 0.85);
+  border: 1px solid rgba(128, 128, 128, 0.35);
+  border-radius: 3px;
+  padding: 2px 4px 1px;
+  line-height: 1;
+}
+.dj-chat-pill--developer {
+  color: #ff6b6b;
+  border-color: rgba(255, 107, 107, 0.5);
+}
+.dj-chat-pill--owner {
+  color: #f0a500;
+  border-color: rgba(240, 165, 0, 0.5);
+}
+.dj-chat-pill--artist {
+  color: #22c55e;
+  border-color: rgba(34, 197, 94, 0.5);
+}
+</style>
+
+<style>
+/* The chat drawer teleports to body, so its inner layout needs unscoped selectors. */
+.dj-chat-drawer .n-drawer-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.dj-chat-drawer .n-drawer-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden !important;
+  display: flex;
+  flex-direction: column;
+}
+.dj-chat-drawer .n-drawer-body-content-wrapper {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.dj-chat-drawer .n-drawer-header__main {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 </style>
