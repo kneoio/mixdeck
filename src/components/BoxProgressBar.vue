@@ -5,8 +5,7 @@ import { useThemeStore } from '@/stores/theme'
 
 /**
  * The box progress bar of the Playlist player, read-only, for what is on air. Its colour tells how much
- * time is left: green while there is plenty, turning red from `warnSeconds` down to `criticalSeconds`,
- * and pulsing once it is critical.
+ * time is left: green while there is plenty, turning red from `warnSeconds` down to `criticalSeconds`.
  */
 const props = withDefaults(defineProps<{
   /** 0 to 1 of the bar that has played. */
@@ -31,7 +30,6 @@ const barRef = ref<HTMLElement | null>(null)
 const boxEls = ref<(HTMLElement | null)[]>([])
 const boxCount = ref(BOX_MIN)
 let resizeObserver: ResizeObserver | null = null
-let pulse: gsap.core.Tween | null = null
 const reducedMotion = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
 const railColor = computed(() => (themeStore.isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'))
@@ -87,7 +85,6 @@ const urgency = computed(() => {
   return clamp01((props.warnSeconds - props.remainingSeconds) / span)
 })
 const color = computed(() => `hsl(${Math.round(GREEN_HUE * (1 - urgency.value))}, 100%, 50%)`)
-const critical = computed(() => props.remainingSeconds <= props.criticalSeconds)
 
 function setBoxRef(el: unknown, i: number) {
   boxEls.value[i] = el instanceof HTMLElement ? el : null
@@ -111,21 +108,8 @@ function applyColor(immediate: boolean) {
   else gsap.to(el, { '--box-color': color.value, duration: drainSeconds || 0.8, ease: drainSeconds ? 'none' : 'power1.out', overwrite: 'auto' })
 }
 
-function applyPulse() {
-  const el = rootRef.value
-  pulse?.kill()
-  pulse = null
-  if (!el) return
-  gsap.set(el, { clearProps: 'filter' })
-  if (!critical.value || reducedMotion) return
-  pulse = gsap.fromTo(el,
-    { filter: 'drop-shadow(0 0 0px var(--box-color))' },
-    { filter: 'drop-shadow(0 0 6px var(--box-color))', duration: 0.6, yoyo: true, repeat: -1, ease: 'sine.inOut' })
-}
-
 onMounted(() => {
   applyColor(true)
-  applyPulse()
   const el = barRef.value
   if (!el) return
   const fit = (width: number) => {
@@ -138,7 +122,6 @@ onMounted(() => {
 })
 
 watch(color, () => applyColor(false))
-watch(critical, applyPulse)
 watch(boxCount, n => {
   boxEls.value = Array.from({ length: n }, () => null)
   void nextTick().then(syncArmedBorders)
@@ -147,7 +130,6 @@ watch(filledCount, () => { void nextTick().then(syncArmedBorders) })
 
 onBeforeUnmount(() => {
   resizeObserver?.disconnect()
-  pulse?.kill()
   drain?.kill()
   if (rootRef.value) gsap.killTweensOf(rootRef.value)
   boxEls.value.forEach(el => {
