@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import datanestApiService from '@/services/datanestApi'
 import type { EntitlementAction } from '@/utils/entitlements'
-import type { AivoxStreamBuffer } from '@/services/aivoxApi'
+import type { AivoxDjJoinOnAir, AivoxStreamBuffer } from '@/services/aivoxApi'
 
 export interface BufferState {
   buffer: AivoxStreamBuffer
@@ -82,6 +82,7 @@ export const useBrandsStore = defineStore('brands', () => {
   const streamingStates = ref<Record<string, boolean>>({})
   const heartbeatPulses = ref<Record<string, number>>({})
   const bufferStates = ref<Record<string, BufferState | null>>({})
+  const lastDjJoins = ref<Record<string, AivoxDjJoinOnAir | null>>({})
 
   async function loadBrands() {
     loading.value = true
@@ -128,6 +129,10 @@ export const useBrandsStore = defineStore('brands', () => {
     bufferStates.value[slug] = buffer ? { buffer, receivedAt: Date.now() } : null
   }
 
+  function setLastDjJoin(slug: string, join: AivoxDjJoinOnAir | null) {
+    lastDjJoins.value[slug] = join
+  }
+
   return {
     brands,
     actions,
@@ -139,6 +144,7 @@ export const useBrandsStore = defineStore('brands', () => {
     streamingStates,
     heartbeatPulses,
     bufferStates,
+    lastDjJoins,
     loadBrands,
     fetchBrand,
     saveBrand,
@@ -146,6 +152,7 @@ export const useBrandsStore = defineStore('brands', () => {
     closeBrand,
     setStreamingState,
     pulseHeartbeat,
-    setBufferState
+    setBufferState,
+    setLastDjJoin
   }
 })

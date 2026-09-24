@@ -285,6 +285,31 @@ const aAiredSeconds = computed(() => {
 })
 watch(aAiredSeconds, s => { if (s !== null && s !== Infinity) lastJoinSeenOnAir.value = true })
 
+/** The A that `lastJoinId` continues; picking any other A starts a fresh chain. */
+let continuesSlug: string | null = null
+watch(songA, s => {
+  if (lastJoinId.value !== null && s?.slugName !== continuesSlug) {
+    lastJoinId.value = null
+    lastJoinSeenOnAir.value = false
+  }
+})
+/**
+ * A reopened deck carries on from the last join if its C has not played out yet: that C is put in as A,
+ * as if the session had never closed. Offered once, and only while the DJ has not picked an A.
+ */
+let pickupOffered = false
+watch([() => sessionState.value, () => brandsStore.lastDjJoins[brandSlug.value]], ([state, onAir]) => {
+  if (pickupOffered || state !== 'active' || !onAir || songA.value) return
+  pickupOffered = true
+  lastJoinId.value = onAir.joinId
+  lastJoinSeenOnAir.value = false
+  continuesSlug = onAir.incomingSongSlug
+  songA.value = {
+    slugName: onAir.incomingSongSlug, id: onAir.incomingSongId,
+    title: onAir.incomingSongTitle, artist: onAir.incomingSongArtist,
+  }
+}, { immediate: true })
+
 const fullModel = computed<LinkModel | null>(() =>
   aBuf.value && bBuf.value
     ? {
@@ -613,6 +638,7 @@ async function sendToAir() {
     message.success(t('dj.sent'))
     lastJoinId.value = joinId
     lastJoinSeenOnAir.value = false
+    continuesSlug = b.slugName
     // The station will play a → b next, so the next link continues from b, with its audio already decoded.
     carriedBuffer = bBuf.value
     songA.value = b

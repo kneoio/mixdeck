@@ -301,6 +301,7 @@ function applyDashboardEntry(entry: AivoxDashboardStreamEntry) {
     if (entry.status) radioStatuses[entry.brand] = entry.status as BrandStatus
     if (entry.heartbeat) brandsStore.pulseHeartbeat(entry.brand)
     brandsStore.setBufferState(entry.brand, entry.buffer)
+    brandsStore.setLastDjJoin(entry.brand, entry.lastDjJoin ?? null)
     return
   }
   let wizard = otsWizards.value.find(w => w.slugName === entry.brand)
@@ -323,6 +324,7 @@ function applyDashboardSnapshot(entries: AivoxDashboardStreamEntry[]) {
     if (brand.slugName && !present.has(brand.slugName)) {
       brandsStore.setStreamingState(brand.slugName, false)
       brandsStore.setBufferState(brand.slugName, null)
+      brandsStore.setLastDjJoin(brand.slugName, null)
       delete radioStatuses[brand.slugName]
     }
   }

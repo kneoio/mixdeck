@@ -51,6 +51,15 @@ export interface AivoxStreamBuffer {
   djIncomingSongStartSeconds: number | null
 }
 
+/** The last human DJ join while it has not played out: a reopened deck carries on from its incoming song. */
+export interface AivoxDjJoinOnAir {
+  joinId: string
+  incomingSongId: string
+  incomingSongSlug: string
+  incomingSongTitle: string
+  incomingSongArtist: string
+}
+
 export interface AivoxDashboardStreamEntry {
   brand: string
   type: AivoxDashboardStreamType
@@ -59,6 +68,7 @@ export interface AivoxDashboardStreamEntry {
   error: string | null
   remainingMinutes: number
   buffer: AivoxStreamBuffer | null
+  lastDjJoin: AivoxDjJoinOnAir | null
 }
 
 class AivoxApiService extends ApiClient {
