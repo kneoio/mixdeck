@@ -73,6 +73,8 @@ export default {
     your_player: 'თქვენი პლეიერი',
     copy_url: 'ბმულის კოპირება',
     stationTime: 'სადგურის დრო',
+    bufferPlayed: 'დაკრულია {played} / {total}',
+    bufferAhead: 'ბუფერში {ahead}',
     timezone: 'დროის სარტყელი',
     onAir: 'ეთერში',
     not_enough_songs: 'არასაკმარისი სიმღერა: {current}/{required} საჭიროა სტრიმის დასაწყებად.',

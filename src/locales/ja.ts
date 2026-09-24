@@ -73,6 +73,8 @@ export default {
     your_player: 'あなたのプレーヤー',
     copy_url: 'リンクをコピー',
     stationTime: 'ステーション時刻',
+    bufferPlayed: '再生済み {played} / {total}',
+    bufferAhead: 'バッファ {ahead}',
     timezone: 'タイムゾーン',
     onAir: 'オンエア',
     not_enough_songs: '曲数が不足しています: ストリームを開始するには {current}/{required} 曲が必要です。',

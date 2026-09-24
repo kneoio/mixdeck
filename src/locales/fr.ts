@@ -73,6 +73,8 @@ export default {
     your_player: 'Votre lecteur',
     copy_url: 'Copier le lien',
     stationTime: 'Heure de la station',
+    bufferPlayed: 'Joué {played} / {total}',
+    bufferAhead: '{ahead} en tampon',
     timezone: 'Fuseau horaire',
     onAir: "À l'antenne",
     not_enough_songs: 'Pas assez de chansons : {current}/{required} requises pour démarrer la diffusion.',

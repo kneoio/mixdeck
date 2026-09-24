@@ -73,6 +73,8 @@ export default {
     your_player: '내 플레이어',
     copy_url: '링크 복사',
     stationTime: '방송국 시간',
+    bufferPlayed: '재생됨 {played} / {total}',
+    bufferAhead: '버퍼 {ahead}',
     timezone: '시간대',
     onAir: '방송 중',
     not_enough_songs: '노래가 부족합니다: 스트림을 시작하려면 {current}/{required}개가 필요합니다.',

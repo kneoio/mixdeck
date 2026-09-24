@@ -73,6 +73,8 @@ export default {
     your_player: 'आपका प्लेयर',
     copy_url: 'लिंक कॉपी करें',
     stationTime: 'स्टेशन समय',
+    bufferPlayed: 'चला {played} / {total}',
+    bufferAhead: '{ahead} बफ़र में',
     timezone: 'समय क्षेत्र',
     onAir: 'ऑन एयर',
     not_enough_songs: 'पर्याप्त गाने नहीं: स्ट्रीम शुरू करने के लिए {current}/{required} आवश्यक हैं।',

@@ -73,6 +73,8 @@ export default {
     your_player: 'Ваш плеер',
     copy_url: 'Копировать ссылку',
     stationTime: 'Время станции',
+    bufferPlayed: 'Сыграно {played} / {total}',
+    bufferAhead: 'в буфере {ahead}',
     timezone: 'Часовой пояс',
     onAir: 'В эфире',
     not_enough_songs: 'Недостаточно песен: {current}/{required} требуется для запуска трансляции.',

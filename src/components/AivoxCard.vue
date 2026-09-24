@@ -11,6 +11,7 @@ import LedGreen from '@/components/LedGreen.vue'
 import LedIndicator from '@/components/LedIndicator.vue'
 import LoaderProgress from '@/components/LoaderProgress.vue'
 import AivoxQueue from '@/components/AivoxQueue.vue'
+import StreamBufferBar from '@/components/StreamBufferBar.vue'
 import { useBrandsStore, type BrandStatus } from '@/stores/brands'
 import { useUserSubscriptionStore } from '@/stores/userSubscription'
 
@@ -235,6 +236,7 @@ onUnmounted(() => {
         <span class="timezone">{{ timezone }}</span>
       </div>
     </div>
+    <StreamBufferBar v-if="alive" :brand-slug="brandSlug" />
     <AivoxQueue :entries="queueEntries" />
   </NCard>
 </template>

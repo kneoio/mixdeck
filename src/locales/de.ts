@@ -73,6 +73,8 @@ export default {
     your_player: 'Ihr Player',
     copy_url: 'Link kopieren',
     stationTime: 'Senderzeit',
+    bufferPlayed: 'Gespielt {played} / {total}',
+    bufferAhead: '{ahead} gepuffert',
     timezone: 'Zeitzone',
     onAir: 'On Air',
     not_enough_songs: 'Nicht genug Songs: {current}/{required} erforderlich, um die Übertragung zu starten.',

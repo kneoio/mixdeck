@@ -4,6 +4,10 @@ import { useI18n } from 'vue-i18n'
 import BoxProgressBar from '@/components/BoxProgressBar.vue'
 import { useBrandsStore } from '@/stores/brands'
 
+/**
+ * How far the song on air has played, and how much audio aivox already has queued behind the live edge.
+ * An empty buffer on a running station is the first sign of a stalled stream.
+ */
 const props = defineProps<{ brandSlug: string }>()
 const { t } = useI18n()
 const brandsStore = useBrandsStore()
@@ -18,8 +22,8 @@ const state = computed(() => brandsStore.bufferStates[props.brandSlug] ?? null)
 // Frames arrive every 5 s; audio goes live in real time, so advance locally between them.
 const elapsed = computed(() => state.value ? Math.max(0, (now.value - state.value.receivedAt) / 1000) : 0)
 const duration = computed(() => state.value?.buffer.durationSeconds ?? 0)
-const committed = computed(() => state.value ? Math.min(duration.value, state.value.buffer.committedSeconds + elapsed.value) : 0)
-const pending = computed(() => state.value ? Math.max(0, state.value.buffer.pendingSeconds - elapsed.value) : 0)
+const played = computed(() => state.value ? Math.min(duration.value, state.value.buffer.committedSeconds + elapsed.value) : 0)
+const ahead = computed(() => state.value ? Math.max(0, state.value.buffer.pendingSeconds - elapsed.value) : 0)
 
 function fmt(seconds: number) {
   const s = Math.floor(seconds)
@@ -28,42 +32,32 @@ function fmt(seconds: number) {
 </script>
 
 <template>
-  <div v-if="state" class="dj-buffer">
-    <div class="dj-buffer-head">
-      <span class="dj-buffer-title">{{ state.buffer.title }}</span>
-      <span class="dj-buffer-time">
-        {{ t('dj.buffer_committed', { committed: fmt(committed), total: fmt(duration) }) }}
-        · {{ t('dj.buffer_pending', { pending: fmt(pending) }) }}
-      </span>
-    </div>
+  <div v-if="state && duration > 0" class="stream-buffer">
     <BoxProgressBar
-      :progress="duration ? committed / duration : 0"
-      :buffered="duration ? pending / duration : 0"
-      :remaining-seconds="duration - committed"
+      :progress="played / duration"
+      :buffered="ahead / duration"
+      :remaining-seconds="duration - played"
     />
+    <div class="stream-buffer-meta">
+      <span>{{ t('dashboard.bufferPlayed', { played: fmt(played), total: fmt(duration) }) }}</span>
+      <span>{{ t('dashboard.bufferAhead', { ahead: fmt(ahead) }) }}</span>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.dj-buffer {
+.stream-buffer {
+  margin-top: 10px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
-.dj-buffer-head {
+.stream-buffer-meta {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  font-size: 0.75rem;
-  color: var(--dj-muted);
-}
-.dj-buffer-title {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.dj-buffer-time {
-  flex: none;
+  font-size: 11px;
+  opacity: 0.55;
   font-variant-numeric: tabular-nums;
 }
 </style>

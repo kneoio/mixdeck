@@ -73,6 +73,8 @@ export default {
     your_player: 'مشغلك',
     copy_url: 'نسخ الرابط',
     stationTime: 'وقت المحطة',
+    bufferPlayed: 'تم تشغيل {played} / {total}',
+    bufferAhead: '{ahead} في المخزن المؤقت',
     timezone: 'المنطقة الزمنية',
     onAir: 'على الهواء',
     not_enough_songs: 'أغانٍ غير كافية: {current}/{required} مطلوبة لبدء البث.',

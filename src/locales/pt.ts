@@ -73,6 +73,8 @@ export default {
     your_player: 'Seu player',
     copy_url: 'Copiar link',
     stationTime: 'Hora da estação',
+    bufferPlayed: 'Tocado {played} / {total}',
+    bufferAhead: '{ahead} em buffer',
     timezone: 'Fuso horário',
     onAir: 'No ar',
     not_enough_songs: 'Músicas insuficientes: {current}/{required} necessárias para iniciar a transmissão.',

@@ -73,6 +73,8 @@ export default {
     your_player: 'Сіздің плеер',
     copy_url: 'Сілтемені көшіру',
     stationTime: 'Станция уақыты',
+    bufferPlayed: 'Ойнатылды {played} / {total}',
+    bufferAhead: 'буферде {ahead}',
     timezone: 'Уақыт белдеуі',
     onAir: 'Эфирде',
     not_enough_songs: 'Жеткілікті ән жоқ: трансляцияны бастау үшін {current}/{required} қажет.',

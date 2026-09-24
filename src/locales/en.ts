@@ -199,6 +199,8 @@ export default {
     your_player: 'Your Player',
     copy_url: 'Copy link',
     stationTime: 'Station Time',
+    bufferPlayed: 'Played {played} / {total}',
+    bufferAhead: '{ahead} buffered',
     timezone: 'Timezone',
     onAir: 'On Air',
     not_enough_songs: 'Not enough songs: {current}/{required} required to start the stream.',

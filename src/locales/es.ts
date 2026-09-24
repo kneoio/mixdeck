@@ -73,6 +73,8 @@ export default {
     your_player: 'Tu reproductor',
     copy_url: 'Copiar enlace',
     stationTime: 'Hora de la emisora',
+    bufferPlayed: 'Reproducido {played} / {total}',
+    bufferAhead: '{ahead} en búfer',
     timezone: 'Zona horaria',
     onAir: 'En antena',
     not_enough_songs: 'Canciones insuficientes: se necesitan {current}/{required} para iniciar la transmisión.',

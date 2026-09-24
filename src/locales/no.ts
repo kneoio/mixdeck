@@ -73,6 +73,8 @@ export default {
     your_player: 'Din spiller',
     copy_url: 'Kopier lenke',
     stationTime: 'Stasjonstid',
+    bufferPlayed: 'Spilt {played} / {total}',
+    bufferAhead: '{ahead} bufret',
     timezone: 'Tidssone',
     onAir: 'På luften',
     not_enough_songs: 'Ikke nok sanger: {current}/{required} kreves for å starte strømmen.',
