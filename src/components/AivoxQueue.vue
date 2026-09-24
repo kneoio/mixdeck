@@ -135,7 +135,7 @@ function mergingMethodLabel(item: AivoxQueueEntry): string {
 }
 .queue-eq .bar {
   width: 3px;
-  background: rgba(255, 214, 0, 0.9);
+  background: #FFD600;
   border-radius: 1px;
   transform-origin: bottom;
   animation: eq-pulse 0.9s ease-in-out infinite alternate;
@@ -220,9 +220,9 @@ function mergingMethodLabel(item: AivoxQueueEntry): string {
   white-space: nowrap;
 }
 .queue-type-tag--playing {
-  background: rgba(255, 214, 0, 0.15);
-  color: #FFD600;
-  border: 1px solid rgba(255, 214, 0, 0.35);
+  background: #FFD600;
+  color: #1a1a1a;
+  border: 1px solid #FFD600;
 }
 .queue-type-tag--prioritized {
   background: rgba(24, 160, 88, 0.1);
@@ -239,10 +239,28 @@ function mergingMethodLabel(item: AivoxQueueEntry): string {
   opacity: 0.5;
   border: 1px solid rgba(255,255,255,0.12);
 }
+/** What is on air is the one card that has to be found at a glance, so it glows. */
 .queue-item--playing {
-  border-color: rgba(255, 214, 0, 0.25);
-  background: rgba(255, 214, 0, 0.06);
-  box-shadow: 0 0 0 1px rgba(255, 214, 0, 0.15);
+  border-color: rgba(255, 214, 0, 0.7);
+  background: linear-gradient(90deg, rgba(255, 214, 0, 0.18), rgba(255, 214, 0, 0.05));
+  box-shadow: 0 0 0 1px rgba(255, 214, 0, 0.3), 0 0 16px rgba(255, 214, 0, 0.2);
+  animation: now-playing-glow 2.4s ease-in-out infinite;
+}
+.queue-item--playing .queue-title {
+  color: #FFD600;
+}
+.queue-item--playing .queue-artist {
+  opacity: 0.8;
+}
+@keyframes now-playing-glow {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(255, 214, 0, 0.3), 0 0 10px rgba(255, 214, 0, 0.12); }
+  50%      { box-shadow: 0 0 0 1px rgba(255, 214, 0, 0.5), 0 0 22px rgba(255, 214, 0, 0.3); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .queue-item--playing,
+  .queue-eq .bar {
+    animation: none;
+  }
 }
 .queue-item--played {
   opacity: 0.5;
