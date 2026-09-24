@@ -10,7 +10,6 @@ import GsapButton from '@/components/GsapButton.vue'
 import DjLinkEditor from '@/components/dj/DjLinkEditor.vue'
 import DjSongPicker, { type DjSong } from '@/components/dj/DjSongPicker.vue'
 import DjChat from '@/components/dj/DjChat.vue'
-import DjBufferBar from '@/components/dj/DjBufferBar.vue'
 import { useDjColors } from '@/utils/djColors'
 import { useBrandsStore } from '@/stores/brands'
 import { type DjChatContext } from '@/services/djApi'
@@ -727,7 +726,6 @@ onBeforeUnmount(() => {
       </span>
     </div>
 
-    <DjBufferBar :brand-slug="brandSlug" />
 
     <p v-if="aGone" class="dj-banner">{{ t('dj.too_late') }}</p>
 

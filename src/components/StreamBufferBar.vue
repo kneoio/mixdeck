@@ -33,15 +33,14 @@ function fmt(seconds: number) {
 
 <template>
   <div v-if="state && duration > 0" class="stream-buffer">
+    <span class="stream-buffer-label">{{ t('dashboard.bufferPlayed', { played: fmt(played), total: fmt(duration) }) }}</span>
     <BoxProgressBar
+      class="stream-buffer-bar"
       :progress="played / duration"
       :buffered="ahead / duration"
       :remaining-seconds="duration - played"
     />
-    <div class="stream-buffer-meta">
-      <span>{{ t('dashboard.bufferPlayed', { played: fmt(played), total: fmt(duration) }) }}</span>
-      <span>{{ t('dashboard.bufferAhead', { ahead: fmt(ahead) }) }}</span>
-    </div>
+    <span class="stream-buffer-label">{{ t('dashboard.bufferAhead', { ahead: fmt(ahead) }) }}</span>
   </div>
 </template>
 
@@ -49,15 +48,18 @@ function fmt(seconds: number) {
 .stream-buffer {
   margin-top: 10px;
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 10px;
 }
-.stream-buffer-meta {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
+.stream-buffer-bar {
+  flex: 1;
+  min-width: 0;
+}
+.stream-buffer-label {
+  flex: none;
   font-size: 11px;
   opacity: 0.55;
+  white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
 </style>

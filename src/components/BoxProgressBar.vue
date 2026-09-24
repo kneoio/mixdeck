@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import gsap from 'gsap'
 import { useThemeStore } from '@/stores/theme'
 
@@ -37,8 +37,46 @@ const reducedMotion = typeof window !== 'undefined' && window.matchMedia?.('(pre
 const railColor = computed(() => (themeStore.isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'))
 
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x))
-const progressUnits = computed(() => clamp01(props.progress) * boxCount.value)
-const bufferedEndUnits = computed(() => clamp01(props.progress + props.buffered) * boxCount.value)
+
+/**
+ * What the boxes show. It follows the props, except when the next song goes on air: then, instead of
+ * snapping back to empty, the boxes go out one by one, fast, from the end back to the start.
+ */
+const shown = reactive({ progress: props.progress, buffered: props.buffered })
+/** A fall this large is a new song starting, not a correction. */
+const RESET_DROP = 0.3
+const DRAIN_SECONDS_PER_BOX = 0.025
+const DRAIN_MAX_SECONDS = 1.2
+let drain: gsap.core.Tween | null = null
+/** How long the running drain lasts, so the colour can travel back to green over the same time. */
+let drainSeconds = 0
+watch(() => [props.progress, props.buffered] as const, ([p, b], [prev]) => {
+  if (!reducedMotion && prev - p > RESET_DROP) {
+    drain?.kill()
+    const steps = Math.max(1, Math.ceil(clamp01(shown.progress) * boxCount.value))
+    drainSeconds = Math.min(DRAIN_MAX_SECONDS, steps * DRAIN_SECONDS_PER_BOX)
+    shown.buffered = 0
+    drain = gsap.to(shown, {
+      progress: clamp01(p),
+      duration: drainSeconds,
+      ease: `steps(${steps})`,
+      onComplete: () => {
+        drain = null
+        drainSeconds = 0
+        shown.progress = props.progress
+        shown.buffered = props.buffered
+      },
+    })
+    return
+  }
+  // A drain in flight picks up the latest values when it completes.
+  if (drain) return
+  shown.progress = p
+  shown.buffered = b
+})
+
+const progressUnits = computed(() => clamp01(shown.progress) * boxCount.value)
+const bufferedEndUnits = computed(() => clamp01(shown.progress + shown.buffered) * boxCount.value)
 const filledCount = computed(() => Math.min(boxCount.value, Math.floor(progressUnits.value)))
 
 const playedFill = (i: number) => clamp01(progressUnits.value - i)
@@ -69,7 +107,8 @@ function applyColor(immediate: boolean) {
   const el = rootRef.value
   if (!el) return
   if (immediate || reducedMotion) gsap.set(el, { '--box-color': color.value })
-  else gsap.to(el, { '--box-color': color.value, duration: 0.8, ease: 'power1.out', overwrite: 'auto' })
+  // While the boxes drain, the colour travels back to green alongside them.
+  else gsap.to(el, { '--box-color': color.value, duration: drainSeconds || 0.8, ease: drainSeconds ? 'none' : 'power1.out', overwrite: 'auto' })
 }
 
 function applyPulse() {
@@ -109,6 +148,7 @@ watch(filledCount, () => { void nextTick().then(syncArmedBorders) })
 onBeforeUnmount(() => {
   resizeObserver?.disconnect()
   pulse?.kill()
+  drain?.kill()
   if (rootRef.value) gsap.killTweensOf(rootRef.value)
   boxEls.value.forEach(el => {
     const ring = el?.querySelector('.box-progress__ring')
@@ -123,7 +163,7 @@ onBeforeUnmount(() => {
       ref="barRef"
       class="box-progress__bar"
       role="progressbar"
-      :aria-valuenow="Math.round(clamp01(progress) * 100)"
+      :aria-valuenow="Math.round(clamp01(shown.progress) * 100)"
       aria-valuemin="0"
       aria-valuemax="100"
     >

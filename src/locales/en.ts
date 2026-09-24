@@ -154,8 +154,6 @@ export default {
     too_late: 'A has already played past your mix on air — this link goes out without A',
     session_expiring: 'Lost contact with the station — it takes the air back in {time}',
     session_expired: 'The station has taken the air back',
-    buffer_committed: 'On air {committed} / {total}',
-    buffer_pending: 'buffer {pending}',
   },
   overview: {
     title: 'Streams',
