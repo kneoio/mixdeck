@@ -1,3 +1,4 @@
+import { AudioBufferSource, BufferTarget, canEncodeAudio, OggOutputFormat, Output, QUALITY_HIGH } from 'mediabunny'
 import { getAudioContext, OVERLAP_SECONDS } from './djAudio'
 
 const EDGE_FADE = 0.04
@@ -433,11 +434,56 @@ export function scheduleMix(
   }
 }
 
+/**
+ * Where the DJ's mix begins, in junction seconds: the first moment A is not playing on its own at full
+ * volume, because C, a B clip or A's own curve comes in. Up to there the render is plain A, the same
+ * audio as the join on air, which is what lets aivox stitch the two anywhere before it.
+ */
+export function mixPointOf(model: LinkModel): number {
+  const starts = [model.bStart, ...model.voices.flatMap(v => (v.buf ? [v.start] : []))]
+  const dip = model.duckA.findIndex(p => p.volume < 0.999)
+  if (dip >= 0) starts.push(model.aStart + (dip === 0 ? 0 : model.duckA[dip - 1].time))
+  return Math.max(model.aStart, Math.min(...starts))
+}
+
+/** The same link with A silent: plan B, what airs once A has already played out on air. */
+export function withoutA(model: LinkModel): LinkModel {
+  return { ...model, duckA: [{ time: 0, volume: 0 }, { time: Math.max(0.01, model.a.duration), volume: 0 }] }
+}
+
+/** Plan B's range: it starts where the first thing other than A does, so it does not open on silence. */
+export function planBWindow(model: LinkModel, win: MixWindow): MixWindow {
+  const first = Math.min(model.bStart, ...model.voices.flatMap(v => (v.buf ? [v.start] : [])))
+  return { start: Math.min(Math.max(win.start, first), Math.max(win.start, win.end - 1)), end: win.end }
+}
+
 export async function renderLink(model: LinkModel, win: MixWindow): Promise<AudioBuffer> {
   const sampleRate = model.a.sampleRate
   const ctx = new OfflineAudioContext(2, Math.ceil((win.end - win.start) * sampleRate), sampleRate)
   scheduleMix(ctx, ctx.destination, model, win, 0)
   return ctx.startRendering()
+}
+
+/** Opus runs at 48 kHz; the encoder resamples the render to it. */
+const OPUS_SAMPLE_RATE = 48000
+
+export interface EncodedJoin { blob: Blob; format: 'opus' | 'wav' }
+
+/**
+ * A join is a whole song plus the link, so it goes up as Opus in Ogg, about a ninth of the WAV.
+ * A browser that cannot encode Opus sends WAV instead; the server takes either.
+ */
+export async function encodeJoin(buf: AudioBuffer): Promise<EncodedJoin> {
+  const opus = await canEncodeAudio('opus', { numberOfChannels: buf.numberOfChannels, sampleRate: OPUS_SAMPLE_RATE, quality: QUALITY_HIGH })
+    .catch(() => false)
+  if (!opus) return { blob: encodeWav(buf), format: 'wav' }
+  const output = new Output({ format: new OggOutputFormat(), target: new BufferTarget() })
+  const source = new AudioBufferSource({ codec: 'opus', quality: QUALITY_HIGH, transform: { sampleRate: OPUS_SAMPLE_RATE } })
+  output.addAudioTrack(source)
+  await output.start()
+  await source.add(buf)
+  await output.finalize()
+  return { blob: new Blob([output.target.buffer!], { type: 'audio/ogg' }), format: 'opus' }
 }
 
 /** 16-bit PCM WAV. */

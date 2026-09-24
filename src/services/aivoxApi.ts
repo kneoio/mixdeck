@@ -46,6 +46,9 @@ export interface AivoxStreamBuffer {
   durationSeconds: number
   committedSeconds: number
   pendingSeconds: number
+  /** Set when the fragment is a human DJ join: which one, and where its incoming song begins in it. */
+  djJoinId: string | null
+  djIncomingSongStartSeconds: number | null
 }
 
 export interface AivoxDashboardStreamEntry {

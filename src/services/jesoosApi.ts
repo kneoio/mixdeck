@@ -58,17 +58,32 @@ export interface DebugInstructionResponse {
 /** Same chunk size the song upload uses. */
 const DJ_JOIN_CHUNK_SIZE = 5 * 1024 * 1024
 
-/** A transition the DJ rendered in the deck. aivox stitches it onto the join before it. */
-export interface DjJoin {
+export interface DjJoinRender {
   blob: Blob
+  format: 'opus' | 'wav'
+}
+
+/**
+ * A transition the DJ rendered in the deck, in up to two renders. aivox stitches the full one onto the
+ * join before it, or airs plan B (without A) when A has already played past the mix point.
+ */
+export interface DjJoin {
+  /** A + link + C; null once A has already aired past the mix point. */
+  full: DjJoinRender | null
+  /** Link + C with A muted; null for the first join of a session. */
+  planB: DjJoinRender | null
   joinId: string
   /** The join this one cuts into; null for the first join of a session. */
   continuesJoinId: string | null
   durationSeconds: number
-  /** Where second 0 of the incoming song sits in this file. */
+  /** Where second 0 of the incoming song sits in the full render. */
   incomingSongStartSeconds: number
-  /** Where in the outgoing song this file begins. */
+  /** Where in the outgoing song the full render begins. */
   outgoingSongFromSeconds: number
+  /** Where in the full render the DJ's mix begins; before it the render is plain A. */
+  mixPointSeconds: number
+  /** Where second 0 of the incoming song sits in plan B. */
+  planBIncomingSongStartSeconds: number
   songASlug: string
   songBSlug: string
 }
@@ -93,19 +108,31 @@ class JesoosApiService extends ApiClient {
    */
   async sendDjJoin(brandSlug: string, join: DjJoin, onProgress?: (percent: number) => void): Promise<void> {
     const brand = encodeURIComponent(brandSlug)
-    const totalChunks = Math.ceil(join.blob.size / DJ_JOIN_CHUNK_SIZE)
-    for (let i = 0; i < totalChunks; i++) {
-      const start = i * DJ_JOIN_CHUNK_SIZE
-      const chunk = join.blob.slice(start, Math.min(start + DJ_JOIN_CHUNK_SIZE, join.blob.size))
-      const body = new FormData()
-      body.append('chunk', chunk, `${join.joinId}.wav`)
-      const params = new URLSearchParams({
-        joinId: join.joinId,
-        chunkIndex: String(i),
-        totalChunks: String(totalChunks),
-      })
-      await this.request<void>(`/dj/${brand}/air/chunk?${params}`, { method: 'POST', body })
-      onProgress?.(Math.round(((i + 1) / totalChunks) * 100))
+    const parts = [
+      ...(join.full ? [{ part: 'main', render: join.full }] : []),
+      ...(join.planB ? [{ part: 'planB', render: join.planB }] : []),
+    ]
+    const totalBytes = parts.reduce((sum, p) => sum + p.render.blob.size, 0) || 1
+    let sentBytes = 0
+    for (const { part, render } of parts) {
+      const { blob, format } = render
+      const totalChunks = Math.ceil(blob.size / DJ_JOIN_CHUNK_SIZE)
+      for (let i = 0; i < totalChunks; i++) {
+        const start = i * DJ_JOIN_CHUNK_SIZE
+        const chunk = blob.slice(start, Math.min(start + DJ_JOIN_CHUNK_SIZE, blob.size))
+        const body = new FormData()
+        body.append('chunk', chunk, `${join.joinId}.${format}`)
+        const params = new URLSearchParams({
+          joinId: join.joinId,
+          part,
+          format,
+          chunkIndex: String(i),
+          totalChunks: String(totalChunks),
+        })
+        await this.request<void>(`/dj/${brand}/air/chunk?${params}`, { method: 'POST', body })
+        sentBytes += chunk.size
+        onProgress?.(Math.round((sentBytes / totalBytes) * 100))
+      }
     }
 
     const form = new FormData()
@@ -114,6 +141,8 @@ class JesoosApiService extends ApiClient {
     form.append('durationSeconds', String(join.durationSeconds))
     form.append('incomingSongStartSeconds', String(join.incomingSongStartSeconds))
     form.append('outgoingSongFromSeconds', String(join.outgoingSongFromSeconds))
+    form.append('mixPointSeconds', String(join.mixPointSeconds))
+    form.append('planBIncomingSongStartSeconds', String(join.planBIncomingSongStartSeconds))
     form.append('songASlug', join.songASlug)
     form.append('songBSlug', join.songBSlug)
     await this.request<void>(`/dj/${brand}/air`, { method: 'POST', body: form })

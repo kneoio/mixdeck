@@ -151,7 +151,7 @@ export default {
     generate_error: 'Could not generate the voice',
     deadline_label: 'Time left to finish this link: {time}',
     deadline_locked: 'Locked — the queued song is going out now',
-    too_late: 'The cut has already gone out — pick A again from what is on air now',
+    too_late: 'A has already played past your mix on air — this link goes out without A',
     session_expiring: 'Lost contact with the station — it takes the air back in {time}',
     session_expired: 'The station has taken the air back',
     buffer_committed: 'On air {committed} / {total}',

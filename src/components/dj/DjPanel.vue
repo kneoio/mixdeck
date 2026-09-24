@@ -22,7 +22,8 @@ import {
   HEAD_SECONDS, MAX_VOICE_LANES, MAX_VOICE_SECONDS, TAIL_SECONDS,
 } from '@/utils/djAudio'
 import {
-  autoCrossfade, autoDuck, bStartFor, emptyLane, encodeWav, flatCurve, LinkPreview, pairedCurve, renderLink, type EnvelopePoint, type LinkModel, type MixWindow, type VoiceLane,
+  autoCrossfade, autoDuck, bStartFor, emptyLane, encodeJoin, flatCurve, LinkPreview, mixPointOf, pairedCurve, planBWindow, renderLink, withoutA,
+  type EnvelopePoint, type LinkModel, type MixWindow, type VoiceLane,
 } from '@/utils/djMix'
 
 const { t } = useI18n()
@@ -247,48 +248,67 @@ const overhang = computed(() =>
     v.buf && v.start + v.buf.duration > total.value + 0.05 ? [voices.value.length > 1 ? `B${n + 1}` : 'B'] : []),
 )
 /**
- * What Play and Send cover. Until the DJ drags the range on the ruler it runs from a little before C
- * comes in (or the first B clip) to the end of C, so a join always carries the incoming song whole:
- * the next join cuts into it, and if none comes it simply plays out and the agenda takes over.
- * The first join of a session has nothing on air to continue from, so it carries A whole too.
+ * What Play and Send cover. Until the DJ drags the range on the ruler it is the whole of A, the link
+ * and the whole of C. C goes whole because the next join cuts into it, and if none comes it simply
+ * plays out and the agenda takes over. A goes whole because it is the C of the join on air: up to the
+ * mix point both hold the same audio, so aivox can stitch the two wherever on air still allows.
  */
 const manualRange = ref<MixWindow | null>(null)
-const win = computed<MixWindow>(() => {
+const fullWin = computed<MixWindow>(() => {
   const end = total.value
   const manual = manualRange.value
   if (manual) {
     const start = Math.min(Math.max(0, manual.start), Math.max(0, end - 1))
     return { start, end: Math.min(end, Math.max(manual.end, start + 1)) }
   }
-  const first = Math.min(bStart.value, voiceStart.value ?? bStart.value)
-  const start = lastJoinId.value === null ? aStart.value : Math.max(0, first - 10)
-  return { start, end }
+  return { start: aStart.value, end }
 })
 // A new pair of songs is a new junction, so the range starts out following it again.
 watch([aBuf, bBuf], () => { manualRange.value = null })
 
-/** The join currently on air, which the next one is stitched onto. */
+/** The join last sent, whose C is this link's A. */
 const lastJoinId = ref<string | null>(null)
-const lastJoinIncomingStart = ref(0)
-/** Seconds aivox needs to render the stitch; a cut closer than this to the live edge is refused. */
+/** Set once that join is seen going out; when something else goes out after it, A has played out whole. */
+const lastJoinSeenOnAir = ref(false)
+/** Seconds aivox needs to render the stitch; a mix point closer than this to the live edge airs as plan B. */
 const STITCH_MARGIN_SECONDS = 8
 
 const brandsStore = useBrandsStore()
-/** How far into the join on air aivox has already published; that part can no longer be cut. */
-const committedSeconds = computed(() => {
+/** How far into A (the C of the join on air) aivox has already published; null while that join has not started. */
+const aAiredSeconds = computed(() => {
+  if (lastJoinId.value === null) return null
   const state = brandsStore.bufferStates[brandSlug.value]
-  if (!state) return null
-  return state.buffer.committedSeconds + Math.max(0, (now.value - state.receivedAt) / 1000)
+  const buffer = state?.buffer
+  if (!buffer || buffer.djJoinId !== lastJoinId.value) return lastJoinSeenOnAir.value ? Infinity : null
+  const committed = buffer.committedSeconds + Math.max(0, (now.value - state.receivedAt) / 1000)
+  return committed - (buffer.djIncomingSongStartSeconds ?? 0)
 })
-/** Where this link cuts into the join on air, in that file's seconds. */
-const cutInPreviousJoin = computed(() =>
-  lastJoinIncomingStart.value + Math.max(0, win.value.start - aStart.value))
-const secondsUntilLock = computed(() => {
-  const committed = committedSeconds.value
-  if (lastJoinId.value === null || committed === null) return null
-  return cutInPreviousJoin.value - committed - STITCH_MARGIN_SECONDS
+watch(aAiredSeconds, s => { if (s !== null && s !== Infinity) lastJoinSeenOnAir.value = true })
+
+const fullModel = computed<LinkModel | null>(() =>
+  aBuf.value && bBuf.value
+    ? {
+        a: aBuf.value, b: bBuf.value, voices: voices.value,
+        aStart: aStart.value, bStart: bStart.value,
+        duckA: duckA.value, duckB: duckB.value,
+      }
+    : null,
+)
+/** Where the mix begins, in A's own seconds. */
+const mixPointInA = computed(() => (fullModel.value ? mixPointOf(fullModel.value) - aStart.value : null))
+/**
+ * A has already played past the mix point on air, so this link can no longer be stitched in. It goes out
+ * as plan B, without A, and A is taken off the editor: what the DJ hears is what will air.
+ */
+const aGone = computed(() => {
+  const aired = aAiredSeconds.value
+  const mix = mixPointInA.value
+  return aired !== null && mix !== null && aired + STITCH_MARGIN_SECONDS >= mix
 })
-const tooLate = computed(() => secondsUntilLock.value !== null && secondsUntilLock.value <= 0)
+
+/** What Play and the editor cover: the whole link, or plan B's once A is gone. */
+const win = computed<MixWindow>(() =>
+  aGone.value && fullModel.value ? planBWindow(fullModel.value, fullWin.value) : fullWin.value)
 const clampStart = (duration: number, s: number) => Math.min(Math.max(0, s), Math.max(0, total.value - duration))
 
 /** The stretch where both songs play together, in junction seconds. */
@@ -354,15 +374,9 @@ watch([aBuf, bBuf, aStart, bStart], () => {
   voices.value = voices.value.map(v => (v.buf ? { ...v, start: clampStart(v.buf.duration, v.start) } : v))
 })
 
+/** What is auditioned: the whole link, or plan B once A is gone. */
 const model = computed<LinkModel | null>(() =>
-  aBuf.value && bBuf.value
-    ? {
-        a: aBuf.value, b: bBuf.value, voices: voices.value,
-        aStart: aStart.value, bStart: bStart.value,
-        duckA: duckA.value, duckB: duckB.value,
-      }
-    : null,
-)
+  fullModel.value && aGone.value ? withoutA(fullModel.value) : fullModel.value)
 
 function applyAutoDuck() {
   // Linked, the curves are a crossfade, so "auto" means the crossfade rather than a duck.
@@ -568,33 +582,37 @@ const sending = ref(false)
 const uploadProgress = ref(0)
 
 async function sendToAir() {
-  const m = model.value
+  const m = fullModel.value
   const a = songA.value
   const b = songB.value
   if (!m || !filledVoices.value.length || !a || !b || sending.value) return
-  if (tooLate.value) {
-    message.error(t('dj.too_late'))
-    return
-  }
   stopPreview()
   sending.value = true
   try {
-    const rendered = await renderLink(m, win.value)
+    const full = fullWin.value
+    const continuing = lastJoinId.value !== null
+    // Once A is gone only plan B can air; the first join has nothing on air for plan B to follow.
+    const fullRender = aGone.value ? null : await renderLink(m, full)
+    const planBWin = planBWindow(m, full)
+    const planBRender = continuing ? await renderLink(withoutA(m), planBWin) : null
     const joinId = crypto.randomUUID()
     uploadProgress.value = 1
     await jesoosApiService.sendDjJoin(brandSlug.value, {
-      blob: encodeWav(rendered),
+      full: fullRender ? await encodeJoin(fullRender) : null,
+      planB: planBRender ? await encodeJoin(planBRender) : null,
       joinId,
       continuesJoinId: lastJoinId.value,
-      durationSeconds: Math.round(rendered.duration * 100) / 100,
-      incomingSongStartSeconds: Math.max(0, bStart.value - win.value.start),
-      outgoingSongFromSeconds: Math.max(0, win.value.start - aStart.value),
+      durationSeconds: Math.round((fullRender ?? planBRender)!.duration * 100) / 100,
+      incomingSongStartSeconds: Math.max(0, bStart.value - full.start),
+      outgoingSongFromSeconds: Math.max(0, full.start - aStart.value),
+      mixPointSeconds: Math.max(0, mixPointOf(m) - full.start),
+      planBIncomingSongStartSeconds: Math.max(0, bStart.value - planBWin.start),
       songASlug: a.slugName,
       songBSlug: b.slugName,
     }, percent => { uploadProgress.value = percent })
     message.success(t('dj.sent'))
     lastJoinId.value = joinId
-    lastJoinIncomingStart.value = Math.max(0, bStart.value - win.value.start)
+    lastJoinSeenOnAir.value = false
     // The station will play a → b next, so the next link continues from b, with its audio already decoded.
     carriedBuffer = bBuf.value
     songA.value = b
@@ -605,6 +623,7 @@ async function sendToAir() {
     message.error(t('dj.send_error'))
     // The cut can no longer be made, so A has to be picked again from whatever is on air.
     lastJoinId.value = null
+    lastJoinSeenOnAir.value = false
     aLocked.value = false
   } finally {
     sending.value = false
@@ -616,7 +635,7 @@ const ready = computed(() => sessionState.value === 'active')
 // Recording needs a live session, not songs: a voice can be captured first and placed later.
 const canRecord = computed(() => ready.value && !sending.value)
 const canPreview = computed(() => ready.value && !!model.value && !recording.value && !sending.value)
-const canSend = computed(() => canPreview.value && !ending.value && !tooLate.value)
+const canSend = computed(() => canPreview.value && !ending.value)
 
 const songLabel = (s: DjSong | null) => (s ? [s.artist, s.title].filter(Boolean).join(' — ') : '')
 
@@ -684,7 +703,7 @@ onBeforeUnmount(() => {
 
     <DjBufferBar :brand-slug="brandSlug" />
 
-    <p v-if="tooLate" class="dj-banner dj-banner--error">{{ t('dj.too_late') }}</p>
+    <p v-if="aGone" class="dj-banner">{{ t('dj.too_late') }}</p>
 
     <p v-if="sessionExpiresIn !== null" class="dj-banner dj-banner--error">
       {{ sessionExpiresIn > 0
@@ -695,7 +714,7 @@ onBeforeUnmount(() => {
     <section class="dj-section">
       <h3 class="dj-section-title">{{ t('dj.songs') }}</h3>
       <div class="dj-pickers">
-        <DjSongPicker v-model="songA" class="dj-asset-field dj-asset-field--a" label="A" :placeholder="t('dj.pick_a')" :brand-slug="brandSlug" :exclude-slug="songB?.slugName" :loading="loadingA" :disabled="aLocked && !tooLate" />
+        <DjSongPicker v-model="songA" class="dj-asset-field dj-asset-field--a" label="A" :placeholder="t('dj.pick_a')" :brand-slug="brandSlug" :exclude-slug="songB?.slugName" :loading="loadingA" :disabled="aLocked" />
         <div v-for="(v, n) in voices" :key="v.id" class="dj-asset-row">
           <span class="dj-asset-slot">{{ voices.length > 1 ? `B${n + 1}` : 'B' }}</span>
           <NButton size="small" :disabled="!canRecord || (recording && recordingId !== v.id)" @click="toggleRec(v.id)">
@@ -740,7 +759,7 @@ onBeforeUnmount(() => {
         v-model:duck-b="duckB"
         v-model:a-start="aStart"
         v-model:b-start="bStart"
-        :a="aBuf"
+        :a="aGone ? null : aBuf"
         :b="bBuf"
         :total="total"
         :window="win"
