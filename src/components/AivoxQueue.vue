@@ -31,6 +31,11 @@ function queueTypeLabel(item: AivoxQueueEntry): string {
   return t('dashboard.queue.inQueue')
 }
 
+/** A join the human DJ made: it gets its own colour so it is not mistaken for an agenda entry. */
+function isDjJoin(item: AivoxQueueEntry): boolean {
+  return String(item.tech.mergingMethod ?? '').trim() === 'DJ_JOIN'
+}
+
 function mergingMethodLabel(item: AivoxQueueEntry): string {
   const method = String(item.tech.mergingMethod ?? 'NOT_MIXED').trim() || 'NOT_MIXED'
   const key = `dashboard.queue.mixing.${method}`
@@ -45,7 +50,7 @@ function mergingMethodLabel(item: AivoxQueueEntry): string {
       <span v-if="i > 0" class="queue-connector">›</span>
       <div
         class="queue-item"
-        :class="[`queue-item--${item.tech.queueType}`]"
+        :class="[`queue-item--${item.tech.queueType}`, { 'queue-item--dj': isDjJoin(item) }]"
       >
         <div class="queue-indicator">
           <span v-if="item.tech.queueType === 'playing'" class="queue-eq">
@@ -68,10 +73,10 @@ function mergingMethodLabel(item: AivoxQueueEntry): string {
           </button>
         </div>
         <div class="queue-right">
-          <span class="queue-mixing">{{ mergingMethodLabel(item) }}</span>
+          <span class="queue-mixing" :class="{ 'queue-mixing--dj': isDjJoin(item) }">{{ mergingMethodLabel(item) }}</span>
           <span
             class="queue-type-tag"
-            :class="`queue-type-tag--${item.tech.queueType}`"
+            :class="[`queue-type-tag--${item.tech.queueType}`, { 'queue-type-tag--dj': isDjJoin(item) }]"
             :title="queueTypeLabel(item)"
           >
             <NIcon
@@ -258,6 +263,7 @@ function mergingMethodLabel(item: AivoxQueueEntry): string {
 }
 @media (prefers-reduced-motion: reduce) {
   .queue-item--playing,
+  .queue-item--dj.queue-item--playing,
   .queue-eq .bar {
     animation: none;
   }
@@ -271,6 +277,46 @@ function mergingMethodLabel(item: AivoxQueueEntry): string {
 }
 .queue-item--regular {
   border-color: rgba(255, 255, 255, 0.08);
+}
+/* A human DJ join is orange in every state, so it stands out from the agenda's entries. */
+.queue-item--dj {
+  border-color: rgba(255, 138, 0, 0.55);
+  background: linear-gradient(90deg, rgba(255, 138, 0, 0.16), rgba(255, 138, 0, 0.04));
+  box-shadow: inset 3px 0 0 #FF8A00;
+}
+.queue-item--dj .queue-title {
+  color: #FF8A00;
+}
+.queue-mixing--dj {
+  opacity: 1;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #FF8A00;
+}
+.queue-item--dj.queue-item--playing {
+  border-color: rgba(255, 138, 0, 0.85);
+  background: linear-gradient(90deg, rgba(255, 138, 0, 0.26), rgba(255, 138, 0, 0.07));
+  box-shadow: inset 3px 0 0 #FF8A00, 0 0 0 1px rgba(255, 138, 0, 0.4), 0 0 16px rgba(255, 138, 0, 0.3);
+  animation: dj-playing-glow 2.4s ease-in-out infinite;
+}
+.queue-item--dj.queue-item--playing .queue-eq .bar {
+  background: #FF8A00;
+}
+.queue-type-tag--dj.queue-type-tag--playing {
+  background: #FF8A00;
+  border-color: #FF8A00;
+  color: #1a1a1a;
+}
+.queue-type-tag--dj.queue-type-tag--prioritized {
+  background: rgba(255, 138, 0, 0.12);
+  border-color: rgba(255, 138, 0, 0.45);
+  color: #FF8A00;
+}
+@keyframes dj-playing-glow {
+  0%, 100% { box-shadow: inset 3px 0 0 #FF8A00, 0 0 0 1px rgba(255, 138, 0, 0.4), 0 0 10px rgba(255, 138, 0, 0.16); }
+  50%      { box-shadow: inset 3px 0 0 #FF8A00, 0 0 0 1px rgba(255, 138, 0, 0.6), 0 0 22px rgba(255, 138, 0, 0.4); }
 }
 .queue-type-icon {
   display: none;

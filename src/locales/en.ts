@@ -91,6 +91,7 @@ export default {
     end_session: 'End session',
     end_error: 'Could not hand the station back to the agenda',
     starting: 'Taking over the station…',
+    takeover_slow: 'The takeover is taking longer than usual — you can prepare your link meanwhile; Send unlocks once the station is yours',
     session_error: 'Could not start the DJ session',
     retry: 'Retry',
     songs: 'Assets',

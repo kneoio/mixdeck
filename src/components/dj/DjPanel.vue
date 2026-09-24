@@ -656,11 +656,25 @@ async function sendToAir() {
   }
 }
 
-const ready = computed(() => sessionState.value === 'active')
+/**
+ * How long the deck waits for the takeover and the station's first status before it lets the DJ work
+ * anyway. The link can be prepared meanwhile; sending still needs the session jesoos confirms.
+ */
+const TAKEOVER_TIMEOUT_MS = 15_000
+const takeoverTimedOut = ref(false)
+let takeoverTimer: ReturnType<typeof setTimeout> | null = null
+const sessionActive = computed(() => sessionState.value === 'active')
+const ready = computed(() => sessionActive.value || takeoverTimedOut.value)
+/**
+ * A stays shut until the session is live and the station's status has come in, since that status
+ * decides whether A is the C of a join still on air. Picked earlier, it would skip that pick-up.
+ */
+const aStatusKnown = computed(() =>
+  takeoverTimedOut.value || (sessionActive.value && brandsStore.lastDjJoins[brandSlug.value] !== undefined))
 // Recording needs a live session, not songs: a voice can be captured first and placed later.
 const canRecord = computed(() => ready.value && !sending.value)
 const canPreview = computed(() => ready.value && !!model.value && !recording.value && !sending.value)
-const canSend = computed(() => canPreview.value && !ending.value)
+const canSend = computed(() => canPreview.value && sessionActive.value && !ending.value)
 
 const songLabel = (s: DjSong | null) => (s ? [s.artist, s.title].filter(Boolean).join(' — ') : '')
 
@@ -668,6 +682,12 @@ onMounted(async () => {
   clockTimer = setInterval(() => { now.value = Date.now() }, 1000)
   void pollQueue()
   queueTimer = setInterval(pollQueue, 10000)
+  takeoverTimer = setTimeout(() => {
+    takeoverTimer = null
+    if (aStatusKnown.value) return
+    takeoverTimedOut.value = true
+    message.warning(t('dj.takeover_slow'), { duration: 8000 })
+  }, TAKEOVER_TIMEOUT_MS)
   await startSession()
   // The session lapses on the server without this, so a closed laptop hands the air back.
   keepAliveTimer = setInterval(() => {
@@ -682,6 +702,7 @@ onBeforeUnmount(() => {
   if (clockTimer) clearInterval(clockTimer)
   if (queueTimer) clearInterval(queueTimer)
   if (keepAliveTimer) clearInterval(keepAliveTimer)
+  if (takeoverTimer) clearTimeout(takeoverTimer)
   clearRecTimer()
   preview.stop()
   if (!sessionEnded && sessionState.value === 'active') {
@@ -696,7 +717,7 @@ onBeforeUnmount(() => {
     <header class="dj-topbar">
       <div class="dj-timer">
         <small>{{ t('dj.session') }}</small>
-        <span>{{ ready ? elapsed : '--:--' }}</span>
+        <span>{{ sessionActive ? elapsed : '--:--' }}</span>
       </div>
       <GsapButton @click="chatOpen = true">
         <NIcon :component="ChatbubblesOutline" />
@@ -738,7 +759,7 @@ onBeforeUnmount(() => {
     <section class="dj-section">
       <h3 class="dj-section-title">{{ t('dj.songs') }}</h3>
       <div class="dj-pickers">
-        <DjSongPicker v-model="songA" class="dj-asset-field dj-asset-field--a" label="A" :placeholder="t('dj.pick_a')" :brand-slug="brandSlug" :exclude-slug="songB?.slugName" :loading="loadingA" :disabled="aLocked" />
+        <DjSongPicker v-model="songA" class="dj-asset-field dj-asset-field--a" label="A" :placeholder="t('dj.pick_a')" :brand-slug="brandSlug" :exclude-slug="songB?.slugName" :loading="loadingA || !aStatusKnown" :disabled="aLocked || !aStatusKnown" />
         <div v-for="(v, n) in voices" :key="v.id" class="dj-asset-row">
           <span class="dj-asset-slot">{{ voices.length > 1 ? `B${n + 1}` : 'B' }}</span>
           <NButton size="small" :disabled="!canRecord || (recording && recordingId !== v.id)" @click="toggleRec(v.id)">
