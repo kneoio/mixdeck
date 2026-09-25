@@ -90,6 +90,7 @@ export default {
     fade_hint: 'Drag a volume curve to add a point and shape the fade, double-click a point to remove it.',
     automix: 'Automix',
     automix_error: 'Could not reach the Automix server',
+    automix_starting: 'Starting…',
     lane_automix: 'Automix',
     delete_automix: 'Remove the Automix clip',
     mute: 'Mute',

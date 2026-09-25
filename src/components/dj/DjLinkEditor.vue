@@ -123,7 +123,7 @@ const bStyle = computed(() => trackStyle(props.bStart, props.b?.duration ?? 0))
 const voiceStyle = (v: VoiceLane) =>
   props.recordingId === v.id ? { left: '0px', width: '100%' } : trackStyle(v.start, v.buf?.duration ?? 0)
 const voiceDuration = (v: VoiceLane) => v.buf?.duration ?? 0
-const dStyle = computed(() => (props.d ? trackStyle(props.d.start, props.d.buf.duration) : {}))
+const dStyle = computed(() => (props.d?.buf ? trackStyle(props.d.start, props.d.buf.duration) : {}))
 const toggleVoiceMute = (v: VoiceLane) => patchVoice(v.id, { muted: !v.muted })
 
 const yOf = (volume: number) => 4 + (1 - volume) * (LANE_H - 8)
@@ -545,6 +545,8 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
           @click="emit('update:d', null)"
         >✕</button>
         <b class="dj-letter-d">D</b><small>{{ t('dj.lane_automix') }}</small>
+        <span v-if="d.status === 'processing'" class="dj-d-progress">{{ d.progressLabel }}</span>
+        <span v-else-if="d.status === 'error'" class="dj-d-progress dj-d-progress-error">{{ d.errorMessage || t('dj.automix_error') }}</span>
       </div>
     </div>
 
@@ -660,6 +662,7 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
       </div>
 
       <div v-if="d" class="dj-lane dj-tone-d">
+        <div v-if="!d.buf" class="dj-lane-empty">{{ d.status === 'error' ? (d.errorMessage || t('dj.automix_error')) : d.progressLabel }}</div>
         <DjVoiceTrack class="dj-track" :style="dStyle" :buf="d.buf" :color="djColors.d" :tabindex="-1" />
       </div>
 
@@ -800,6 +803,16 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
 }
 .dj-letter-d {
   color: var(--dj-d);
+}
+.dj-d-progress {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.7rem;
+  color: var(--dj-muted);
+}
+.dj-d-progress-error {
+  color: var(--dj-error, #e33);
 }
 .dj-mute {
   position: absolute;

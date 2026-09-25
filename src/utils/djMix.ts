@@ -29,11 +29,18 @@ export const emptyLane = (id: number): VoiceLane => ({
   id, buf: null, source: null, start: 0, duck: [], reverb: 0, echo: 0, radio: 0, distortion: 0, muted: false,
 })
 
-/** A whole pre-mixed clip from the Automix server, played as its own layer alongside A, B and C. */
+/**
+ * A whole pre-mixed clip from the Automix server, played as its own layer alongside A, B and C.
+ * `buf` is null while the render job is still running: the lane activates as soon as the job
+ * starts, with `progressLabel`/`errorMessage` tracking spectra's SSE progress until `buf` arrives.
+ */
 export interface AutomixLane {
-  buf: AudioBuffer
+  buf: AudioBuffer | null
   start: number
   muted: boolean
+  status: 'processing' | 'done' | 'error'
+  progressLabel: string | null
+  errorMessage: string | null
 }
 
 /** Junction timeline: A starts at `aStart`, C at `bStart`, and each B lane at its own `start`. */
@@ -271,7 +278,7 @@ function layersOf(model: LinkModel) {
           fx: { reverb: v.reverb, echo: v.echo, radio: v.radio, distortion: v.distortion } as FxAmounts | null,
         }]
       : []),
-    ...(model.d
+    ...(model.d && model.d.buf
       ? [{
           key: 'd', buf: model.d.buf, start: model.d.start,
           env: model.d.muted ? silentCurve(model.d.buf.duration) : flatCurve(model.d.buf.duration),

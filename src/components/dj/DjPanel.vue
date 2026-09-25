@@ -238,11 +238,24 @@ async function applyAutomix() {
   const slugC = songB.value?.slugName
   if (!slugA || !slugC || automixing.value) return
   automixing.value = true
+  // Activates the D row immediately, before the render has even started on the server.
+  dLane.value = { buf: null, start: aStart.value, muted: false, status: 'processing', progressLabel: t('dj.automix_starting'), errorMessage: null }
   try {
-    const { blob } = await aivoxApiService.mix(slugA, slugC)
+    const { job_id } = await aivoxApiService.startMixJob(slugA, slugC)
+    const final = await aivoxApiService.mixEvents(job_id, progress => {
+      if (!dLane.value) return
+      dLane.value = { ...dLane.value, progressLabel: progress.name, errorMessage: progress.errorMessage }
+    })
+    if (final.status === 'ERROR') {
+      if (dLane.value) dLane.value = { ...dLane.value, status: 'error', progressLabel: null, errorMessage: final.errorMessage }
+      message.error(final.errorMessage || t('dj.automix_error'))
+      return
+    }
+    const { blob } = await aivoxApiService.getMixResult(job_id)
     const buf = await decodeBlob(blob)
-    dLane.value = { buf, start: aStart.value, muted: false }
+    if (dLane.value) dLane.value = { ...dLane.value, buf, status: 'done', progressLabel: null }
   } catch {
+    if (dLane.value) dLane.value = { ...dLane.value, status: 'error', progressLabel: null, errorMessage: null }
     message.error(t('dj.automix_error'))
   } finally {
     automixing.value = false
