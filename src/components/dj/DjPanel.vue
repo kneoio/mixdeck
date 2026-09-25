@@ -814,7 +814,7 @@ onBeforeUnmount(() => {
           <span class="dj-asset-slot">{{ voices.length > 1 ? `B${n + 1}` : 'B' }}</span>
           <NButton size="small" :disabled="!canRecord || (recording && recordingId !== v.id)" @click="toggleRec(v.id)">
             <LedRed class="dj-rec-led" :active="recordingId === v.id" />
-            <strong>{{ t('dj.rec') }}</strong>
+            <span class="dj-rec-label">{{ t('dj.rec') }}</span>
           </NButton>
           <span v-if="recordingId === v.id" class="dj-rec-time">{{ recSeconds }}s / {{ MAX_VOICE_SECONDS }}s</span>
           <NButton size="small" :disabled="recording || sending" @click="pickFile(v.id)">
@@ -1084,6 +1084,9 @@ onBeforeUnmount(() => {
 .dj-rec-led {
   margin-right: 6px;
   vertical-align: -3px;
+}
+.dj-rec-label {
+  font-weight: 700;
 }
 .dj-rec-time {
   font-size: 0.75rem;

@@ -231,9 +231,7 @@ onUnmounted(() => {
       </div>
       <GsapButton
         v-if="showTakeOver"
-        class="take-over-btn"
-        size="small"
-        type="primary"
+        type="success"
         :disabled="takeOverDisabled"
         @click="emit('take-over')"
       ><span>{{ t('dj.take_over') }}</span></GsapButton>
@@ -281,15 +279,6 @@ onUnmounted(() => {
   align-items: center;
   gap: 10px;
   margin-left: 20px;
-}
-/** Same footprint as the old tiny NButton this replaced — only the slanted GsapButton look is new. */
-.take-over-btn {
-  height: 22px;
-  padding: 0 10px;
-  margin-left: 12px;
-}
-.take-over-btn :deep(.gsap-btn__inner) {
-  font-size: 0.68rem;
 }
 .free-badge {
   font-size: 0.65rem;

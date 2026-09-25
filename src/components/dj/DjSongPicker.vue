@@ -92,15 +92,18 @@ function tag(t: DjTag) {
 }
 
 /**
- * Title/artist with the song's genres and labels as small colour chips: wrapped under the option in
- * the dropdown, inline beside it once picked so the field itself does not grow taller.
+ * Title/artist with the song's genres and labels as small colour chips, kept on one line with the
+ * name. Naive UI calls this render function itself, outside our template, so scoped CSS classes
+ * never reach these nodes — the layout has to be inline styles instead.
  */
 function renderOption(option: { label: string; genres: DjTag[]; labels: DjTag[] }, selected: boolean) {
   const tags = [...option.genres, ...option.labels]
   if (!tags.length) return option.label
-  return h('div', { class: selected ? 'dj-picker-option dj-picker-option--selected' : 'dj-picker-option' }, [
-    h('span', option.label),
-    h(NSpace, { size: 4, wrap: !selected, class: 'dj-picker-tags' }, { default: () => tags.map(tag) }),
+  return h('div', {
+    style: 'display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden',
+  }, [
+    h('span', { style: 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;' + (selected ? '' : 'flex:1') }, option.label),
+    h(NSpace, { size: 4, wrap: false, style: 'flex:none' }, { default: () => tags.map(tag) }),
   ])
 }
 
@@ -153,28 +156,5 @@ onMounted(() => search())
 .dj-picker :deep(.n-select) {
   flex: 1;
   min-width: 0;
-}
-.dj-picker-option {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-  padding: 2px 0;
-}
-.dj-picker-option--selected {
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-}
-.dj-picker-option span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.dj-picker-tags {
-  flex: none;
-}
-.dj-picker-option--selected .dj-picker-tags :deep(.n-tag) {
-  white-space: nowrap;
 }
 </style>
