@@ -629,7 +629,7 @@ function onScrubEnd() {
 }
 
 // Edits are heard as they are made; only losing the model (a song removed) ends the audition.
-watch([voices, duckA, duckB, aBuf, bBuf, aStart, bStart, win], () => {
+watch([voices, duckA, duckB, aBuf, bBuf, aStart, bStart, win, mutedA, mutedC, dLane], () => {
   if (!previewing.value) return
   if (model.value) preview.refresh(model.value, win.value)
   else stopPreview()
