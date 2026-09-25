@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import WaveSurfer from 'wavesurfer.js'
 import TimelinePlugin from 'wavesurfer.js/plugins/timeline'
 import { MAX_GAP_SECONDS, MAX_VOICE_SECONDS, peaksOf } from '@/utils/djAudio'
-import { pairedCurve, type EnvelopePoint, type MixWindow, type VoiceLane } from '@/utils/djMix'
+import { pairedCurve, type AutomixLane, type EnvelopePoint, type MixWindow, type VoiceLane } from '@/utils/djMix'
 import { NSlider } from 'naive-ui'
 import { useDjColors } from '@/utils/djColors'
 import DjVoiceTrack from '@/components/dj/DjVoiceTrack.vue'
@@ -19,10 +19,15 @@ const props = defineProps<{
   voices: VoiceLane[]
   aStart: number
   bStart: number
+  /** The Automix server's rendered join, if the DJ has fetched one. */
+  d?: AutomixLane | null
   total: number
   /** A volume curve per song, in that song's own seconds, edited by the DJ. */
   duckA: EnvelopePoint[]
   duckB: EnvelopePoint[]
+  /** Mutes A / C for both preview and what is sent; each keeps its own curve underneath. */
+  mutedA?: boolean
+  mutedB?: boolean
   window: MixWindow
   playhead: number
   /** Id of the B lane the microphone is filling, if any. */
@@ -43,6 +48,8 @@ const emit = defineEmits<{
   'update:duckB': [duck: EnvelopePoint[]]
   'update:aStart': [seconds: number]
   'update:bStart': [seconds: number]
+  'update:mutedA': [muted: boolean]
+  'update:mutedB': [muted: boolean]
   'update:window': [range: MixWindow]
   'record-end': [blob: Blob, id: number]
   'record-error': [error: unknown]
@@ -115,6 +122,8 @@ const bStyle = computed(() => trackStyle(props.bStart, props.b?.duration ?? 0))
 const voiceStyle = (v: VoiceLane) =>
   props.recordingId === v.id ? { left: '0px', width: '100%' } : trackStyle(v.start, v.buf?.duration ?? 0)
 const voiceDuration = (v: VoiceLane) => v.buf?.duration ?? 0
+const dStyle = computed(() => (props.d ? trackStyle(props.d.start, props.d.buf.duration) : {}))
+const toggleVoiceMute = (v: VoiceLane) => patchVoice(v.id, { muted: !v.muted })
 
 const yOf = (volume: number) => 4 + (1 - volume) * (LANE_H - 8)
 const MIN_GAP = 0.05
@@ -483,12 +492,22 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
         </div>
       </div>
       <div class="dj-gutter-lane dj-tone-a">
+        <button
+          type="button" class="dj-mute" :class="{ 'dj-mute-on': mutedA }"
+          :title="t('dj.mute')" :aria-label="t('dj.mute')" :aria-pressed="!!mutedA"
+          @click="emit('update:mutedA', !mutedA)"
+        >M</button>
         <b class="dj-letter-a">A</b><small>{{ t('dj.lane_tail') }}</small>
         <span v-if="infoA?.bpm" class="dj-param">{{ t('dj.bpm', { bpm: Math.round(infoA.bpm) }) }}</span>
         <span v-if="infoA?.key" class="dj-param">{{ infoA.scale ? `${infoA.key} ${infoA.scale}` : infoA.key }}</span>
         <span v-if="infoA?.aiGenerated" class="dj-param-ai" :title="t('dj.ai_generated')">🤖</span>
       </div>
       <div v-for="(v, n) in voices" :key="v.id" class="dj-gutter-lane dj-gutter-voice dj-tone-b">
+        <button
+          type="button" class="dj-mute" :class="{ 'dj-mute-on': v.muted }"
+          :title="t('dj.mute')" :aria-label="t('dj.mute')" :aria-pressed="!!v.muted"
+          @click="toggleVoiceMute(v)"
+        >M</button>
         <b class="dj-letter-b">{{ voices.length > 1 ? `B${n + 1}` : 'B' }}</b><small>{{ t('dj.lane_voice') }}</small>
         <small v-if="v.source">{{ t(`dj.voice_source_${v.source}`) }}</small>
         <div class="dj-fx">
@@ -503,10 +522,18 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
         </div>
       </div>
       <div class="dj-gutter-lane dj-tone-c">
+        <button
+          type="button" class="dj-mute" :class="{ 'dj-mute-on': mutedB }"
+          :title="t('dj.mute')" :aria-label="t('dj.mute')" :aria-pressed="!!mutedB"
+          @click="emit('update:mutedB', !mutedB)"
+        >M</button>
         <b class="dj-letter-c">C</b><small>{{ t('dj.lane_head') }}</small>
         <span v-if="infoB?.bpm" class="dj-param">{{ t('dj.bpm', { bpm: Math.round(infoB.bpm) }) }}</span>
         <span v-if="infoB?.key" class="dj-param">{{ infoB.scale ? `${infoB.key} ${infoB.scale}` : infoB.key }}</span>
         <span v-if="infoB?.aiGenerated" class="dj-param-ai" :title="t('dj.ai_generated')">🤖</span>
+      </div>
+      <div v-if="d" class="dj-gutter-lane dj-tone-d">
+        <b class="dj-letter-d">D</b><small>{{ t('dj.lane_automix') }}</small>
       </div>
     </div>
 
@@ -621,6 +648,10 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
         </svg>
       </div>
 
+      <div v-if="d" class="dj-lane dj-tone-d">
+        <DjVoiceTrack class="dj-track" :style="dStyle" :buf="d.buf" :color="djColors.d" :tabindex="-1" />
+      </div>
+
       <div class="dj-overlay">
         <template v-if="a && b">
           <div class="dj-dim" :style="{ left: 0, width: px(window.start) }" />
@@ -673,6 +704,7 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
   height: 26px;
 }
 .dj-gutter-lane {
+  position: relative;
   height: var(--lane-h);
   display: flex;
   flex-direction: column;
@@ -743,6 +775,9 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
 .dj-tone-c {
   --tone: var(--dj-c);
 }
+.dj-tone-d {
+  --tone: var(--dj-d);
+}
 .dj-letter-a {
   color: var(--dj-a);
 }
@@ -751,6 +786,30 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
 }
 .dj-letter-c {
   color: var(--dj-c);
+}
+.dj-letter-d {
+  color: var(--dj-d);
+}
+.dj-mute {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--dj-border);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--dj-muted);
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+.dj-mute-on {
+  border-color: var(--dj-danger);
+  background: var(--dj-danger);
+  color: #fff;
 }
 /** A stripe down the gutter edge and a faint wash across the lane tie each row to its asset. */
 .dj-gutter-lane {

@@ -19,8 +19,9 @@ import {
   HEAD_SECONDS, MAX_VOICE_LANES, MAX_VOICE_SECONDS, TAIL_SECONDS,
 } from '@/utils/djAudio'
 import {
-  autoCrossfade, autoDuck, bStartFor, emptyLane, encodeJoin, flatCurve, LinkPreview, mixPointOf, pairedCurve, planBWindow, renderLink, withoutA,
-  type EnvelopePoint, type LinkModel, type MixWindow, type VoiceLane,
+  autoCrossfade, autoDuck, bStartFor, emptyLane, encodeJoin, encodeWav, flatCurve, LinkPreview, mixPointOf, pairedCurve, planBWindow, renderLink,
+  silentCurve, withoutA,
+  type AutomixLane, type EnvelopePoint, type LinkModel, type MixWindow, type VoiceLane,
 } from '@/utils/djMix'
 
 const { t } = useI18n()
@@ -48,6 +49,7 @@ const themeStyle = computed(() => ({
   '--dj-a': djColors.value.a,
   '--dj-b': djColors.value.b,
   '--dj-c': djColors.value.c,
+  '--dj-d': djColors.value.d,
 }))
 
 // ── Session / ON AIR ────────────────────────────────────────────────
@@ -224,6 +226,36 @@ const duckA = ref<EnvelopePoint[]>([])
 const duckB = ref<EnvelopePoint[]>([])
 /** Optional: while on, the two curves are one, as they used to be. Off by default. */
 const linkCurves = ref(false)
+/** Mutes A / C for both preview and what is sent, without touching their own curves. */
+const mutedA = ref(false)
+const mutedC = ref(false)
+
+// ── Automix (D) ─────────────────────────────────────────────────────
+const AUTOMIX_URL = 'http://127.0.0.1:38795/mix'
+const AUTOMIX_SECONDS = '30'
+const automixing = ref(false)
+const dLane = shallowRef<AutomixLane | null>(null)
+async function applyAutomix() {
+  const a = aBuf.value
+  const b = bBuf.value
+  if (!a || !b || automixing.value) return
+  automixing.value = true
+  try {
+    const form = new FormData()
+    form.append('file_a', encodeWav(a), 'outgoing.wav')
+    form.append('file_c', encodeWav(b), 'incoming.wav')
+    form.append('seconds', AUTOMIX_SECONDS)
+    form.append('keylock', 'true')
+    const res = await fetch(AUTOMIX_URL, { method: 'POST', body: form })
+    if (!res.ok) throw new Error(await res.text())
+    const buf = await decodeBlob(await res.blob())
+    dLane.value = { buf, start: bStart.value }
+  } catch {
+    message.error(t('dj.automix_error'))
+  } finally {
+    automixing.value = false
+  }
+}
 
 /** Where B comes in. Seeded from the default overlap, then the DJ can slide B in time. */
 const bStart = ref(bStartFor(TAIL_SECONDS))
@@ -258,7 +290,7 @@ const fullWin = computed<MixWindow>(() => {
   return { start: aStart.value, end: noC.value ? Math.max(aEnd.value, voiceEnd.value) : end }
 })
 // A new pair of songs is a new junction, so the range starts out following it again.
-watch([aBuf, bBuf], () => { manualRange.value = null })
+watch([aBuf, bBuf], () => { manualRange.value = null; dLane.value = null })
 
 /** The join last sent, whose C is this link's A. */
 const lastJoinId = ref<string | null>(null)
@@ -331,9 +363,12 @@ const fullModel = computed<LinkModel | null>(() => {
   const b = bBuf.value ?? (noC.value ? silentC.value : null)
   return a && b
     ? {
-        a, b, voices: voices.value,
+        a, b,
+        voices: voices.value.map(v => (v.muted && v.buf ? { ...v, duck: silentCurve(v.buf.duration) } : v)),
         aStart: aStart.value, bStart: noC.value ? Infinity : bStart.value,
-        duckA: duckA.value, duckB: duckB.value,
+        duckA: mutedA.value ? silentCurve(a.duration) : duckA.value,
+        duckB: mutedC.value ? silentCurve(b.duration) : duckB.value,
+        d: dLane.value,
       }
     : null
 })
@@ -854,8 +889,11 @@ onBeforeUnmount(() => {
         v-model:duck-b="duckB"
         v-model:a-start="aStart"
         v-model:b-start="bStart"
+        v-model:muted-a="mutedA"
+        v-model:muted-b="mutedC"
         :a="withoutAOnAir ? null : aBuf"
         :b="bBuf"
+        :d="dLane"
         :total="total"
         :window="win"
         :playhead="playhead"
@@ -876,6 +914,7 @@ onBeforeUnmount(() => {
       />
       <p v-if="overhang.length" class="dj-overhang">{{ t('dj.overhang', { lanes: overhang.join(', ') }) }}</p>
       <div class="dj-curve-tools">
+        <NButton size="small" :loading="automixing" :disabled="!aBuf || !bBuf || recording || automixing" @click="applyAutomix">{{ t('dj.automix') }}</NButton>
         <NButton size="small" :disabled="!aBuf || !bBuf || recording" @click="applyAutoDuck">{{ t('dj.auto_duck') }}</NButton>
         <NCheckbox v-model:checked="linkCurves" size="small">{{ t('dj.link_curves') }}</NCheckbox>
         <NButton size="small" :disabled="!aBuf && !bBuf" @click="resetCurve">{{ t('dj.reset_curve') }}</NButton>

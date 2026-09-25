@@ -22,11 +22,18 @@ export interface VoiceLane {
   echo: number
   radio: number
   distortion: number
+  muted: boolean
 }
 
 export const emptyLane = (id: number): VoiceLane => ({
-  id, buf: null, source: null, start: 0, duck: [], reverb: 0, echo: 0, radio: 0, distortion: 0,
+  id, buf: null, source: null, start: 0, duck: [], reverb: 0, echo: 0, radio: 0, distortion: 0, muted: false,
 })
+
+/** A whole pre-mixed clip from the Automix server, played as its own layer alongside A, B and C. */
+export interface AutomixLane {
+  buf: AudioBuffer
+  start: number
+}
 
 /** Junction timeline: A starts at `aStart`, C at `bStart`, and each B lane at its own `start`. */
 export interface LinkModel {
@@ -42,6 +49,8 @@ export interface LinkModel {
    */
   duckA: EnvelopePoint[]
   duckB: EnvelopePoint[]
+  /** The Automix server's rendered join, if the DJ has fetched one. */
+  d?: AutomixLane | null
 }
 
 /** Length of the synthetic room, in seconds. */
@@ -113,6 +122,12 @@ function roomFor(ctx: BaseAudioContext): AudioBuffer {
 }
 
 export const bStartFor = (aDuration: number) => Math.max(0, aDuration - OVERLAP_SECONDS)
+
+/** A curve that keeps a layer silent for its whole length, for muting it without touching its own curve. */
+export function silentCurve(duration: number): EnvelopePoint[] {
+  const end = Math.max(0.01, duration)
+  return [{ time: 0, volume: 0 }, { time: end, volume: 0 }]
+}
 
 /**
  * A curve that leaves the song alone: flat and open, with a handle at each end to grab. `mid`
@@ -254,6 +269,9 @@ function layersOf(model: LinkModel) {
           key: `v${v.id}`, buf: v.buf, start: v.start, env: v.duck,
           fx: { reverb: v.reverb, echo: v.echo, radio: v.radio, distortion: v.distortion } as FxAmounts | null,
         }]
+      : []),
+    ...(model.d
+      ? [{ key: 'd', buf: model.d.buf, start: model.d.start, env: flatCurve(model.d.buf.duration), fx: null as FxAmounts | null }]
       : []),
   ]
 }

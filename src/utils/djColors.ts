@@ -11,5 +11,6 @@ export function useDjColors() {
     a: themeVars.value.primaryColor,
     b: themeVars.value.warningColor,
     c: themeVars.value.infoColor,
+    d: themeVars.value.successColor,
   }))
 }
