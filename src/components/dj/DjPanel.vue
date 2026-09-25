@@ -19,7 +19,7 @@ import {
   HEAD_SECONDS, MAX_VOICE_LANES, MAX_VOICE_SECONDS, TAIL_SECONDS,
 } from '@/utils/djAudio'
 import {
-  autoCrossfade, autoDuck, bStartFor, emptyLane, encodeJoin, encodeWav, flatCurve, LinkPreview, mixPointOf, pairedCurve, planBWindow, renderLink,
+  autoCrossfade, autoDuck, bStartFor, emptyLane, encodeJoin, flatCurve, LinkPreview, mixPointOf, pairedCurve, planBWindow, renderLink,
   silentCurve, withoutA,
   type AutomixLane, type EnvelopePoint, type LinkModel, type MixWindow, type VoiceLane,
 } from '@/utils/djMix'
@@ -231,24 +231,16 @@ const mutedA = ref(false)
 const mutedC = ref(false)
 
 // ── Automix (D) ─────────────────────────────────────────────────────
-const AUTOMIX_URL = 'http://127.0.0.1:38795/mix'
-const AUTOMIX_SECONDS = '30'
 const automixing = ref(false)
 const dLane = shallowRef<AutomixLane | null>(null)
 async function applyAutomix() {
-  const a = aBuf.value
-  const b = bBuf.value
-  if (!a || !b || automixing.value) return
+  const slugA = songA.value?.slugName
+  const slugC = songB.value?.slugName
+  if (!slugA || !slugC || automixing.value) return
   automixing.value = true
   try {
-    const form = new FormData()
-    form.append('file_a', encodeWav(a), 'outgoing.wav')
-    form.append('file_c', encodeWav(b), 'incoming.wav')
-    form.append('seconds', AUTOMIX_SECONDS)
-    form.append('keylock', 'true')
-    const res = await fetch(AUTOMIX_URL, { method: 'POST', body: form })
-    if (!res.ok) throw new Error(await res.text())
-    const buf = await decodeBlob(await res.blob())
+    const { blob } = await aivoxApiService.mix(slugA, slugC)
+    const buf = await decodeBlob(blob)
     dLane.value = { buf, start: bStart.value }
   } catch {
     message.error(t('dj.automix_error'))

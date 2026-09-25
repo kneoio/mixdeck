@@ -96,6 +96,28 @@ class AivoxApiService extends ApiClient {
       headers: { 'X-Client-ID': 'mixpla-web' },
     })
   }
+
+  /**
+   * Renders the crossfade between two songs (by slug) through spectra. Returns the wav bytes and
+   * the plan spectra sent back in `X-Mix-Plan`. Bypasses `request()`, whose JSON-only response
+   * handling doesn't fit an audio body plus a header to read.
+   */
+  async mix(slugA: string, slugC: string, seconds = 30, keylock = true): Promise<{ blob: Blob; plan: string | null }> {
+    const response = await fetch(`${this.baseUrl}/mix`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Client-ID': 'mixpla-web',
+        ...authService.getAuthHeader(),
+      },
+      body: JSON.stringify({ slugA, slugC, seconds, keylock }),
+    })
+    if (!response.ok) {
+      const detail = await response.json().catch(() => null)
+      throw new Error(detail?.detail || `HTTP error! status: ${response.status}`)
+    }
+    return { blob: await response.blob(), plan: response.headers.get('X-Mix-Plan') }
+  }
 }
 
 export const aivoxApiService = new AivoxApiService()
