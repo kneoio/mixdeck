@@ -272,6 +272,13 @@ async function applyAutomix() {
     automixing.value = false
   }
 }
+// D taking over the join means A, B and C would otherwise double up with it; muted automatically
+// the moment its render lands, and unmuted again once D is gone, rather than left for the DJ to catch.
+watch(() => !!dLane.value?.buf, active => {
+  mutedA.value = active
+  mutedC.value = active
+  voices.value = voices.value.map(v => (v.muted === active ? v : { ...v, muted: active }))
+})
 
 /** Where B comes in. Seeded from the default overlap, then the DJ can slide B in time. */
 const bStart = ref(bStartFor(TAIL_SECONDS))
