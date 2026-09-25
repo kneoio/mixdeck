@@ -486,7 +486,7 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
         <b class="dj-letter-a">A</b><small>{{ t('dj.lane_tail') }}</small>
         <span v-if="infoA?.bpm" class="dj-param">{{ t('dj.bpm', { bpm: Math.round(infoA.bpm) }) }}</span>
         <span v-if="infoA?.key" class="dj-param">{{ infoA.scale ? `${infoA.key} ${infoA.scale}` : infoA.key }}</span>
-        <span v-if="infoA?.aiGenerated" class="dj-param dj-param-ai">{{ t('dj.ai_generated') }}</span>
+        <span v-if="infoA?.aiGenerated" class="dj-param-ai" :title="t('dj.ai_generated')">🤖</span>
       </div>
       <div v-for="(v, n) in voices" :key="v.id" class="dj-gutter-lane dj-gutter-voice dj-tone-b">
         <b class="dj-letter-b">{{ voices.length > 1 ? `B${n + 1}` : 'B' }}</b><small>{{ t('dj.lane_voice') }}</small>
@@ -506,7 +506,7 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
         <b class="dj-letter-c">C</b><small>{{ t('dj.lane_head') }}</small>
         <span v-if="infoB?.bpm" class="dj-param">{{ t('dj.bpm', { bpm: Math.round(infoB.bpm) }) }}</span>
         <span v-if="infoB?.key" class="dj-param">{{ infoB.scale ? `${infoB.key} ${infoB.scale}` : infoB.key }}</span>
-        <span v-if="infoB?.aiGenerated" class="dj-param dj-param-ai">{{ t('dj.ai_generated') }}</span>
+        <span v-if="infoB?.aiGenerated" class="dj-param-ai" :title="t('dj.ai_generated')">🤖</span>
       </div>
     </div>
 
@@ -729,8 +729,10 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
   color: var(--dj-muted);
 }
 .dj-param-ai {
-  color: var(--dj-warn);
-  font-weight: 700;
+  margin-top: 2px;
+  font-size: 0.75rem;
+  line-height: 1;
+  cursor: default;
 }
 .dj-tone-a {
   --tone: var(--dj-a);
