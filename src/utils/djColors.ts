@@ -12,5 +12,7 @@ export function useDjColors() {
     b: themeVars.value.warningColor,
     c: themeVars.value.infoColor,
     d: themeVars.value.successColor,
+    /** D outside the actual stitch region: same hue, faded into the background instead of solid. */
+    dDim: `color-mix(in srgb, ${themeVars.value.successColor} 35%, transparent)`,
   }))
 }

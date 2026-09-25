@@ -3,7 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import WaveSurfer from 'wavesurfer.js'
 import TimelinePlugin from 'wavesurfer.js/plugins/timeline'
-import { MAX_GAP_SECONDS, MAX_VOICE_SECONDS, peaksOf } from '@/utils/djAudio'
+import { MAX_GAP_SECONDS, MAX_VOICE_SECONDS, peaksOf, sliceBuffer } from '@/utils/djAudio'
 import { pairedCurve, type AutomixLane, type EnvelopePoint, type MixWindow, type VoiceLane } from '@/utils/djMix'
 import { NSlider } from 'naive-ui'
 import { useDjColors } from '@/utils/djColors'
@@ -123,7 +123,34 @@ const bStyle = computed(() => trackStyle(props.bStart, props.b?.duration ?? 0))
 const voiceStyle = (v: VoiceLane) =>
   props.recordingId === v.id ? { left: '0px', width: '100%' } : trackStyle(v.start, v.buf?.duration ?? 0)
 const voiceDuration = (v: VoiceLane) => v.buf?.duration ?? 0
-const dStyle = computed(() => (props.d?.buf ? trackStyle(props.d.start, props.d.buf.duration) : {}))
+interface DSegment { buf: AudioBuffer; style: Record<string, string>; color: string }
+
+/**
+ * The D waveform split around the plan's actual stitch region (mixStart/mixEnd, in junction
+ * seconds): the real overlap in full colour, the rest of the clip (mostly a straight copy of
+ * A or C) faded — a colour cue instead of a separate dimming overlay.
+ */
+const dSegments = computed<DSegment[]>(() => {
+  const lane = props.d
+  if (!lane?.buf) return []
+  const full: DSegment = { buf: lane.buf, style: trackStyle(lane.start, lane.buf.duration), color: djColors.value.d }
+  if (lane.mixStart == null || lane.mixEnd == null) return [full]
+
+  const dur = lane.buf.duration
+  const start = Math.max(0, Math.min(dur, lane.mixStart - lane.start))
+  const end = Math.max(0, Math.min(dur, lane.mixEnd - lane.start))
+  if (end <= start) return [full]
+
+  const segments: DSegment[] = []
+  if (start > 0) {
+    segments.push({ buf: sliceBuffer(lane.buf, 0, start), style: trackStyle(lane.start, start), color: djColors.value.dDim })
+  }
+  segments.push({ buf: sliceBuffer(lane.buf, start, end), style: trackStyle(lane.start + start, end - start), color: djColors.value.d })
+  if (end < dur) {
+    segments.push({ buf: sliceBuffer(lane.buf, end, dur), style: trackStyle(lane.start + end, dur - end), color: djColors.value.dDim })
+  }
+  return segments
+})
 const toggleVoiceMute = (v: VoiceLane) => patchVoice(v.id, { muted: !v.muted })
 
 const yOf = (volume: number) => 4 + (1 - volume) * (LANE_H - 8)
@@ -663,7 +690,10 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
 
       <div v-if="d" class="dj-lane dj-tone-d">
         <div v-if="!d.buf" class="dj-lane-empty">{{ d.status === 'error' ? (d.errorMessage || t('dj.automix_error')) : d.progressLabel }}</div>
-        <DjVoiceTrack class="dj-track" :style="dStyle" :buf="d.buf" :color="djColors.d" :tabindex="-1" />
+        <DjVoiceTrack
+          v-for="(seg, i) in dSegments" :key="i"
+          class="dj-track" :style="seg.style" :buf="seg.buf" :color="seg.color" :tabindex="-1"
+        />
       </div>
 
       <div class="dj-overlay">

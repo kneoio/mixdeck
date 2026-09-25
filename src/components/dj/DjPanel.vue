@@ -239,7 +239,7 @@ async function applyAutomix() {
   if (!slugA || !slugC || automixing.value) return
   automixing.value = true
   // Activates the D row immediately, before the render has even started on the server.
-  dLane.value = { buf: null, start: aStart.value, muted: false, status: 'processing', progressLabel: t('dj.automix_starting'), errorMessage: null }
+  dLane.value = { buf: null, start: aStart.value, muted: false, status: 'processing', progressLabel: t('dj.automix_starting'), errorMessage: null, mixStart: null, mixEnd: null }
   try {
     const { job_id } = await aivoxApiService.startMixJob(slugA, slugC)
     const final = await aivoxApiService.mixEvents(job_id, progress => {
@@ -253,16 +253,18 @@ async function applyAutomix() {
     }
     const { blob, plan } = await aivoxApiService.getMixResult(job_id)
     const buf = await decodeBlob(blob)
-    if (dLane.value) dLane.value = { ...dLane.value, buf, status: 'done', progressLabel: null }
-    // Highlight the actual stitch region spectra computed: a.mix_start_sec/stop_sec are
-    // already absolute A-file positions, the same coordinate space the junction timeline
-    // uses (A always starts at 0 there), so no conversion is needed.
-    if (plan) {
-      manualRange.value = { start: plan.a.mix_start_sec, end: plan.a.stop_sec }
-      // C enters (its own start_from_sec) exactly when A reaches mix_start_sec, so C's
-      // buffer-time-zero sits at mix_start_sec - start_from_sec on the junction timeline.
-      bStart.value = plan.a.mix_start_sec - plan.c.start_from_sec
+    // a.mix_start_sec/stop_sec are already absolute A-file positions, the same coordinate
+    // space the junction timeline uses (A always starts at 0 there) — mixStart/mixEnd color
+    // that part of the D waveform brighter than the rest, rather than a dimming overlay.
+    if (dLane.value) {
+      dLane.value = {
+        ...dLane.value, buf, status: 'done', progressLabel: null,
+        mixStart: plan?.a.mix_start_sec ?? null, mixEnd: plan?.a.stop_sec ?? null,
+      }
     }
+    // C enters (its own start_from_sec) exactly when A reaches mix_start_sec, so C's
+    // buffer-time-zero sits at mix_start_sec - start_from_sec on the junction timeline.
+    if (plan) bStart.value = plan.a.mix_start_sec - plan.c.start_from_sec
   } catch {
     if (dLane.value) dLane.value = { ...dLane.value, status: 'error', progressLabel: null, errorMessage: null }
     message.error(t('dj.automix_error'))

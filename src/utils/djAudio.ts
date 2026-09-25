@@ -38,7 +38,7 @@ export async function decodeBlob(blob: Blob): Promise<AudioBuffer> {
   return getAudioContext().decodeAudioData(await blob.arrayBuffer())
 }
 
-function slice(buf: AudioBuffer, fromSec: number, toSec: number): AudioBuffer {
+export function sliceBuffer(buf: AudioBuffer, fromSec: number, toSec: number): AudioBuffer {
   const sr = buf.sampleRate
   const from = Math.max(0, Math.floor(fromSec * sr))
   const to = Math.min(buf.length, Math.floor(toSec * sr))
@@ -54,10 +54,10 @@ function slice(buf: AudioBuffer, fromSec: number, toSec: number): AudioBuffer {
 }
 
 export const cropTail = (buf: AudioBuffer, seconds = TAIL_SECONDS) =>
-  slice(buf, buf.duration - seconds, buf.duration)
+  sliceBuffer(buf, buf.duration - seconds, buf.duration)
 
 export const cropHead = (buf: AudioBuffer, seconds = HEAD_SECONDS) =>
-  slice(buf, 0, seconds)
+  sliceBuffer(buf, 0, seconds)
 
 /** ~100 peaks per second, enough to draw the lane without handing wavesurfer raw samples. */
 export function peaksOf(buf: AudioBuffer): Float32Array {

@@ -41,6 +41,10 @@ export interface AutomixLane {
   status: 'processing' | 'done' | 'error'
   progressLabel: string | null
   errorMessage: string | null
+  /** The actual stitch region within `buf`, in junction seconds (null until the plan is in) —
+   * colors that part of the D waveform brighter than the rest, rather than a dimming overlay. */
+  mixStart: number | null
+  mixEnd: number | null
 }
 
 /** Junction timeline: A starts at `aStart`, C at `bStart`, and each B lane at its own `start`. */
