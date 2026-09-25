@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NButton, NCheckbox, NDrawer, NDrawerContent, NIcon, NProgress, NSelect, useMessage, useThemeVars } from 'naive-ui'
-import { ChatbubblesOutline } from '@vicons/ionicons5'
-import AivoxQueue from '@/components/AivoxQueue.vue'
+import { NButton, NCheckbox, NDrawer, NDrawerContent, NProgress, NSelect, useMessage, useThemeVars } from 'naive-ui'
 import LedRed from '@/components/LedRed.vue'
-import LedGreen from '@/components/LedGreen.vue'
+import LedPlay from '@/components/LedPlay.vue'
 import GsapButton from '@/components/GsapButton.vue'
 import DjLinkEditor from '@/components/dj/DjLinkEditor.vue'
 import DjSongPicker, { type DjSong } from '@/components/dj/DjSongPicker.vue'
@@ -14,7 +12,7 @@ import { useDjColors } from '@/utils/djColors'
 import { useBrandsStore } from '@/stores/brands'
 import { useStationChatStore } from '@/stores/stationChat'
 import datanestApiService from '@/services/datanestApi'
-import aivoxApiService, { type AivoxQueueEntry } from '@/services/aivoxApi'
+import aivoxApiService from '@/services/aivoxApi'
 import jesoosApiService from '@/services/jesoosApi'
 import {
   decodeBlob, fetchSongBuffer,
@@ -97,15 +95,12 @@ const sessionExpiresIn = computed(() => {
   return left > SESSION_WARNING_MS / 1000 ? null : Math.max(0, left)
 })
 
-const queueEntries = ref<AivoxQueueEntry[]>([])
 /** Wall-clock time the queued song locks in, and how much of that the system needs for itself. */
 const deadlineAt = ref<number | null>(null)
 const stitchBuffer = ref(0)
 async function pollQueue() {
   try {
     const res = await aivoxApiService.queue(brandSlug.value)
-    const all = Array.isArray(res.fullQueue) ? res.fullQueue : []
-    queueEntries.value = all.filter(e => e.tech.queueType === 'prioritized' || e.tech.queueType === 'regular')
     if (res.deadline) {
       deadlineAt.value = Date.now() + res.deadline.secondsUntilLocked * 1000
       stitchBuffer.value = res.deadline.stitchBufferSeconds
@@ -113,7 +108,6 @@ async function pollQueue() {
       deadlineAt.value = null
     }
   } catch {
-    queueEntries.value = []
     deadlineAt.value = null
   }
 }
@@ -750,13 +744,14 @@ onBeforeUnmount(() => {
         <small>{{ t('dj.session') }}</small>
         <span>{{ sessionActive ? elapsed : '--:--' }}</span>
       </div>
-      <GsapButton @click="chatOpen = true">
-        <NIcon :component="ChatbubblesOutline" />
-        <span>{{ t('dj.chat_open') }}</span>
-      </GsapButton>
-      <GsapButton type="error" :loading="ending" :disabled="sessionState === 'starting'" @click="endSession">
-        <span>{{ t('dj.end_session') }}</span>
-      </GsapButton>
+      <div class="dj-topbar-buttons">
+        <GsapButton @click="chatOpen = true">
+          <span>{{ t('dj.chat_open') }}</span>
+        </GsapButton>
+        <GsapButton type="error" :loading="ending" :disabled="sessionState === 'starting'" @click="endSession">
+          <span>{{ t('dj.end_session') }}</span>
+        </GsapButton>
+      </div>
     </header>
 
     <!-- The station's own AI DJ, the one its listeners talk to; the deck joins as the signed-in owner. -->
@@ -819,7 +814,7 @@ onBeforeUnmount(() => {
           <span class="dj-asset-slot">{{ voices.length > 1 ? `B${n + 1}` : 'B' }}</span>
           <NButton size="small" :disabled="!canRecord || (recording && recordingId !== v.id)" @click="toggleRec(v.id)">
             <LedRed class="dj-rec-led" :active="recordingId === v.id" />
-            {{ t('dj.rec') }}
+            <strong>{{ t('dj.rec') }}</strong>
           </NButton>
           <span v-if="recordingId === v.id" class="dj-rec-time">{{ recSeconds }}s / {{ MAX_VOICE_SECONDS }}s</span>
           <NButton size="small" :disabled="recording || sending" @click="pickFile(v.id)">
@@ -888,7 +883,7 @@ onBeforeUnmount(() => {
       </div>
       <div class="dj-controls">
         <GsapButton size="large" :disabled="!canPreview" @click="togglePreview">
-          <LedGreen class="dj-preview-led" :active="previewing" />
+          <LedPlay class="dj-preview-led" :active="previewing" />
           <span>{{ previewing ? t('dj.preview_stop') : t('dj.preview') }}</span>
         </GsapButton>
         <div class="dj-send">
@@ -909,12 +904,6 @@ onBeforeUnmount(() => {
         </div>
       </div>
     </section>
-
-    <section class="dj-section">
-      <h3 class="dj-section-title">{{ t('dj.coming_up') }}</h3>
-      <AivoxQueue v-if="queueEntries.length" :entries="queueEntries" />
-      <p v-else class="dj-empty">{{ t('dj.queue_empty') }}</p>
-    </section>
   </div>
 </template>
 
@@ -934,6 +923,11 @@ onBeforeUnmount(() => {
   justify-content: flex-end;
   gap: 24px;
   flex-wrap: wrap;
+}
+.dj-topbar-buttons {
+  display: flex;
+  align-items: center;
+  gap: 3px;
 }
 .dj-timer {
   display: flex;

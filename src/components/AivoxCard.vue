@@ -15,7 +15,8 @@ import StreamBufferBar from '@/components/StreamBufferBar.vue'
 import { useBrandsStore, type BrandStatus } from '@/stores/brands'
 import { useUserSubscriptionStore } from '@/stores/userSubscription'
 
-const props = defineProps<{ brandSlug: string; timezone?: string; status?: BrandStatus }>()
+const props = defineProps<{ brandSlug: string; timezone?: string; status?: BrandStatus; showTakeOver?: boolean; takeOverDisabled?: boolean }>()
+const emit = defineEmits<{ 'take-over': [] }>()
 const { t } = useI18n()
 const brandsStore = useBrandsStore()
 const userSubscriptionStore = useUserSubscriptionStore()
@@ -208,14 +209,14 @@ onUnmounted(() => {
         :disabled="loading || alive"
         @click="handleStart"
       >
-        <span>Start</span>
+        <span>{{ t('dashboard.broadcast_start') }}</span>
       </GsapButton>
       <GsapButton
         type="error"
         :disabled="loading || !alive"
         @click="handleStop"
       >
-        <span>Stop</span>
+        <span>{{ t('dashboard.broadcast_stop') }}</span>
       </GsapButton>
       <div class="aivox-status">
         <div class="aivox-led-wrap">
@@ -228,6 +229,14 @@ onUnmounted(() => {
         </div>
         <span class="free-badge" :class="{ 'free-badge--hidden': !showFreeBadge }">{{ t('dashboard.free_streaming_limit') }}</span>
       </div>
+      <GsapButton
+        v-if="showTakeOver"
+        class="take-over-btn"
+        size="small"
+        type="primary"
+        :disabled="takeOverDisabled"
+        @click="emit('take-over')"
+      ><span>{{ t('dj.take_over') }}</span></GsapButton>
       <div v-if="timezone" class="time-right">
         <span class="label tz-caption">{{ t('dashboard.stationTime') }}:</span>
         <span class="time">{{ localTime }}</span>
@@ -272,6 +281,15 @@ onUnmounted(() => {
   align-items: center;
   gap: 10px;
   margin-left: 20px;
+}
+/** Same footprint as the old tiny NButton this replaced — only the slanted GsapButton look is new. */
+.take-over-btn {
+  height: 22px;
+  padding: 0 10px;
+  margin-left: 12px;
+}
+.take-over-btn :deep(.gsap-btn__inner) {
+  font-size: 0.68rem;
 }
 .free-badge {
   font-size: 0.65rem;

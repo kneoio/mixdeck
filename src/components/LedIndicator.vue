@@ -4,14 +4,14 @@
     :class="{ active, pulse }"
     :style="{ color: color ?? '#00FF3C', animationDuration: pulse ? beatDuration : undefined }"
   >
-    ▬
+    {{ glyph ?? '▬' }}
   </span>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
 
-const props = defineProps<{ active?: boolean; pulse?: boolean; size?: number; color?: string; bpm?: number }>();
+const props = defineProps<{ active?: boolean; pulse?: boolean; size?: number; color?: string; bpm?: number; glyph?: string }>();
 
 const beatDuration = computed(() => {
   if (!props.bpm || props.bpm <= 0) return '0.8s';

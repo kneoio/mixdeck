@@ -1,7 +1,14 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { NSelect } from 'naive-ui'
+import { computed, h, onMounted, ref } from 'vue'
+import { NSelect, NSpace, NTag } from 'naive-ui'
 import datanestApiService from '@/services/datanestApi'
+
+/** A genre or label as the playlist endpoint returns it: enough to render its own tag. */
+export interface DjTag {
+  identifier: string
+  color?: string
+  fontColor?: string
+}
 
 export interface DjSong {
   /** Fragment slug — what the Playlist view uses to load audio. */
@@ -13,6 +20,8 @@ export interface DjSong {
   /** Deck parameters, when the library knows them. */
   bpm?: number
   key?: string
+  genres?: DjTag[]
+  labels?: DjTag[]
 }
 
 const props = defineProps<{
@@ -48,12 +57,21 @@ async function search(term = '') {
       artist: e.artist ?? '',
       bpm: e.bpm ?? undefined,
       key: e.key ?? undefined,
+      genres: e.genres ?? [],
+      labels: e.labels ?? [],
     }))
   } catch {
     if (seq === searchSeq) songs.value = []
   } finally {
     if (seq === searchSeq) searching.value = false
   }
+}
+
+/** Same debounce as the Playlist view's own search box, so typing doesn't fire a call per keystroke. */
+let searchTimer: ReturnType<typeof setTimeout> | null = null
+function onSearch(term: string) {
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => search(term), 400)
 }
 
 const options = computed(() => {
@@ -64,8 +82,27 @@ const options = computed(() => {
     label: [s.artist, s.title].filter(Boolean).join(' — ') || s.slugName,
     value: s.slugName,
     disabled: s.slugName === props.excludeSlug,
+    genres: s.genres ?? [],
+    labels: s.labels ?? [],
   }))
 })
+
+function tag(t: DjTag) {
+  return h(NTag, { size: 'small', style: t.color ? `background:${t.color};color:${t.fontColor || '#fff'}` : '' }, { default: () => t.identifier })
+}
+
+/**
+ * Title/artist with the song's genres and labels as small colour chips: wrapped under the option in
+ * the dropdown, inline beside it once picked so the field itself does not grow taller.
+ */
+function renderOption(option: { label: string; genres: DjTag[]; labels: DjTag[] }, selected: boolean) {
+  const tags = [...option.genres, ...option.labels]
+  if (!tags.length) return option.label
+  return h('div', { class: selected ? 'dj-picker-option dj-picker-option--selected' : 'dj-picker-option' }, [
+    h('span', option.label),
+    h(NSpace, { size: 4, wrap: !selected, class: 'dj-picker-tags' }, { default: () => tags.map(tag) }),
+  ])
+}
 
 function onUpdate(slug: string | null) {
   emit('update:modelValue', songs.value.find(s => s.slugName === slug) ?? (props.modelValue?.slugName === slug ? props.modelValue : null))
@@ -86,7 +123,8 @@ onMounted(() => search())
       remote
       clearable
       :placeholder="placeholder"
-      @search="search"
+      :render-label="renderOption"
+      @search="onSearch"
       @update:value="onUpdate"
     />
   </div>
@@ -115,5 +153,28 @@ onMounted(() => search())
 .dj-picker :deep(.n-select) {
   flex: 1;
   min-width: 0;
+}
+.dj-picker-option {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 2px 0;
+}
+.dj-picker-option--selected {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+.dj-picker-option span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dj-picker-tags {
+  flex: none;
+}
+.dj-picker-option--selected .dj-picker-tags :deep(.n-tag) {
+  white-space: nowrap;
 }
 </style>

@@ -14,14 +14,6 @@
           <div class="brand-head">
             <span class="brand-name" @click="goPlaylist(brand)">{{ brandLabel(brand) }}</span>
             <span v-if="dashboardSnapshotReceived" class="brand-status">{{ ledState(brand).label }}</span>
-            <GsapButton
-              v-if="canUseDjMode && dashboardSnapshotReceived && brand.slugName"
-              class="take-over-btn"
-              size="small"
-              type="primary"
-              :disabled="djBrand === brand.slugName || !isAlive(brand)"
-              @click="djBrand = brand.slugName ?? null"
-            ><span>{{ t('dj.take_over') }}</span></GsapButton>
           </div>
         </template>
 
@@ -55,6 +47,9 @@
           :brand-slug="brand.slugName"
           :timezone="brand.timeZone"
           :status="brand.status"
+          :show-take-over="canUseDjMode"
+          :take-over-disabled="djBrand === brand.slugName || !isAlive(brand)"
+          @take-over="djBrand = brand.slugName ?? null"
         />
         <DjPanel
           v-if="canUseDjMode && brand.slugName && djBrand === brand.slugName"
@@ -517,14 +512,6 @@ onBeforeUnmount(() => {
 }
 .brand-name:hover {
   color: var(--vt-c-primary);
-}
-/** Same footprint as the old tiny NButton this replaced — only the slanted GsapButton look is new. */
-.take-over-btn {
-  height: 22px;
-  padding: 0 10px;
-}
-.take-over-btn :deep(.gsap-btn__inner) {
-  font-size: 0.68rem;
 }
 .brand-status {
   font-size: 9px;

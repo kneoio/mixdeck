@@ -158,8 +158,8 @@ export function autoDuck(
   const end = voiceStart + voiceDuration
   return localise([
     { time: voiceStart - 0.35, volume: 1 },
-    { time: voiceStart, volume: 0.22 },
-    ...(recover ? [{ time: end, volume: 0.22 }, { time: end + 0.7, volume: 1 }] : []),
+    { time: voiceStart, volume: 0.08 },
+    ...(recover ? [{ time: end, volume: 0.08 }, { time: end + 0.7, volume: 1 }] : []),
   ], songStart, songDuration)
 }
 
