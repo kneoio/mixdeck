@@ -32,8 +32,8 @@ const props = defineProps<{
   titleA?: string
   titleB?: string
   /** Deck parameters shown beside each song, when the library knows them. */
-  infoA?: { bpm?: number; key?: string } | null
-  infoB?: { bpm?: number; key?: string } | null
+  infoA?: { bpm?: number; key?: string; scale?: string; aiGenerated?: boolean } | null
+  infoB?: { bpm?: number; key?: string; scale?: string; aiGenerated?: boolean } | null
   /** When on, the two curves are a crossfade: one song falls as the other rises. */
   linked?: boolean
 }>()
@@ -485,7 +485,8 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
       <div class="dj-gutter-lane dj-tone-a">
         <b class="dj-letter-a">A</b><small>{{ t('dj.lane_tail') }}</small>
         <span v-if="infoA?.bpm" class="dj-param">{{ t('dj.bpm', { bpm: Math.round(infoA.bpm) }) }}</span>
-        <span v-if="infoA?.key" class="dj-param">{{ infoA.key }}</span>
+        <span v-if="infoA?.key" class="dj-param">{{ infoA.scale ? `${infoA.key} ${infoA.scale}` : infoA.key }}</span>
+        <span v-if="infoA?.aiGenerated" class="dj-param dj-param-ai">{{ t('dj.ai_generated') }}</span>
       </div>
       <div v-for="(v, n) in voices" :key="v.id" class="dj-gutter-lane dj-gutter-voice dj-tone-b">
         <b class="dj-letter-b">{{ voices.length > 1 ? `B${n + 1}` : 'B' }}</b><small>{{ t('dj.lane_voice') }}</small>
@@ -504,7 +505,8 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
       <div class="dj-gutter-lane dj-tone-c">
         <b class="dj-letter-c">C</b><small>{{ t('dj.lane_head') }}</small>
         <span v-if="infoB?.bpm" class="dj-param">{{ t('dj.bpm', { bpm: Math.round(infoB.bpm) }) }}</span>
-        <span v-if="infoB?.key" class="dj-param">{{ infoB.key }}</span>
+        <span v-if="infoB?.key" class="dj-param">{{ infoB.scale ? `${infoB.key} ${infoB.scale}` : infoB.key }}</span>
+        <span v-if="infoB?.aiGenerated" class="dj-param dj-param-ai">{{ t('dj.ai_generated') }}</span>
       </div>
     </div>
 
@@ -725,6 +727,10 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
   font-size: 0.62rem;
   letter-spacing: 0.04em;
   color: var(--dj-muted);
+}
+.dj-param-ai {
+  color: var(--dj-warn);
+  font-weight: 700;
 }
 .dj-tone-a {
   --tone: var(--dj-a);

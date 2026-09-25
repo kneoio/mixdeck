@@ -105,6 +105,7 @@ export default {
     distortion: 'Distort',
     file_error: 'Could not read that audio file',
     bpm: '{bpm} BPM',
+    ai_generated: 'Possibly AI',
     rec_hint: 'Press REC to record your link, or add an effect',
     window: 'Play / send range',
     auto_range: 'Auto range',

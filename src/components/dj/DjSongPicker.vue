@@ -20,6 +20,9 @@ export interface DjSong {
   /** Deck parameters, when the library knows them. */
   bpm?: number
   key?: string
+  scale?: string
+  /** Metadata hints the upload carried, e.g. an AI tool's signature in a file comment. */
+  aiGenerated?: boolean
   genres?: DjTag[]
   labels?: DjTag[]
 }
@@ -107,8 +110,29 @@ function renderOption(option: { label: string; genres: DjTag[]; labels: DjTag[] 
   ])
 }
 
+/** The deck parameters (bpm, key, scale, AI flag) only come from the fragment's own detail, not the search list. */
+let enrichSeq = 0
+async function enrich(slug: string) {
+  const seq = ++enrichSeq
+  try {
+    const doc = await datanestApiService.getSharedFragment(slug)
+    if (seq !== enrichSeq || props.modelValue?.slugName !== slug) return
+    const info = doc?.addInfo
+    if (!info) return
+    emit('update:modelValue', {
+      ...props.modelValue,
+      bpm: info.bpm ?? props.modelValue.bpm,
+      key: info.key ?? props.modelValue.key,
+      scale: info.scale ?? props.modelValue.scale,
+      aiGenerated: info.ai_generated_metadata_check?.suspected_ai_generated ?? props.modelValue.aiGenerated,
+    })
+  } catch { /* deck params are a nice-to-have; the pick itself still works without them */ }
+}
+
 function onUpdate(slug: string | null) {
-  emit('update:modelValue', songs.value.find(s => s.slugName === slug) ?? (props.modelValue?.slugName === slug ? props.modelValue : null))
+  const song = songs.value.find(s => s.slugName === slug) ?? (props.modelValue?.slugName === slug ? props.modelValue : null)
+  emit('update:modelValue', song)
+  if (song) void enrich(song.slugName)
 }
 
 onMounted(() => search())
