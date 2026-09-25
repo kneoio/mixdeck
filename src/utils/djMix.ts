@@ -33,6 +33,7 @@ export const emptyLane = (id: number): VoiceLane => ({
 export interface AutomixLane {
   buf: AudioBuffer
   start: number
+  muted: boolean
 }
 
 /** Junction timeline: A starts at `aStart`, C at `bStart`, and each B lane at its own `start`. */
@@ -271,7 +272,11 @@ function layersOf(model: LinkModel) {
         }]
       : []),
     ...(model.d
-      ? [{ key: 'd', buf: model.d.buf, start: model.d.start, env: flatCurve(model.d.buf.duration), fx: null as FxAmounts | null }]
+      ? [{
+          key: 'd', buf: model.d.buf, start: model.d.start,
+          env: model.d.muted ? silentCurve(model.d.buf.duration) : flatCurve(model.d.buf.duration),
+          fx: null as FxAmounts | null,
+        }]
       : []),
   ]
 }

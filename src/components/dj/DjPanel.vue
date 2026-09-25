@@ -241,7 +241,7 @@ async function applyAutomix() {
   try {
     const { blob } = await aivoxApiService.mix(slugA, slugC)
     const buf = await decodeBlob(blob)
-    dLane.value = { buf, start: bStart.value }
+    dLane.value = { buf, start: aStart.value, muted: false }
   } catch {
     message.error(t('dj.automix_error'))
   } finally {
@@ -883,9 +883,9 @@ onBeforeUnmount(() => {
         v-model:b-start="bStart"
         v-model:muted-a="mutedA"
         v-model:muted-b="mutedC"
+        v-model:d="dLane"
         :a="withoutAOnAir ? null : aBuf"
         :b="bBuf"
-        :d="dLane"
         :total="total"
         :window="win"
         :playhead="playhead"

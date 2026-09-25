@@ -50,6 +50,7 @@ const emit = defineEmits<{
   'update:bStart': [seconds: number]
   'update:mutedA': [muted: boolean]
   'update:mutedB': [muted: boolean]
+  'update:d': [lane: AutomixLane | null]
   'update:window': [range: MixWindow]
   'record-end': [blob: Blob, id: number]
   'record-error': [error: unknown]
@@ -533,6 +534,16 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
         <span v-if="infoB?.aiGenerated" class="dj-param-ai" :title="t('dj.ai_generated')">🤖</span>
       </div>
       <div v-if="d" class="dj-gutter-lane dj-tone-d">
+        <button
+          type="button" class="dj-mute" :class="{ 'dj-mute-on': d.muted }"
+          :title="t('dj.mute')" :aria-label="t('dj.mute')" :aria-pressed="!!d.muted"
+          @click="emit('update:d', { ...d, muted: !d.muted })"
+        >M</button>
+        <button
+          type="button" class="dj-d-delete"
+          :title="t('dj.delete_automix')" :aria-label="t('dj.delete_automix')"
+          @click="emit('update:d', null)"
+        >✕</button>
         <b class="dj-letter-d">D</b><small>{{ t('dj.lane_automix') }}</small>
       </div>
     </div>
@@ -809,6 +820,25 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
 /* A B lane's effect sliders sit in that same corner, so its mute button stands clear of them. */
 .dj-gutter-voice .dj-mute {
   right: 166px;
+}
+.dj-d-delete {
+  position: absolute;
+  top: 8px;
+  right: 34px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--dj-border);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--dj-muted);
+  font-size: 0.7rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.dj-d-delete:hover {
+  border-color: var(--dj-danger);
+  color: var(--dj-danger);
 }
 .dj-mute-on {
   border-color: var(--dj-danger);

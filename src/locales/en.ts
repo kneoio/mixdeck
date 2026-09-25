@@ -91,6 +91,7 @@ export default {
     automix: 'Automix',
     automix_error: 'Could not reach the Automix server',
     lane_automix: 'Automix',
+    delete_automix: 'Remove the Automix clip',
     mute: 'Mute',
     auto_duck: 'Auto duck',
     link_curves: 'Crossfade',
