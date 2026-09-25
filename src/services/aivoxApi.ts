@@ -45,6 +45,19 @@ export interface AivoxMixProgress {
   errorMessage: string | null
 }
 
+/**
+ * The mix plan spectra sends back in `X-Mix-Plan` (relayed by aivox unchanged, so still
+ * snake_case — this is spectra's own JSON, not an aivox DTO), trimmed to the fields the junction
+ * timeline needs. `a.mix_start_sec`/`a.stop_sec` are absolute positions in A's own file — the same
+ * coordinate space the junction timeline uses (A always starts at 0 there), so they can drive the
+ * link editor's highlighted range directly, with no conversion.
+ */
+export interface AivoxMixPlan {
+  a: { mix_start_sec: number; stop_sec: number }
+  c: { start_from_sec: number }
+  overlap_sec: number
+}
+
 export type AivoxDashboardStreamType = 'RADIO' | 'OTS'
 
 /** The fragment currently going live: `committedSeconds` of it can no longer be cut, `pendingSeconds` of queued audio still can. */
@@ -150,7 +163,7 @@ class AivoxApiService extends ApiClient {
   }
 
   /** Fetches a finished mix job's rendered wav and the plan spectra sent back in `X-Mix-Plan`. */
-  async getMixResult(jobId: string): Promise<{ blob: Blob; plan: string | null }> {
+  async getMixResult(jobId: string): Promise<{ blob: Blob; plan: AivoxMixPlan | null }> {
     const response = await fetch(`${this.baseUrl}/mix/${encodeURIComponent(jobId)}/result`, {
       headers: { 'X-Client-ID': 'mixpla-web', ...authService.getAuthHeader() },
     })
@@ -158,7 +171,12 @@ class AivoxApiService extends ApiClient {
       const detail = await response.json().catch(() => null)
       throw new Error(detail?.detail || `HTTP error! status: ${response.status}`)
     }
-    return { blob: await response.blob(), plan: response.headers.get('X-Mix-Plan') }
+    const rawPlan = response.headers.get('X-Mix-Plan')
+    let plan: AivoxMixPlan | null = null
+    try {
+      plan = rawPlan ? (JSON.parse(rawPlan) as AivoxMixPlan) : null
+    } catch { /* malformed header; treat as absent rather than failing the whole result */ }
+    return { blob: await response.blob(), plan }
   }
 }
 
