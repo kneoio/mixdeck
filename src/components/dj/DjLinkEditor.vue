@@ -806,6 +806,10 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
   line-height: 1;
   cursor: pointer;
 }
+/* A B lane's effect sliders sit in that same corner, so its mute button stands clear of them. */
+.dj-gutter-voice .dj-mute {
+  right: 166px;
+}
 .dj-mute-on {
   border-color: var(--dj-danger);
   background: var(--dj-danger);
