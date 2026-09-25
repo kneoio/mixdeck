@@ -3,7 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import WaveSurfer from 'wavesurfer.js'
 import TimelinePlugin from 'wavesurfer.js/plugins/timeline'
-import { MAX_GAP_SECONDS, peaksOf } from '@/utils/djAudio'
+import { MAX_GAP_SECONDS, MAX_VOICE_SECONDS, peaksOf } from '@/utils/djAudio'
 import { pairedCurve, type EnvelopePoint, type MixWindow, type VoiceLane } from '@/utils/djMix'
 import { NSlider } from 'naive-ui'
 import { useDjColors } from '@/utils/djColors'
@@ -27,6 +27,8 @@ const props = defineProps<{
   playhead: number
   /** Id of the B lane the microphone is filling, if any. */
   recordingId: number | null
+  /** Seconds recorded so far, while `recordingId` is set. */
+  recSeconds?: number
   titleA?: string
   titleB?: string
   /** Deck parameters shown beside each song, when the library knows them. */
@@ -556,6 +558,10 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
           @record-end="emit('record-end', $event, v.id)"
           @record-error="emit('record-error', $event)"
         />
+        <div v-if="recordingId === v.id" class="dj-rec-progress">
+          <span class="dj-rec-progress-dot" />
+          {{ recSeconds ?? 0 }}s / {{ MAX_VOICE_SECONDS }}s
+        </div>
         <template v-if="v.buf && recordingId !== v.id">
           <svg class="dj-env dj-env-voice" :width="areaWidth" :height="LANE_H">
             <polyline
@@ -828,6 +834,35 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
 }
 .dj-track-recording {
   outline: 1px solid var(--dj-danger);
+}
+.dj-rec-progress {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, black 55%, transparent);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  z-index: 1;
+}
+.dj-rec-progress-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--dj-danger);
+  animation: dj-rec-progress-pulse 0.8s ease-in-out infinite;
+}
+@keyframes dj-rec-progress-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
 }
 .dj-lane-empty {
   position: absolute;

@@ -860,6 +860,7 @@ onBeforeUnmount(() => {
         :window="win"
         :playhead="playhead"
         :recording-id="recordingId"
+        :rec-seconds="recSeconds"
         :title-a="songLabel(songA)"
         :title-b="songLabel(songB)"
         :info-a="songA"
