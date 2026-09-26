@@ -381,16 +381,19 @@ const silentC = computed(() => {
   if (!a) return null
   return new AudioBuffer({ length: Math.ceil(0.05 * a.sampleRate), numberOfChannels: 2, sampleRate: a.sampleRate })
 })
+/** A muted A/C is treated as if it was never added: skipped from the send, same as noA/noC. */
+const aPresent = computed(() => !!aBuf.value && !mutedA.value)
+const cPresent = computed(() => !!bBuf.value && !mutedC.value)
 const fullModel = computed<LinkModel | null>(() => {
-  const a = aBuf.value ?? (noA.value ? silentA.value : null)
-  const b = bBuf.value ?? (noC.value ? silentC.value : null)
+  const a = aPresent.value ? aBuf.value! : (bBuf.value ? silentA.value : null)
+  const b = cPresent.value ? bBuf.value! : (aBuf.value ? silentC.value : null)
   return a && b
     ? {
         a, b,
         voices: voices.value.map(v => (v.muted && v.buf ? { ...v, duck: silentCurve(v.buf.duration) } : v)),
-        aStart: aStart.value, bStart: noC.value ? Infinity : bStart.value,
-        duckA: mutedA.value ? silentCurve(a.duration) : duckA.value,
-        duckB: mutedC.value ? silentCurve(b.duration) : duckB.value,
+        aStart: aStart.value, bStart: cPresent.value ? bStart.value : Infinity,
+        duckA: aPresent.value ? duckA.value : silentCurve(a.duration),
+        duckB: cPresent.value ? duckB.value : silentCurve(b.duration),
         d: dLane.value,
       }
     : null
@@ -680,10 +683,15 @@ async function sendToAir() {
   const m = fullModel.value
   const a = songA.value
   const b = songB.value
-  if (!m || !filledVoices.value.length || (!a && !noA.value) || (!b && !noC.value) || sending.value) return
+  if (sending.value) return
+  if (!m || !filledVoices.value.length || (!a && !noA.value) || (!b && !noC.value)) {
+    message.warning('Add something to send first.')
+    return
+  }
   const endsChain = noC.value
   stopPreview()
   sending.value = true
+  uploadProgress.value = 1
   try {
     const full = fullWin.value
     const continuing = lastJoinId.value !== null
@@ -693,7 +701,6 @@ async function sendToAir() {
     const planBWin = planBWindow(m, full)
     const planBRender = continuing || noA.value ? await renderLink(withoutA(m), planBWin) : null
     const joinId = crypto.randomUUID()
-    uploadProgress.value = 1
     await jesoosApiService.sendDjJoin(brandSlug.value, {
       full: fullRender ? await encodeJoin(fullRender) : null,
       planB: planBRender ? await encodeJoin(planBRender) : null,
@@ -757,7 +764,7 @@ const aStatusKnown = computed(() =>
 // Recording needs a live session, not songs: a voice can be captured first and placed later.
 const canRecord = computed(() => ready.value && !sending.value)
 const canPreview = computed(() => ready.value && !!model.value && !recording.value && !sending.value)
-const canSend = computed(() => canPreview.value && sessionActive.value && !ending.value)
+const canSend = computed(() => ready.value && sessionActive.value && !ending.value && !recording.value && !sending.value)
 
 const songLabel = (s: DjSong | null) => (s ? [s.artist, s.title].filter(Boolean).join(' — ') : '')
 
@@ -1029,8 +1036,12 @@ onBeforeUnmount(() => {
 }
 .dj-send {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 12px;
+}
+.dj-send .n-progress {
+  flex: 1;
+  min-width: 80px;
 }
 .dj-deadline-bar {
   flex: 1;

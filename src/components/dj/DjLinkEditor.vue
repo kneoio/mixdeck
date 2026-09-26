@@ -92,7 +92,7 @@ const BASE_VIEW_SECONDS = 80
 const MIN_ZOOM = 0.1
 const MAX_ZOOM = 8
 const ZOOM_STEP = 1.5
-const zoom = ref(1)
+const zoom = ref(0.5)
 const pps = computed(() => (viewWidth.value > 0 ? (viewWidth.value / BASE_VIEW_SECONDS) * zoom.value : 0))
 const areaWidth = computed(() => Math.max(1, props.total * pps.value))
 async function zoomTo(next: number, anchorClientX?: number) {
