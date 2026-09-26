@@ -520,23 +520,25 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
         </div>
       </div>
       <div class="dj-gutter-lane dj-tone-a">
+        <div class="dj-lane-tag">{{ t('dj.lane_tail') }}</div>
         <button
           type="button" class="dj-mute" :class="{ 'dj-mute-on': mutedA }"
           :title="t('dj.mute')" :aria-label="t('dj.mute')" :aria-pressed="!!mutedA"
           @click="emit('update:mutedA', !mutedA)"
         >M</button>
-        <b class="dj-letter-a">A</b><small>{{ t('dj.lane_tail') }}</small>
+        <b class="dj-letter-a">A</b>
         <span v-if="infoA?.bpm" class="dj-param">{{ t('dj.bpm', { bpm: Math.round(infoA.bpm) }) }}</span>
         <span v-if="infoA?.key" class="dj-param">{{ infoA.scale ? `${infoA.key} ${infoA.scale}` : infoA.key }}</span>
         <img v-if="infoA?.aiGenerated" class="dj-param-ai" src="/AI_accept_color.png" :alt="t('dj.ai_generated')" :title="t('dj.ai_generated')">
       </div>
       <div v-for="(v, n) in voices" :key="v.id" class="dj-gutter-lane dj-gutter-voice dj-tone-b">
+        <div class="dj-lane-tag">{{ t('dj.lane_voice') }}</div>
         <button
           type="button" class="dj-mute" :class="{ 'dj-mute-on': v.muted }"
           :title="t('dj.mute')" :aria-label="t('dj.mute')" :aria-pressed="!!v.muted"
           @click="toggleVoiceMute(v)"
         >M</button>
-        <b class="dj-letter-b">{{ voices.length > 1 ? `B${n + 1}` : 'B' }}</b><small>{{ t('dj.lane_voice') }}</small>
+        <b class="dj-letter-b">{{ voices.length > 1 ? `B${n + 1}` : 'B' }}</b>
         <small v-if="v.source">{{ t(`dj.voice_source_${v.source}`) }}</small>
         <div class="dj-fx">
           <label v-for="fx in effectsOf(v)" :key="fx.key" class="dj-fx-col" :title="`${fx.label} ${fx.pct}%`">
@@ -550,17 +552,19 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
         </div>
       </div>
       <div class="dj-gutter-lane dj-tone-c">
+        <div class="dj-lane-tag">{{ t('dj.lane_head') }}</div>
         <button
           type="button" class="dj-mute" :class="{ 'dj-mute-on': mutedB }"
           :title="t('dj.mute')" :aria-label="t('dj.mute')" :aria-pressed="!!mutedB"
           @click="emit('update:mutedB', !mutedB)"
         >M</button>
-        <b class="dj-letter-c">C</b><small>{{ t('dj.lane_head') }}</small>
+        <b class="dj-letter-c">C</b>
         <span v-if="infoB?.bpm" class="dj-param">{{ t('dj.bpm', { bpm: Math.round(infoB.bpm) }) }}</span>
         <span v-if="infoB?.key" class="dj-param">{{ infoB.scale ? `${infoB.key} ${infoB.scale}` : infoB.key }}</span>
         <img v-if="infoB?.aiGenerated" class="dj-param-ai" src="/AI_accept_color.png" :alt="t('dj.ai_generated')" :title="t('dj.ai_generated')">
       </div>
       <div v-if="d" class="dj-gutter-lane dj-tone-d">
+        <div class="dj-lane-tag">{{ t('dj.lane_automix') }}</div>
         <button
           type="button" class="dj-mute" :class="{ 'dj-mute-on': d.muted }"
           :title="t('dj.mute')" :aria-label="t('dj.mute')" :aria-pressed="!!d.muted"
@@ -571,7 +575,7 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
           :title="t('dj.delete_automix')" :aria-label="t('dj.delete_automix')"
           @click="emit('update:d', null)"
         >✕</button>
-        <b class="dj-letter-d">D</b><small>{{ t('dj.lane_automix') }}</small>
+        <b class="dj-letter-d">D</b>
         <span v-if="d.status === 'processing'" class="dj-d-progress">{{ d.progressLabel }}</span>
         <span v-else-if="d.status === 'error'" class="dj-d-progress dj-d-progress-error">{{ d.errorMessage || t('dj.automix_error') }}</span>
       </div>
@@ -753,8 +757,28 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 0 10px;
+  padding: 0 10px 0 28px;
   border-top: 1px solid var(--dj-border);
+}
+/** The lane's caption stands rotated bottom-to-top on its colored stripe, instead of sitting inline. */
+.dj-lane-tag {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  background: var(--tone);
+  color: #0b0b0f;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 .dj-gutter-lane b {
   font-size: 0.9rem;
@@ -888,10 +912,7 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
   background: var(--dj-danger);
   color: #fff;
 }
-/** A stripe down the gutter edge and a faint wash across the lane tie each row to its asset. */
-.dj-gutter-lane {
-  box-shadow: inset 3px 0 0 var(--tone);
-}
+/** A faint wash across the lane ties it to its asset; the stripe itself is the lane-tag column. */
 .dj-lane {
   background: color-mix(in srgb, var(--tone) 4%, transparent);
 }
