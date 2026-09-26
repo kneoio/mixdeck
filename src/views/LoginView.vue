@@ -83,7 +83,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { NInput, NLayout } from 'naive-ui'
@@ -105,10 +105,14 @@ const resending = ref(false)
 const failCount = ref(0)
 const codeLocked = ref(false)
 
-// Already signed in (e.g. back button onto /login) — go straight through.
-onMounted(() => {
-  if (authStore.isAuthenticated) void router.replace(redirectTarget())
-})
+// Already signed in (back button onto /login, or logged in from another tab) — go straight through.
+watch(
+  () => authStore.isAuthenticated,
+  (authenticated) => {
+    if (authenticated) void router.replace(redirectTarget())
+  },
+  { immediate: true },
+)
 
 /** Only same-origin absolute paths are honoured, so ?redirect= can't bounce elsewhere. */
 function redirectTarget(): string {

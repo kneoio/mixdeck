@@ -20,6 +20,8 @@ export class ApiClient {
   constructor(protected readonly baseUrl: string) {}
 
   protected async request<T>(endpoint: string, options: RequestInit = {}, retried = false): Promise<T> {
+    // After sleep or a backgrounded tab the token may have lapsed — refresh before sending, not after a 401.
+    if (!retried) await authService.ensureValidToken()
     const authHeaders = authService.getAuthHeader()
     const url = `${this.baseUrl}${endpoint}`
 
@@ -41,9 +43,13 @@ export class ApiClient {
     if (!response.ok) {
       if (response.status === 401) {
         if (!retried) {
-          const refreshed = await authService.refreshToken()
-          if (refreshed) {
+          const result = await authService.refresh()
+          if (result === 'ok') {
             return this.request<T>(endpoint, options, true)
+          }
+          // Keycloak unreachable: keep the session and let the caller retry.
+          if (result === 'transient') {
+            throw new Error('Network error, please try again')
           }
         }
         void authService.login(window.location.href)

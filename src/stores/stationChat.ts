@@ -66,6 +66,8 @@ export const useStationChatStore = defineStore('stationChat', () => {
   let intentionalDisconnect = false
   /** Tracks whether the current socket ever reached OPEN (auth upgrade succeeded). */
   let everOpened = false
+  /** Bumped per open attempt so a stale one that awaited a token refresh doesn't open a second socket. */
+  let openGeneration = 0
 
   const isBusy = computed(
     () => replyInFlight.value || !!processing.value || streamingMessageId.value != null,
@@ -96,14 +98,19 @@ export const useStationChatStore = defineStore('stationChat', () => {
     reconnectDelay = Math.min(delay * RECONNECT_MULTIPLIER, RECONNECT_MAX_DELAY_MS)
     reconnectTimer = setTimeout(() => {
       reconnectTimer = null
-      if (!intentionalDisconnect) openSocket()
+      if (!intentionalDisconnect) void openSocket()
     }, delay)
   }
 
-  function openSocket() {
+  async function openSocket() {
     teardownSocket()
     intentionalDisconnect = false
     everOpened = false
+
+    // The token rides in the URL, so it must be fresh before connecting (e.g. after the laptop slept).
+    const generation = ++openGeneration
+    await authService.ensureValidToken()
+    if (generation !== openGeneration || intentionalDisconnect) return
 
     const url = buildWsUrl()
     if (!url) {
@@ -154,7 +161,7 @@ export const useStationChatStore = defineStore('stationChat', () => {
     brandSlug.value = slug
     clearReconnectTimer()
     intentionalDisconnect = false
-    openSocket()
+    void openSocket()
   }
 
   function disconnect() {

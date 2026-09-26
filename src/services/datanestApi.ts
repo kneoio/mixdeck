@@ -327,7 +327,7 @@ class DatanestApiService extends ApiClient {
     return this.bulkUploadFileChunked(file, fileId, batchId, brandSlug, onProgress, signal)
   }
 
-  private bulkUploadFileSingle(
+  private async bulkUploadFileSingle(
     file: File,
     fileId: string,
     batchId: string,
@@ -335,6 +335,7 @@ class DatanestApiService extends ApiClient {
     onProgress: (percent: number) => void,
     signal?: AbortSignal
   ): Promise<void> {
+    await authService.ensureValidToken()
     return new Promise((resolve, reject) => {
       const url = `${this.baseUrl}/public/soundfragments-bulk/files?batchId=${encodeURIComponent(batchId)}&brandSlug=${encodeURIComponent(brandSlug)}&fileId=${encodeURIComponent(fileId)}`
       const formData = new FormData()
@@ -390,7 +391,6 @@ class DatanestApiService extends ApiClient {
     options?: { signal?: AbortSignal; fileId?: string }
   ): Promise<any> {
     const fileId = options?.fileId ?? crypto.randomUUID().replace(/-/g, '')
-    const authHeaders = authService.getAuthHeader()
     const totalChunks = Math.ceil(file.size / BULK_UPLOAD_CHUNK_SIZE)
     let lastResponse: any
 
@@ -413,9 +413,9 @@ class DatanestApiService extends ApiClient {
       if (brandSlug) params.set('brandSlug', brandSlug)
       if (entityId) params.set('entityId', entityId)
 
-      const res = await fetch(`${this.baseUrl}/public/soundfragments-bulk/chunk?${params}`, {
+      // Per chunk, so a long upload survives the access token expiring partway through.
+      const res = await authService.authorizedFetch(`${this.baseUrl}/public/soundfragments-bulk/chunk?${params}`, {
         method: 'POST',
-        headers: authHeaders as HeadersInit,
         body: form,
         signal: options?.signal,
       })
@@ -472,8 +472,7 @@ class DatanestApiService extends ApiClient {
   }
 
   async downloadFile(url: string, fallbackFilename: string): Promise<void> {
-    const authHeaders = authService.getAuthHeader()
-    const response = await fetch(url, { headers: authHeaders })
+    const response = await authService.authorizedFetch(url)
     if (!response.ok) throw new Error(`Download failed (${response.status})`)
     const blob = await response.blob()
 
@@ -494,7 +493,8 @@ class DatanestApiService extends ApiClient {
     URL.revokeObjectURL(objectUrl)
   }
 
-  uploadBrandLogo(brandSlug: string, file: File): Promise<{ slugName: string }> {
+  async uploadBrandLogo(brandSlug: string, file: File): Promise<{ slugName: string }> {
+    await authService.ensureValidToken()
     return new Promise((resolve, reject) => {
       const url = `${this.baseUrl}/public/brands/${encodeURIComponent(brandSlug)}/logo`
       const formData = new FormData()
@@ -517,8 +517,7 @@ class DatanestApiService extends ApiClient {
 
   /** Fetch authenticated audio (or any binary) as a blob URL for `<audio src>`. Caller must `URL.revokeObjectURL` when done. */
   async fetchBlobUrl(url: string): Promise<string> {
-    const authHeaders = authService.getAuthHeader()
-    const response = await fetch(url, { headers: authHeaders })
+    const response = await authService.authorizedFetch(url)
     if (!response.ok) throw new Error(`Failed to load file (${response.status})`)
     const blob = await response.blob()
     return URL.createObjectURL(blob)
@@ -526,8 +525,7 @@ class DatanestApiService extends ApiClient {
 
   /** Fetch authenticated audio (or any binary) as raw bytes, e.g. for `decodeAudioData`. */
   async fetchArrayBuffer(url: string): Promise<ArrayBuffer> {
-    const authHeaders = authService.getAuthHeader()
-    const response = await fetch(url, { headers: authHeaders })
+    const response = await authService.authorizedFetch(url)
     if (!response.ok) throw new Error(`Failed to load file (${response.status})`)
     return response.arrayBuffer()
   }
@@ -633,9 +631,8 @@ class DatanestApiService extends ApiClient {
         for (const slug of meta.stationSlugs) params.append('stationSlug', slug)
       }
 
-      const res = await fetch(`${this.baseUrl}/public/songs/chunk?${params}`, {
+      const res = await authService.authorizedFetch(`${this.baseUrl}/public/songs/chunk?${params}`, {
         method: 'POST',
-        headers: { ...authService.getAuthHeader() },
         body: form,
       })
 

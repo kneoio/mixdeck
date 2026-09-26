@@ -1,4 +1,5 @@
 import { useRegisterSW } from 'virtual:pwa-register/vue'
+import authService from '@/services/auth'
 
 let singleton: ReturnType<typeof createServiceWorkerState> | null = null
 
@@ -30,12 +31,14 @@ function createServiceWorkerState() {
     },
   })
 
-  function applyUpdate() {
+  async function applyUpdate() {
+    // A reload mid-refresh would lose the rotated tokens Keycloak just issued.
+    await authService.whenIdle()
     // Don't rely solely on the SW 'controlling' event to trigger the reload —
     // if it never fires the click silently does nothing. Reload directly so
     // the click always re-runs the router's auth guard (and redirects to
     // login if the session has since expired).
-    updateServiceWorker(true)
+    await updateServiceWorker(true)
     window.location.reload()
   }
 

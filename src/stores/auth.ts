@@ -24,6 +24,21 @@ export const useAuthStore = defineStore('auth', () => {
       userProfile.value = null
       void login(redirectUri)
     })
+    // Session rejected in the background, or logged in/out in another tab.
+    authService.onSessionChange((authenticated) => {
+      isAuthenticated.value = authenticated
+      userProfile.value = authenticated ? authService.getUserProfile() : null
+      if (!authenticated) void loginIfOnProtectedRoute()
+    })
+  }
+
+  /** Public pages stay put when the session ends; protected ones go to login. */
+  async function loginIfOnProtectedRoute() {
+    const { default: router } = await import('@/router')
+    const route = router.currentRoute.value
+    if (route.matched.some(record => record.meta.requiresAuth)) {
+      await login(route.fullPath)
+    }
   }
 
   function rememberRedirect(redirectUri?: string) {

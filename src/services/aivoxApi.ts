@@ -133,8 +133,8 @@ class AivoxApiService extends ApiClient {
    * JSON-only response handling doesn't fit a streamed body.
    */
   async mixEvents(jobId: string, onProgress: (progress: AivoxMixProgress) => void): Promise<AivoxMixProgress> {
-    const response = await fetch(`${this.baseUrl}/mix/${encodeURIComponent(jobId)}/events`, {
-      headers: { 'X-Client-ID': 'mixpla-web', ...authService.getAuthHeader() },
+    const response = await authService.authorizedFetch(`${this.baseUrl}/mix/${encodeURIComponent(jobId)}/events`, {
+      headers: { 'X-Client-ID': 'mixpla-web' },
     })
     if (!response.ok || !response.body) {
       throw new Error(`HTTP error! status: ${response.status}`)
@@ -164,8 +164,8 @@ class AivoxApiService extends ApiClient {
 
   /** Fetches a finished mix job's rendered wav and the plan spectra sent back in `X-Mix-Plan`. */
   async getMixResult(jobId: string): Promise<{ blob: Blob; plan: AivoxMixPlan | null }> {
-    const response = await fetch(`${this.baseUrl}/mix/${encodeURIComponent(jobId)}/result`, {
-      headers: { 'X-Client-ID': 'mixpla-web', ...authService.getAuthHeader() },
+    const response = await authService.authorizedFetch(`${this.baseUrl}/mix/${encodeURIComponent(jobId)}/result`, {
+      headers: { 'X-Client-ID': 'mixpla-web' },
     })
     if (!response.ok) {
       const detail = await response.json().catch(() => null)

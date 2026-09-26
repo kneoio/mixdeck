@@ -385,7 +385,8 @@ function connectDashboardSocket() {
     dashboardSocket = null
     const likelyAuthRejection = Date.now() - openedAt < 1000
     if (likelyAuthRejection) {
-      authService.refreshToken().finally(() => scheduleDashboardReconnect())
+      // Fast closes also happen while the backend restarts — only refresh if the token is actually due.
+      authService.ensureValidToken().finally(() => scheduleDashboardReconnect())
     } else {
       scheduleDashboardReconnect()
     }
