@@ -684,12 +684,11 @@ async function sendToAir() {
   const a = songA.value
   const b = songB.value
   if (sending.value) return
-  if (!m || !filledVoices.value.length || (!a && !noA.value) || (!b && !noC.value)) {
+  if (!m || (!a && !noA.value) || (!b && !noC.value)) {
     message.warning('Add something to send first.')
     return
   }
   const endsChain = noC.value
-  stopPreview()
   sending.value = true
   uploadProgress.value = 1
   try {
