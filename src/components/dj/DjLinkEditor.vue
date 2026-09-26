@@ -5,7 +5,8 @@ import WaveSurfer from 'wavesurfer.js'
 import TimelinePlugin from 'wavesurfer.js/plugins/timeline'
 import { MAX_GAP_SECONDS, MAX_VOICE_SECONDS, peaksOf, sliceBuffer } from '@/utils/djAudio'
 import { pairedCurve, type AutomixLane, type EnvelopePoint, type MixWindow, type VoiceLane } from '@/utils/djMix'
-import { NSlider } from 'naive-ui'
+import { NIcon, NSlider } from 'naive-ui'
+import { HardwareChipOutline } from '@vicons/ionicons5'
 import { useDjColors } from '@/utils/djColors'
 import DjVoiceTrack from '@/components/dj/DjVoiceTrack.vue'
 
@@ -528,7 +529,7 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
         <b class="dj-letter-a">A</b><small>{{ t('dj.lane_tail') }}</small>
         <span v-if="infoA?.bpm" class="dj-param">{{ t('dj.bpm', { bpm: Math.round(infoA.bpm) }) }}</span>
         <span v-if="infoA?.key" class="dj-param">{{ infoA.scale ? `${infoA.key} ${infoA.scale}` : infoA.key }}</span>
-        <span v-if="infoA?.aiGenerated" class="dj-param-ai" :title="t('dj.ai_generated')">🤖</span>
+        <NIcon v-if="infoA?.aiGenerated" class="dj-param-ai" :component="HardwareChipOutline" :title="t('dj.ai_generated')" />
       </div>
       <div v-for="(v, n) in voices" :key="v.id" class="dj-gutter-lane dj-gutter-voice dj-tone-b">
         <button
@@ -558,7 +559,7 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
         <b class="dj-letter-c">C</b><small>{{ t('dj.lane_head') }}</small>
         <span v-if="infoB?.bpm" class="dj-param">{{ t('dj.bpm', { bpm: Math.round(infoB.bpm) }) }}</span>
         <span v-if="infoB?.key" class="dj-param">{{ infoB.scale ? `${infoB.key} ${infoB.scale}` : infoB.key }}</span>
-        <span v-if="infoB?.aiGenerated" class="dj-param-ai" :title="t('dj.ai_generated')">🤖</span>
+        <NIcon v-if="infoB?.aiGenerated" class="dj-param-ai" :component="HardwareChipOutline" :title="t('dj.ai_generated')" />
       </div>
       <div v-if="d" class="dj-gutter-lane dj-tone-d">
         <button
@@ -806,7 +807,8 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
 }
 .dj-param-ai {
   margin-top: 2px;
-  font-size: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--dj-muted);
   line-height: 1;
   cursor: default;
 }
@@ -863,7 +865,7 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
 .dj-d-delete {
   position: absolute;
   top: 8px;
-  right: 34px;
+  right: 192px;
   width: 20px;
   height: 20px;
   padding: 0;
