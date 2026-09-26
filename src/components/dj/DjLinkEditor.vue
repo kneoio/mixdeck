@@ -864,6 +864,10 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
 .dj-gutter-voice .dj-mute {
   right: 166px;
 }
+/* D's mute lines up in the same column as B's, clear of its delete button. */
+.dj-tone-d .dj-mute {
+  right: 166px;
+}
 .dj-d-delete {
   position: absolute;
   top: 8px;
