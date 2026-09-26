@@ -65,10 +65,10 @@ const djColors = useDjColors()
 type EffectKey = 'reverb' | 'echo' | 'radio' | 'distortion'
 /** The effects on a B lane, in the order their sliders stand. */
 const effectsOf = (v: VoiceLane) => [
-  { key: 'reverb' as const, label: t('dj.reverb'), pct: Math.round(v.reverb * 100) },
-  { key: 'echo' as const, label: t('dj.echo'), pct: Math.round(v.echo * 100) },
-  { key: 'radio' as const, label: t('dj.radio'), pct: Math.round(v.radio * 100) },
-  { key: 'distortion' as const, label: t('dj.distortion'), pct: Math.round(v.distortion * 100) },
+  { key: 'reverb' as const, label: t('dj.reverb'), short: 'Rev.', pct: Math.round(v.reverb * 100) },
+  { key: 'echo' as const, label: t('dj.echo'), short: 'Echo', pct: Math.round(v.echo * 100) },
+  { key: 'radio' as const, label: t('dj.radio'), short: 'Radio', pct: Math.round(v.radio * 100) },
+  { key: 'distortion' as const, label: t('dj.distortion'), short: 'Dist.', pct: Math.round(v.distortion * 100) },
 ]
 function patchVoice(id: number, patch: Partial<VoiceLane>) {
   emit('update:voices', props.voices.map(v => (v.id === id ? { ...v, ...patch } : v)))
@@ -547,7 +547,7 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
               :min="0" :max="100" :step="5" :tooltip="false" :aria-label="fx.label"
               @update:value="setEffect(v.id, fx.key, $event)"
             />
-            <span class="dj-fx-name">{{ fx.label }}</span>
+            <span class="dj-fx-name">{{ fx.short }}</span>
           </label>
         </div>
       </div>
@@ -792,14 +792,14 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
 }
 .dj-gutter-voice {
   position: relative;
-  /* Keeps the caption clear of the slider block standing at the right of the cell. */
-  padding-right: 158px;
+  /* Keeps the caption clear of the slider block, shifted left to leave the mute button its own corner. */
+  padding-right: 184px;
 }
-/** The effect sliders stand upright in a row at the right of B's cell, each with its name under it. */
+/** The effect sliders stand upright closer to the caption, leaving the top-right corner free for mute. */
 .dj-fx {
   position: absolute;
   top: 8px;
-  right: 8px;
+  right: 34px;
   bottom: 6px;
   display: flex;
   gap: 0;
@@ -883,10 +883,6 @@ function onKey(e: KeyboardEvent, v: VoiceLane) {
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
-}
-/* B's effect sliders sit in that same corner, so its mute button stands clear of them. */
-.dj-gutter-voice .dj-mute {
-  right: 166px;
 }
 .dj-d-delete {
   position: absolute;
