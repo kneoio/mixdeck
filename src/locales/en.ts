@@ -145,7 +145,7 @@ export default {
     too_late: 'A has already played past your mix on air — this link goes out without A',
     session_expiring: 'Lost contact with the station — it takes the air back in {time}',
     session_expired: 'The station has taken the air back',
-    mode_track: 'Voice track',
+    mode_track: 'Pre-mix',
     mode_live: 'Live',
     live_mixer: 'Live mixer',
     live_connecting: 'Going live…',

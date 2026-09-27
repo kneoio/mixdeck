@@ -748,7 +748,7 @@ async function sendToAir() {
 
 // ── Live ────────────────────────────────────────────────────────────
 /**
- * Voice track sends prepared links for the station to stitch in; Live streams the deck's own mix to air
+ * Pre-mix sends prepared links for the station to stitch in; Live streams the deck's own mix to air
  * as it is played, and the queue waits until the DJ hands the air back.
  */
 const mode = ref<'track' | 'live'>('track')
