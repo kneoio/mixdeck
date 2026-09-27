@@ -40,6 +40,8 @@ export class LiveBroadcast {
   private recorder: MediaRecorder | null = null
   private micStream: MediaStream | null = null
   private micSource: MediaStreamAudioSourceNode | null = null
+  private micOpen = false
+  private micLevel = 1
   private endReason: string | null = null
   private lastMeta = ''
 
@@ -168,7 +170,18 @@ export class LiveBroadcast {
   }
 
   setMicOpen(open: boolean) {
-    this.micGate.gain.setTargetAtTime(open ? 1 : 0, this.ctx.currentTime, RAMP_SECONDS)
+    this.micOpen = open
+    this.applyMic()
+  }
+
+  /** The mic's own volume, 1 as it comes in; above 1 boosts a quiet mic. */
+  setMicLevel(level: number) {
+    this.micLevel = level
+    this.applyMic()
+  }
+
+  private applyMic() {
+    this.micGate.gain.setTargetAtTime(this.micOpen ? this.micLevel : 0, this.ctx.currentTime, RAMP_SECONDS)
   }
 
   /** The same four effects as a B lane in the link editor, on the live voice. */

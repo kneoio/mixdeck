@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, h, onBeforeUnmount, onMounted, reactive, ref, watch, type VNodeChild } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NButton, NIcon, NSelect, NSlider, useMessage, type SelectOption } from 'naive-ui'
+import { NButton, NIcon, NInput, NSelect, NSlider, useMessage, type SelectOption } from 'naive-ui'
 import { Play } from '@vicons/ionicons5'
 import LedRed from '@/components/LedRed.vue'
 import type { DjSong } from '@/components/dj/DjSongPicker.vue'
@@ -9,6 +9,7 @@ import aivoxApiService from '@/services/aivoxApi'
 import datanestApiService from '@/services/datanestApi'
 import { fetchSongBuffer } from '@/utils/djAudio'
 import { LiveBroadcast } from '@/utils/djLive'
+import type { FxAmounts } from '@/utils/djMix'
 
 const { t } = useI18n()
 const message = useMessage()
@@ -204,6 +205,61 @@ const micOpen = ref(false)
 watch(micOpen, open => live.setMicOpen(open))
 const micFx = reactive({ reverb: 0, echo: 0, radio: 0, distortion: 0 })
 watch(micFx, amounts => live.setMicFx({ ...amounts }), { deep: true })
+/** 1 is the mic as it comes in; up to 1.5 to lift a quiet one. */
+const micLevel = ref(1)
+watch(micLevel, level => live.setMicLevel(level))
+
+// ── Effect presets ──────────────────────────────────────────────────
+interface FxPreset {
+  name: string
+  fx: FxAmounts
+}
+/** Kept in this browser only: a DJ's own sounds, not something the station needs to know. */
+const PRESETS_KEY = 'mixdeck.dj.micFxPresets'
+const DEFAULT_PRESETS: FxPreset[] = [
+  { name: 'Clean', fx: { reverb: 0, echo: 0, radio: 0, distortion: 0 } },
+  { name: 'Radio', fx: { reverb: 0, echo: 0, radio: 0.8, distortion: 0 } },
+  { name: 'Hall', fx: { reverb: 0.5, echo: 0, radio: 0, distortion: 0 } },
+  { name: 'Echo', fx: { reverb: 0.15, echo: 0.5, radio: 0, distortion: 0 } },
+]
+
+function loadPresets(): FxPreset[] {
+  try {
+    const raw = localStorage.getItem(PRESETS_KEY)
+    const parsed = raw ? JSON.parse(raw) : null
+    if (Array.isArray(parsed)) return parsed.filter(p => p && typeof p.name === 'string' && p.fx)
+  } catch { /* storage blocked or corrupt: fall back to the defaults */ }
+  return DEFAULT_PRESETS.map(p => ({ name: p.name, fx: { ...p.fx } }))
+}
+const presets = ref<FxPreset[]>(loadPresets())
+watch(presets, list => {
+  try {
+    localStorage.setItem(PRESETS_KEY, JSON.stringify(list))
+  } catch { /* storage blocked: presets last for this visit only */ }
+}, { deep: true })
+
+const presetName = ref('')
+const FX_KEYS = ['reverb', 'echo', 'radio', 'distortion'] as const
+const matches = (p: FxPreset) => FX_KEYS.every(k => Math.abs(p.fx[k] - micFx[k]) < 0.005)
+
+function applyPreset(p: FxPreset) {
+  Object.assign(micFx, p.fx)
+}
+
+/** Saving under a name that already exists overwrites that preset. */
+function savePreset() {
+  const name = presetName.value.trim()
+  if (!name) return
+  const fx = { ...micFx }
+  const existing = presets.value.find(p => p.name.toLowerCase() === name.toLowerCase())
+  if (existing) existing.fx = fx
+  else presets.value.push({ name, fx })
+  presetName.value = ''
+}
+
+function deletePreset(p: FxPreset) {
+  presets.value = presets.value.filter(x => x !== p)
+}
 const fxSliders = [
   { key: 'reverb' as const, label: 'dj.reverb' },
   { key: 'echo' as const, label: 'dj.echo' },
@@ -405,6 +461,40 @@ onBeforeUnmount(() => {
             <span>{{ t(fx.label) }}</span>
           </div>
         </div>
+        <div class="dj-live-vol">
+          <span class="dj-live-vol-value">{{ Math.round(micLevel * 100) }}%</span>
+          <NSlider
+            v-model:value="micLevel"
+            vertical
+            :min="0"
+            :max="1.5"
+            :step="0.05"
+            :tooltip="false"
+            :theme-overrides="{ railHeight: '8px', fillColor: 'var(--dj-b)', fillColorHover: 'var(--dj-b)' }"
+          />
+          <span class="dj-live-vol-label">{{ t('dj.live_mic_volume') }}</span>
+        </div>
+      </div>
+
+      <div class="dj-live-presets">
+        <span class="dj-live-presets-label">{{ t('dj.live_presets') }}</span>
+        <span
+          v-for="p in presets"
+          :key="p.name"
+          class="dj-live-preset"
+          :class="{ 'dj-live-preset--active': matches(p) }"
+        >
+          <button type="button" class="dj-live-preset-apply" @click="applyPreset(p)">{{ p.name }}</button>
+          <button type="button" class="dj-live-preset-delete" :aria-label="t('dj.live_remove')" @click="deletePreset(p)">✕</button>
+        </span>
+        <NInput
+          v-model:value="presetName"
+          class="dj-live-preset-name"
+          size="small"
+          :placeholder="t('dj.live_preset_name')"
+          @keyup.enter="savePreset"
+        />
+        <NButton size="small" :disabled="!presetName.trim()" @click="savePreset">{{ t('dj.live_preset_save') }}</NButton>
       </div>
       <NSelect
         class="dj-live-field"
@@ -552,6 +642,84 @@ onBeforeUnmount(() => {
 }
 .dj-live-fx-slider :deep(.n-slider) {
   flex: 1;
+}
+/** The mic's volume stands apart from the effects: its own panel, a thicker rail, its level on top. */
+.dj-live-vol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  height: 140px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--dj-b) 60%, transparent);
+  background: color-mix(in srgb, var(--dj-b) 12%, transparent);
+}
+.dj-live-vol :deep(.n-slider) {
+  flex: 1;
+}
+.dj-live-vol-value {
+  min-width: 44px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: var(--dj-b);
+  color: #1a1a1a;
+}
+.dj-live-vol-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.dj-live-presets {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.dj-live-presets-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--dj-muted);
+  margin-right: 4px;
+}
+.dj-live-preset {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 4px;
+  border: 1px solid var(--dj-border);
+  font-size: 0.78rem;
+  overflow: hidden;
+}
+.dj-live-preset--active {
+  border-color: var(--dj-b);
+  background: color-mix(in srgb, var(--dj-b) 20%, transparent);
+}
+.dj-live-preset-apply,
+.dj-live-preset-delete {
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+.dj-live-preset-apply {
+  padding: 3px 4px 3px 9px;
+  font-weight: 600;
+}
+.dj-live-preset-delete {
+  padding: 3px 7px 3px 3px;
+  opacity: 0.35;
+}
+.dj-live-preset-delete:hover {
+  opacity: 0.9;
+}
+.dj-live-preset-name {
+  width: 140px;
 }
 .dj-live-hint {
   margin: 0;
