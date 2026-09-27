@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NButton, NButtonGroup, NCheckbox, NDrawer, NDrawerContent, NProgress, NSelect, useMessage, useThemeVars } from 'naive-ui'
+import { NButton, NButtonGroup, NCheckbox, NDrawer, NDrawerContent, NModal, NProgress, NSelect, useMessage, useThemeVars } from 'naive-ui'
 import LedRed from '@/components/LedRed.vue'
 import LedPlay from '@/components/LedPlay.vue'
 import GsapButton from '@/components/GsapButton.vue'
@@ -137,7 +137,50 @@ function formatCountdown(seconds: number) {
   return `${mm}:${ss}`
 }
 
+/**
+ * Ending the session or switching back to Pre-mix while the live deck still has a song going out to
+ * air would cut it off for listeners instead of handing it back cleanly; both go through this guard.
+ */
+const liveDeck = ref<InstanceType<typeof DjLiveDeck> | null>(null)
+const pendingLeaveLive = ref<'end' | 'switch' | null>(null)
+const leaveLiveModalShow = computed({
+  get: () => pendingLeaveLive.value !== null,
+  set: (v: boolean) => { if (!v) pendingLeaveLive.value = null },
+})
+const leaveLiveBody = computed(() => pendingLeaveLive.value === 'end'
+  ? t('dj.live_leave_while_broadcasting_body_end')
+  : t('dj.live_leave_while_broadcasting_body_switch'))
+const leaveLiveConfirmText = computed(() => pendingLeaveLive.value === 'end'
+  ? t('dj.live_leave_while_broadcasting_confirm_end')
+  : t('dj.live_leave_while_broadcasting_confirm_switch'))
+
+function requestEndSession() {
+  if (mode.value === 'live' && liveDeck.value?.broadcasting) {
+    pendingLeaveLive.value = 'end'
+    return
+  }
+  void endSession()
+}
+
+/** The only way back to Pre-mix: there is no separate "hand back" button, the toggle itself does it. */
+function requestPreMix() {
+  if (mode.value !== 'live') return
+  if (liveDeck.value?.broadcasting) {
+    pendingLeaveLive.value = 'switch'
+    return
+  }
+  mode.value = 'track'
+}
+
+function confirmLeaveLive() {
+  const action = pendingLeaveLive.value
+  pendingLeaveLive.value = null
+  if (action === 'end') void endSession()
+  else if (action === 'switch') mode.value = 'track'
+}
+
 async function endSession() {
+  pendingLeaveLive.value = null
   if (ending.value) return
   ending.value = true
   stopPreview()
@@ -830,7 +873,7 @@ onBeforeUnmount(() => {
   <div class="dj-panel" :style="themeStyle">
     <header class="dj-topbar">
       <NButtonGroup class="dj-mode" size="small">
-        <NButton :type="mode === 'track' ? 'primary' : 'default'" :disabled="mode === 'live'" :title="mode === 'live' ? t('dj.live_handback_first') : ''">
+        <NButton :type="mode === 'track' ? 'primary' : 'default'" :disabled="mode === 'track'" @click="requestPreMix">
           {{ t('dj.mode_track') }}
         </NButton>
         <NButton :type="mode === 'live' ? 'error' : 'default'" :disabled="mode !== 'live' && !canGoLive" @click="mode !== 'live' && goLive()">
@@ -845,7 +888,7 @@ onBeforeUnmount(() => {
         <GsapButton @click="chatOpen = true">
           <span>{{ t('dj.chat_open') }}</span>
         </GsapButton>
-        <GsapButton type="error" :loading="ending" :disabled="sessionState === 'starting'" @click="endSession">
+        <GsapButton type="error" :loading="ending" :disabled="sessionState === 'starting'" @click="requestEndSession">
           <span>{{ t('dj.end_session') }}</span>
         </GsapButton>
       </div>
@@ -946,7 +989,7 @@ onBeforeUnmount(() => {
 
     <section v-if="mode === 'live'" class="dj-section">
       <h3 class="dj-section-title">{{ t('dj.live_mixer') }}</h3>
-      <DjLiveDeck :brand-slug="brandSlug" @ended="onLiveEnded" />
+      <DjLiveDeck ref="liveDeck" :brand-slug="brandSlug" @ended="onLiveEnded" />
     </section>
 
     <section v-else class="dj-section">
@@ -1013,6 +1056,18 @@ onBeforeUnmount(() => {
         </div>
       </div>
     </section>
+
+    <NModal
+      v-model:show="leaveLiveModalShow"
+      preset="dialog"
+      type="warning"
+      :title="t('dj.live_leave_while_broadcasting_title')"
+      :content="leaveLiveBody"
+      :positive-text="leaveLiveConfirmText"
+      :negative-text="t('dj.live_leave_while_broadcasting_cancel')"
+      @positive-click="confirmLeaveLive"
+      @negative-click="pendingLeaveLive = null"
+    />
   </div>
 </template>
 

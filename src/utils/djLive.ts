@@ -218,11 +218,15 @@ export class LiveBroadcast {
     if (this.socket?.readyState === WebSocket.OPEN) this.socket.send(JSON.stringify({ type: 'end' }))
   }
 
-  /** Tears everything down; the socket closing ends the live feed on aivox too. */
+  /**
+   * Tears everything down. Hands the air back gracefully first (aivox airs what it already has, then
+   * closes its own end) rather than just dropping the connection, whatever leaving Live turns out to be.
+   */
   dispose() {
     this.stopSong()
     for (const key of [...this.effects.keys()]) this.stopEffect(key)
     this.stopRecorder()
+    this.end()
     if (this.socket && this.socket.readyState <= WebSocket.OPEN) this.socket.close(1000, 'deck_closed')
     this.socket = null
     this.micStream?.getTracks().forEach(track => track.stop())

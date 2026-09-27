@@ -18,7 +18,7 @@ const props = defineProps<{ brandSlug: string }>()
 const emit = defineEmits<{ ended: [reason: string] }>()
 
 const live = new LiveBroadcast()
-const state = ref<'connecting' | 'on_air' | 'ending'>('connecting')
+const state = ref<'connecting' | 'on_air'>('connecting')
 const onAirSince = ref(0)
 const now = ref(Date.now())
 let ticker: ReturnType<typeof setInterval> | null = null
@@ -522,15 +522,6 @@ function renderEffectTag({ option }: { option: SelectOption }) {
   })
 }
 
-// ── Handing back ────────────────────────────────────────────────────
-/** Only at a song boundary: the queue cannot pick up a song mid-way, so no song may be playing. */
-function handBack() {
-  if (playingSlug.value) return
-  micOpen.value = false
-  state.value = 'ending'
-  live.end()
-}
-
 const onAirFor = computed(() => formatTime((now.value - onAirSince.value) / 1000))
 
 onMounted(async () => {
@@ -570,17 +561,7 @@ defineExpose({ broadcasting: computed(() => !!playingSlug.value) })
     <div class="dj-live-status" :class="`dj-live-status--${state}`">
       <LedRed :active="state === 'on_air'" />
       <span v-if="state === 'connecting'">{{ t('dj.live_connecting') }}</span>
-      <span v-else-if="state === 'on_air'">{{ t('dj.live_on_air', { time: onAirFor }) }}</span>
-      <span v-else>{{ t('dj.live_ending') }}</span>
-      <NButton
-        class="dj-live-handback"
-        size="small"
-        :disabled="state !== 'on_air' || !!playingSlug"
-        :title="playingSlug ? t('dj.live_handback_hint') : ''"
-        @click="handBack"
-      >
-        {{ t('dj.live_handback') }}
-      </NButton>
+      <span v-else>{{ t('dj.live_on_air', { time: onAirFor }) }}</span>
     </div>
 
     <section class="dj-live-area">
@@ -776,9 +757,6 @@ defineExpose({ broadcasting: computed(() => !!playingSlug.value) })
 .dj-live-status--on_air {
   background: color-mix(in srgb, var(--dj-danger) 14%, transparent);
   font-weight: 600;
-}
-.dj-live-handback {
-  margin-left: auto;
 }
 .dj-live-area {
   display: flex;
