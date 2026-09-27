@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, h, onBeforeUnmount, onMounted, reactive, ref, watch, type VNodeChild } from 'vue'
+import { computed, h, onBeforeUnmount, onMounted, reactive, ref, watch, type Ref, type VNodeChild } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NButton, NIcon, NInput, NSelect, NSlider, useMessage, type SelectOption } from 'naive-ui'
 import { HeadsetOutline, Play } from '@vicons/ionicons5'
@@ -200,6 +200,86 @@ const balance = ref(0.5)
 const BALANCE_STEP = 0.05
 watch(balance, x => live.setBalance(x), { immediate: true })
 
+/**
+ * Named presets kept in this browser only, seeded with `defaults` the first time. Anything unreadable
+ * falls back to the defaults; blocked storage just means they last for this visit.
+ */
+function storedList<T extends { name: string }>(key: string, defaults: T[], valid: (item: T) => boolean) {
+  let initial = defaults.map(d => JSON.parse(JSON.stringify(d)) as T)
+  try {
+    const parsed = JSON.parse(localStorage.getItem(key) ?? 'null')
+    if (Array.isArray(parsed)) initial = parsed.filter(p => p && typeof p.name === 'string' && valid(p))
+  } catch { /* storage blocked or corrupt */ }
+  const list = ref(initial) as Ref<T[]>
+  watch(list, value => {
+    try {
+      localStorage.setItem(key, JSON.stringify(value))
+    } catch { /* storage blocked */ }
+  }, { deep: true })
+  return list
+}
+
+// ── Level presets ───────────────────────────────────────────────────
+interface LevelPreset {
+  name: string
+  /** Fader position, 0 all song to 1 all mic. */
+  balance: number
+}
+const LEVEL_PRESETS_KEY = 'mixdeck.dj.balancePresets'
+const DEFAULT_LEVEL_PRESETS: LevelPreset[] = [
+  { name: 'Song', balance: 0 },
+  { name: 'Talk over', balance: 0.7 },
+  { name: 'Even', balance: 0.5 },
+  { name: 'Voice', balance: 1 },
+]
+const levelPresets = storedList<LevelPreset>(LEVEL_PRESETS_KEY, DEFAULT_LEVEL_PRESETS, p => typeof p.balance === 'number')
+const levelPresetName = ref('')
+
+/** One fader step per tick: the full range takes 2 s, and the DJ watches the handle travel there. */
+const GLIDE_TICK_MS = 100
+let glideTimer: ReturnType<typeof setInterval> | null = null
+
+function stopGlide() {
+  if (glideTimer) clearInterval(glideTimer)
+  glideTimer = null
+}
+
+function glideTo(target: number) {
+  stopGlide()
+  const goal = Math.round(target / BALANCE_STEP) * BALANCE_STEP
+  glideTimer = setInterval(() => {
+    const diff = goal - balance.value
+    if (Math.abs(diff) < BALANCE_STEP / 2) {
+      balance.value = goal
+      stopGlide()
+      return
+    }
+    balance.value = Math.round((balance.value + Math.sign(diff) * BALANCE_STEP) * 100) / 100
+  }, GLIDE_TICK_MS)
+}
+
+/** The DJ's own hand always wins over a glide in progress. */
+function onBalanceInput(value: number) {
+  stopGlide()
+  balance.value = value
+}
+
+const levelMatches = (p: LevelPreset) => Math.abs(p.balance - balance.value) < BALANCE_STEP / 2
+
+/** Saving under a name that already exists moves that preset to the current position. */
+function saveLevelPreset() {
+  const name = levelPresetName.value.trim()
+  if (!name) return
+  const existing = levelPresets.value.find(p => p.name.toLowerCase() === name.toLowerCase())
+  if (existing) existing.balance = balance.value
+  else levelPresets.value.push({ name, balance: balance.value })
+  levelPresetName.value = ''
+}
+
+function deleteLevelPreset(p: LevelPreset) {
+  levelPresets.value = levelPresets.value.filter(x => x !== p)
+}
+
 // ── Mic ─────────────────────────────────────────────────────────────
 const micOpen = ref(false)
 watch(micOpen, open => live.setMicOpen(open))
@@ -232,20 +312,7 @@ const DEFAULT_PRESETS: FxPreset[] = [
   { name: 'Echo', fx: { reverb: 0.15, echo: 0.5, radio: 0, distortion: 0 } },
 ]
 
-function loadPresets(): FxPreset[] {
-  try {
-    const raw = localStorage.getItem(PRESETS_KEY)
-    const parsed = raw ? JSON.parse(raw) : null
-    if (Array.isArray(parsed)) return parsed.filter(p => p && typeof p.name === 'string' && p.fx)
-  } catch { /* storage blocked or corrupt: fall back to the defaults */ }
-  return DEFAULT_PRESETS.map(p => ({ name: p.name, fx: { ...p.fx } }))
-}
-const presets = ref<FxPreset[]>(loadPresets())
-watch(presets, list => {
-  try {
-    localStorage.setItem(PRESETS_KEY, JSON.stringify(list))
-  } catch { /* storage blocked: presets last for this visit only */ }
-}, { deep: true })
+const presets = storedList<FxPreset>(PRESETS_KEY, DEFAULT_PRESETS, p => !!p.fx)
 
 const presetName = ref('')
 const FX_KEYS = ['reverb', 'echo', 'radio', 'distortion'] as const
@@ -393,6 +460,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   if (ticker) clearInterval(ticker)
   if (songTimer) clearTimeout(songTimer)
+  stopGlide()
   live.dispose()
 })
 </script>
@@ -433,22 +501,48 @@ onBeforeUnmount(() => {
       <p v-if="!crate.length" class="dj-live-empty">{{ t('dj.live_songs_empty') }}</p>
     </section>
 
-    <section class="dj-live-balance">
-      <span class="dj-live-chip dj-live-chip--song">{{ t('dj.live_song') }}</span>
-      <NSlider
-        v-model:value="balance"
-        class="dj-live-balance-slider"
-        :min="0"
-        :max="1"
-        :step="BALANCE_STEP"
-        :tooltip="false"
-        :theme-overrides="{ railHeight: '8px', fillColor: 'var(--dj-b)', fillColorHover: 'var(--dj-b)' }"
-      >
-        <template #thumb>
-          <div class="dj-live-balance-thumb">{{ Math.round(balance * 100) }}%</div>
-        </template>
-      </NSlider>
-      <span class="dj-live-chip dj-live-chip--mic">{{ t('dj.live_mic') }}</span>
+    <section class="dj-live-balance-area">
+      <div class="dj-live-balance">
+        <span class="dj-live-chip dj-live-chip--song">{{ t('dj.live_song') }}</span>
+        <NSlider
+          :value="balance"
+          class="dj-live-balance-slider"
+          :min="0"
+          :max="1"
+          :step="BALANCE_STEP"
+          :tooltip="false"
+          :theme-overrides="{ railHeight: '8px', fillColor: 'var(--dj-b)', fillColorHover: 'var(--dj-b)' }"
+          @update:value="onBalanceInput"
+        >
+          <template #thumb>
+            <div class="dj-live-balance-thumb">{{ Math.round(balance * 100) }}%</div>
+          </template>
+        </NSlider>
+        <span class="dj-live-chip dj-live-chip--mic">{{ t('dj.live_mic') }}</span>
+      </div>
+
+      <div class="dj-live-presets dj-live-presets--levels">
+        <span class="dj-live-presets-label">{{ t('dj.live_level_presets') }}</span>
+        <span
+          v-for="p in levelPresets"
+          :key="p.name"
+          class="dj-live-preset"
+          :class="{ 'dj-live-preset--active': levelMatches(p) }"
+        >
+          <button type="button" class="dj-live-preset-apply" @click="glideTo(p.balance)">
+            {{ p.name }} <span class="dj-live-preset-value">{{ Math.round(p.balance * 100) }}%</span>
+          </button>
+          <button type="button" class="dj-live-preset-delete" :aria-label="t('dj.live_remove')" @click="deleteLevelPreset(p)">✕</button>
+        </span>
+        <NInput
+          v-model:value="levelPresetName"
+          class="dj-live-preset-name"
+          size="small"
+          :placeholder="t('dj.live_preset_name')"
+          @keyup.enter="saveLevelPreset"
+        />
+        <NButton size="small" :disabled="!levelPresetName.trim()" @click="saveLevelPreset">{{ t('dj.live_preset_save') }}</NButton>
+      </div>
     </section>
 
     <section class="dj-live-area">
@@ -579,14 +673,29 @@ onBeforeUnmount(() => {
   font-size: 0.8rem;
   color: var(--dj-muted);
 }
+.dj-live-balance-area {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 16px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--dj-border);
+}
 .dj-live-balance {
   display: flex;
   align-items: center;
   /* Half the handle's width, so at either end it stops beside the chip instead of over it. */
   gap: 36px;
-  padding: 24px 16px;
-  border-radius: 8px;
-  border: 1px solid var(--dj-border);
+  padding: 24px 0 14px;
+}
+.dj-live-presets--levels {
+  justify-content: center;
+}
+.dj-live-preset-value {
+  margin-left: 4px;
+  font-weight: 400;
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
 }
 .dj-live-balance-slider {
   flex: 1;
