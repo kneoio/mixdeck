@@ -327,12 +327,19 @@ const presetNamed = (name: string | null) => levelPresets.value.find(p => p.name
 
 // ── Mic ─────────────────────────────────────────────────────────────
 const micOpen = ref(false)
-watch(micOpen, open => {
-  live.setMicOpen(open)
-  if (!autoFader.enabled) return
-  const preset = presetNamed(open ? autoFader.micOn : autoFader.micOff)
+watch(micOpen, open => live.setMicOpen(open))
+
+/**
+ * The preset Auto fader currently calls for, given the mic's own state — or null while Auto is off.
+ * Watching this alone covers every way the fader can fall out of step with it: the mic being pressed,
+ * Auto being switched on, and the DJ picking a different preset for the state the mic is already in.
+ */
+const autoFaderTarget = computed(() => (
+  autoFader.enabled ? presetNamed(micOpen.value ? autoFader.micOn : autoFader.micOff) : null
+))
+watch(autoFaderTarget, preset => {
   if (preset) glideTo(preset.balance)
-})
+}, { immediate: true })
 const micFx = reactive({ reverb: 0, echo: 0, radio: 0, distortion: 0 })
 watch(micFx, amounts => live.setMicFx({ ...amounts }), { deep: true })
 /**
