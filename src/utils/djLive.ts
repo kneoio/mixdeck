@@ -1,7 +1,5 @@
 import { getAudioContext } from '@/utils/djAudio'
-
-/** The sources on the live mixer: the two song decks, the prepared link, and the microphone. */
-export type LiveChannel = 'a' | 'c' | 'link'
+import { applyFx, buildFx, type FxAmounts, type FxNodes } from '@/utils/djMix'
 
 export interface LiveNowPlaying {
   songId?: string | null
@@ -10,22 +8,11 @@ export interface LiveNowPlaying {
   artist?: string | null
 }
 
-/** How much the music dips while the mic is open, when talkover is on. */
-const TALKOVER_LEVEL = 0.3
 /** Fader moves ramp over this long, so a jump on the slider does not click. */
 const RAMP_SECONDS = 0.03
 /** How often the recorder hands over audio; small enough that aivox never waits on the deck. */
 const CHUNK_MS = 250
 const BITRATE = 128_000
-
-interface Deck {
-  gain: GainNode
-  source: AudioBufferSourceNode | null
-  buffer: AudioBuffer | null
-  /** Where in the buffer playback started, and the context time it started at. */
-  offset: number
-  startedAt: number
-}
 
 function pickMimeType(): string | undefined {
   return ['audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/mp4']
@@ -33,39 +20,39 @@ function pickMimeType(): string | undefined {
 }
 
 /**
- * The live mixer. Everything the DJ plays is summed into a program bus that is recorded and streamed to
- * aivox over a WebSocket, which airs it as it arrives. The DJ monitors the music locally; the mic goes
- * to air only, never to the speakers, so it cannot feed back.
+ * The live mixer: one song at a time on one side of the main fader, the DJ's voice and effect clips on
+ * the other. Everything is summed into a program bus that is recorded and streamed to aivox over a
+ * WebSocket, which airs it as it arrives. The DJ hears the song and the effects locally; the mic goes to
+ * air only, never to the speakers, so it cannot feed back.
  */
 export class LiveBroadcast {
   private readonly ctx = getAudioContext()
   private readonly program = this.ctx.createGain()
-  private readonly music = this.ctx.createGain()
-  private readonly micGain = this.ctx.createGain()
+  private readonly songSide = this.ctx.createGain()
+  private readonly voiceSide = this.ctx.createGain()
+  private readonly sfxSide = this.ctx.createGain()
+  private readonly micGate = this.ctx.createGain()
   private readonly destination = this.ctx.createMediaStreamDestination()
-  private readonly decks: Record<LiveChannel, Deck>
+  private readonly micFx: FxNodes
+  private song: { source: AudioBufferSourceNode; buffer: AudioBuffer; offset: number; startedAt: number } | null = null
+  private readonly effects = new Map<string, AudioBufferSourceNode>()
   private socket: WebSocket | null = null
   private recorder: MediaRecorder | null = null
   private micStream: MediaStream | null = null
   private micSource: MediaStreamAudioSourceNode | null = null
-  private micOpen = false
-  private micLevel = 1
-  private talkover = true
   private endReason: string | null = null
   private lastMeta = ''
 
   constructor() {
-    const deck = (): Deck => {
-      const gain = this.ctx.createGain()
-      gain.connect(this.music)
-      return { gain, source: null, buffer: null, offset: 0, startedAt: 0 }
-    }
-    this.decks = { a: deck(), c: deck(), link: deck() }
-    this.music.connect(this.program)
-    this.music.connect(this.ctx.destination)
-    this.micGain.gain.value = 0
-    this.micGain.connect(this.program)
+    this.songSide.connect(this.program)
+    this.songSide.connect(this.ctx.destination)
+    this.sfxSide.connect(this.program)
+    this.sfxSide.connect(this.ctx.destination)
+    this.voiceSide.connect(this.program)
+    this.micGate.gain.value = 0
+    this.micFx = buildFx(this.ctx, this.micGate, this.voiceSide, { reverb: 0, echo: 0, radio: 0, distortion: 0 })
     this.program.connect(this.destination)
+    this.setBalance(0.5)
   }
 
   /**
@@ -78,7 +65,7 @@ export class LiveBroadcast {
       audio: { echoCancellation: false, noiseSuppression: true, autoGainControl: true },
     })
     this.micSource = this.ctx.createMediaStreamSource(this.micStream)
-    this.micSource.connect(this.micGain)
+    this.micSource.connect(this.micGate)
 
     const socket = new WebSocket(url)
     socket.binaryType = 'arraybuffer'
@@ -105,8 +92,7 @@ export class LiveBroadcast {
   }
 
   private startRecorder() {
-    const mimeType = pickMimeType()
-    const recorder = new MediaRecorder(this.destination.stream, { mimeType, audioBitsPerSecond: BITRATE })
+    const recorder = new MediaRecorder(this.destination.stream, { mimeType: pickMimeType(), audioBitsPerSecond: BITRATE })
     recorder.ondataavailable = event => {
       if (event.data.size && this.socket?.readyState === WebSocket.OPEN) this.socket.send(event.data)
     }
@@ -119,67 +105,75 @@ export class LiveBroadcast {
     this.recorder = null
   }
 
-  setGain(channel: LiveChannel, value: number) {
-    this.decks[channel].gain.gain.setTargetAtTime(value, this.ctx.currentTime, RAMP_SECONDS)
+  /** The main fader: 0 is all song, 1 is all voice and effects, the middle holds both at equal power. */
+  setBalance(x: number) {
+    const now = this.ctx.currentTime
+    const song = Math.cos((x * Math.PI) / 2)
+    const voice = Math.sin((x * Math.PI) / 2)
+    this.songSide.gain.setTargetAtTime(song, now, RAMP_SECONDS)
+    this.voiceSide.gain.setTargetAtTime(voice, now, RAMP_SECONDS)
+    this.sfxSide.gain.setTargetAtTime(voice, now, RAMP_SECONDS)
   }
 
-  play(channel: LiveChannel, buffer: AudioBuffer, from: number, onEnded: () => void) {
-    this.stop(channel)
-    const deck = this.decks[channel]
+  /** Starts a song, replacing whatever song was playing. */
+  playSong(buffer: AudioBuffer, from: number, onEnded: () => void) {
+    this.stopSong()
     const source = this.ctx.createBufferSource()
     source.buffer = buffer
-    source.connect(deck.gain)
+    source.connect(this.songSide)
     source.onended = () => {
-      if (deck.source !== source) return
-      deck.offset = buffer.duration
-      deck.source = null
+      if (this.song?.source !== source) return
+      this.song = null
       onEnded()
     }
     const offset = Math.min(Math.max(0, from), buffer.duration)
     source.start(0, offset)
-    Object.assign(deck, { source, buffer, offset, startedAt: this.ctx.currentTime })
+    this.song = { source, buffer, offset, startedAt: this.ctx.currentTime }
   }
 
-  /** Stops the deck where it is, so play resumes from there. */
-  stop(channel: LiveChannel) {
-    const deck = this.decks[channel]
-    if (!deck.source) return
-    deck.offset = this.position(channel)
-    const source = deck.source
-    deck.source = null
+  stopSong() {
+    if (!this.song) return
+    const { source } = this.song
+    this.song = null
     source.stop()
     source.disconnect()
   }
 
-  isPlaying(channel: LiveChannel) {
-    return !!this.decks[channel].source
+  songPosition() {
+    if (!this.song) return 0
+    return Math.min(this.song.buffer.duration, this.song.offset + this.ctx.currentTime - this.song.startedAt)
   }
 
-  position(channel: LiveChannel) {
-    const deck = this.decks[channel]
-    if (!deck.source || !deck.buffer) return deck.offset
-    return Math.min(deck.buffer.duration, deck.offset + this.ctx.currentTime - deck.startedAt)
+  /** Plays an effect clip once; pressing it again while it plays stops it. */
+  playEffect(key: string, buffer: AudioBuffer, onEnded: () => void) {
+    this.stopEffect(key)
+    const source = this.ctx.createBufferSource()
+    source.buffer = buffer
+    source.connect(this.sfxSide)
+    source.onended = () => {
+      if (this.effects.get(key) !== source) return
+      this.effects.delete(key)
+      onEnded()
+    }
+    source.start()
+    this.effects.set(key, source)
   }
 
-  setMicLevel(value: number) {
-    this.micLevel = value
-    this.applyMic()
+  stopEffect(key: string) {
+    const source = this.effects.get(key)
+    if (!source) return
+    this.effects.delete(key)
+    source.stop()
+    source.disconnect()
   }
 
   setMicOpen(open: boolean) {
-    this.micOpen = open
-    this.applyMic()
+    this.micGate.gain.setTargetAtTime(open ? 1 : 0, this.ctx.currentTime, RAMP_SECONDS)
   }
 
-  setTalkover(on: boolean) {
-    this.talkover = on
-    this.applyMic()
-  }
-
-  private applyMic() {
-    const now = this.ctx.currentTime
-    this.micGain.gain.setTargetAtTime(this.micOpen ? this.micLevel : 0, now, RAMP_SECONDS)
-    this.music.gain.setTargetAtTime(this.micOpen && this.talkover ? TALKOVER_LEVEL : 1, now, 0.15)
+  /** The same four effects as a B lane in the link editor, on the live voice. */
+  setMicFx(amounts: FxAmounts) {
+    applyFx(this.ctx, this.micFx, amounts, false)
   }
 
   /** Tells listeners what is playing; sent only when it changes. */
@@ -197,14 +191,13 @@ export class LiveBroadcast {
 
   /** Tears everything down; the socket closing ends the live feed on aivox too. */
   dispose() {
-    for (const channel of Object.keys(this.decks) as LiveChannel[]) this.stop(channel)
+    this.stopSong()
+    for (const key of [...this.effects.keys()]) this.stopEffect(key)
     this.stopRecorder()
     if (this.socket && this.socket.readyState <= WebSocket.OPEN) this.socket.close(1000, 'deck_closed')
     this.socket = null
     this.micStream?.getTracks().forEach(track => track.stop())
     this.micSource?.disconnect()
-    this.music.disconnect()
-    this.program.disconnect()
-    this.micGain.disconnect()
+    for (const node of [this.songSide, this.sfxSide, this.voiceSide, this.micGate, this.program]) node.disconnect()
   }
 }

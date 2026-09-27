@@ -769,11 +769,6 @@ function onLiveEnded(reason: string) {
   else message.warning(t('dj.live_ended', { reason }), { duration: 8000 })
 }
 
-/** The live deck's LINK channel plays what the editor would: the link as prepared, songs included. */
-function renderPreparedLink() {
-  return model.value ? renderLink(model.value, win.value) : Promise.resolve(null)
-}
-
 /**
  * How long the deck waits for the takeover and the station's first status before it lets the DJ work
  * anyway. The link can be prepared meanwhile; sending still needs the session jesoos confirms.
@@ -890,7 +885,7 @@ onBeforeUnmount(() => {
       <NButton size="small" @click="startSession">{{ t('dj.retry') }}</NButton>
     </p>
 
-    <div v-if="deadlineSeconds !== null" class="dj-deadline" :class="`dj-deadline--${deadlineUrgency}`">
+    <div v-if="mode === 'track' && deadlineSeconds !== null" class="dj-deadline" :class="`dj-deadline--${deadlineUrgency}`">
       <div class="dj-deadline-bar"><div class="dj-deadline-fill" :style="{ width: deadlinePct + '%' }" /></div>
       <span class="dj-deadline-text">
         {{ deadlineSeconds > 0 ? t('dj.deadline_label', { time: formatCountdown(deadlineSeconds) }) : t('dj.deadline_locked') }}
@@ -898,9 +893,11 @@ onBeforeUnmount(() => {
     </div>
 
 
-    <p v-if="aGone" class="dj-banner">{{ t('dj.too_late') }}</p>
-    <p v-else-if="noA && bBuf" class="dj-banner">{{ t('dj.no_a') }}</p>
-    <p v-else-if="noC" class="dj-banner">{{ t('dj.no_c') }}</p>
+    <template v-if="mode === 'track'">
+      <p v-if="aGone" class="dj-banner">{{ t('dj.too_late') }}</p>
+      <p v-else-if="noA && bBuf" class="dj-banner">{{ t('dj.no_a') }}</p>
+      <p v-else-if="noC" class="dj-banner">{{ t('dj.no_c') }}</p>
+    </template>
 
     <p v-if="sessionExpiresIn !== null" class="dj-banner dj-banner--error">
       {{ sessionExpiresIn > 0
@@ -908,7 +905,7 @@ onBeforeUnmount(() => {
         : t('dj.session_expired') }}
     </p>
 
-    <section class="dj-section">
+    <section v-if="mode === 'track'" class="dj-section">
       <h3 class="dj-section-title">{{ t('dj.songs') }}</h3>
       <div class="dj-pickers">
         <DjSongPicker v-model="songA" class="dj-asset-field dj-asset-field--a" label="A" :placeholder="t('dj.pick_a')" :brand-slug="brandSlug" :exclude-slug="songB?.slugName" :loading="loadingA || !aStatusKnown" :disabled="aLocked || !aStatusKnown" />
@@ -949,19 +946,10 @@ onBeforeUnmount(() => {
 
     <section v-if="mode === 'live'" class="dj-section">
       <h3 class="dj-section-title">{{ t('dj.live_mixer') }}</h3>
-      <DjLiveDeck
-        :brand-slug="brandSlug"
-        :a="aBuf"
-        :c="bBuf"
-        :song-a="songA"
-        :song-c="songB"
-        :render-link="renderPreparedLink"
-        :can-render-link="!!model && filledVoices.length > 0"
-        @ended="onLiveEnded"
-      />
+      <DjLiveDeck :brand-slug="brandSlug" @ended="onLiveEnded" />
     </section>
 
-    <section class="dj-section">
+    <section v-else class="dj-section">
       <h3 class="dj-section-title">{{ t('dj.link_editor') }}</h3>
       <DjLinkEditor
         ref="editor"
@@ -1007,7 +995,7 @@ onBeforeUnmount(() => {
           <LedPlay class="dj-preview-led" :active="previewing" />
           <span>{{ previewing ? t('dj.preview_stop') : t('dj.preview') }}</span>
         </GsapButton>
-        <div v-if="mode === 'track'" class="dj-send">
+        <div class="dj-send">
           <GsapButton type="primary" size="large" :loading="sending" :disabled="!canSend" @click="sendToAir">
             <span>{{ t('dj.send') }}</span>
           </GsapButton>

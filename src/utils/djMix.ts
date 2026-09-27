@@ -259,10 +259,10 @@ export function envelopeAt(points: EnvelopePoint[], t: number): number {
   return points[points.length - 1].volume
 }
 
-interface FxAmounts { reverb: number; echo: number; radio: number; distortion: number }
+export interface FxAmounts { reverb: number; echo: number; radio: number; distortion: number }
 
 /** The parts of one clip's effect chain that a slider can reach while the mix is running. */
-interface FxNodes {
+export interface FxNodes {
   distDrive: GainNode
   distOut: GainNode
   distDry: GainNode
@@ -297,7 +297,7 @@ function layersOf(model: LinkModel) {
  * out, so an amount can be changed while the mix plays without rebuilding anything. Distortion
  * drives the raw signal, then radio squeezes it, and the room and the echo hear the result.
  */
-function buildFx(ctx: BaseAudioContext, input: AudioNode, master: AudioNode, amounts: FxAmounts): FxNodes {
+export function buildFx(ctx: BaseAudioContext, input: AudioNode, master: AudioNode, amounts: FxAmounts): FxNodes {
   // No oversampling on the clipper: it delays the driven path, which then partly cancels against the dry one.
   const distDrive = ctx.createGain()
   const clipper = ctx.createWaveShaper()
@@ -353,7 +353,7 @@ function buildFx(ctx: BaseAudioContext, input: AudioNode, master: AudioNode, amo
 }
 
 /** Sets the amounts on a built chain; a running mix glides to them so a slider drag does not click. */
-function applyFx(ctx: BaseAudioContext, n: FxNodes, a: FxAmounts, immediate: boolean) {
+export function applyFx(ctx: BaseAudioContext, n: FxNodes, a: FxAmounts, immediate: boolean) {
   const set = (param: AudioParam, value: number) => {
     if (immediate) param.value = value
     else param.setTargetAtTime(value, ctx.currentTime, 0.03)

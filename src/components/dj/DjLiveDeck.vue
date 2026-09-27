@@ -1,25 +1,19 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NButton, NSlider, NSwitch } from 'naive-ui'
+import { NButton, NSelect, NSlider, useMessage } from 'naive-ui'
 import LedRed from '@/components/LedRed.vue'
 import LedPlay from '@/components/LedPlay.vue'
-import type { DjSong } from '@/components/dj/DjSongPicker.vue'
+import DjSongPicker, { type DjSong } from '@/components/dj/DjSongPicker.vue'
 import aivoxApiService from '@/services/aivoxApi'
-import { LiveBroadcast, type LiveChannel } from '@/utils/djLive'
+import datanestApiService from '@/services/datanestApi'
+import { fetchSongBuffer } from '@/utils/djAudio'
+import { LiveBroadcast } from '@/utils/djLive'
 
 const { t } = useI18n()
+const message = useMessage()
 
-const props = defineProps<{
-  brandSlug: string
-  a: AudioBuffer | null
-  c: AudioBuffer | null
-  songA: DjSong | null
-  songC: DjSong | null
-  /** Renders the link prepared in the editor; null when there is nothing to render. */
-  renderLink: () => Promise<AudioBuffer | null>
-  canRenderLink: boolean
-}>()
+const props = defineProps<{ brandSlug: string }>()
 const emit = defineEmits<{ ended: [reason: string] }>()
 
 const live = new LiveBroadcast()
@@ -28,119 +22,160 @@ const onAirSince = ref(0)
 const now = ref(Date.now())
 let ticker: ReturnType<typeof setInterval> | null = null
 
-// ── Channels ────────────────────────────────────────────────────────
-const faders = reactive<Record<LiveChannel, number>>({ a: 1, c: 1, link: 1 })
-/** 0 is all A, 1 is all C; the middle plays both at equal power. */
-const crossfader = ref(0.5)
-const playing = reactive<Record<LiveChannel, boolean>>({ a: false, c: false, link: false })
-const positions = reactive<Record<LiveChannel, number>>({ a: 0, c: 0, link: 0 })
-const linkBuf = ref<AudioBuffer | null>(null)
-const renderingLink = ref(false)
-
-const buffers = computed<Record<LiveChannel, AudioBuffer | null>>(() => ({ a: props.a, c: props.c, link: linkBuf.value }))
-
-function effectiveGain(channel: LiveChannel) {
-  const x = crossfader.value
-  if (channel === 'a') return faders.a * Math.cos((x * Math.PI) / 2)
-  if (channel === 'c') return faders.c * Math.sin((x * Math.PI) / 2)
-  return faders.link
-}
-watch([faders, crossfader], () => {
-  for (const channel of ['a', 'c', 'link'] as LiveChannel[]) live.setGain(channel, effectiveGain(channel))
-}, { immediate: true, deep: true })
-
-function start(channel: LiveChannel, buf: AudioBuffer, from: number) {
-  live.play(channel, buf, from, () => {
-    playing[channel] = false
-    positions[channel] = buf.duration
-  })
-  playing[channel] = true
-}
-
-function toggle(channel: LiveChannel) {
-  const buf = buffers.value[channel]
-  if (!buf) return
-  if (playing[channel]) {
-    live.stop(channel)
-    playing[channel] = false
-    positions[channel] = live.position(channel)
-    return
-  }
-  // Played out to the end: start over rather than not at all.
-  start(channel, buf, positions[channel] >= buf.duration - 0.05 ? 0 : positions[channel])
-}
-
-function seek(channel: LiveChannel, to: number) {
-  positions[channel] = to
-  const buf = buffers.value[channel]
-  if (playing[channel] && buf) start(channel, buf, to)
-}
-
-// A new song on a deck starts from its top, stopped.
-watch(() => props.a, () => { live.stop('a'); playing.a = false; positions.a = 0 })
-watch(() => props.c, () => { live.stop('c'); playing.c = false; positions.c = 0 })
-
-async function loadLink() {
-  if (renderingLink.value) return
-  renderingLink.value = true
-  try {
-    live.stop('link')
-    playing.link = false
-    positions.link = 0
-    linkBuf.value = await props.renderLink()
-  } finally {
-    renderingLink.value = false
-  }
-}
-
-// ── Mic ─────────────────────────────────────────────────────────────
-const micOpen = ref(false)
-const micLevel = ref(1)
-const talkover = ref(true)
-watch(micOpen, open => live.setMicOpen(open))
-watch(micLevel, level => live.setMicLevel(level))
-watch(talkover, on => live.setTalkover(on))
-
-// ── Now playing ─────────────────────────────────────────────────────
-/** Whichever song is loudest on air is what listeners are told is playing. */
-const dominant = computed<DjSong | null>(() => {
-  const a = playing.a ? effectiveGain('a') : 0
-  const c = playing.c ? effectiveGain('c') : 0
-  if (Math.max(a, c) < 0.05) return null
-  return a >= c ? props.songA : props.songC
-})
-watch([dominant, state], ([song, s]) => {
-  if (s !== 'on_air' || !song) return
-  live.sendNowPlaying({ songId: song.id, slugName: song.slugName, title: song.title, artist: song.artist })
-})
-
-// ── Handing back ────────────────────────────────────────────────────
-/** Only at a song boundary: the queue cannot pick up a song mid-way, so nothing may be playing. */
-const anyPlaying = computed(() => playing.a || playing.c || playing.link)
-
-function handBack() {
-  if (anyPlaying.value) return
-  micOpen.value = false
-  state.value = 'ending'
-  live.end()
-}
-
-const onAirFor = computed(() => {
-  const total = Math.max(0, Math.floor((now.value - onAirSince.value) / 1000))
-  return formatTime(total)
-})
-
 function formatTime(seconds: number) {
   const s = Math.max(0, Math.floor(seconds))
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
 }
 
+// ── Songs ───────────────────────────────────────────────────────────
+interface CrateSong {
+  song: DjSong
+  buf: AudioBuffer | null
+  loading: boolean
+  /** Times it was started this session. */
+  plays: number
+}
+/** The songs the DJ has lined up; any of them goes on air with its play button. */
+const crate = ref<CrateSong[]>([])
+const picked = ref<DjSong | null>(null)
+const playingSlug = ref<string | null>(null)
+const position = ref(0)
+
+watch(picked, song => {
+  if (!song) return
+  picked.value = null
+  if (crate.value.some(c => c.song.slugName === song.slugName)) return
+  const item = reactive<CrateSong>({ song, buf: null, loading: true, plays: 0 })
+  crate.value.push(item)
+  // Loaded as soon as it is picked, so pressing play starts it at once.
+  fetchSongBuffer(song.slugName)
+    .then(buf => { item.buf = buf })
+    .catch(() => {
+      message.error(t('dj.song_error'))
+      crate.value = crate.value.filter(c => c !== item)
+    })
+    .finally(() => { item.loading = false })
+})
+
+function toggleSong(item: CrateSong) {
+  if (!item.buf) return
+  if (playingSlug.value === item.song.slugName) {
+    live.stopSong()
+    playingSlug.value = null
+    return
+  }
+  const slug = item.song.slugName
+  live.playSong(item.buf, 0, () => {
+    if (playingSlug.value === slug) playingSlug.value = null
+  })
+  playingSlug.value = slug
+  position.value = 0
+  item.plays++
+}
+
+function removeSong(item: CrateSong) {
+  if (playingSlug.value === item.song.slugName) return
+  crate.value = crate.value.filter(c => c !== item)
+}
+
+const playingItem = computed(() => crate.value.find(c => c.song.slugName === playingSlug.value) ?? null)
+const songLabel = (s: DjSong) => [s.artist, s.title].filter(Boolean).join(' — ') || s.slugName
+
+watch([playingItem, state], ([item, s]) => {
+  if (s !== 'on_air' || !item) return
+  live.sendNowPlaying({ songId: item.song.id, slugName: item.song.slugName, title: item.song.title, artist: item.song.artist })
+})
+
+// ── Main fader ──────────────────────────────────────────────────────
+/** 0 is all song, 1 is all mic. */
+const balance = ref(0.5)
+watch(balance, x => live.setBalance(x), { immediate: true })
+
+// ── Mic ─────────────────────────────────────────────────────────────
+const micOpen = ref(false)
+watch(micOpen, open => live.setMicOpen(open))
+const micFx = reactive({ reverb: 0, echo: 0, radio: 0, distortion: 0 })
+watch(micFx, amounts => live.setMicFx({ ...amounts }), { deep: true })
+const fxSliders = [
+  { key: 'reverb' as const, label: 'dj.reverb' },
+  { key: 'echo' as const, label: 'dj.echo' },
+  { key: 'radio' as const, label: 'dj.radio' },
+  { key: 'distortion' as const, label: 'dj.distortion' },
+]
+
+// ── Effects ─────────────────────────────────────────────────────────
+interface Effect {
+  slug: string
+  label: string
+  buf: AudioBuffer | null
+  loading: boolean
+  playing: boolean
+}
+const effects = ref<Effect[]>([])
+/** Effects come from the station's sound assets, as in the link editor. */
+const effectOptions = ref<{ label: string; value: string }[]>([])
+const effectsSearching = ref(false)
+let effectSeq = 0
+
+async function searchEffects(term = '') {
+  const seq = ++effectSeq
+  effectsSearching.value = true
+  try {
+    const res = await datanestApiService.getSoundAssets(1, 30, term.trim())
+    if (seq !== effectSeq) return
+    effectOptions.value = res.entries.map((e: any) => ({ label: e.title || e.slugName, value: e.slugName }))
+  } catch {
+    if (seq === effectSeq) effectOptions.value = []
+  } finally {
+    if (seq === effectSeq) effectsSearching.value = false
+  }
+}
+
+function addEffect(slug: string | null) {
+  if (!slug || effects.value.some(e => e.slug === slug)) return
+  const label = effectOptions.value.find(o => o.value === slug)?.label ?? slug
+  const item = reactive<Effect>({ slug, label, buf: null, loading: true, playing: false })
+  effects.value.push(item)
+  fetchSongBuffer(slug)
+    .then(buf => { item.buf = buf })
+    .catch(() => {
+      message.error(t('dj.file_error'))
+      effects.value = effects.value.filter(e => e !== item)
+    })
+    .finally(() => { item.loading = false })
+}
+
+function toggleEffect(item: Effect) {
+  if (!item.buf) return
+  if (item.playing) {
+    live.stopEffect(item.slug)
+    item.playing = false
+    return
+  }
+  live.playEffect(item.slug, item.buf, () => { item.playing = false })
+  item.playing = true
+}
+
+function removeEffect(item: Effect) {
+  live.stopEffect(item.slug)
+  effects.value = effects.value.filter(e => e !== item)
+}
+
+// ── Handing back ────────────────────────────────────────────────────
+/** Only at a song boundary: the queue cannot pick up a song mid-way, so no song may be playing. */
+function handBack() {
+  if (playingSlug.value) return
+  micOpen.value = false
+  state.value = 'ending'
+  live.end()
+}
+
+const onAirFor = computed(() => formatTime((now.value - onAirSince.value) / 1000))
+
 onMounted(async () => {
   ticker = setInterval(() => {
     now.value = Date.now()
-    for (const channel of ['a', 'c', 'link'] as LiveChannel[]) {
-      if (playing[channel]) positions[channel] = live.position(channel)
-    }
+    if (playingSlug.value) position.value = live.songPosition()
   }, 200)
   const url = aivoxApiService.liveInputUrl(props.brandSlug)
   if (!url) {
@@ -161,12 +196,6 @@ onBeforeUnmount(() => {
   if (ticker) clearInterval(ticker)
   live.dispose()
 })
-
-const strips = computed(() => [
-  { channel: 'a' as const, label: 'A', title: props.songA ? [props.songA.artist, props.songA.title].filter(Boolean).join(' — ') : t('dj.live_no_song') },
-  { channel: 'link' as const, label: 'LINK', title: t('dj.live_link_hint') },
-  { channel: 'c' as const, label: 'C', title: props.songC ? [props.songC.artist, props.songC.title].filter(Boolean).join(' — ') : t('dj.live_no_song') },
-])
 </script>
 
 <template>
@@ -179,67 +208,113 @@ const strips = computed(() => [
       <NButton
         class="dj-live-handback"
         size="small"
-        :disabled="state !== 'on_air' || anyPlaying"
-        :title="anyPlaying ? t('dj.live_handback_hint') : ''"
+        :disabled="state !== 'on_air' || !!playingSlug"
+        :title="playingSlug ? t('dj.live_handback_hint') : ''"
         @click="handBack"
       >
         {{ t('dj.live_handback') }}
       </NButton>
     </div>
 
-    <div class="dj-live-strips">
-      <div v-for="s in strips" :key="s.channel" class="dj-live-strip" :class="`dj-live-strip--${s.channel}`">
-        <span class="dj-live-chip">{{ s.label }}</span>
-        <span class="dj-live-title" :title="s.title">{{ s.title }}</span>
-        <NSlider v-model:value="faders[s.channel]" class="dj-live-fader" vertical :min="0" :max="1" :step="0.01" :tooltip="false" />
-        <NButton v-if="s.channel === 'link'" size="tiny" :loading="renderingLink" :disabled="!canRenderLink" @click="loadLink">
-          {{ t('dj.live_load_link') }}
-        </NButton>
-        <NButton size="small" :disabled="!buffers[s.channel] || state !== 'on_air'" @click="toggle(s.channel)">
-          <LedPlay class="dj-live-led" :active="playing[s.channel]" />
-          {{ playing[s.channel] ? t('dj.preview_stop') : t('dj.preview') }}
-        </NButton>
-        <input
-          class="dj-live-seek"
-          type="range"
-          min="0"
-          :max="buffers[s.channel]?.duration ?? 0"
-          step="0.1"
-          :value="positions[s.channel]"
-          :disabled="!buffers[s.channel]"
-          :aria-label="t('dj.live_seek')"
-          @change="seek(s.channel, Number(($event.target as HTMLInputElement).value))"
+    <section class="dj-live-area dj-live-area--song">
+      <h4 class="dj-live-area-title">{{ t('dj.live_songs') }}</h4>
+      <DjSongPicker v-model="picked" label="♪" :placeholder="t('dj.live_add_song')" :brand-slug="brandSlug" />
+      <p v-if="!crate.length" class="dj-live-empty">{{ t('dj.live_songs_empty') }}</p>
+      <div class="dj-live-tags">
+        <div
+          v-for="item in crate"
+          :key="item.song.slugName"
+          class="dj-live-tag"
+          :class="{ 'dj-live-tag--playing': playingSlug === item.song.slugName }"
         >
-        <span class="dj-live-time">
-          {{ formatTime(positions[s.channel]) }} / {{ formatTime(buffers[s.channel]?.duration ?? 0) }}
-        </span>
+          <NButton
+            size="tiny"
+            circle
+            :loading="item.loading"
+            :disabled="!item.buf || state !== 'on_air'"
+            :aria-label="playingSlug === item.song.slugName ? t('dj.preview_stop') : t('dj.preview')"
+            @click="toggleSong(item)"
+          >
+            <LedPlay :active="playingSlug === item.song.slugName" />
+          </NButton>
+          <span class="dj-live-tag-label" :title="songLabel(item.song)">{{ songLabel(item.song) }}</span>
+          <span v-if="playingSlug === item.song.slugName && item.buf" class="dj-live-tag-time">
+            {{ formatTime(position) }} / {{ formatTime(item.buf.duration) }}
+          </span>
+          <span class="dj-live-tag-count" :title="t('dj.live_plays', { n: item.plays })">×{{ item.plays }}</span>
+          <button
+            class="dj-live-tag-remove"
+            type="button"
+            :disabled="playingSlug === item.song.slugName"
+            :aria-label="t('dj.live_remove')"
+            @click="removeSong(item)"
+          >✕</button>
+          <div
+            v-if="playingSlug === item.song.slugName && item.buf"
+            class="dj-live-tag-progress"
+            :style="{ width: (position / item.buf.duration) * 100 + '%' }"
+          />
+        </div>
       </div>
+    </section>
 
-      <div class="dj-live-strip dj-live-strip--mic">
-        <span class="dj-live-chip">MIC</span>
-        <span class="dj-live-title">{{ t('dj.live_mic') }}</span>
-        <NSlider v-model:value="micLevel" class="dj-live-fader" vertical :min="0" :max="1.5" :step="0.01" :tooltip="false" />
+    <section class="dj-live-balance">
+      <span class="dj-live-chip dj-live-chip--song">{{ t('dj.live_song') }}</span>
+      <NSlider v-model:value="balance" :min="0" :max="1" :step="0.01" :tooltip="false" />
+      <span class="dj-live-chip dj-live-chip--mic">{{ t('dj.live_mic') }}</span>
+    </section>
+
+    <section class="dj-live-area dj-live-area--mic">
+      <h4 class="dj-live-area-title">{{ t('dj.live_mic') }}</h4>
+      <div class="dj-live-mic-row">
         <NButton
           class="dj-live-mic"
-          :class="{ 'dj-live-mic--open': micOpen }"
           :type="micOpen ? 'error' : 'default'"
           :disabled="state !== 'on_air'"
           @click="micOpen = !micOpen"
         >
+          <LedRed class="dj-live-mic-led" :active="micOpen" />
           {{ micOpen ? t('dj.live_mic_open') : t('dj.live_mic_closed') }}
         </NButton>
-        <label class="dj-live-talkover">
-          <NSwitch v-model:value="talkover" size="small" />
-          {{ t('dj.live_talkover') }}
-        </label>
+        <div class="dj-live-fx">
+          <div v-for="fx in fxSliders" :key="fx.key" class="dj-live-fx-slider">
+            <NSlider v-model:value="micFx[fx.key]" vertical :min="0" :max="1" :step="0.01" :tooltip="false" />
+            <span>{{ t(fx.label) }}</span>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <div class="dj-live-crossfader">
-      <span class="dj-live-chip dj-live-chip--a">A</span>
-      <NSlider v-model:value="crossfader" :min="0" :max="1" :step="0.01" :tooltip="false" />
-      <span class="dj-live-chip dj-live-chip--c">C</span>
-    </div>
+      <NSelect
+        class="dj-live-effect-select"
+        :value="null"
+        :options="effectOptions"
+        :loading="effectsSearching"
+        :placeholder="t('dj.pick_effect')"
+        filterable
+        remote
+        clearable
+        @focus="searchEffects()"
+        @search="searchEffects"
+        @update:value="addEffect"
+      />
+      <div class="dj-live-tags">
+        <div v-for="item in effects" :key="item.slug" class="dj-live-tag dj-live-tag--effect" :class="{ 'dj-live-tag--playing': item.playing }">
+          <NButton
+            size="tiny"
+            circle
+            :loading="item.loading"
+            :disabled="!item.buf || state !== 'on_air'"
+            :aria-label="item.playing ? t('dj.preview_stop') : t('dj.preview')"
+            @click="toggleEffect(item)"
+          >
+            <LedPlay :active="item.playing" />
+          </NButton>
+          <span class="dj-live-tag-label" :title="item.label">{{ item.label }}</span>
+          <button class="dj-live-tag-remove" type="button" :aria-label="t('dj.live_remove')" @click="removeEffect(item)">✕</button>
+        </div>
+      </div>
+    </section>
+
     <p class="dj-live-hint">{{ t('dj.live_hint') }}</p>
   </div>
 </template>
@@ -248,7 +323,7 @@ const strips = computed(() => [
 .dj-live {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
 }
 .dj-live-status {
   display: flex;
@@ -267,84 +342,151 @@ const strips = computed(() => [
 .dj-live-handback {
   margin-left: auto;
 }
-.dj-live-strips {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 12px;
-}
-.dj-live-strip {
+.dj-live-area {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 8px;
+  gap: 10px;
+  padding: 12px;
   border: 1px solid var(--dj-border);
   border-radius: 8px;
   background: var(--dj-surface);
-  min-width: 0;
 }
-.dj-live-strip--a { --dj-slot: var(--dj-a); }
-.dj-live-strip--c { --dj-slot: var(--dj-c); }
-.dj-live-strip--link { --dj-slot: var(--dj-b); }
-.dj-live-strip--mic { --dj-slot: var(--dj-danger); }
-.dj-live-chip {
-  min-width: 28px;
-  height: 22px;
-  padding: 0 6px;
-  border-radius: 6px;
+.dj-live-area--song {
+  --dj-slot: var(--dj-a);
+}
+.dj-live-area--mic {
+  --dj-slot: var(--dj-b);
+}
+.dj-live-area-title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--dj-muted);
+  text-transform: uppercase;
+}
+.dj-live-empty {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--dj-muted);
+}
+.dj-live-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.dj-live-tag {
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 0.75rem;
-  background: var(--dj-slot, var(--dj-border));
-  color: #1a1a1a;
+  gap: 8px;
+  max-width: 100%;
+  padding: 4px 8px 4px 4px;
+  border: 1px solid var(--dj-border);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  overflow: hidden;
 }
-.dj-live-chip--a { --dj-slot: var(--dj-a); }
-.dj-live-chip--c { --dj-slot: var(--dj-c); }
-.dj-live-title {
-  width: 100%;
-  text-align: center;
-  font-size: 0.75rem;
-  color: var(--dj-muted);
+.dj-live-tag--playing {
+  border-color: var(--dj-slot);
+  background: color-mix(in srgb, var(--dj-slot) 18%, transparent);
+}
+.dj-live-tag-label {
+  min-width: 0;
+  max-width: 280px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.dj-live-fader {
-  height: 140px;
-}
-.dj-live-led {
-  margin-right: 6px;
-  vertical-align: -3px;
-}
-.dj-live-seek {
-  width: 100%;
-  accent-color: var(--dj-slot, var(--dj-accent));
-}
-.dj-live-time {
+.dj-live-tag-time {
   font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
   color: var(--dj-muted);
+}
+.dj-live-tag-count {
+  flex: none;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: var(--dj-slot);
+  color: #1a1a1a;
+}
+.dj-live-tag-remove {
+  flex: none;
+  border: none;
+  background: none;
+  padding: 0 2px;
+  color: var(--dj-muted);
+  cursor: pointer;
+}
+.dj-live-tag-remove:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.dj-live-tag-progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--dj-slot);
+  transition: width 0.2s linear;
+}
+.dj-live-balance {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--dj-border);
+}
+.dj-live-chip {
+  flex: none;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: #1a1a1a;
+}
+.dj-live-chip--song {
+  background: var(--dj-a);
+}
+.dj-live-chip--mic {
+  background: var(--dj-b);
+}
+.dj-live-mic-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
 }
 .dj-live-mic {
   font-weight: 700;
   letter-spacing: 0.06em;
 }
-.dj-live-talkover {
+.dj-live-mic-led {
+  margin-right: 8px;
+  vertical-align: -3px;
+}
+.dj-live-fx {
   display: flex;
+  gap: 18px;
+}
+.dj-live-fx-slider {
+  display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 6px;
-  font-size: 0.72rem;
+  height: 110px;
+  font-size: 0.7rem;
   color: var(--dj-muted);
 }
-.dj-live-crossfader {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  max-width: 420px;
-  width: 100%;
-  align-self: center;
+.dj-live-fx-slider :deep(.n-slider) {
+  flex: 1;
+}
+.dj-live-effect-select {
+  max-width: 360px;
 }
 .dj-live-hint {
   margin: 0;
