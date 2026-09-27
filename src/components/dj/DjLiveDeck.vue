@@ -391,6 +391,7 @@ onBeforeUnmount(() => {
       <div class="dj-live-mic-row">
         <NButton
           class="dj-live-mic"
+          size="large"
           :type="micOpen ? 'error' : 'default'"
           :disabled="state !== 'on_air'"
           @click="micOpen = !micOpen"
@@ -524,9 +525,13 @@ onBeforeUnmount(() => {
   gap: 24px;
   flex-wrap: wrap;
 }
+/** The one control a DJ reaches for mid-sentence, so it is the biggest thing in the mic area. */
 .dj-live-mic {
+  min-width: 180px;
+  height: 64px;
+  font-size: 1.05rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
 }
 .dj-live-mic-led {
   margin-right: 8px;
