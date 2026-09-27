@@ -195,6 +195,8 @@ watch([playingItem, state], ([item, s]) => {
 // ── Main fader ──────────────────────────────────────────────────────
 /** 0 is all song, 1 is all mic. */
 const balance = ref(0.5)
+/** The fader moves in 5 % steps, so a level set by hand holds steady instead of drifting with the hand. */
+const BALANCE_STEP = 0.05
 watch(balance, x => live.setBalance(x), { immediate: true })
 
 // ── Mic ─────────────────────────────────────────────────────────────
@@ -373,7 +375,7 @@ onBeforeUnmount(() => {
         class="dj-live-balance-slider"
         :min="0"
         :max="1"
-        :step="0.01"
+        :step="BALANCE_STEP"
         :tooltip="false"
         :theme-overrides="{ railHeight: '8px', fillColor: 'var(--dj-b)', fillColorHover: 'var(--dj-b)' }"
       >
@@ -472,7 +474,7 @@ onBeforeUnmount(() => {
   align-items: center;
   /* Half the handle's width, so at either end it stops beside the chip instead of over it. */
   gap: 36px;
-  padding: 18px 16px;
+  padding: 24px 16px;
   border-radius: 8px;
   border: 1px solid var(--dj-border);
 }
@@ -482,13 +484,15 @@ onBeforeUnmount(() => {
 /** The main fader's handle: big enough to find at a glance, with where it sits written on it. */
 .dj-live-balance-thumb {
   width: 56px;
-  height: 28px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 5px;
-  background: var(--dj-fade);
+  background: #fff;
   color: #1a1a1a;
+  /* Keeps the white handle visible on the light theme too. */
+  border: 1px solid rgba(0, 0, 0, 0.15);
   font-size: 0.78rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
