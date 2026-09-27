@@ -104,6 +104,14 @@ class AivoxApiService extends ApiClient {
     return `${wsBase}/info/dashboard/stream?token=${encodeURIComponent(token)}`
   }
 
+  /** The socket a live deck streams its mix into; aivox airs it straight away, bypassing the queue. */
+  liveInputUrl(brandSlug: string): string | null {
+    const token = authService.getToken()
+    if (!token) return null
+    const wsBase = this.baseUrl.replace(/^http/, 'ws')
+    return `${wsBase}/live-input/${encodeURIComponent(brandSlug)}?token=${encodeURIComponent(token)}`
+  }
+
   async start(brandSlug: string): Promise<{ status: string }> {
     return this.request<{ status: string }>(`/command/start?brand=${encodeURIComponent(brandSlug)}`, { method: 'POST', headers: { 'X-Client-ID': 'mixpla-web' } })
   }

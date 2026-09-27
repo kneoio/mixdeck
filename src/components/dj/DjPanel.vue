@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NButton, NCheckbox, NDrawer, NDrawerContent, NProgress, NSelect, useMessage, useThemeVars } from 'naive-ui'
+import { NButton, NButtonGroup, NCheckbox, NDrawer, NDrawerContent, NProgress, NSelect, useMessage, useThemeVars } from 'naive-ui'
 import LedRed from '@/components/LedRed.vue'
 import LedPlay from '@/components/LedPlay.vue'
 import GsapButton from '@/components/GsapButton.vue'
 import DjLinkEditor from '@/components/dj/DjLinkEditor.vue'
+import DjLiveDeck from '@/components/dj/DjLiveDeck.vue'
 import DjSongPicker, { type DjSong } from '@/components/dj/DjSongPicker.vue'
 import DjStationChat from '@/components/dj/DjStationChat.vue'
 import { useDjColors } from '@/utils/djColors'
@@ -745,6 +746,34 @@ async function sendToAir() {
   }
 }
 
+// ── Live ────────────────────────────────────────────────────────────
+/**
+ * Voice track sends prepared links for the station to stitch in; Live streams the deck's own mix to air
+ * as it is played, and the queue waits until the DJ hands the air back.
+ */
+const mode = ref<'track' | 'live'>('track')
+
+function goLive() {
+  stopPreview()
+  // Going live drops whatever the station had queued, so no sent join is left for the next link to continue.
+  lastJoinId.value = null
+  lastJoinSeenOnAir.value = false
+  continuesSlug = null
+  aLocked.value = false
+  mode.value = 'live'
+}
+
+function onLiveEnded(reason: string) {
+  mode.value = 'track'
+  if (reason === 'dj_ended') message.success(t('dj.live_back'))
+  else message.warning(t('dj.live_ended', { reason }), { duration: 8000 })
+}
+
+/** The live deck's LINK channel plays what the editor would: the link as prepared, songs included. */
+function renderPreparedLink() {
+  return model.value ? renderLink(model.value, win.value) : Promise.resolve(null)
+}
+
 /**
  * How long the deck waits for the takeover and the station's first status before it lets the DJ work
  * anyway. The link can be prepared meanwhile; sending still needs the session jesoos confirms.
@@ -764,6 +793,7 @@ const aStatusKnown = computed(() =>
 const canRecord = computed(() => ready.value && !sending.value)
 const canPreview = computed(() => ready.value && !!model.value && !recording.value && !sending.value)
 const canSend = computed(() => ready.value && sessionActive.value && !ending.value && !recording.value && !sending.value)
+const canGoLive = computed(() => sessionActive.value && !ending.value && !sending.value && !recording.value)
 
 const songLabel = (s: DjSong | null) => (s ? [s.artist, s.title].filter(Boolean).join(' — ') : '')
 
@@ -804,6 +834,14 @@ onBeforeUnmount(() => {
 <template>
   <div class="dj-panel" :style="themeStyle">
     <header class="dj-topbar">
+      <NButtonGroup class="dj-mode" size="small">
+        <NButton :type="mode === 'track' ? 'primary' : 'default'" :disabled="mode === 'live'" :title="mode === 'live' ? t('dj.live_handback_first') : ''">
+          {{ t('dj.mode_track') }}
+        </NButton>
+        <NButton :type="mode === 'live' ? 'error' : 'default'" :disabled="mode !== 'live' && !canGoLive" @click="mode !== 'live' && goLive()">
+          {{ t('dj.mode_live') }}
+        </NButton>
+      </NButtonGroup>
       <div class="dj-timer">
         <small>{{ t('dj.session') }}</small>
         <span>{{ sessionActive ? elapsed : '--:--' }}</span>
@@ -909,6 +947,20 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
+    <section v-if="mode === 'live'" class="dj-section">
+      <h3 class="dj-section-title">{{ t('dj.live_mixer') }}</h3>
+      <DjLiveDeck
+        :brand-slug="brandSlug"
+        :a="aBuf"
+        :c="bBuf"
+        :song-a="songA"
+        :song-c="songB"
+        :render-link="renderPreparedLink"
+        :can-render-link="!!model && filledVoices.length > 0"
+        @ended="onLiveEnded"
+      />
+    </section>
+
     <section class="dj-section">
       <h3 class="dj-section-title">{{ t('dj.link_editor') }}</h3>
       <DjLinkEditor
@@ -955,7 +1007,7 @@ onBeforeUnmount(() => {
           <LedPlay class="dj-preview-led" :active="previewing" />
           <span>{{ previewing ? t('dj.preview_stop') : t('dj.preview') }}</span>
         </GsapButton>
-        <div class="dj-send">
+        <div v-if="mode === 'track'" class="dj-send">
           <GsapButton type="primary" size="large" :loading="sending" :disabled="!canSend" @click="sendToAir">
             <span>{{ t('dj.send') }}</span>
           </GsapButton>
@@ -992,6 +1044,9 @@ onBeforeUnmount(() => {
   justify-content: flex-end;
   gap: 24px;
   flex-wrap: wrap;
+}
+.dj-mode {
+  margin-right: auto;
 }
 .dj-topbar-buttons {
   display: flex;
