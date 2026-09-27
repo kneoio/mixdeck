@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, h, onBeforeUnmount, onMounted, reactive, ref, watch, type Ref, type VNodeChild } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NButton, NIcon, NInput, NSelect, NSlider, useMessage, type SelectOption } from 'naive-ui'
+import { NButton, NIcon, NInput, NSelect, NSlider, NSwitch, useMessage, type SelectOption } from 'naive-ui'
 import { HeadsetOutline, Play } from '@vicons/ionicons5'
 import LedRed from '@/components/LedRed.vue'
 import type { DjSong } from '@/components/dj/DjSongPicker.vue'
@@ -289,9 +289,46 @@ function deleteLevelPreset(p: LevelPreset) {
   levelPresets.value = levelPresets.value.filter(x => x !== p)
 }
 
+// ── Auto fader ──────────────────────────────────────────────────────
+/**
+ * With Auto on, the MIC button moves the fader too: on, it glides to one level preset, off, to another,
+ * so handing the air between voice and song is a single press. Presets are referred to by name.
+ */
+interface AutoFader {
+  enabled: boolean
+  micOn: string | null
+  micOff: string | null
+}
+const AUTO_FADER_KEY = 'mixdeck.dj.autoFader'
+function loadAutoFader(): AutoFader {
+  const fallback: AutoFader = { enabled: false, micOn: 'Talk over', micOff: 'Song' }
+  try {
+    const parsed = JSON.parse(localStorage.getItem(AUTO_FADER_KEY) ?? 'null')
+    if (parsed && typeof parsed.enabled === 'boolean') return { ...fallback, ...parsed }
+  } catch { /* storage blocked or corrupt */ }
+  return fallback
+}
+const autoFader = reactive<AutoFader>(loadAutoFader())
+watch(autoFader, value => {
+  try {
+    localStorage.setItem(AUTO_FADER_KEY, JSON.stringify(value))
+  } catch { /* storage blocked */ }
+}, { deep: true })
+
+const levelPresetOptions = computed(() => levelPresets.value.map(p => ({
+  label: `${p.name} · ${Math.round(p.balance * 100)}%`,
+  value: p.name,
+})))
+const presetNamed = (name: string | null) => levelPresets.value.find(p => p.name === name) ?? null
+
 // ── Mic ─────────────────────────────────────────────────────────────
 const micOpen = ref(false)
-watch(micOpen, open => live.setMicOpen(open))
+watch(micOpen, open => {
+  live.setMicOpen(open)
+  if (!autoFader.enabled) return
+  const preset = presetNamed(open ? autoFader.micOn : autoFader.micOff)
+  if (preset) glideTo(preset.balance)
+})
 const micFx = reactive({ reverb: 0, echo: 0, radio: 0, distortion: 0 })
 watch(micFx, amounts => live.setMicFx({ ...amounts }), { deep: true })
 /**
@@ -552,6 +589,21 @@ onBeforeUnmount(() => {
         />
         <NButton size="small" :disabled="!levelPresetName.trim()" @click="saveLevelPreset">{{ t('dj.live_preset_save') }}</NButton>
       </div>
+
+      <div class="dj-live-auto" :class="{ 'dj-live-auto--on': autoFader.enabled }">
+        <label class="dj-live-auto-switch">
+          <NSwitch v-model:value="autoFader.enabled" size="small" />
+          {{ t('dj.live_auto_fader') }}
+        </label>
+        <span class="dj-live-auto-rule">
+          {{ t('dj.live_auto_mic_on') }}
+          <NSelect v-model:value="autoFader.micOn" class="dj-live-auto-select" size="small" :options="levelPresetOptions" :disabled="!autoFader.enabled" />
+        </span>
+        <span class="dj-live-auto-rule">
+          {{ t('dj.live_auto_mic_off') }}
+          <NSelect v-model:value="autoFader.micOff" class="dj-live-auto-select" size="small" :options="levelPresetOptions" :disabled="!autoFader.enabled" />
+        </span>
+      </div>
     </section>
 
     <section class="dj-live-area">
@@ -699,6 +751,40 @@ onBeforeUnmount(() => {
 }
 .dj-live-presets--levels {
   justify-content: center;
+}
+.dj-live-auto {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px dashed var(--dj-border);
+  font-size: 0.8rem;
+}
+.dj-live-auto--on {
+  border-style: solid;
+  border-color: var(--dj-b);
+  background: color-mix(in srgb, var(--dj-b) 10%, transparent);
+}
+.dj-live-auto-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+}
+.dj-live-auto-rule {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--dj-muted);
+}
+.dj-live-auto-select {
+  width: 170px;
 }
 .dj-live-preset-value {
   margin-left: 4px;
