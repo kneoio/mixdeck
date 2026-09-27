@@ -2,7 +2,7 @@
 import { computed, h, onBeforeUnmount, onMounted, reactive, ref, watch, type Ref, type VNodeChild } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NButton, NIcon, NInput, NSelect, NSlider, NSwitch, useMessage, type SelectOption } from 'naive-ui'
-import { HeadsetOutline, Play } from '@vicons/ionicons5'
+import { HeadsetOutline, Play, VolumeHighOutline, VolumeMuteOutline } from '@vicons/ionicons5'
 import LedRed from '@/components/LedRed.vue'
 import type { DjSong } from '@/components/dj/DjSongPicker.vue'
 import aivoxApiService from '@/services/aivoxApi'
@@ -186,6 +186,10 @@ function renderSongTag({ option }: { option: SelectOption }) {
     progress: playing && item.buf ? position.value / item.buf.duration : undefined,
   })
 }
+
+/** The song muted in the DJ's own output only, for listening to the station itself; the air is untouched. */
+const songMonitorMuted = ref(false)
+watch(songMonitorMuted, muted => live.setSongMonitorMuted(muted))
 
 const playingItem = computed(() => crate.value.find(c => c.song.slugName === playingSlug.value) ?? null)
 watch([playingItem, state], ([item, s]) => {
@@ -530,7 +534,18 @@ onBeforeUnmount(() => {
     </div>
 
     <section class="dj-live-area">
-      <h4 class="dj-live-area-title">{{ t('dj.live_songs') }}</h4>
+      <div class="dj-live-area-head">
+        <h4 class="dj-live-area-title">{{ t('dj.live_songs') }}</h4>
+        <NButton
+          size="small"
+          :type="songMonitorMuted ? 'warning' : 'default'"
+          :title="t('dj.live_song_mute_hint')"
+          @click="songMonitorMuted = !songMonitorMuted"
+        >
+          <NIcon class="dj-live-mute-icon" :component="songMonitorMuted ? VolumeMuteOutline : VolumeHighOutline" size="16" />
+          {{ songMonitorMuted ? t('dj.live_song_muted') : t('dj.live_song_mute') }}
+        </NButton>
+      </div>
       <NSelect
         class="dj-live-field"
         multiple
@@ -721,6 +736,15 @@ onBeforeUnmount(() => {
   border: 1px solid var(--dj-border);
   border-radius: 8px;
   background: var(--dj-surface);
+}
+.dj-live-area-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.dj-live-mute-icon {
+  margin-right: 6px;
 }
 .dj-live-area-title {
   margin: 0;

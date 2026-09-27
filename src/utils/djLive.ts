@@ -30,6 +30,8 @@ export class LiveBroadcast {
   private readonly program = this.ctx.createGain()
   private readonly songSide = this.ctx.createGain()
   private readonly voiceSide = this.ctx.createGain()
+  /** The song in the DJ's own output; muting it leaves the air untouched. */
+  private readonly songMonitor = this.ctx.createGain()
   private readonly sfxSide = this.ctx.createGain()
   /** The mic's own volume, then its effects, then one bus that feeds both the air and the DJ's ears. */
   private readonly micVolume = this.ctx.createGain()
@@ -51,7 +53,7 @@ export class LiveBroadcast {
 
   constructor() {
     this.songSide.connect(this.program)
-    this.songSide.connect(this.ctx.destination)
+    this.songSide.connect(this.songMonitor).connect(this.ctx.destination)
     this.sfxSide.connect(this.program)
     this.sfxSide.connect(this.ctx.destination)
     this.voiceSide.connect(this.program)
@@ -185,6 +187,14 @@ export class LiveBroadcast {
     this.micVolume.gain.setTargetAtTime(level, this.ctx.currentTime, RAMP_SECONDS)
   }
 
+  /**
+   * Silences the song in the DJ's own output only; it keeps going to air. For a DJ listening to the
+   * station itself, who would otherwise hear every song twice, the second time 15–20 s late.
+   */
+  setSongMonitorMuted(muted: boolean) {
+    this.songMonitor.gain.setTargetAtTime(muted ? 0 : 1, this.ctx.currentTime, RAMP_SECONDS)
+  }
+
   /** Lets the DJ hear their own voice, effects included; meant for headphones, speakers would feed back. */
   setMicMonitor(on: boolean) {
     this.micMonitor.gain.setTargetAtTime(on ? 1 : 0, this.ctx.currentTime, RAMP_SECONDS)
@@ -217,7 +227,7 @@ export class LiveBroadcast {
     this.socket = null
     this.micStream?.getTracks().forEach(track => track.stop())
     this.micSource?.disconnect()
-    for (const node of [this.songSide, this.sfxSide, this.voiceSide, this.micVolume, this.micBus, this.micGate, this.micMonitor, this.program]) {
+    for (const node of [this.songSide, this.songMonitor, this.sfxSide, this.voiceSide, this.micVolume, this.micBus, this.micGate, this.micMonitor, this.program]) {
       node.disconnect()
     }
   }
