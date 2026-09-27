@@ -175,6 +175,7 @@ export default {
     live_auto_mic_off: 'Mic off →',
     live_preset_name: 'Preset name',
     live_preset_save: 'Save',
+    live_preset_save_at: 'Save at {pct}%',
     live_mic: 'Mic',
     live_mic_open: 'MIC ON AIR',
     live_mic_closed: 'MIC OFF',

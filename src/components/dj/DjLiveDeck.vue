@@ -609,7 +609,9 @@ onBeforeUnmount(() => {
           :placeholder="t('dj.live_preset_name')"
           @keyup.enter="saveLevelPreset"
         />
-        <NButton size="small" :disabled="!levelPresetName.trim()" @click="saveLevelPreset">{{ t('dj.live_preset_save') }}</NButton>
+        <NButton size="small" :disabled="!levelPresetName.trim()" @click="saveLevelPreset">
+          {{ t('dj.live_preset_save_at', { pct: Math.round(balance * 100) }) }}
+        </NButton>
       </div>
 
       <div class="dj-live-auto" :class="{ 'dj-live-auto--on': autoFader.enabled }">
