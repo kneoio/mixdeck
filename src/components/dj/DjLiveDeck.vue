@@ -200,8 +200,10 @@ watch([playingItem, state], ([item, s]) => {
 // ── Main fader ──────────────────────────────────────────────────────
 /** 0 is all song, 1 is all mic. */
 const balance = ref(0.5)
-/** The fader moves in 5 % steps, so a level set by hand holds steady instead of drifting with the hand. */
-const BALANCE_STEP = 0.05
+/** Fine enough that the handle reads as a classic, continuous fader rather than a stepped one. */
+const FADER_STEP = 0.001
+/** How close counts as "at" a preset, for highlighting the matching chip. */
+const LEVEL_MATCH_TOLERANCE = 0.02
 watch(balance, x => live.setBalance(x), { immediate: true })
 
 /**
@@ -223,6 +225,22 @@ function storedList<T extends { name: string }>(key: string, defaults: T[], vali
   return list
 }
 
+/** Which named preset the DJ had picked last, so reopening the deck lands back where they left it. */
+const LAST_FX_PRESET_KEY = 'mixdeck.dj.lastMicFxPreset'
+const LAST_LEVEL_PRESET_KEY = 'mixdeck.dj.lastLevelPreset'
+function rememberLastPreset(key: string, name: string) {
+  try {
+    localStorage.setItem(key, name)
+  } catch { /* storage blocked */ }
+}
+function lastPresetName(key: string): string | null {
+  try {
+    return localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
 // ── Level presets ───────────────────────────────────────────────────
 interface LevelPreset {
   name: string
@@ -241,7 +259,7 @@ const levelPresetName = ref('')
 
 /**
  * How long a glide across the whole fader takes; shorter moves take proportionally less. The handle
- * moves smoothly, every frame, and only lands on the 5 % grid at the end — the step is for the hand.
+ * moves smoothly, every frame, landing exactly on the preset's own value.
  */
 const GLIDE_FULL_RANGE_MS = 2000
 let glideFrame: number | null = null
@@ -254,7 +272,7 @@ function stopGlide() {
 function glideTo(target: number) {
   stopGlide()
   const from = balance.value
-  const goal = Math.round(target / BALANCE_STEP) * BALANCE_STEP
+  const goal = Math.min(1, Math.max(0, target))
   const duration = Math.abs(goal - from) * GLIDE_FULL_RANGE_MS
   if (duration < 1) {
     balance.value = goal
@@ -277,7 +295,7 @@ function onBalanceInput(value: number) {
   balance.value = value
 }
 
-const levelMatches = (p: LevelPreset) => Math.abs(p.balance - balance.value) < BALANCE_STEP / 2
+const levelMatches = (p: LevelPreset) => Math.abs(p.balance - balance.value) < LEVEL_MATCH_TOLERANCE
 
 /** Saving under a name that already exists moves that preset to the current position. */
 function saveLevelPreset() {
@@ -291,6 +309,11 @@ function saveLevelPreset() {
 
 function deleteLevelPreset(p: LevelPreset) {
   levelPresets.value = levelPresets.value.filter(x => x !== p)
+}
+
+function applyLevelPreset(p: LevelPreset) {
+  glideTo(p.balance)
+  rememberLastPreset(LAST_LEVEL_PRESET_KEY, p.name)
 }
 
 // ── Auto fader ──────────────────────────────────────────────────────
@@ -377,6 +400,7 @@ const matches = (p: FxPreset) => FX_KEYS.every(k => Math.abs(p.fx[k] - micFx[k])
 
 function applyPreset(p: FxPreset) {
   Object.assign(micFx, p.fx)
+  rememberLastPreset(LAST_FX_PRESET_KEY, p.name)
 }
 
 /** Saving under a name that already exists overwrites that preset. */
@@ -389,6 +413,22 @@ function savePreset() {
   else presets.value.push({ name, fx })
   presetName.value = ''
 }
+
+/**
+ * Reopening the deck lands back where the DJ left it: the mic effect preset they last picked, and —
+ * unless Auto fader is on and would set it anyway from the mic's own state — the level preset too.
+ */
+onMounted(() => {
+  const fxName = lastPresetName(LAST_FX_PRESET_KEY)
+  const fxPreset = fxName ? presets.value.find(p => p.name === fxName) : undefined
+  if (fxPreset) Object.assign(micFx, fxPreset.fx)
+
+  if (!autoFader.enabled) {
+    const levelName = lastPresetName(LAST_LEVEL_PRESET_KEY)
+    const levelPreset = levelName ? levelPresets.value.find(p => p.name === levelName) : undefined
+    if (levelPreset) balance.value = levelPreset.balance
+  }
+})
 
 function deletePreset(p: FxPreset) {
   presets.value = presets.value.filter(x => x !== p)
@@ -520,6 +560,9 @@ onBeforeUnmount(() => {
   stopGlide()
   live.dispose()
 })
+
+/** So DjPanel can warn before ending the whole session out from under a song still going out to air. */
+defineExpose({ broadcasting: computed(() => !!playingSlug.value) })
 </script>
 
 <template>
@@ -577,7 +620,7 @@ onBeforeUnmount(() => {
           class="dj-live-balance-slider"
           :min="0"
           :max="1"
-          :step="BALANCE_STEP"
+          :step="FADER_STEP"
           :tooltip="false"
           :theme-overrides="{ railHeight: '8px', fillColor: 'var(--dj-b)', fillColorHover: 'var(--dj-b)' }"
           @update:value="onBalanceInput"
@@ -597,7 +640,7 @@ onBeforeUnmount(() => {
           class="dj-live-preset"
           :class="{ 'dj-live-preset--active': levelMatches(p) }"
         >
-          <button type="button" class="dj-live-preset-apply" @click="glideTo(p.balance)">
+          <button type="button" class="dj-live-preset-apply" @click="applyLevelPreset(p)">
             {{ p.name }} <span class="dj-live-preset-value">{{ Math.round(p.balance * 100) }}%</span>
           </button>
           <button type="button" class="dj-live-preset-delete" :aria-label="t('dj.live_remove')" @click="deleteLevelPreset(p)">✕</button>
