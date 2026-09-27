@@ -163,6 +163,8 @@ export default {
     live_song: 'Song',
     live_remove: 'Remove',
     live_mic_volume: 'Volume',
+    live_hear_myself: 'Hear myself',
+    live_hear_myself_hint: 'Put on headphones — through speakers your mic picks up your own voice and howls',
     live_presets: 'Presets',
     live_preset_name: 'Preset name',
     live_preset_save: 'Save',

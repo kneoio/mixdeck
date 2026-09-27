@@ -22,8 +22,8 @@ function pickMimeType(): string | undefined {
 /**
  * The live mixer: one song at a time on one side of the main fader, the DJ's voice and effect clips on
  * the other. Everything is summed into a program bus that is recorded and streamed to aivox over a
- * WebSocket, which airs it as it arrives. The DJ hears the song and the effects locally; the mic goes to
- * air only, never to the speakers, so it cannot feed back.
+ * WebSocket, which airs it as it arrives. The DJ hears the song and the effects locally; their own voice
+ * only when they turn the monitor on, which is meant for headphones, since speakers would feed back.
  */
 export class LiveBroadcast {
   private readonly ctx = getAudioContext()
@@ -31,7 +31,13 @@ export class LiveBroadcast {
   private readonly songSide = this.ctx.createGain()
   private readonly voiceSide = this.ctx.createGain()
   private readonly sfxSide = this.ctx.createGain()
+  /** The mic's own volume, then its effects, then one bus that feeds both the air and the DJ's ears. */
+  private readonly micVolume = this.ctx.createGain()
+  private readonly micBus = this.ctx.createGain()
+  /** Opens the processed voice to air. */
   private readonly micGate = this.ctx.createGain()
+  /** Opens the processed voice to the DJ's own output, independent of the air. */
+  private readonly micMonitor = this.ctx.createGain()
   private readonly destination = this.ctx.createMediaStreamDestination()
   private readonly micFx: FxNodes
   private song: { source: AudioBufferSourceNode; buffer: AudioBuffer; offset: number; startedAt: number } | null = null
@@ -40,8 +46,6 @@ export class LiveBroadcast {
   private recorder: MediaRecorder | null = null
   private micStream: MediaStream | null = null
   private micSource: MediaStreamAudioSourceNode | null = null
-  private micOpen = false
-  private micLevel = 1
   private endReason: string | null = null
   private lastMeta = ''
 
@@ -51,8 +55,11 @@ export class LiveBroadcast {
     this.sfxSide.connect(this.program)
     this.sfxSide.connect(this.ctx.destination)
     this.voiceSide.connect(this.program)
+    this.micFx = buildFx(this.ctx, this.micVolume, this.micBus, { reverb: 0, echo: 0, radio: 0, distortion: 0 })
     this.micGate.gain.value = 0
-    this.micFx = buildFx(this.ctx, this.micGate, this.voiceSide, { reverb: 0, echo: 0, radio: 0, distortion: 0 })
+    this.micBus.connect(this.micGate).connect(this.voiceSide)
+    this.micMonitor.gain.value = 0
+    this.micBus.connect(this.micMonitor).connect(this.ctx.destination)
     this.program.connect(this.destination)
     this.setBalance(0.5)
   }
@@ -67,7 +74,7 @@ export class LiveBroadcast {
       audio: { echoCancellation: false, noiseSuppression: true, autoGainControl: true },
     })
     this.micSource = this.ctx.createMediaStreamSource(this.micStream)
-    this.micSource.connect(this.micGate)
+    this.micSource.connect(this.micVolume)
 
     const socket = new WebSocket(url)
     socket.binaryType = 'arraybuffer'
@@ -170,18 +177,17 @@ export class LiveBroadcast {
   }
 
   setMicOpen(open: boolean) {
-    this.micOpen = open
-    this.applyMic()
+    this.micGate.gain.setTargetAtTime(open ? 1 : 0, this.ctx.currentTime, RAMP_SECONDS)
   }
 
   /** The mic's own volume, 1 as it comes in; above 1 boosts a quiet mic. */
   setMicLevel(level: number) {
-    this.micLevel = level
-    this.applyMic()
+    this.micVolume.gain.setTargetAtTime(level, this.ctx.currentTime, RAMP_SECONDS)
   }
 
-  private applyMic() {
-    this.micGate.gain.setTargetAtTime(this.micOpen ? this.micLevel : 0, this.ctx.currentTime, RAMP_SECONDS)
+  /** Lets the DJ hear their own voice, effects included; meant for headphones, speakers would feed back. */
+  setMicMonitor(on: boolean) {
+    this.micMonitor.gain.setTargetAtTime(on ? 1 : 0, this.ctx.currentTime, RAMP_SECONDS)
   }
 
   /** The same four effects as a B lane in the link editor, on the live voice. */
@@ -211,6 +217,8 @@ export class LiveBroadcast {
     this.socket = null
     this.micStream?.getTracks().forEach(track => track.stop())
     this.micSource?.disconnect()
-    for (const node of [this.songSide, this.sfxSide, this.voiceSide, this.micGate, this.program]) node.disconnect()
+    for (const node of [this.songSide, this.sfxSide, this.voiceSide, this.micVolume, this.micBus, this.micGate, this.micMonitor, this.program]) {
+      node.disconnect()
+    }
   }
 }

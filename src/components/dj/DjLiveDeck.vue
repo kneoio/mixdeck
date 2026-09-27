@@ -2,7 +2,7 @@
 import { computed, h, onBeforeUnmount, onMounted, reactive, ref, watch, type VNodeChild } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NButton, NIcon, NInput, NSelect, NSlider, useMessage, type SelectOption } from 'naive-ui'
-import { Play } from '@vicons/ionicons5'
+import { HeadsetOutline, Play } from '@vicons/ionicons5'
 import LedRed from '@/components/LedRed.vue'
 import type { DjSong } from '@/components/dj/DjSongPicker.vue'
 import aivoxApiService from '@/services/aivoxApi'
@@ -205,6 +205,15 @@ const micOpen = ref(false)
 watch(micOpen, open => live.setMicOpen(open))
 const micFx = reactive({ reverb: 0, echo: 0, radio: 0, distortion: 0 })
 watch(micFx, amounts => live.setMicFx({ ...amounts }), { deep: true })
+/**
+ * The DJ hearing their own voice, effects included, whether or not the mic is on air — so effects can
+ * be tried before going out. Headphones only: through speakers the mic picks itself up and howls.
+ */
+const hearMyself = ref(false)
+watch(hearMyself, on => {
+  live.setMicMonitor(on)
+  if (on) message.warning(t('dj.live_hear_myself_hint'), { duration: 5000 })
+})
 /** 1 is the mic as it comes in; up to 1.5 to lift a quiet one. */
 const micLevel = ref(1)
 watch(micLevel, level => live.setMicLevel(level))
@@ -455,6 +464,16 @@ onBeforeUnmount(() => {
           <LedRed class="dj-live-mic-led" :active="micOpen" />
           {{ micOpen ? t('dj.live_mic_open') : t('dj.live_mic_closed') }}
         </NButton>
+        <NButton
+          class="dj-live-hear"
+          :type="hearMyself ? 'primary' : 'default'"
+          :disabled="state === 'connecting'"
+          :title="t('dj.live_hear_myself_hint')"
+          @click="hearMyself = !hearMyself"
+        >
+          <NIcon class="dj-live-hear-icon" :component="HeadsetOutline" size="20" />
+          {{ t('dj.live_hear_myself') }}
+        </NButton>
         <div class="dj-live-fx">
           <div v-for="fx in fxSliders" :key="fx.key" class="dj-live-fx-slider">
             <NSlider v-model:value="micFx[fx.key]" vertical :min="0" :max="1" :step="0.01" :tooltip="false" />
@@ -622,6 +641,13 @@ onBeforeUnmount(() => {
   font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: 0.08em;
+}
+.dj-live-hear {
+  height: 64px;
+  font-weight: 600;
+}
+.dj-live-hear-icon {
+  margin-right: 8px;
 }
 .dj-live-mic-led {
   margin-right: 8px;
