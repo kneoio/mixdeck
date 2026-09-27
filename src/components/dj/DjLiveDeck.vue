@@ -235,27 +235,36 @@ const DEFAULT_LEVEL_PRESETS: LevelPreset[] = [
 const levelPresets = storedList<LevelPreset>(LEVEL_PRESETS_KEY, DEFAULT_LEVEL_PRESETS, p => typeof p.balance === 'number')
 const levelPresetName = ref('')
 
-/** One fader step per tick: the full range takes 2 s, and the DJ watches the handle travel there. */
-const GLIDE_TICK_MS = 100
-let glideTimer: ReturnType<typeof setInterval> | null = null
+/**
+ * How long a glide across the whole fader takes; shorter moves take proportionally less. The handle
+ * moves smoothly, every frame, and only lands on the 5 % grid at the end — the step is for the hand.
+ */
+const GLIDE_FULL_RANGE_MS = 2000
+let glideFrame: number | null = null
 
 function stopGlide() {
-  if (glideTimer) clearInterval(glideTimer)
-  glideTimer = null
+  if (glideFrame !== null) cancelAnimationFrame(glideFrame)
+  glideFrame = null
 }
 
 function glideTo(target: number) {
   stopGlide()
+  const from = balance.value
   const goal = Math.round(target / BALANCE_STEP) * BALANCE_STEP
-  glideTimer = setInterval(() => {
-    const diff = goal - balance.value
-    if (Math.abs(diff) < BALANCE_STEP / 2) {
-      balance.value = goal
-      stopGlide()
-      return
-    }
-    balance.value = Math.round((balance.value + Math.sign(diff) * BALANCE_STEP) * 100) / 100
-  }, GLIDE_TICK_MS)
+  const duration = Math.abs(goal - from) * GLIDE_FULL_RANGE_MS
+  if (duration < 1) {
+    balance.value = goal
+    return
+  }
+  const startedAt = performance.now()
+  const frame = (nowMs: number) => {
+    const p = Math.min(1, (nowMs - startedAt) / duration)
+    // Eases in and out, as a hand on a fader would.
+    const eased = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2
+    balance.value = from + (goal - from) * eased
+    glideFrame = p < 1 ? requestAnimationFrame(frame) : null
+  }
+  glideFrame = requestAnimationFrame(frame)
 }
 
 /** The DJ's own hand always wins over a glide in progress. */
