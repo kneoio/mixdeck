@@ -252,9 +252,17 @@ class DatanestApiService extends ApiClient {
     )
   }
 
-  async getSoundAssets(page = 1, pageSize = 10, searchTerm = ''): Promise<PagedResult<any>> {
+  async getSoundAssets(
+    page = 1,
+    pageSize = 10,
+    searchTerm = '',
+    types?: string[],
+  ): Promise<PagedResult<any>> {
     const params = new URLSearchParams({ page: String(page), size: String(pageSize) })
-    if (searchTerm) params.set('filter', JSON.stringify({ searchTerm }))
+    const cleanFilters: Record<string, unknown> = {}
+    if (searchTerm) cleanFilters.searchTerm = searchTerm
+    if (types?.length) cleanFilters.type = types
+    if (Object.keys(cleanFilters).length) params.set('filter', JSON.stringify(cleanFilters))
     const response = await this.request<any>(`/public/soundfragments/sound-assets?${params}`)
     const viewData = response?.payload?.viewData ?? response?.viewData
     if (!viewData) throw new Error('Unexpected response format')
