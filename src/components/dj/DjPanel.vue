@@ -621,7 +621,7 @@ async function searchEffects(term = '') {
   const seq = ++effectSeq
   effectsLoading.value = true
   try {
-    const res = await datanestApiService.getSoundAssets(1, 30, term.trim())
+    const res = await datanestApiService.getSoundAssets(1, 30, term.trim(), ['EFFECT'])
     if (seq !== effectSeq) return
     effectOptions.value = res.entries.map((e: any) => ({ label: e.title || e.slugName, value: e.slugName }))
   } catch {
