@@ -5,6 +5,27 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mixdeck</title>
+    <script>
+      // Crash/session restore and back-forward cache can show a dead dark frame
+      // and never re-run the app. Reload once, before paint, so auth can send
+      // the user to login the way a manual refresh does.
+      (function () {
+        var key = '__mixdeck_restore_reload__'
+        var nav = performance.getEntriesByType('navigation')[0]
+        var restored = document.wasDiscarded || (nav && nav.type === 'back_forward')
+        if (restored && !sessionStorage.getItem(key)) {
+          sessionStorage.setItem(key, '1')
+          location.reload()
+          return
+        }
+        sessionStorage.removeItem(key)
+        window.addEventListener('pageshow', function (event) {
+          if (!event.persisted || sessionStorage.getItem(key)) return
+          sessionStorage.setItem(key, '1')
+          location.reload()
+        })
+      })()
+    </script>
   </head>
   <body>
     <div id="app"></div>
