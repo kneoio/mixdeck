@@ -578,6 +578,9 @@ export default {
     play_code_generate: 'Generate from slug',
     play_code_copy: 'Copy',
     play_code_copied: 'Copied',
+    copy_info: 'Copy info',
+    info_copied: 'Info copied',
+
     replace_file: 'Replace file',
     choose_file: 'Choose file',
     saved: 'Track saved',

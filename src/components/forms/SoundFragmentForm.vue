@@ -517,6 +517,61 @@ async function copyPlayCode() {
   }
 }
 
+function buildFragmentInfoText(): string {
+  const lines: string[] = []
+  const title = formData.value.title.trim()
+  const artist = formData.value.artist.trim()
+  const name = [title, artist].filter(Boolean).join(' - ')
+  if (name) lines.push(name)
+
+  const genres = formData.value.genres.map(genreLabelById).filter(Boolean)
+  if (genres.length) lines.push(`${t('fragmentForm.genres')}: ${genres.join(', ')}`)
+
+  const labels = labelDisplayTags.value
+    .map(tag => tag.replace(/^🔒\s*/, '').trim())
+    .filter(Boolean)
+  if (labels.length) lines.push(`${t('fragmentForm.labels')}: ${labels.join(', ')}`)
+
+  const vibeParts: string[] = []
+  if (tempoInfo.value) vibeParts.push(tempoInfo.value)
+  if (keyInfo.value) vibeParts.push(keyInfo.value)
+  if (moodInfo.value) vibeParts.push(moodInfo.value)
+  if (hasDanceabilityData.value) {
+    vibeParts.push(isDanceable.value ? 'Danceable' : t('fragmentForm.add_info_not_danceable'))
+  }
+  if (genreRows.value.length) {
+    vibeParts.push(
+      genreRows.value
+        .map(g => (g.category ? `${g.category} · ${g.name}` : g.name))
+        .join(', ')
+    )
+  }
+  if (vibeParts.length) lines.push(`${t('fragmentForm.add_info_vibe')}: ${vibeParts.join(' · ')}`)
+
+  const desc = formData.value.description.trim()
+  if (desc) {
+    lines.push('')
+    lines.push(`${t('fragmentForm.description')}:`)
+    lines.push(desc)
+  }
+
+  const playCode = formData.value.playCode.trim()
+  if (playCode) lines.push(`${t('fragmentForm.play_code')}: ${playCode}`)
+
+  return lines.join('\n').trim()
+}
+
+async function copyFragmentInfo() {
+  const text = buildFragmentInfoText()
+  if (!text) return
+  try {
+    await navigator.clipboard.writeText(text)
+    message.success(t('fragmentForm.info_copied'))
+  } catch {
+    message.error(t('help.copy_failed'))
+  }
+}
+
 function updateIsMobile() {
   isMobile.value = window.innerWidth <= 768
 }
@@ -826,6 +881,9 @@ watch([activeTab, genreRows], async () => {
     <template #actions>
       <div class="gsap-row">
         <GsapButton @click="navigateBack"><span>{{ t('common.close') }}</span></GsapButton>
+        <GsapButton :disabled="loading" @click="copyFragmentInfo">
+          <span>{{ t('fragmentForm.copy_info') }}</span>
+        </GsapButton>
         <GsapButton
           v-if="isEditing"
           type="success"
