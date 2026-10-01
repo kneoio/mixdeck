@@ -881,9 +881,6 @@ watch([activeTab, genreRows], async () => {
     <template #actions>
       <div class="gsap-row">
         <GsapButton @click="navigateBack"><span>{{ t('common.close') }}</span></GsapButton>
-        <GsapButton :disabled="loading" @click="copyFragmentInfo">
-          <span>{{ t('fragmentForm.copy_info') }}</span>
-        </GsapButton>
         <GsapButton
           v-if="isEditing"
           type="success"
@@ -893,6 +890,9 @@ watch([activeTab, genreRows], async () => {
           <span>{{ t('playlistView.share_dialog_submit') }}</span>
         </GsapButton>
         <GsapButton type="primary" @click="handleSave"><span>{{ t('common.save') }}</span></GsapButton>
+        <GsapButton :disabled="loading" @click="copyFragmentInfo">
+          <span>{{ t('fragmentForm.copy_info') }}</span>
+        </GsapButton>
       </div>
     </template>
 
