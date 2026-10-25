@@ -9,7 +9,8 @@
         <template v-else>{{ t('auth.code_subtitle', { email }) }}</template>
       </p>
 
-      <form v-if="step === 'email'" class="login-form" @submit.prevent="onRequestCode">
+      <template v-if="step === 'email'">
+      <form class="login-form" @submit.prevent="onRequestCode">
         <n-input
           v-model:value="email"
           type="text"
@@ -32,6 +33,14 @@
           </button>
         </div>
       </form>
+
+      <!-- Outside the form: GsapButton renders a submit button, which would send the email code. -->
+      <div v-if="passkeySupported" class="login-passkey">
+        <GsapButton type="default" :disabled="loading" block @click="onPasskeyLogin">
+          <span>{{ loading ? t('auth.passkey_signing_in') : t('auth.passkey_sign_in') }}</span>
+        </GsapButton>
+      </div>
+      </template>
 
       <form v-else class="login-form" @submit.prevent="onVerifyCode">
         <n-input
@@ -83,12 +92,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { NInput, NLayout } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
-import authService, { AuthRequestError } from '@/services/auth'
+import authService, { AuthRequestError, passkeyErrorKind } from '@/services/auth'
 import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n()
@@ -104,6 +113,9 @@ const loading = ref(false)
 const resending = ref(false)
 const failCount = ref(0)
 const codeLocked = ref(false)
+const passkeySupported = authService.supportsPasskeys()
+
+onUnmounted(() => authService.cancelPasskeyCeremony())
 
 // Already signed in (back button onto /login, or logged in from another tab) — go straight through.
 watch(
@@ -211,6 +223,23 @@ async function onVerifyCode() {
   }
 }
 
+async function onPasskeyLogin() {
+  const typed = email.value.trim()
+  loading.value = true
+  error.value = ''
+  try {
+    await authService.loginWithPasskey(isValidEmail(typed) ? typed : undefined)
+    const target = redirectTarget()
+    authStore.onLoginSuccess()
+    await router.replace(target)
+  } catch (err) {
+    // Dismissing the browser's passkey prompt is not an error worth showing.
+    if (passkeyErrorKind(err) !== 'cancelled') error.value = t('auth.passkey_failed')
+  } finally {
+    loading.value = false
+  }
+}
+
 async function onResend() {
   resending.value = true
   error.value = ''
@@ -276,6 +305,10 @@ function goHome() {
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.login-passkey {
+  margin-top: 12px;
 }
 
 .login-error {

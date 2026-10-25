@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import {
   NAvatar, NTag, NDescriptions, NDescriptionsItem,
-  NCard, NSpace, NFlex, NDivider, NSelect
+  NCard, NSpace, NFlex, NDivider, NSelect, NInput, NPopconfirm, useMessage
 } from 'naive-ui'
 import { useAuthStore } from '@/stores/auth'
 import { useUserSubscriptionStore } from '@/stores/userSubscription'
@@ -13,6 +13,7 @@ import PageHeader from '@/components/PageHeader.vue'
 import ActionBar from '@/components/ActionBar.vue'
 import GsapButton from '@/components/GsapButton.vue'
 import GsapSpin from '@/components/GsapSpin.vue'
+import authService, { passkeyErrorKind, type PasskeyCredential } from '@/services/auth'
 import { LOCALE_LABELS, SUPPORTED_LOCALES, saveLocale, type SupportedLocale } from '@/i18n'
 
 const appVersion = __APP_VERSION__
@@ -22,7 +23,58 @@ const authStore = useAuthStore()
 const userSubscriptionStore = useUserSubscriptionStore()
 const themeStore = useThemeStore()
 
+const message = useMessage()
 const profile = computed(() => authStore.userProfile ?? {})
+
+const passkeySupported = authService.supportsPasskeys()
+const passkeys = ref<PasskeyCredential[]>([])
+const passkeysLoading = ref(false)
+const passkeyName = ref('')
+
+async function loadPasskeys() {
+  passkeysLoading.value = true
+  try {
+    passkeys.value = await authService.listPasskeys()
+  } catch {
+    passkeys.value = []
+  } finally {
+    passkeysLoading.value = false
+  }
+}
+
+async function onAddPasskey() {
+  passkeysLoading.value = true
+  try {
+    await authService.registerPasskey(passkeyName.value)
+    passkeyName.value = ''
+    message.success(t('profile.passkey_added'))
+    await loadPasskeys()
+  } catch (err) {
+    const kind = passkeyErrorKind(err)
+    if (kind === 'already_registered') message.warning(t('profile.passkey_already'))
+    else if (kind !== 'cancelled') message.error(t('profile.passkey_failed'))
+  } finally {
+    passkeysLoading.value = false
+  }
+}
+
+async function onRemovePasskey(id: number) {
+  passkeysLoading.value = true
+  try {
+    await authService.removePasskey(id)
+    message.success(t('profile.passkey_removed'))
+    await loadPasskeys()
+  } catch {
+    message.error(t('profile.passkey_failed'))
+    passkeysLoading.value = false
+  }
+}
+
+function passkeyLastUsed(p: PasskeyCredential): string {
+  return p.last_used_date
+    ? t('profile.passkey_last_used', { date: new Date(p.last_used_date).toLocaleDateString(locale.value) })
+    : t('profile.passkey_never_used')
+}
 
 const fullName = computed(() => {
   const f = profile.value.firstName || ''
@@ -91,6 +143,7 @@ function renderStatusTag(text: string, active: boolean) {
 }
 
 onMounted(async () => {
+  if (passkeySupported) void loadPasskeys()
   try {
     await userSubscriptionStore.refresh()
   } catch {
@@ -131,6 +184,41 @@ onMounted(async () => {
             </NSpace>
           </NDescriptionsItem>
         </NDescriptions>
+      </NCard>
+
+      <!-- Passkeys -->
+      <NCard v-if="passkeySupported" :title="t('profile.passkeys')">
+        <p style="opacity: 0.55; font-size: 13px; margin: 0 0 12px;">{{ t('profile.passkeys_subtitle') }}</p>
+        <GsapSpin :show="passkeysLoading">
+          <div v-if="passkeys.length === 0" style="opacity: 0.55; font-size: 13px; margin-bottom: 16px;">
+            {{ t('profile.passkeys_none') }}
+          </div>
+          <div v-else style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
+            <NFlex v-for="p in passkeys" :key="p.id" align="center" justify="space-between">
+              <div>
+                <div>{{ p.name || t('profile.passkey_default_name') }}</div>
+                <div style="opacity: 0.55; font-size: 12px;">{{ passkeyLastUsed(p) }}</div>
+              </div>
+              <NPopconfirm @positive-click="onRemovePasskey(p.id)">
+                <template #trigger>
+                  <GsapButton><span>{{ t('profile.passkey_remove') }}</span></GsapButton>
+                </template>
+                {{ t('profile.passkey_remove_confirm') }}
+              </NPopconfirm>
+            </NFlex>
+          </div>
+          <NSpace :size="12" align="center">
+            <NInput
+              v-model:value="passkeyName"
+              :placeholder="t('profile.passkey_name_placeholder')"
+              maxlength="255"
+              style="width: 220px;"
+            />
+            <GsapButton type="primary" @click="onAddPasskey">
+              <span>{{ t('profile.passkey_add') }}</span>
+            </GsapButton>
+          </NSpace>
+        </GsapSpin>
       </NCard>
 
       <!-- Language -->

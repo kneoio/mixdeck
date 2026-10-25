@@ -1,3 +1,9 @@
+import {
+  browserSupportsWebAuthn,
+  startAuthentication,
+  startRegistration,
+  WebAuthnAbortService,
+} from '@simplewebauthn/browser'
 import { appConfig } from '@/config/appConfig'
 
 const ACCESS_TOKEN_KEY = 'mixdeck_access_token'
@@ -81,6 +87,22 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+export type PasskeyErrorKind = 'cancelled' | 'already_registered' | 'failed'
+
+export type PasskeyCredential = {
+  id: number
+  name: string | null
+  reg_date: string
+  last_used_date: string | null
+  device_type: string | null
+  backed_up: boolean
+}
+
+type PasskeyLoginResult = {
+  email: string
+  code: string
+}
+
 export class AuthRequestError extends Error {
   status: number
 
@@ -89,6 +111,28 @@ export class AuthRequestError extends Error {
     this.name = 'AuthRequestError'
     this.status = status
   }
+}
+
+export function passkeyErrorKind(err: unknown): PasskeyErrorKind {
+  const e = err as { name?: string; code?: string; status?: number; cause?: { name?: string } } | null
+  const names = [e?.name, e?.cause?.name]
+  if (names.includes('NotAllowedError') || names.includes('AbortError') || e?.code === 'ERROR_CEREMONY_ABORTED') {
+    return 'cancelled'
+  }
+  if (e?.code === 'ERROR_AUTHENTICATOR_PREVIOUSLY_REGISTERED' || names.includes('InvalidStateError') || e?.status === 409) {
+    return 'already_registered'
+  }
+  return 'failed'
+}
+
+async function readErrorMessage(response: Response, fallback: string): Promise<string> {
+  try {
+    const data = await response.json()
+    if (typeof data?.error === 'string') return data.error
+  } catch {
+    // keep fallback
+  }
+  return fallback
 }
 
 function readDevAccessToken(): string | null {
@@ -291,6 +335,87 @@ class AuthService {
 
     const data = (await response.json()) as TokenResponse
     this.applyTokens(data)
+  }
+
+  supportsPasskeys(): boolean {
+    return browserSupportsWebAuthn()
+  }
+
+  cancelPasskeyCeremony() {
+    WebAuthnAbortService.cancelCeremony()
+  }
+
+  /**
+   * Passkey sign-in. datanest verifies the assertion and returns a one-time login code, which goes
+   * to Keycloak exactly like an emailed code, so Keycloak stays the only token issuer.
+   */
+  async loginWithPasskey(email?: string): Promise<void> {
+    const optionsResponse = await fetch(`${appConfig.otpDatanestServer}/auth/webauthn/login/options`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(email ? { email } : {}),
+    })
+    if (!optionsResponse.ok) {
+      throw new AuthRequestError(await readErrorMessage(optionsResponse, 'Passkey sign-in failed'), optionsResponse.status)
+    }
+    const optionsJSON = await optionsResponse.json()
+
+    const assertion = await startAuthentication({ optionsJSON })
+
+    const verifyResponse = await fetch(`${appConfig.otpDatanestServer}/auth/webauthn/login/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ response: assertion }),
+    })
+    if (!verifyResponse.ok) {
+      throw new AuthRequestError(await readErrorMessage(verifyResponse, 'Passkey sign-in failed'), verifyResponse.status)
+    }
+    const result = (await verifyResponse.json()) as PasskeyLoginResult
+    await this.verifyOtp(result.email, result.code)
+  }
+
+  async registerPasskey(name?: string): Promise<PasskeyCredential> {
+    const optionsResponse = await this.authorizedFetch(`${appConfig.otpDatanestServer}/auth/webauthn/register/options`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    })
+    if (!optionsResponse.ok) {
+      throw new AuthRequestError(await readErrorMessage(optionsResponse, 'Passkey registration failed'), optionsResponse.status)
+    }
+    const optionsJSON = await optionsResponse.json()
+
+    const attestation = await startRegistration({ optionsJSON })
+
+    const body: { response: unknown; name?: string } = { response: attestation }
+    if (name?.trim()) body.name = name.trim()
+    const verifyResponse = await this.authorizedFetch(`${appConfig.otpDatanestServer}/auth/webauthn/register/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    if (!verifyResponse.ok) {
+      throw new AuthRequestError(await readErrorMessage(verifyResponse, 'Passkey registration failed'), verifyResponse.status)
+    }
+    return (await verifyResponse.json()).credential as PasskeyCredential
+  }
+
+  async listPasskeys(): Promise<PasskeyCredential[]> {
+    const response = await this.authorizedFetch(`${appConfig.otpDatanestServer}/auth/webauthn/credentials`)
+    if (!response.ok) {
+      throw new AuthRequestError(await readErrorMessage(response, 'Could not load passkeys'), response.status)
+    }
+    const data = await response.json()
+    return Array.isArray(data?.credentials) ? data.credentials : []
+  }
+
+  async removePasskey(id: number): Promise<void> {
+    const response = await this.authorizedFetch(`${appConfig.otpDatanestServer}/auth/webauthn/credentials/${id}`, {
+      method: 'DELETE',
+    })
+    if (!response.ok) {
+      throw new AuthRequestError(await readErrorMessage(response, 'Could not remove passkey'), response.status)
+    }
   }
 
   refresh(): Promise<RefreshResult> {
