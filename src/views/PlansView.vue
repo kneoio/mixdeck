@@ -20,11 +20,15 @@
               <div style="font-size: 18px; font-weight: 700;">{{ card.name }}</div>
               <NTag v-if="card.subscribed" class="current-plan-badge" :class="{ 'plan-glow-badge': card.id === justUpgradedId }" type="success" size="small">{{ t('plans.current') }}</NTag>
               <NTag v-if="card.subscribed && userSubscriptionStore.redeemed" class="current-plan-badge" type="warning" size="small">{{ t('plans.redeemed') }}</NTag>
+              <NTag v-if="card.subscribed && cancelDate" class="current-plan-badge" type="error" size="small">{{ t('plans.cancelled_badge') }}</NTag>
             </div>
             <div style="font-size: 28px; font-weight: 800; margin: 8px 0;">
               €{{ card.price }} <span style="font-size: 14px; font-weight: 400; opacity: 0.5;">/ mo</span>
             </div>
             <div style="font-size: 13px; opacity: 0.55;">{{ card.description }}</div>
+            <NAlert v-if="card.subscribed && cancelDate" type="warning" :show-icon="false" style="margin-top: 12px; font-size: 13px;">
+              {{ t('plans.cancel_scheduled', { date: cancelDate }) }}
+            </NAlert>
           </div>
           <NDivider style="margin: 0 0 16px;" />
           <ul style="list-style: none; padding: 0; margin: 0 0 24px; display: flex; flex-direction: column; gap: 10px; font-size: 13px; flex: 1;">
@@ -38,7 +42,7 @@
           </div>
           <GsapButton
             block
-            :disabled="card.subscribed || subscribing === card.identifier"
+            :disabled="card.subscribed || !!cancelDate || subscribing === card.identifier"
             :type="card.action === 'upgrade' ? 'primary' : 'default'"
             @click="subscribe(card.identifier, card.price)"
           >
@@ -55,7 +59,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { NCard, NDivider, NEmpty, NInput, NTag, useMessage } from 'naive-ui'
+import { NAlert, NCard, NDivider, NEmpty, NInput, NTag, useMessage } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
 import GsapSpin from '@/components/GsapSpin.vue'
 import PageHeader from '@/components/PageHeader.vue'
@@ -91,7 +95,7 @@ interface SubscriptionProductViewEntry {
   subscribed?: boolean
 }
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const message = useMessage()
@@ -126,6 +130,12 @@ function qualityLabel(kbps: number | string): string {
 function durationLabel(val: number | string): string {
   return val === 'infinitely' || val === 0 ? t('plans.feat_duration_nonstop') : `${val} ${t('plans.feat_min')}`
 }
+
+const cancelDate = computed(() => {
+  const cancelAt = userSubscriptionStore.subscription?.cancelAt
+  if (!cancelAt) return null
+  return new Date(cancelAt).toLocaleDateString(locale.value, { year: 'numeric', month: 'long', day: 'numeric' })
+})
 
 const cards = computed(() => {
   const subscriptionType = userSubscriptionStore.subscriptionType
@@ -201,7 +211,7 @@ async function subscribe(planIdentifier: string, price: number) {
       await userSubscriptionStore.refresh()
     }
     await subscriptionProductsStore.loadProducts()
-    message.success(t('plans.subscribe_success'))
+    message.success(cancelDate.value ? t('plans.cancel_success', { date: cancelDate.value }) : t('plans.subscribe_success'))
   } catch (error) {
     if (error instanceof ApiPaymentActionRequiredError) {
       try {
