@@ -656,7 +656,7 @@ defineExpose({ broadcasting: computed(() => !!playingSlug.value) })
       </div>
     </section>
 
-    <section class="dj-live-area">
+    <section class="dj-live-area" :class="{ 'dj-live-area--mic-open': micOpen }">
       <h4 class="dj-live-area-title">{{ t('dj.live_mic') }}</h4>
       <div class="dj-live-mic-row">
         <NButton
@@ -768,6 +768,11 @@ defineExpose({ broadcasting: computed(() => !!playingSlug.value) })
   border: 1px solid var(--dj-border);
   border-radius: 8px;
   background: var(--dj-surface);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.dj-live-area--mic-open {
+  border-color: var(--dj-danger);
+  box-shadow: 0 0 0 1px var(--dj-danger), 0 0 14px color-mix(in srgb, var(--dj-danger) 45%, transparent);
 }
 .dj-live-area-head {
   display: flex;
