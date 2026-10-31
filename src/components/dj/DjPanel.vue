@@ -1,29 +1,13 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NButton, NButtonGroup, NCheckbox, NDrawer, NDrawerContent, NModal, NProgress, NSelect, useMessage, useThemeVars } from 'naive-ui'
-import LedRed from '@/components/LedRed.vue'
-import LedPlay from '@/components/LedPlay.vue'
+import { NButton, NDrawer, NDrawerContent, NModal, useMessage, useThemeVars } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
-import DjLinkEditor from '@/components/dj/DjLinkEditor.vue'
 import DjLiveDeck from '@/components/dj/DjLiveDeck.vue'
-import DjSongPicker, { type DjSong } from '@/components/dj/DjSongPicker.vue'
 import DjStationChat from '@/components/dj/DjStationChat.vue'
 import { useDjColors } from '@/utils/djColors'
-import { useBrandsStore } from '@/stores/brands'
 import { useStationChatStore } from '@/stores/stationChat'
-import datanestApiService from '@/services/datanestApi'
-import aivoxApiService from '@/services/aivoxApi'
 import jesoosApiService from '@/services/jesoosApi'
-import {
-  decodeBlob, fetchSongBuffer,
-  HEAD_SECONDS, MAX_VOICE_LANES, MAX_VOICE_SECONDS, TAIL_SECONDS,
-} from '@/utils/djAudio'
-import {
-  autoCrossfade, autoDuck, bStartFor, emptyLane, encodeJoin, flatCurve, LinkPreview, mixPointOf, pairedCurve, planBWindow, renderLink,
-  silentCurve, withoutA,
-  type AutomixLane, type EnvelopePoint, type LinkModel, type MixWindow, type VoiceLane,
-} from '@/utils/djMix'
 
 const { t } = useI18n()
 const message = useMessage()
@@ -60,7 +44,6 @@ const now = ref(Date.now())
 const ending = ref(false)
 let sessionEnded = false
 let clockTimer: ReturnType<typeof setInterval> | null = null
-let queueTimer: ReturnType<typeof setInterval> | null = null
 let keepAliveTimer: ReturnType<typeof setInterval> | null = null
 /** Well inside the server's session TTL, so a working deck never lapses. */
 const KEEP_ALIVE_MS = 60_000
@@ -98,39 +81,6 @@ const sessionExpiresIn = computed(() => {
   return left > SESSION_WARNING_MS / 1000 ? null : Math.max(0, left)
 })
 
-/** Wall-clock time the queued song locks in, and how much of that the system needs for itself. */
-const deadlineAt = ref<number | null>(null)
-const stitchBuffer = ref(0)
-async function pollQueue() {
-  try {
-    const res = await aivoxApiService.queue(brandSlug.value)
-    if (res.deadline) {
-      deadlineAt.value = Date.now() + res.deadline.secondsUntilLocked * 1000
-      stitchBuffer.value = res.deadline.stitchBufferSeconds
-    } else {
-      deadlineAt.value = null
-    }
-  } catch {
-    deadlineAt.value = null
-  }
-}
-
-/** Visual scale only (the backend reports a remaining time, not a fixed total). */
-const DEADLINE_VISUAL_MAX_SECONDS = 90
-
-const deadlineSeconds = computed(() => {
-  if (deadlineAt.value === null) return null
-  return Math.max(0, Math.round((deadlineAt.value - now.value) / 1000) - stitchBuffer.value)
-})
-const deadlineUrgency = computed(() => {
-  if (deadlineSeconds.value === null) return 'ok'
-  if (deadlineSeconds.value <= 10) return 'critical'
-  if (deadlineSeconds.value <= 30) return 'warn'
-  return 'ok'
-})
-const deadlinePct = computed(() =>
-  deadlineSeconds.value === null ? 0 : Math.min(100, (deadlineSeconds.value / DEADLINE_VISUAL_MAX_SECONDS) * 100),
-)
 function formatCountdown(seconds: number) {
   const mm = Math.floor(seconds / 60)
   const ss = String(seconds % 60).padStart(2, '0')
@@ -167,7 +117,6 @@ async function endSession() {
   pendingLeaveLive.value = false
   if (ending.value) return
   ending.value = true
-  stopPreview()
   try {
     if (!sessionEnded && sessionState.value === 'active') {
       sessionEnded = true
@@ -181,599 +130,10 @@ async function endSession() {
   emit('close')
 }
 
-// ── Songs ───────────────────────────────────────────────────────────
-const songA = ref<DjSong | null>(null)
-const songB = ref<DjSong | null>(null)
-/** Locked once a link is sent to air: the next A is always the song that just went out. */
-const aLocked = ref(false)
-const aBuf = shallowRef<AudioBuffer | null>(null)
-const bBuf = shallowRef<AudioBuffer | null>(null)
-const loadingA = ref(false)
-const loadingB = ref(false)
-
-/** C's decoded audio, handed to A after a send so the next link starts without refetching it. */
-let carriedBuffer: AudioBuffer | null = null
-
-async function loadSong(song: DjSong | null, slot: 'a' | 'b') {
-  const target = slot === 'a' ? aBuf : bBuf
-  const loading = slot === 'a' ? loadingA : loadingB
-  const current = () => (slot === 'a' ? songA : songB).value?.slugName
-  target.value = null
-  if (!song) return
-  if (slot === 'a' && carriedBuffer) {
-    target.value = carriedBuffer
-    carriedBuffer = null
-    return
-  }
-  loading.value = true
-  try {
-    const full = await fetchSongBuffer(song.slugName)
-    if (current() !== song.slugName) return
-    // The whole song is loaded so it can all be seen; the play / send range decides what is heard.
-    target.value = full
-  } catch {
-    if (current() === song.slugName) message.error(t('dj.song_error'))
-  } finally {
-    if (current() === song.slugName) loading.value = false
-  }
-}
-watch(songA, s => loadSong(s, 'a'))
-watch(songB, s => loadSong(s, 'b'))
-
-// ── Junction timeline ───────────────────────────────────────────────
-/**
- * The B lanes: voices, recordings, generated links and effect clips. Each carries its own place on
- * the timeline, volume curve and effects. Replaced rather than mutated, so the array can stay shallow.
- */
-const voices = shallowRef<VoiceLane[]>([emptyLane(1)])
-let nextLaneId = 2
-const filledVoices = computed(() => voices.value.filter(v => v.buf))
-/** Where the earliest clip starts, or null while every lane is empty. */
-const voiceStart = computed<number | null>(() =>
-  filledVoices.value.length ? Math.min(...filledVoices.value.map(v => v.start)) : null,
-)
-const voiceEnd = computed(() => Math.max(0, ...filledVoices.value.map(v => v.start + (v.buf?.duration ?? 0))))
-function patchLane(id: number, patch: Partial<VoiceLane>) {
-  voices.value = voices.value.map(v => (v.id === id ? { ...v, ...patch } : v))
-}
-function addLane() {
-  if (voices.value.length >= MAX_VOICE_LANES) return
-  voices.value = [...voices.value, emptyLane(nextLaneId++)]
-}
-function removeLane(id: number) {
-  if (recordingId.value === id) return
-  stopPreview()
-  // The last lane is only ever emptied, so there is always somewhere to record.
-  voices.value = voices.value.length > 1 ? voices.value.filter(v => v.id !== id) : [emptyLane(nextLaneId++)]
-}
-/**
- * A volume curve per song, in that song's own seconds. Each is seeded flat and open the moment
- * its song loads, so there are always handles on the lane to take hold of.
- */
-const duckA = ref<EnvelopePoint[]>([])
-const duckB = ref<EnvelopePoint[]>([])
-/** Optional: while on, the two curves are one, as they used to be. Off by default. */
-const linkCurves = ref(false)
-/** Mutes A / C for both preview and what is sent, without touching their own curves. */
-const mutedA = ref(false)
-const mutedC = ref(false)
-
-// ── Automix (D) ─────────────────────────────────────────────────────
-const automixing = ref(false)
-const dLane = shallowRef<AutomixLane | null>(null)
-async function applyAutomix() {
-  const slugA = songA.value?.slugName
-  const slugC = songB.value?.slugName
-  if (!slugA || !slugC || automixing.value) return
-  automixing.value = true
-  // Activates the D row immediately, before the render has even started on the server.
-  dLane.value = { buf: null, start: aStart.value, muted: false, status: 'processing', progressLabel: t('dj.automix_starting'), errorMessage: null, mixStart: null, mixEnd: null }
-  try {
-    const { job_id } = await aivoxApiService.startMixJob(slugA, slugC)
-    const final = await aivoxApiService.mixEvents(job_id, progress => {
-      if (!dLane.value) return
-      dLane.value = { ...dLane.value, progressLabel: progress.name, errorMessage: progress.errorMessage }
-    })
-    if (final.status === 'ERROR') {
-      if (dLane.value) dLane.value = { ...dLane.value, status: 'error', progressLabel: null, errorMessage: final.errorMessage }
-      message.error(final.errorMessage || t('dj.automix_error'))
-      return
-    }
-    const { blob, plan } = await aivoxApiService.getMixResult(job_id)
-    const buf = await decodeBlob(blob)
-    // a.mix_start_sec/stop_sec are already absolute A-file positions, the same coordinate
-    // space the junction timeline uses (A always starts at 0 there) — mixStart/mixEnd color
-    // that part of the D waveform brighter than the rest, rather than a dimming overlay.
-    if (dLane.value) {
-      dLane.value = {
-        ...dLane.value, buf, status: 'done', progressLabel: null,
-        mixStart: plan?.a.mix_start_sec ?? null, mixEnd: plan?.a.stop_sec ?? null,
-      }
-    }
-    // C enters (its own start_from_sec) exactly when A reaches mix_start_sec, so C's
-    // buffer-time-zero sits at mix_start_sec - start_from_sec on the junction timeline.
-    if (plan) bStart.value = plan.a.mix_start_sec - plan.c.start_from_sec
-  } catch {
-    if (dLane.value) dLane.value = { ...dLane.value, status: 'error', progressLabel: null, errorMessage: null }
-    message.error(t('dj.automix_error'))
-  } finally {
-    automixing.value = false
-  }
-}
-// D taking over the join means A, B and C would otherwise double up with it; muted automatically
-// the moment its render lands, and unmuted again once D is gone, rather than left for the DJ to catch.
-watch(() => !!dLane.value?.buf, active => {
-  mutedA.value = active
-  mutedC.value = active
-  voices.value = voices.value.map(v => (v.muted === active ? v : { ...v, muted: active }))
-})
-
-/** Where B comes in. Seeded from the default overlap, then the DJ can slide B in time. */
-const bStart = ref(bStartFor(TAIL_SECONDS))
-/** Where A starts. Zero until the DJ slides A along the timeline. */
-const aStart = ref(0)
-const aEnd = computed(() => aStart.value + (aBuf.value?.duration ?? TAIL_SECONDS))
-watch(aBuf, buf => {
-  aStart.value = 0
-  bStart.value = bStartFor(buf?.duration ?? TAIL_SECONDS)
-})
-const total = computed(() => Math.max(aEnd.value, bStart.value + (bBuf.value?.duration ?? HEAD_SECONDS)))
-/** B lanes whose clip is longer than the timeline has room for; the part past the end is not played or sent. */
-const overhang = computed(() =>
-  voices.value.flatMap((v, n) =>
-    v.buf && v.start + v.buf.duration > total.value + 0.05 ? [voices.value.length > 1 ? `B${n + 1}` : 'B'] : []),
-)
-/**
- * What Play and Send cover. Until the DJ drags the range on the ruler it is the whole of A, the link
- * and the whole of C. C goes whole because the next join cuts into it, and if none comes it simply
- * plays out and the agenda takes over. A goes whole because it is the C of the join on air: up to the
- * mix point both hold the same audio, so aivox can stitch the two wherever on air still allows.
- */
-const manualRange = ref<MixWindow | null>(null)
-const fullWin = computed<MixWindow>(() => {
-  const end = total.value
-  const manual = manualRange.value
-  if (manual) {
-    const start = Math.min(Math.max(0, manual.start), Math.max(0, end - 1))
-    return { start, end: Math.min(end, Math.max(manual.end, start + 1)) }
-  }
-  // With no C the link ends where the last of A and the DJ's voice ends.
-  return { start: aStart.value, end: noC.value ? Math.max(aEnd.value, voiceEnd.value) : end }
-})
-// A new pair of songs is a new junction, so the range starts out following it again.
-watch([aBuf, bBuf], () => { manualRange.value = null; dLane.value = null })
-
-/** The join last sent, whose C is this link's A. */
-const lastJoinId = ref<string | null>(null)
-/** Set once that join is seen going out; when something else goes out after it, A has played out whole. */
-const lastJoinSeenOnAir = ref(false)
-/** Seconds aivox needs to render the stitch; a mix point closer than this to the live edge airs as plan B. */
-const STITCH_MARGIN_SECONDS = 8
-
-const brandsStore = useBrandsStore()
-/** How far into A (the C of the join on air) aivox has already published; null while that join has not started. */
-const aAiredSeconds = computed(() => {
-  if (lastJoinId.value === null) return null
-  const state = brandsStore.bufferStates[brandSlug.value]
-  const buffer = state?.buffer
-  if (!buffer || buffer.djJoinId !== lastJoinId.value) return lastJoinSeenOnAir.value ? Infinity : null
-  const committed = buffer.committedSeconds + Math.max(0, (now.value - state.receivedAt) / 1000)
-  return committed - (buffer.djIncomingSongStartSeconds ?? 0)
-})
-watch(aAiredSeconds, s => { if (s !== null && s !== Infinity) lastJoinSeenOnAir.value = true })
-
-/** The A that `lastJoinId` continues; picking any other A starts a fresh chain. */
-let continuesSlug: string | null = null
-watch(songA, s => {
-  if (lastJoinId.value !== null && s?.slugName !== continuesSlug) {
-    lastJoinId.value = null
-    lastJoinSeenOnAir.value = false
-  }
-})
-/**
- * A reopened deck carries on from the last join if its C has not played out yet: that C is put in as A,
- * as if the session had never closed. Offered once, and only while the DJ has not picked an A.
- */
-let pickupOffered = false
-watch([() => sessionState.value, () => brandsStore.lastDjJoins[brandSlug.value]], ([state, onAir]) => {
-  if (pickupOffered || state !== 'active' || !onAir || songA.value) return
-  pickupOffered = true
-  lastJoinId.value = onAir.joinId
-  lastJoinSeenOnAir.value = false
-  continuesSlug = onAir.incomingSongSlug
-  songA.value = {
-    slugName: onAir.incomingSongSlug, id: onAir.incomingSongId,
-    title: onAir.incomingSongTitle, artist: onAir.incomingSongArtist,
-  }
-}, { immediate: true })
-
-/**
- * No A at all: nothing of the DJ's is on air to continue from and no A was picked, so the link opens with
- * the DJ's own voice straight into C — typically right after the station's AI DJ has handed over.
- */
-const noA = computed(() => !songA.value && lastJoinId.value === null)
-/** Stands in for A when there is none, so the timeline keeps its usual shape; it is never heard or sent. */
-const silentA = computed(() => {
-  const b = bBuf.value
-  if (!b) return null
-  return new AudioBuffer({ length: Math.ceil(TAIL_SECONDS * b.sampleRate), numberOfChannels: 2, sampleRate: b.sampleRate })
-})
-/**
- * No C: the link is A, then the DJ's voice, with no song after it. Nothing can continue from it, so it
- * ends the chain; whatever comes next (another link, or the agenda once the session ends) follows it.
- */
-const noC = computed(() => !songB.value && !!aBuf.value)
-/** Stands in for C when there is none; placed beyond the end of the link, so it is never heard or sent. */
-const silentC = computed(() => {
-  const a = aBuf.value
-  if (!a) return null
-  return new AudioBuffer({ length: Math.ceil(0.05 * a.sampleRate), numberOfChannels: 2, sampleRate: a.sampleRate })
-})
-/** A muted A/C is treated as if it was never added: skipped from the send, same as noA/noC. */
-const aPresent = computed(() => !!aBuf.value && !mutedA.value)
-const cPresent = computed(() => !!bBuf.value && !mutedC.value)
-const fullModel = computed<LinkModel | null>(() => {
-  const a = aPresent.value ? aBuf.value! : (bBuf.value ? silentA.value : null)
-  const b = cPresent.value ? bBuf.value! : (aBuf.value ? silentC.value : null)
-  return a && b
-    ? {
-        a, b,
-        voices: voices.value.map(v => (v.muted && v.buf ? { ...v, duck: silentCurve(v.buf.duration) } : v)),
-        aStart: aStart.value, bStart: cPresent.value ? bStart.value : Infinity,
-        duckA: aPresent.value ? duckA.value : silentCurve(a.duration),
-        duckB: cPresent.value ? duckB.value : silentCurve(b.duration),
-        d: dLane.value,
-      }
-    : null
-})
-/** Where the mix begins, in A's own seconds. */
-const mixPointInA = computed(() => (fullModel.value ? mixPointOf(fullModel.value) - aStart.value : null))
-/**
- * A has already played past the mix point on air, so this link can no longer be stitched in. It goes out
- * as plan B, without A, and A is taken off the editor: what the DJ hears is what will air.
- */
-const aGone = computed(() => {
-  const aired = aAiredSeconds.value
-  const mix = mixPointInA.value
-  return aired !== null && mix !== null && aired + STITCH_MARGIN_SECONDS >= mix
-})
-
-/** The link goes out without A: A has already aired past the mix, or there never was an A. */
-const withoutAOnAir = computed(() => aGone.value || noA.value)
-
-/** What Play and the editor cover: the whole link, or plan B's when it goes out without A. */
-const win = computed<MixWindow>(() =>
-  withoutAOnAir.value && fullModel.value ? planBWindow(fullModel.value, fullWin.value) : fullWin.value)
-const clampStart = (duration: number, s: number) => Math.min(Math.max(0, s), Math.max(0, total.value - duration))
-
-/** The stretch where both songs play together, in junction seconds. */
-const overlap = () => ({
-  from: Math.max(aStart.value, bStart.value),
-  to: Math.min(aEnd.value, bStart.value + (bBuf.value?.duration ?? 0)),
-})
-/**
- * Pairs B's curve with A's over the overlap. `prev` is passed when a song has just slid: the
- * points C was given for the old overlap belong to that overlap, not to C, so they are dropped
- * rather than kept, or every step of a slide would leave a few more behind.
- */
-function syncLinked(prev?: { aStart: number; bStart: number }) {
-  const a = aBuf.value
-  const b = bBuf.value
-  if (!linkCurves.value || !a || !b) return
-  const own = prev === undefined
-    ? duckB.value
-    : duckB.value.filter(p => p.time > prev.aStart + a.duration - prev.bStart + 1e-6)
-  duckB.value = pairedCurve(duckA.value, aStart.value, a.duration, own, bStart.value, b.duration)
-}
-/** A falls and B rises across the overlap; whatever A does before it is left as it was. */
-function applyCrossfade() {
-  const a = aBuf.value
-  if (!a || !bBuf.value) return
-  const { from, to } = overlap()
-  if (to - from < 0.05) return
-  // A's curve is in A's own seconds, so the overlap is taken relative to where A starts.
-  const fromA = from - aStart.value
-  const toA = to - aStart.value
-  const before = duckA.value.filter(p => p.time < fromA - 1e-6)
-  duckA.value = [
-    ...before,
-    { time: fromA, volume: 1 },
-    { time: toA, volume: 0 },
-    ...(toA < a.duration - 1e-6 ? [{ time: a.duration, volume: 0 }] : []),
-  ]
-  syncLinked()
-}
-// Linking two untouched curves would leave B silent through the overlap, so start from a crossfade.
-watch(linkCurves, on => {
-  if (!on || !aBuf.value || !bBuf.value) return
-  const { from } = overlap()
-  const untouched = !duckA.value.some(p => p.volume < 0.999 && p.time >= from - aStart.value - 1e-6)
-  if (untouched) applyCrossfade()
-  else syncLinked()
-})
-// Sliding either song moves the overlap, so C is paired with A again over its new position.
-watch(bStart, (_now, prev) => syncLinked({ aStart: aStart.value, bStart: prev }))
-watch(aStart, (_now, prev) => syncLinked({ aStart: prev, bStart: bStart.value }))
-/** Seconds in from its edge that a song's default fade handle sits: 5 s before A ends, 5 s after C begins. */
-const FADE_HANDLE_SECONDS = 5
-function defaultCurveA() {
-  const length = aBuf.value?.duration ?? 0
-  return flatCurve(length, length - FADE_HANDLE_SECONDS)
-}
-function defaultCurveC() {
-  return flatCurve(bBuf.value?.duration ?? 0, FADE_HANDLE_SECONDS)
-}
-watch(aBuf, () => { duckA.value = defaultCurveA() })
-watch(bBuf, () => { duckB.value = defaultCurveC() })
-watch([aBuf, bBuf, aStart, bStart], () => {
-  voices.value = voices.value.map(v => (v.buf ? { ...v, start: clampStart(v.buf.duration, v.start) } : v))
-})
-
-/** What is auditioned: the whole link, or plan B once A is gone. */
-const model = computed<LinkModel | null>(() =>
-  fullModel.value && withoutAOnAir.value ? withoutA(fullModel.value) : fullModel.value)
-
-function applyAutoDuck() {
-  // Linked, the curves are a crossfade, so "auto" means the crossfade rather than a duck.
-  if (linkCurves.value) return applyCrossfade()
-  const a = aBuf.value
-  const b = bBuf.value
-  if (!a || !b) return
-  if (voiceStart.value !== null) {
-    // Ducks across the whole voiced stretch, from the first clip's start to the last one's end.
-    const length = voiceEnd.value - voiceStart.value
-    // A ends soon after the voice anyway, so it dips and stays down rather than climbing back up just to stop.
-    duckA.value = autoDuck(voiceStart.value, length, aStart.value, a.duration, false)
-    duckB.value = autoDuck(voiceStart.value, length, bStart.value, b.duration)
-    return
-  }
-  // Nothing to duck under, so blend the songs across the stretch where they play together.
-  const { from, to } = overlap()
-  duckA.value = autoCrossfade(from, to, aStart.value, a.duration, false)
-  duckB.value = autoCrossfade(from, to, bStart.value, b.duration, true)
-}
-function resetCurve() {
-  duckA.value = defaultCurveA()
-  duckB.value = defaultCurveC()
-}
-function onDeleteVoice(id: number) {
-  if (sending.value) return
-  stopPreview()
-  patchLane(id, { buf: null, source: null, start: 0, duck: [] })
-}
-
-// ── Recording ───────────────────────────────────────────────────────
-const editor = ref<InstanceType<typeof DjLinkEditor> | null>(null)
-/** Id of the B lane the microphone is filling. */
-const recordingId = ref<number | null>(null)
-const recording = computed(() => recordingId.value !== null)
-const recSeconds = ref(0)
-let recTimer: ReturnType<typeof setInterval> | null = null
-
-function clearRecTimer() {
-  if (recTimer) { clearInterval(recTimer); recTimer = null }
-}
-
-async function toggleRec(id: number) {
-  if (recordingId.value !== null) {
-    if (recordingId.value === id) editor.value?.stopRec(id)
-    return
-  }
-  stopPreview()
-  recordingId.value = id
-  recSeconds.value = 0
-  await nextTick()
-  await editor.value?.startRec(id)
-  if (recordingId.value !== id) return
-  recTimer = setInterval(() => {
-    recSeconds.value += 1
-    if (recSeconds.value >= MAX_VOICE_SECONDS) editor.value?.stopRec(id)
-  }, 1000)
-}
-
-function setVoice(id: number, buf: AudioBuffer, source: 'rec' | 'ai' | 'file') {
-  // Land the clip so it finishes as C comes in; the DJ can drag from there. A new clip starts with a flat curve.
-  patchLane(id, { buf, source, start: clampStart(buf.duration, bStart.value - buf.duration), duck: flatCurve(buf.duration) })
-}
-
-/** The voice slot also takes a ready-made sound asset, not just a live recording. */
-const fileEl = ref<HTMLInputElement | null>(null)
-let fileLane = 0
-function pickFile(id: number) {
-  fileLane = id
-  fileEl.value?.click()
-}
-async function onPickFile(e: Event) {
-  const input = e.target as HTMLInputElement
-  const file = input.files?.[0]
-  input.value = ''
-  if (!file) return
-  stopPreview()
-  try {
-    setVoice(fileLane, await decodeBlob(file), 'file')
-  } catch {
-    message.error(t('dj.file_error'))
-  }
-}
-
-/** Effects come from the station's sound assets (the Sound Assets page), loaded like any fragment. */
-const effectOptions = ref<{ label: string; value: string }[]>([])
-const effectsLoading = ref(false)
-let effectSeq = 0
-
-async function searchEffects(term = '') {
-  const seq = ++effectSeq
-  effectsLoading.value = true
-  try {
-    const res = await datanestApiService.getSoundAssets(1, 30, term.trim(), ['EFFECT'])
-    if (seq !== effectSeq) return
-    effectOptions.value = res.entries
-      .filter((e: any) => e.type === 'EFFECT')
-      .map((e: any) => ({ label: e.title || e.slugName, value: e.slugName }))
-  } catch {
-    if (seq === effectSeq) effectOptions.value = []
-  } finally {
-    if (seq === effectSeq) effectsLoading.value = false
-  }
-}
-
-async function onPickEffect(slug: string | null, id: number) {
-  if (!slug) return
-  stopPreview()
-  effectsLoading.value = true
-  try {
-    setVoice(id, await fetchSongBuffer(slug), 'file')
-  } catch {
-    message.error(t('dj.file_error'))
-  } finally {
-    effectsLoading.value = false
-  }
-}
-
 // ── Chat ────────────────────────────────────────────────────────────
 const chatOpen = ref(false)
 const stationChat = useStationChatStore()
 const stationChatRef = ref<{ activate: () => void } | null>(null)
-
-async function onRecordEnd(blob: Blob, id: number) {
-  clearRecTimer()
-  recordingId.value = null
-  try {
-    const buf = await decodeBlob(blob)
-    if (buf.duration < 0.3) return
-    setVoice(id, buf, 'rec')
-  } catch {
-    message.error(t('dj.mic_error'))
-  }
-}
-
-function onRecordError() {
-  clearRecTimer()
-  recordingId.value = null
-  message.error(t('dj.mic_error'))
-}
-
-// ── Preview ─────────────────────────────────────────────────────────
-const preview = new LinkPreview()
-const previewing = ref(false)
-/** The edit cursor. Always on screen, so the DJ can place it before pressing play. */
-const playhead = ref(0)
-const clampHead = (t: number) => Math.min(Math.max(t, win.value.start), win.value.end)
-/** How long before the join the cursor parks by default, so Play starts right at the link, not at the range's edge. */
-const PLAY_LEAD_SECONDS = 3
-const joinCue = () => clampHead((noC.value ? voiceStart.value ?? bStart.value : bStart.value) - PLAY_LEAD_SECONDS)
-/** Once the DJ has placed the cursor themselves, Play resumes from there instead of jumping back to the join. */
-const cursorPlaced = ref(false)
-
-function stopPreview() {
-  preview.stop()
-  previewing.value = false
-}
-
-function togglePreview() {
-  if (previewing.value) return stopPreview()
-  if (!model.value) return
-  // Parked at the end, play again from the join rather than not at all.
-  const from = !cursorPlaced.value || playhead.value >= win.value.end - 0.05 ? joinCue() : playhead.value
-  playhead.value = from
-  previewing.value = true
-  preview.play(model.value, win.value, tm => { playhead.value = tm }, stopPreview, from)
-}
-
-/** Scrubbing: the cursor follows the pointer, and audio re-joins only once the drag ends. */
-function onScrubStart() {
-  cursorPlaced.value = true
-  if (previewing.value) preview.suspend()
-}
-function onScrub(t: number) {
-  playhead.value = clampHead(t)
-}
-function onScrubEnd() {
-  if (previewing.value) preview.seek(playhead.value)
-}
-
-// Edits are heard as they are made; only losing the model (a song removed) ends the audition.
-watch([voices, duckA, duckB, aBuf, bBuf, aStart, bStart, win, mutedA, mutedC, dLane], () => {
-  if (!previewing.value) return
-  if (model.value) preview.refresh(model.value, win.value)
-  else stopPreview()
-})
-// A new pair of songs is a new join; park the cursor there again until the DJ moves it themselves.
-watch([aBuf, bBuf], () => {
-  cursorPlaced.value = false
-  playhead.value = joinCue()
-})
-
-// ── Send to air ─────────────────────────────────────────────────────
-const sending = ref(false)
-/** Percent of the rendered join uploaded so far; the file is large enough to be worth watching. */
-const uploadProgress = ref(0)
-
-async function sendToAir() {
-  const m = fullModel.value
-  const a = songA.value
-  const b = songB.value
-  if (sending.value) return
-  if (!m || (!a && !noA.value) || (!b && !noC.value)) {
-    message.warning('Add something to send first.')
-    return
-  }
-  const endsChain = noC.value
-  sending.value = true
-  uploadProgress.value = 1
-  try {
-    const full = fullWin.value
-    const continuing = lastJoinId.value !== null
-    // Without A (gone on air, or never picked) only plan B can air. A first join with an A has nothing
-    // on air for plan B to follow, so it goes out as the full render alone.
-    const fullRender = withoutAOnAir.value ? null : await renderLink(m, full)
-    const planBWin = planBWindow(m, full)
-    const planBRender = continuing || noA.value ? await renderLink(withoutA(m), planBWin) : null
-    const joinId = crypto.randomUUID()
-    await jesoosApiService.sendDjJoin(brandSlug.value, {
-      full: fullRender ? await encodeJoin(fullRender) : null,
-      planB: planBRender ? await encodeJoin(planBRender) : null,
-      joinId,
-      continuesJoinId: lastJoinId.value,
-      durationSeconds: Math.round((fullRender ?? planBRender)!.duration * 100) / 100,
-      incomingSongStartSeconds: b ? Math.max(0, bStart.value - full.start) : 0,
-      outgoingSongFromSeconds: Math.max(0, full.start - aStart.value),
-      mixPointSeconds: Math.max(0, mixPointOf(m) - full.start),
-      planBIncomingSongStartSeconds: b ? Math.max(0, bStart.value - planBWin.start) : 0,
-      songASlug: a?.slugName ?? null,
-      songBSlug: b?.slugName ?? null,
-    }, percent => { uploadProgress.value = percent })
-    message.success(t('dj.sent'))
-    voices.value = [emptyLane(nextLaneId++)]
-    if (endsChain || !b) {
-      // Nothing continues from a link without C: the next one starts fresh, with A to pick or none at all.
-      lastJoinId.value = null
-      lastJoinSeenOnAir.value = false
-      continuesSlug = null
-      carriedBuffer = null
-      songA.value = null
-      aLocked.value = false
-      return
-    }
-    lastJoinId.value = joinId
-    lastJoinSeenOnAir.value = false
-    continuesSlug = b.slugName
-    // The station will play a → b next, so the next link continues from b, with its audio already decoded.
-    carriedBuffer = bBuf.value
-    songA.value = b
-    songB.value = null
-    aLocked.value = true
-  } catch {
-    message.error(t('dj.send_error'))
-    // The cut can no longer be made, so A has to be picked again from whatever is on air.
-    lastJoinId.value = null
-    lastJoinSeenOnAir.value = false
-    aLocked.value = false
-  } finally {
-    sending.value = false
-    uploadProgress.value = 0
-  }
-}
 
 // ── Live ────────────────────────────────────────────────────────────
 /** The deck only ever runs Live: it streams its own mix to air, and the queue waits until the DJ hands the air back. */
@@ -783,38 +143,10 @@ function onLiveEnded(reason: string) {
   emit('close')
 }
 
-/**
- * How long the deck waits for the takeover and the station's first status before it lets the DJ work
- * anyway. The link can be prepared meanwhile; sending still needs the session jesoos confirms.
- */
-const TAKEOVER_TIMEOUT_MS = 15_000
-const takeoverTimedOut = ref(false)
-let takeoverTimer: ReturnType<typeof setTimeout> | null = null
 const sessionActive = computed(() => sessionState.value === 'active')
-const ready = computed(() => sessionActive.value || takeoverTimedOut.value)
-/**
- * A stays shut until the session is live and the station's status has come in, since that status
- * decides whether A is the C of a join still on air. Picked earlier, it would skip that pick-up.
- */
-const aStatusKnown = computed(() =>
-  takeoverTimedOut.value || (sessionActive.value && brandsStore.lastDjJoins[brandSlug.value] !== undefined))
-// Recording needs a live session, not songs: a voice can be captured first and placed later.
-const canRecord = computed(() => ready.value && !sending.value)
-const canPreview = computed(() => ready.value && !!model.value && !recording.value && !sending.value)
-const canSend = computed(() => ready.value && sessionActive.value && !ending.value && !recording.value && !sending.value)
-
-const songLabel = (s: DjSong | null) => (s ? [s.artist, s.title].filter(Boolean).join(' — ') : '')
 
 onMounted(async () => {
   clockTimer = setInterval(() => { now.value = Date.now() }, 1000)
-  void pollQueue()
-  queueTimer = setInterval(pollQueue, 10000)
-  takeoverTimer = setTimeout(() => {
-    takeoverTimer = null
-    if (aStatusKnown.value) return
-    takeoverTimedOut.value = true
-    message.warning(t('dj.takeover_slow'), { duration: 8000 })
-  }, TAKEOVER_TIMEOUT_MS)
   await startSession()
   // The session lapses on the server without this, so a closed laptop hands the air back.
   keepAliveTimer = setInterval(() => {
@@ -827,11 +159,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   if (clockTimer) clearInterval(clockTimer)
-  if (queueTimer) clearInterval(queueTimer)
   if (keepAliveTimer) clearInterval(keepAliveTimer)
-  if (takeoverTimer) clearTimeout(takeoverTimer)
-  clearRecTimer()
-  preview.stop()
   if (!sessionEnded && sessionState.value === 'active') {
     sessionEnded = true
     void jesoosApiService.endDjSession(brandSlug.value).catch(() => {})
@@ -925,6 +253,7 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: 20px;
 }
+
 .dj-topbar {
   display: flex;
   align-items: center;
@@ -932,28 +261,33 @@ onBeforeUnmount(() => {
   gap: 24px;
   flex-wrap: wrap;
 }
+
 .dj-topbar-buttons {
   display: flex;
   align-items: center;
   gap: 3px;
 }
+
 .dj-timer {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   line-height: 1.1;
 }
+
 .dj-timer small {
   font-size: 0.65rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--dj-muted);
 }
+
 .dj-timer span {
   font-size: 1.6rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
+
 .dj-banner {
   margin: 0;
   padding: 8px 12px;
@@ -964,60 +298,17 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 12px;
 }
+
 .dj-banner--error {
   background: color-mix(in srgb, var(--dj-danger) 12%, transparent);
 }
-.dj-deadline {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.dj-send {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.dj-send .n-progress {
-  flex: 1;
-  min-width: 80px;
-}
-.dj-deadline-bar {
-  flex: 1;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--dj-border);
-  overflow: hidden;
-}
-.dj-deadline-fill {
-  height: 100%;
-  border-radius: 2px;
-  background: var(--dj-live);
-  transition: width 1s linear;
-}
-.dj-deadline--warn .dj-deadline-fill {
-  background: var(--dj-warn);
-}
-.dj-deadline--critical .dj-deadline-fill {
-  background: var(--dj-danger);
-}
-.dj-deadline-text {
-  flex: none;
-  font-size: 0.75rem;
-  font-variant-numeric: tabular-nums;
-  color: var(--dj-muted);
-}
-.dj-deadline--warn .dj-deadline-text {
-  color: var(--dj-warn);
-}
-.dj-deadline--critical .dj-deadline-text {
-  color: var(--dj-danger);
-  font-weight: 700;
-}
+
 .dj-section {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
+
 .dj-section-title {
   margin: 0;
   font-size: 0.85rem;
@@ -1025,96 +316,14 @@ onBeforeUnmount(() => {
   color: var(--dj-muted);
   text-transform: uppercase;
 }
-.dj-pickers {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.dj-asset-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  min-width: 0;
-}
-.dj-overhang {
-  margin: 0;
-  font-size: 0.8rem;
-  color: var(--dj-warn);
-}
-.dj-add-lane {
-  align-self: flex-start;
-}
-/** Each asset keeps its own colour on the chip beside its field. */
-.dj-asset-field--a {
-  --dj-slot: var(--dj-a);
-}
-.dj-asset-field--c {
-  --dj-slot: var(--dj-c);
-}
-/** The song fields take half the width; a full-width select was far more than a title needs. */
-.dj-asset-field {
-  width: 50%;
-}
-/** Matches the slot chip on the song pickers above and below it. */
-.dj-asset-slot {
-  flex: none;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 0.85rem;
-  background: var(--dj-b);
-  color: #1a1a1a;
-}
-.dj-effect-select {
-  width: 180px;
-}
-.dj-file-input {
-  display: none;
-}
-.dj-curve-tools {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  font-size: 0.75rem;
-  color: var(--dj-muted);
-}
-.dj-controls {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-.dj-preview-led {
-  margin-right: 8px;
-  vertical-align: -3px;
-}
-.dj-rec-led {
-  margin-right: 6px;
-  vertical-align: -3px;
-}
-.dj-rec-label {
-  font-weight: 700;
-}
-.dj-rec-time {
-  font-size: 0.75rem;
-  font-variant-numeric: tabular-nums;
-  color: var(--dj-danger);
-}
-.dj-empty {
-  margin: 0;
-  font-size: 0.85rem;
-  color: var(--dj-muted);
-}
+
 @media (max-width: 768px) {
   .dj-asset-field {
     width: 100%;
   }
+
 }
+
 .dj-chat-header {
   display: flex;
   align-items: center;
@@ -1123,12 +332,14 @@ onBeforeUnmount(() => {
   min-width: 0;
   padding-right: 8px;
 }
+
 .dj-chat-title {
   font-size: 0.85rem;
   font-weight: 600;
   line-height: 1.3;
   white-space: nowrap;
 }
+
 .dj-chat-meta {
   display: flex;
   align-items: center;
@@ -1136,11 +347,13 @@ onBeforeUnmount(() => {
   gap: 4px 6px;
   min-width: 0;
 }
+
 .dj-chat-user {
   font-size: 0.72rem;
   font-weight: 500;
   opacity: 0.65;
 }
+
 .dj-chat-pill {
   display: inline-flex;
   align-items: center;
@@ -1155,14 +368,17 @@ onBeforeUnmount(() => {
   padding: 2px 4px 1px;
   line-height: 1;
 }
+
 .dj-chat-pill--developer {
   color: #ff6b6b;
   border-color: rgba(255, 107, 107, 0.5);
 }
+
 .dj-chat-pill--owner {
   color: #f0a500;
   border-color: rgba(240, 165, 0, 0.5);
 }
+
 .dj-chat-pill--artist {
   color: #22c55e;
   border-color: rgba(34, 197, 94, 0.5);
@@ -1176,6 +392,7 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
 }
+
 .dj-chat-drawer .n-drawer-body {
   flex: 1 1 auto;
   min-height: 0;
@@ -1183,6 +400,7 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
 }
+
 .dj-chat-drawer .n-drawer-body-content-wrapper {
   flex: 1 1 auto;
   min-height: 0;
@@ -1191,6 +409,7 @@ onBeforeUnmount(() => {
   flex-direction: column;
   overflow: hidden;
 }
+
 .dj-chat-drawer .n-drawer-header__main {
   flex: 1 1 auto;
   min-width: 0;
