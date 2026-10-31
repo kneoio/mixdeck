@@ -138,49 +138,33 @@ function formatCountdown(seconds: number) {
 }
 
 /**
- * Ending the session or switching back to Pre-mix while the live deck still has a song going out to
- * air would cut it off for listeners instead of handing it back cleanly; both go through this guard.
+ * Ending the session while the live deck still has a song going out to air would cut it off for
+ * listeners instead of handing it back cleanly, so it goes through this guard.
  */
 const liveDeck = ref<InstanceType<typeof DjLiveDeck> | null>(null)
-const pendingLeaveLive = ref<'end' | 'switch' | null>(null)
+const pendingLeaveLive = ref(false)
 const leaveLiveModalShow = computed({
-  get: () => pendingLeaveLive.value !== null,
-  set: (v: boolean) => { if (!v) pendingLeaveLive.value = null },
+  get: () => pendingLeaveLive.value,
+  set: (v: boolean) => { if (!v) pendingLeaveLive.value = false },
 })
-const leaveLiveBody = computed(() => pendingLeaveLive.value === 'end'
-  ? t('dj.live_leave_while_broadcasting_body_end')
-  : t('dj.live_leave_while_broadcasting_body_switch'))
-const leaveLiveConfirmText = computed(() => pendingLeaveLive.value === 'end'
-  ? t('dj.live_leave_while_broadcasting_confirm_end')
-  : t('dj.live_leave_while_broadcasting_confirm_switch'))
+const leaveLiveBody = computed(() => t('dj.live_leave_while_broadcasting_body_end'))
+const leaveLiveConfirmText = computed(() => t('dj.live_leave_while_broadcasting_confirm_end'))
 
 function requestEndSession() {
-  if (mode.value === 'live' && liveDeck.value?.broadcasting) {
-    pendingLeaveLive.value = 'end'
+  if (liveDeck.value?.broadcasting) {
+    pendingLeaveLive.value = true
     return
   }
   void endSession()
 }
 
-/** The only way back to Pre-mix: there is no separate "hand back" button, the toggle itself does it. */
-function requestPreMix() {
-  if (mode.value !== 'live') return
-  if (liveDeck.value?.broadcasting) {
-    pendingLeaveLive.value = 'switch'
-    return
-  }
-  mode.value = 'track'
-}
-
 function confirmLeaveLive() {
-  const action = pendingLeaveLive.value
-  pendingLeaveLive.value = null
-  if (action === 'end') void endSession()
-  else if (action === 'switch') mode.value = 'track'
+  pendingLeaveLive.value = false
+  void endSession()
 }
 
 async function endSession() {
-  pendingLeaveLive.value = null
+  pendingLeaveLive.value = false
   if (ending.value) return
   ending.value = true
   stopPreview()
@@ -792,26 +776,11 @@ async function sendToAir() {
 }
 
 // ── Live ────────────────────────────────────────────────────────────
-/**
- * Pre-mix sends prepared links for the station to stitch in; Live streams the deck's own mix to air
- * as it is played, and the queue waits until the DJ hands the air back.
- */
-const mode = ref<'track' | 'live'>('track')
-
-function goLive() {
-  stopPreview()
-  // Going live drops whatever the station had queued, so no sent join is left for the next link to continue.
-  lastJoinId.value = null
-  lastJoinSeenOnAir.value = false
-  continuesSlug = null
-  aLocked.value = false
-  mode.value = 'live'
-}
-
+/** The deck only ever runs Live: it streams its own mix to air, and the queue waits until the DJ hands the air back. */
 function onLiveEnded(reason: string) {
-  mode.value = 'track'
   if (reason === 'dj_ended') message.success(t('dj.live_back'))
   else message.warning(t('dj.live_ended', { reason }), { duration: 8000 })
+  emit('close')
 }
 
 /**
@@ -833,7 +802,6 @@ const aStatusKnown = computed(() =>
 const canRecord = computed(() => ready.value && !sending.value)
 const canPreview = computed(() => ready.value && !!model.value && !recording.value && !sending.value)
 const canSend = computed(() => ready.value && sessionActive.value && !ending.value && !recording.value && !sending.value)
-const canGoLive = computed(() => sessionActive.value && !ending.value && !sending.value && !recording.value)
 
 const songLabel = (s: DjSong | null) => (s ? [s.artist, s.title].filter(Boolean).join(' — ') : '')
 
@@ -874,14 +842,6 @@ onBeforeUnmount(() => {
 <template>
   <div class="dj-panel" :style="themeStyle">
     <header class="dj-topbar">
-      <NButtonGroup class="dj-mode" size="small">
-        <NButton :type="mode === 'track' ? 'primary' : 'default'" :disabled="mode === 'track'" @click="requestPreMix">
-          {{ t('dj.mode_track') }}
-        </NButton>
-        <NButton :type="mode === 'live' ? 'error' : 'default'" :disabled="mode !== 'live' && !canGoLive" @click="mode !== 'live' && goLive()">
-          {{ t('dj.mode_live') }}
-        </NButton>
-      </NButtonGroup>
       <div class="dj-timer">
         <small>{{ t('dj.session') }}</small>
         <span>{{ sessionActive ? elapsed : '--:--' }}</span>
@@ -930,133 +890,15 @@ onBeforeUnmount(() => {
       <NButton size="small" @click="startSession">{{ t('dj.retry') }}</NButton>
     </p>
 
-    <div v-if="mode === 'track' && deadlineSeconds !== null" class="dj-deadline" :class="`dj-deadline--${deadlineUrgency}`">
-      <div class="dj-deadline-bar"><div class="dj-deadline-fill" :style="{ width: deadlinePct + '%' }" /></div>
-      <span class="dj-deadline-text">
-        {{ deadlineSeconds > 0 ? t('dj.deadline_label', { time: formatCountdown(deadlineSeconds) }) : t('dj.deadline_locked') }}
-      </span>
-    </div>
-
-
-    <template v-if="mode === 'track'">
-      <p v-if="aGone" class="dj-banner">{{ t('dj.too_late') }}</p>
-      <p v-else-if="noA && bBuf" class="dj-banner">{{ t('dj.no_a') }}</p>
-      <p v-else-if="noC" class="dj-banner">{{ t('dj.no_c') }}</p>
-    </template>
-
     <p v-if="sessionExpiresIn !== null" class="dj-banner dj-banner--error">
       {{ sessionExpiresIn > 0
         ? t('dj.session_expiring', { time: formatCountdown(sessionExpiresIn) })
         : t('dj.session_expired') }}
     </p>
 
-    <section v-if="mode === 'track'" class="dj-section">
-      <h3 class="dj-section-title">{{ t('dj.songs') }}</h3>
-      <div class="dj-pickers">
-        <DjSongPicker v-model="songA" class="dj-asset-field dj-asset-field--a" label="A" :placeholder="t('dj.pick_a')" :brand-slug="brandSlug" :exclude-slug="songB?.slugName" :loading="loadingA || !aStatusKnown" :disabled="aLocked || !aStatusKnown" />
-        <div v-for="(v, n) in voices" :key="v.id" class="dj-asset-row">
-          <span class="dj-asset-slot">{{ voices.length > 1 ? `B${n + 1}` : 'B' }}</span>
-          <NButton size="small" :disabled="!canRecord || (recording && recordingId !== v.id)" @click="toggleRec(v.id)">
-            <LedRed class="dj-rec-led" :active="recordingId === v.id" />
-            <span class="dj-rec-label">{{ t('dj.rec') }}</span>
-          </NButton>
-          <span v-if="recordingId === v.id" class="dj-rec-time">{{ recSeconds }}s / {{ MAX_VOICE_SECONDS }}s</span>
-          <NButton size="small" :disabled="recording || sending" @click="pickFile(v.id)">
-            {{ t('dj.add_effect') }}
-          </NButton>
-          <NSelect
-            class="dj-effect-select"
-            size="small"
-            :value="null"
-            :options="effectOptions"
-            :loading="effectsLoading"
-            :disabled="recording || sending"
-            :placeholder="t('dj.pick_effect')"
-            filterable
-            remote
-            clearable
-            @focus="searchEffects()"
-            @search="searchEffects"
-            @update:value="onPickEffect($event, v.id)"
-          />
-          <NButton v-if="voices.length > 1" size="small" quaternary :disabled="recordingId === v.id" :title="t('dj.remove_lane')" :aria-label="t('dj.remove_lane')" @click="removeLane(v.id)">✕</NButton>
-        </div>
-        <NButton v-if="voices.length < MAX_VOICE_LANES" class="dj-add-lane" size="small" dashed :disabled="recording || sending" @click="addLane">
-          {{ t('dj.add_lane') }}
-        </NButton>
-        <input ref="fileEl" class="dj-file-input" type="file" accept="audio/*" @change="onPickFile">
-        <DjSongPicker v-model="songB" class="dj-asset-field dj-asset-field--c" label="C" :placeholder="t('dj.pick_b')" :brand-slug="brandSlug" :exclude-slug="songA?.slugName" :loading="loadingB" />
-      </div>
-    </section>
-
-    <section v-if="mode === 'live'" class="dj-section">
+    <section v-if="sessionActive" class="dj-section">
       <h3 class="dj-section-title">{{ t('dj.live_mixer') }}</h3>
       <DjLiveDeck ref="liveDeck" :brand-slug="brandSlug" @ended="onLiveEnded" />
-    </section>
-
-    <section v-else class="dj-section">
-      <h3 class="dj-section-title">{{ t('dj.link_editor') }}</h3>
-      <DjLinkEditor
-        ref="editor"
-        v-model:voices="voices"
-        v-model:duck-a="duckA"
-        v-model:duck-b="duckB"
-        v-model:a-start="aStart"
-        v-model:b-start="bStart"
-        v-model:muted-a="mutedA"
-        v-model:muted-b="mutedC"
-        v-model:d="dLane"
-        :a="withoutAOnAir ? null : aBuf"
-        :b="bBuf"
-        :total="total"
-        :window="win"
-        :playhead="playhead"
-        :recording-id="recordingId"
-        :rec-seconds="recSeconds"
-        :title-a="songLabel(songA)"
-        :title-b="songLabel(songB)"
-        :info-a="songA"
-        :info-b="songB"
-        :linked="linkCurves"
-        @record-end="onRecordEnd"
-        @record-error="onRecordError"
-        @update:window="manualRange = $event"
-        @scrub-start="onScrubStart"
-        @scrub="onScrub"
-        @scrub-end="onScrubEnd"
-        @delete-voice="onDeleteVoice"
-      />
-      <p v-if="overhang.length" class="dj-overhang">{{ t('dj.overhang', { lanes: overhang.join(', ') }) }}</p>
-      <div class="dj-curve-tools">
-        <NButton size="small" :loading="automixing" :disabled="!aBuf || !bBuf || recording || automixing" @click="applyAutomix">{{ t('dj.automix') }}</NButton>
-        <NButton size="small" :disabled="!aBuf || !bBuf || recording" @click="applyAutoDuck">{{ t('dj.auto_duck') }}</NButton>
-        <NCheckbox v-model:checked="linkCurves" size="small">{{ t('dj.link_curves') }}</NCheckbox>
-        <NButton size="small" :disabled="!aBuf && !bBuf" @click="resetCurve">{{ t('dj.reset_curve') }}</NButton>
-        <NButton size="small" :disabled="!manualRange" @click="manualRange = null">{{ t('dj.auto_range') }}</NButton>
-        <span>{{ t('dj.fade_hint') }}</span>
-      </div>
-      <div class="dj-controls">
-        <GsapButton size="large" :disabled="!canPreview" @click="togglePreview">
-          <LedPlay class="dj-preview-led" :active="previewing" />
-          <span>{{ previewing ? t('dj.preview_stop') : t('dj.preview') }}</span>
-        </GsapButton>
-        <div class="dj-send">
-          <GsapButton type="primary" size="large" :loading="sending" :disabled="!canSend" @click="sendToAir">
-            <span>{{ t('dj.send') }}</span>
-          </GsapButton>
-          <NProgress
-            v-if="sending"
-            type="line"
-            :percentage="uploadProgress"
-            :show-indicator="false"
-            :height="2"
-            :border-radius="1"
-            :fill-border-radius="1"
-            color="#eff605"
-            rail-color="rgba(255,255,255,0.12)"
-          />
-        </div>
-      </div>
     </section>
 
     <NModal
@@ -1068,7 +910,7 @@ onBeforeUnmount(() => {
       :positive-text="leaveLiveConfirmText"
       :negative-text="t('dj.live_leave_while_broadcasting_cancel')"
       @positive-click="confirmLeaveLive"
-      @negative-click="pendingLeaveLive = null"
+      @negative-click="pendingLeaveLive = false"
     />
   </div>
 </template>
@@ -1089,9 +931,6 @@ onBeforeUnmount(() => {
   justify-content: flex-end;
   gap: 24px;
   flex-wrap: wrap;
-}
-.dj-mode {
-  margin-right: auto;
 }
 .dj-topbar-buttons {
   display: flex;
