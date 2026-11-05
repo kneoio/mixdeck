@@ -775,6 +775,13 @@ onMounted(async () => {
       loadLabelCatalog(),
     ])
 
+    if (!isEditing.value) {
+      if (!brandsStore.brands.length) await brandsStore.loadBrands()
+      const all = brandOptions.value.map(o => o.value).filter(Boolean)
+      formData.value.representedInBrands = Array.from(new Set([...formData.value.representedInBrands, ...all]))
+      boostByBrand.value = parseBoosts(null, formData.value.representedInBrands)
+    }
+
     if (isEditing.value) {
       const frag = (isSharedRoute.value || route.path.startsWith('/sound-library/archived'))
         ? await datanestApiService.getSharedFragment(route.params.fragmentId as string)
