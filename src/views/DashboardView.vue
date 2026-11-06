@@ -32,7 +32,7 @@ const brandsStore = useBrandsStore()
 const userSubscriptionStore = useUserSubscriptionStore()
 const router = useRouter()
 const route = useRoute()
-const { needRefresh, applyUpdate } = useServiceWorker()
+useServiceWorker()
 
 const menuThemeOverrides = computed(() => {
   const normalText = themeStore.isDark ? 'rgba(255,255,255,0.82)' : 'rgba(0,0,0,0.85)'
@@ -464,16 +464,6 @@ html.dark .update-pill--glow {
       />
     </NLayoutSider>
 
-    <span
-      v-if="!isMobile"
-      class="update-pill premium-badge"
-      :class="{ 'update-pill--glow': needRefresh }"
-      :style="{ cursor: needRefresh ? 'pointer' : 'default' }"
-      @click="needRefresh && applyUpdate()"
-    >
-      {{ needRefresh ? t('app.update_available') : t('app.latest_version') }}
-    </span>
-
     <!-- Mobile drawer -->
     <NDrawer
       v-if="isMobile"
@@ -494,16 +484,6 @@ html.dark .update-pill--glow {
           @update:expanded-keys="handleUpdateExpandedKeys"
           @update:value="handleMenuSelect"
         />
-        <template #footer>
-          <span
-            class="premium-badge"
-            :class="{ 'update-pill--glow': needRefresh }"
-            :style="{ cursor: needRefresh ? 'pointer' : 'default' }"
-            @click="needRefresh && applyUpdate()"
-          >
-            {{ needRefresh ? t('app.update_available') : t('app.latest_version') }}
-          </span>
-        </template>
       </NDrawerContent>
     </NDrawer>
 
