@@ -43,29 +43,17 @@
       </template>
 
       <form v-else class="login-form" @submit.prevent="onVerifyCode">
-        <n-input
-          v-model:value="code"
-          type="text"
-          inputmode="numeric"
-          autocomplete="one-time-code"
-          maxlength="6"
+        <n-input-otp
+          ref="otpRef"
+          :value="codeDigits"
+          :length="6"
           size="large"
-          autofocus
-          :placeholder="t('auth.code_placeholder')"
+          block
+          :allow-input="isDigit"
           :disabled="loading || codeLocked"
-          @update:value="onCodeInput"
-        >
-          <template #suffix>
-            <button
-              type="button"
-              class="login-paste"
-              :disabled="loading || codeLocked"
-              @click="onPasteCode"
-            >
-              {{ t('auth.paste') }}
-            </button>
-          </template>
-        </n-input>
+          @update:value="onCodeUpdate"
+          @finish="onCodeFinish"
+        />
         <p class="login-error" :class="{ 'login-error--visible': !!error }">{{ error || ' ' }}</p>
         <GsapButton
           type="primary"
@@ -92,10 +80,11 @@
 </template>
 
 <script setup lang="ts">
-import { onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { NInput, NLayout } from 'naive-ui'
+import { NInput, NInputOtp, NLayout } from 'naive-ui'
+import type { InputOtpInst } from 'naive-ui'
 import GsapButton from '@/components/GsapButton.vue'
 import authService, { AuthRequestError, passkeyErrorKind } from '@/services/auth'
 import { useAuthStore } from '@/stores/auth'
@@ -114,6 +103,7 @@ const resending = ref(false)
 const failCount = ref(0)
 const codeLocked = ref(false)
 const passkeySupported = authService.supportsPasskeys()
+const otpRef = ref<InputOtpInst | null>(null)
 
 onUnmounted(() => authService.cancelPasskeyCeremony())
 
@@ -145,19 +135,24 @@ function resetCodeStep() {
   error.value = ''
 }
 
-function onCodeInput(value: string) {
-  code.value = value.replace(/\D/g, '').slice(0, 6)
+const codeDigits = computed(() => Array.from({ length: 6 }, (_, i) => code.value[i] ?? ''))
+
+function isDigit(char: string): boolean {
+  return /^\d$/.test(char)
+}
+
+function onCodeUpdate(value: string[]) {
+  code.value = value.join('').replace(/\D/g, '').slice(0, 6)
   clearError()
 }
 
-async function onPasteCode() {
-  if (loading.value || codeLocked.value) return
-  try {
-    const text = await navigator.clipboard.readText()
-    onCodeInput(text)
-  } catch {
-    // Clipboard denied or unavailable — leave the field as-is.
-  }
+function onCodeFinish(value: string[]) {
+  code.value = value.join('')
+  void onVerifyCode()
+}
+
+function focusCode() {
+  void nextTick(() => otpRef.value?.focusOnChar(0))
 }
 
 function isValidEmail(value: string): boolean {
@@ -186,6 +181,7 @@ async function onRequestCode() {
     await authService.requestOtp(trimmed)
     resetCodeStep()
     step.value = 'code'
+    focusCode()
   } catch (err) {
     error.value = genericRequestError(err)
   } finally {
@@ -220,6 +216,7 @@ async function onVerifyCode() {
     }
   } finally {
     loading.value = false
+    if (!codeLocked.value) focusCode()
   }
 }
 
