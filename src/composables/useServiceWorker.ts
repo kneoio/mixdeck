@@ -1,3 +1,4 @@
+import { watch } from 'vue'
 import { useRegisterSW } from 'virtual:pwa-register/vue'
 import authService from '@/services/auth'
 
@@ -41,6 +42,10 @@ function createServiceWorkerState() {
     await updateServiceWorker(true)
     window.location.reload()
   }
+
+  watch(needRefresh, (value) => {
+    if (value) applyUpdate()
+  }, { immediate: true })
 
   return { needRefresh, applyUpdate }
 }
