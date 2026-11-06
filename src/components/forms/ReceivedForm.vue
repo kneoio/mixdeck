@@ -10,7 +10,6 @@ import { useDictionaryStore } from '@/stores/dictionary'
 import datanestApiService from '@/services/datanestApi'
 import { handleApiError } from '@/utils/notificationService'
 import { normalizeIdList, toGenreTreeOptions } from '@/utils/genreTree'
-import { appConfig } from '@/config/appConfig'
 
 const { t } = useI18n()
 const dictionaryStore = useDictionaryStore()
@@ -141,7 +140,7 @@ async function loadData() {
     const opusFile = files?.find(f => f?.type === 'opus')
     const f0 = opusFile || files?.[0]
     const fileUrl = f0?.url || ''
-    previewUrl.value = fileUrl.startsWith('http') ? fileUrl : fileUrl ? `${appConfig.datanestServer}${fileUrl}` : ''
+    previewUrl.value = f0?.id ? datanestApiService.soundFragmentFileUrl(fragmentSlug.value, f0.id) : ''
     previewFileName.value = f0?.name || fileUrl.split('/').pop()?.split('?')[0] || ''
   } catch (error: unknown) {
     handleApiError(error, message)
