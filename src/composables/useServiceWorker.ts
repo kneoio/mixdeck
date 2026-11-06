@@ -44,7 +44,10 @@ function createServiceWorkerState() {
   }
 
   watch(needRefresh, (value) => {
-    if (value) applyUpdate()
+    if (value) {
+      console.info('[mixdeck] New version available, updating...')
+      applyUpdate()
+    }
   }, { immediate: true })
 
   return { needRefresh, applyUpdate }
