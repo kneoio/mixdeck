@@ -284,6 +284,11 @@ class DatanestApiService extends ApiClient {
     return `${this.baseUrl}/public/soundfragments/files/${encodeURIComponent(fragmentSlug)}/${encodeURIComponent(fileSlug)}`
   }
 
+  /** GET `/public/shared-sound-fragments/received/:brandSlug/:fragmentSlug/files/:fileSlug` — receiver preview, share-scoped. */
+  receivedFileUrl(brandSlug: string, fragmentSlug: string, fileSlug: string): string {
+    return `${this.baseUrl}/public/shared-sound-fragments/received/${encodeURIComponent(brandSlug)}/${encodeURIComponent(fragmentSlug)}/files/${encodeURIComponent(fileSlug)}`
+  }
+
   async patchSoundFragmentBoost(id: string, brandId: string, boost: number, type: 'brand' | 'shared' = 'brand'): Promise<void> {
     await this.request<void>(`/public/soundfragments/${id}/boost/${brandId}`, {
       method: 'PATCH',

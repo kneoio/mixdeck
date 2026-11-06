@@ -140,7 +140,7 @@ async function loadData() {
     const opusFile = files?.find(f => f?.type === 'opus')
     const f0 = opusFile || files?.[0]
     const fileUrl = f0?.url || ''
-    previewUrl.value = f0?.id ? datanestApiService.soundFragmentFileUrl(fragmentSlug.value, f0.id) : ''
+    previewUrl.value = f0?.id ? datanestApiService.receivedFileUrl(brandSlug.value, fragmentSlug.value, f0.id) : ''
     previewFileName.value = f0?.name || fileUrl.split('/').pop()?.split('?')[0] || ''
   } catch (error: unknown) {
     handleApiError(error, message)
