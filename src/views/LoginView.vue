@@ -1,6 +1,9 @@
 <template>
   <!-- n-layout paints the themed background; a plain div would leak the white body through. -->
-  <n-layout class="login-page">
+  <n-layout
+    class="login-page"
+    content-style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;"
+  >
     <div class="login-panel">
       <div class="login-brand">MIXPLA</div>
       <h1 class="login-title">{{ step === 'email' ? t('auth.email_title') : t('auth.code_title') }}</h1>
@@ -264,10 +267,6 @@ function goHome() {
 .login-page {
   min-height: 100vh;
   width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
 }
 
 .login-panel {
