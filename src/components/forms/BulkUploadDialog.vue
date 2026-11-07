@@ -73,6 +73,7 @@ import LedYellow from '@/components/LedYellow.vue'
 import LedIndicator from '@/components/LedIndicator.vue'
 import LoaderProgress from '@/components/LoaderProgress.vue'
 import datanestApiService, { BULK_UPLOAD_CHUNKED_THRESHOLD } from '@/services/datanestApi'
+import { useBrandsStore } from '@/stores/brands'
 import { isEntitlementLimitCode, isEntitlementLimitError } from '@/utils/errorHandler'
 
 const props = defineProps<{
@@ -86,6 +87,7 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const brandsStore = useBrandsStore()
 const isMobile = ref(false)
 const inlineAlert = ref<{ type: 'success' | 'warning' | 'error'; text: string } | null>(null)
 
@@ -317,6 +319,15 @@ function processQueue() {
   }
 }
 
+/** Defaults to all of the user's brands (like SoundFragmentForm), sent as a comma-separated list. */
+async function resolveBrandSlugs(): Promise<string> {
+  if (!brandsStore.brands.length) {
+    try { await brandsStore.loadBrands() } catch { /* fall back to the selected brand */ }
+  }
+  const all = brandsStore.brands.map(b => b.slugName).filter((s): s is string => !!s)
+  return Array.from(new Set([props.slugName, ...all].filter(Boolean))).join(',')
+}
+
 async function handleFileUpload({ file, onProgress, onFinish, onError }: UploadCustomRequestOptions) {
   if (!file.file) {
     onError?.()
@@ -349,7 +360,7 @@ async function handleFileUpload({ file, onProgress, onFinish, onError }: UploadC
         file.file!,
         apiFileId,
         batchId.value,
-        props.slugName,
+        await resolveBrandSlugs(),
         (percent) => onProgress?.({ percent }),
         abortController.value?.signal
       )
